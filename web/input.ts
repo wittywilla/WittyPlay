@@ -13,6 +13,10 @@ import {
 
 export const MAX_PLAYERS = 4
 const HEARTBEAT_MS = 250
+// Frames can stop for hundreds of milliseconds while timers keep their time, and a press that
+// starts and ends in that gap would be lost. So pads are also read when a frame is this late.
+const FRAME_LATE_MS = 20
+const LATE_CHECK_MS = 10
 const SEATS_KEY = 'wittyplay.seats'
 // A motor's effect runs for this long, and is renewed while the game wants it, so a
 // lost stop can't leave a pad shaking for good.
@@ -206,6 +210,8 @@ export class InputManager {
     cancelAnimationFrame(this.raf)
     this.raf = 0
     clearInterval(this.beat)
+    clearInterval(this.late)
+    this.late = 0
     this.stopRumble()
     window.removeEventListener('keydown', this.keydown)
     window.removeEventListener('keyup', this.keyup)
@@ -219,9 +225,14 @@ export class InputManager {
   // no frames are asked for at all.
   private tick = () => {
     this.raf = 0
+    this.lastFrame = performance.now()
     if (!this.polling) return
     this.poll()
   }
+
+  private lastFrame = 0
+  private late = 0
+  private lateCheck = () => { if (performance.now() - this.lastFrame >= FRAME_LATE_MS) this.poll() }
 
   private wantFrames() {
     return !this.hidden && (this.slots.size > 0 || (this.keyboardTurbo !== 0 && this.held.size > 0))
@@ -388,7 +399,14 @@ export class InputManager {
 
   private poll() {
     if (this.readPads()) this.flush()
-    if (this.polling && !this.raf && this.wantFrames()) this.raf = requestAnimationFrame(this.tick)
+    if (!this.polling) return
+    if (this.wantFrames()) {
+      if (!this.raf) this.raf = requestAnimationFrame(this.tick)
+      if (!this.late) this.late = window.setInterval(this.lateCheck, LATE_CHECK_MS)
+    } else if (this.late) {
+      clearInterval(this.late)
+      this.late = 0
+    }
   }
 
   // Reads everything connected. True if anything may have changed.

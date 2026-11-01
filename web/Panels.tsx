@@ -42,7 +42,7 @@ export function Slider({ label, value, min, max, step, unit, onChange }: { label
   const shown = step >= 1 || unit ? `${Number(value.toFixed(2))}${unit || ''}` : value.toFixed(2)
   return (
     <span className="wp-slider">
-      <input type="range" aria-label={label} min={min} max={max} step={step} value={value} onChange={(e) => onChange(clean(Number(e.target.value)))} onKeyDown={key} />
+      <input type="range" aria-label={label} min={min} max={max} step={step} value={value} style={{ '--wp-pct': `${max > min ? ((value - min) / (max - min)) * 100 : 0}%` } as React.CSSProperties} onChange={(e) => onChange(clean(Number(e.target.value)))} onKeyDown={key} />
       <output>{shown}</output>
     </span>
   )
@@ -52,12 +52,31 @@ export function Back({ onClick, label = 'Back' }: { onClick: () => void; label?:
   return <div className="wp-row"><span className="wp-grow" /><button type="button" className="wp-btn" onClick={onClick}>{label}</button></div>
 }
 
+// A row of consoles to choose from, on one line that scrolls. The chosen one starts in view.
+export function ConsoleChips({ consoles, chosen, onChoose, first, label = 'Which console' }: { consoles: { id: string; short: string; name?: string }[]; chosen: string; onChoose: (id: string) => void; first?: string; label?: string }) {
+  const row = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = row.current?.querySelector<HTMLElement>('[aria-pressed=true]')
+    if (el && row.current) row.current.scrollLeft = el.offsetLeft - row.current.offsetLeft - (row.current.clientWidth - el.offsetWidth) / 2
+  }, [chosen])
+  const chip = (id: string, text: string, title?: string) => <button key={id} type="button" aria-pressed={id === chosen} title={title} className={'wp-chip' + (id === chosen ? ' on' : '')} onClick={() => onChoose(id)}>{text}</button>
+  return (
+    <div ref={row} className="wp-scroller" role="group" aria-label={label}>
+      {first && chip('', first)}
+      {consoles.map((c) => chip(c.id, c.short, c.name))}
+    </div>
+  )
+}
+
 // Which level a change applies to.
 export function LevelPicker({ levels, level, onChange }: { levels: LevelChoice[]; level: Level; onChange: (l: Level) => void }) {
   if (levels.length < 2) return null
   return (
-    <div className="wp-levels" role="group" aria-label="Which games this changes">
-      {levels.map((l) => <button key={l.level} type="button" className={'wp-chip' + (l.level === level ? ' on' : '')} aria-pressed={l.level === level} onClick={() => onChange(l.level)}>{l.label}</button>)}
+    <div className="wp-chips">
+      <span className="wp-chips-label" id="wp-levels-label">Changes apply to</span>
+      <div className="wp-levels" role="group" aria-labelledby="wp-levels-label">
+        {levels.map((l) => <button key={l.level} type="button" className={'wp-chip' + (l.level === level ? ' on' : '')} aria-pressed={l.level === level} onClick={() => onChange(l.level)}>{l.label}</button>)}
+      </div>
     </div>
   )
 }
@@ -183,13 +202,16 @@ export function SettingsPanel({ schema, api, view, groups, level, levels, onLeve
     <>
       <LevelPicker levels={levels} level={level} onChange={onLevel} />
       {presets && presets.length > 0 && (
-        <div className="wp-presets" role="group" aria-label="Presets">
-          {presets.map((p) => <button key={p.name} type="button" className="wp-chip" title={p.description} onClick={() => api.applyPreset(level, p).then(() => say(`${p.name} applied`), (e) => say(e?.message || 'That didn’t work'))}>{p.name}</button>)}
+        <div className="wp-chips">
+          <span className="wp-chips-label" id="wp-presets-label">Start from a look</span>
+          <div className="wp-presets" role="group" aria-labelledby="wp-presets-label">
+            {presets.map((p) => <button key={p.name} type="button" className="wp-chip" title={p.description} onClick={() => api.applyPreset(level, p).then(() => say(`${p.name} applied`), (e) => say(e?.message || 'That didn’t work'))}>{p.name}</button>)}
+          </div>
         </div>
       )}
       {sections.map((s, i) => (
         <section key={i} className="wp-section">
-          {s.title && <h3>{s.title}</h3>}
+          {s.title && s.title !== s.defs[0].label && <h3>{s.title}</h3>}
           {s.defs.map((d) => (
             <div key={d.key} className={'wp-setting wp-kind-' + d.kind}>
               <div className="wp-setting-text">
