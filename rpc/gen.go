@@ -21,6 +21,34 @@ var _ json.RawMessage
 
 // Handlers answer the server's calls, by name.
 var Handlers = map[string]service.Handler{
+	"ipc.FrameTiming.Append": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var a0 []byte
+		if err := service.Arg(args, 0, &a0); err != nil {
+			return nil, nil, err
+		}
+		var recv ipc.FrameTiming
+		if err := service.Recv(rawRecv, &recv); err != nil {
+			return nil, nil, err
+		}
+		r0 := recv.Append(a0)
+		return []any{r0}, back, err
+	},
+	"ipc.InputStamp": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var a0 []byte
+		if err := service.Arg(args, 0, &a0); err != nil {
+			return nil, nil, err
+		}
+		r0 := ipc.InputStamp(a0)
+		return []any{r0}, back, err
+	},
+	"ipc.ParseFrameTiming": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var a0 []byte
+		if err := service.Arg(args, 0, &a0); err != nil {
+			return nil, nil, err
+		}
+		r0, r1 := ipc.ParseFrameTiming(a0)
+		return []any{r0, r1}, back, err
+	},
 	"ipc.ParseInput": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 []byte
 		if err := service.Arg(args, 0, &a0); err != nil {
@@ -1337,6 +1365,22 @@ var Handlers = map[string]service.Handler{
 		}
 		err = recv.Pause(a0)
 		return nil, back, err
+	},
+	"stream.Session.Processes": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		recv, err := resolveSession(rawRecv)
+		if err != nil {
+			return nil, nil, err
+		}
+		r0 := recv.Processes()
+		return []any{r0}, back, err
+	},
+	"stream.Session.RawFrame": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		recv, err := resolveSession(rawRecv)
+		if err != nil {
+			return nil, nil, err
+		}
+		r0, r1 := recv.RawFrame()
+		return []any{r0, r1}, back, err
 	},
 	"stream.Session.Reset": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		recv, err := resolveSession(rawRecv)
