@@ -15,7 +15,7 @@ The games library, its metadata and where saves are kept stay with the server.
 
 No games, ROMs, BIOS files or cores come with it. Bring your own games, and add cores in **Settings → Consoles & cores**. Non-commercial cores are never offered. Games can contain flashing images.
 
-How to use it is in **Help** inside WittyMediaServer: see the gaming guide.
+How to use it is in **Help** inside WittyMediaServer: see Games.
 
 ## How to get it
 
