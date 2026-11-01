@@ -3,7 +3,6 @@ package stream
 import (
 	"log/slog"
 	"os/exec"
-	"strings"
 )
 
 func hideWindow(cmd *exec.Cmd) {}
@@ -19,9 +18,7 @@ func prepareSandbox(cmd *exec.Cmd, saveDir string, log *slog.Logger) {
 		log.Warn("sandbox: sandbox-exec is missing; the runner has only its resource limits")
 		return
 	}
-	quoted := strings.ReplaceAll(strings.ReplaceAll(saveDir, `\`, `\\`), `"`, `\"`)
-	profile := `(version 1)(allow default)(deny network*)(deny process-exec*)(deny file-write*)` +
-		`(allow file-write* (subpath "` + quoted + `"))(allow file-write-data (literal "/dev/null"))`
+	profile := runnerProfile(realPath(cmd.Path), realPath(saveDir))
 	cmd.Args = append([]string{tool, "-p", profile, cmd.Path}, cmd.Args[1:]...)
 	cmd.Path = tool
 }
