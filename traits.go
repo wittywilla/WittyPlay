@@ -103,7 +103,8 @@ var traits = map[string]CoreTraits{
 	// Play! keeps its settings and memory cards under the home folder, and stops if it
 	// can't make one.
 	"play": {GPU: true, OwnHome: true},
-	"ppsspp": {GPU: true, Assets: "PPSSPP", Options: map[string]string{"ppsspp_backend": "opengl"},
+	// PPSSPP lays out the PSP's memory through shared memory too, and can't boot without it.
+	"ppsspp": {GPU: true, Assets: "PPSSPP", SharedMemory: true, Options: map[string]string{"ppsspp_backend": "opengl"},
 		Resolution: pick("ppsspp_internal_resolution", "480x272", "960x544", "1440x816", "1920x1088")},
 	// Left to itself, Flycast keeps memory cards in the system folder, which a running core
 	// can't write to, so nothing a game saved to one would last. These are in the save folder.
