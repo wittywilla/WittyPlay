@@ -68,7 +68,7 @@ func resolveCores(raw json.RawMessage) (*cores.Manager, error) {
 		Extra  []string
 		Custom []cores.Core
 	}
-	if err := json.Unmarshal(raw, &r); err != nil {
+	if err := service.Unmarshal(raw, &r); err != nil {
 		return nil, err
 	}
 	return &cores.Manager{Dir: r.Dir, System: r.System, Extra: r.Extra, Client: safeClient, Custom: func() []cores.Core { return r.Custom }}, nil
@@ -76,7 +76,7 @@ func resolveCores(raw json.RawMessage) (*cores.Manager, error) {
 
 func resolveStore(raw json.RawMessage) (*cores.CustomStore, error) {
 	var st cores.CustomStore
-	if err := json.Unmarshal(raw, &st); err != nil {
+	if err := service.Unmarshal(raw, &st); err != nil {
 		return nil, err
 	}
 	st.Client = safeClient
