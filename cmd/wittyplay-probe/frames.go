@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"image"
 	"image/png"
 	"log/slog"
 	"os"
@@ -220,13 +221,38 @@ func parsePresses(s string) ([]press, error) {
 }
 
 func writePNG(name string, hdr ipc.VideoHeader, data []byte) error {
-	img := stream.ToRGBA(hdr, data)
+	img := toImage(hdr, data)
 	f, err := os.Create(name)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 	return png.Encode(f, img)
+}
+
+// toImage turns a raw frame into a picture.
+func toImage(hdr ipc.VideoHeader, data []byte) *image.RGBA {
+	img := image.NewRGBA(image.Rect(0, 0, hdr.Width, hdr.Height))
+	p := img.Pix
+	switch hdr.Format {
+	case engine.FormatXRGB8888:
+		for i := 0; i+3 < len(data) && i+3 < len(p); i += 4 {
+			p[i], p[i+1], p[i+2], p[i+3] = data[i+2], data[i+1], data[i], 0xff
+		}
+	case engine.FormatRGB565:
+		for i := 0; i+1 < len(data) && i*2+3 < len(p); i += 2 {
+			v := uint16(data[i]) | uint16(data[i+1])<<8
+			r, g, b := byte(v>>11), byte(v>>5)&0x3f, byte(v)&0x1f
+			p[i*2], p[i*2+1], p[i*2+2], p[i*2+3] = r<<3|r>>2, g<<2|g>>4, b<<3|b>>2, 0xff
+		}
+	default:
+		for i := 0; i+1 < len(data) && i*2+3 < len(p); i += 2 {
+			v := uint16(data[i]) | uint16(data[i+1])<<8
+			r, g, b := byte(v>>10)&0x1f, byte(v>>5)&0x1f, byte(v)&0x1f
+			p[i*2], p[i*2+1], p[i*2+2], p[i*2+3] = r<<3|r>>2, g<<3|g>>2, b<<3|b>>2, 0xff
+		}
+	}
+	return img
 }
 
 // gameFlags say what to play.

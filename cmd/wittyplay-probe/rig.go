@@ -205,7 +205,7 @@ func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
 			// And what left the core at about the same moment, before any encoder.
 			if hdr, raw := r.session().RawFrame(); raw != nil {
 				if out, err := os.Create(filepath.Join(f.shots, f.label+"-core.png")); err == nil {
-					_ = png.Encode(out, stream.ToRGBA(hdr, raw))
+					_ = png.Encode(out, toImage(hdr, raw))
 					out.Close()
 				}
 			}

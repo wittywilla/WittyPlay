@@ -834,9 +834,6 @@ func (j *jpegEncoder) loop() {
 	}
 }
 
-// ToRGBA converts a raw frame, for tools that want to look at one.
-func ToRGBA(hdr ipc.VideoHeader, data []byte) *image.RGBA { return toRGBA(hdr, data) }
-
 // toRGBA converts a raw frame. The header and size have already been checked.
 func toRGBA(hdr ipc.VideoHeader, data []byte) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, hdr.Width, hdr.Height))
