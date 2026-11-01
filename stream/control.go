@@ -245,7 +245,7 @@ func (s *Session) Apply(c ipc.Control, coreOptions map[string]string) error {
 // quickStates are the cores whose whole state saves in a fraction of a millisecond to a
 // few milliseconds, measured on real games, so running a frame ahead costs next to
 // nothing. A frame is about as much as all the rest of the path put together.
-var quickStates = map[string]bool{"fceumm": true, "nestopia": true, "mesen": true, "gambatte": true, "sameboy": true, "mgba": true, "vba_next": true, "gearsystem": true, "smsplus": true, "mesen-s": true, "mednafen_supafaust": true, "mednafen_pce_fast": true, "mednafen_wswan": true, "mednafen_ngp": true, "handy": true, "stella": true, "stella2014": true, "prosystem": true}
+var quickStates = map[string]bool{"fceumm": true, "nestopia": true, "gambatte": true, "mgba": true, "vba_next": true, "smsplus": true, "mesen-s": true, "mednafen_pce_fast": true, "mednafen_wswan": true, "mednafen_ngp": true, "handy": true}
 
 // runAheadFor settles what "automatic" means for this core, on this machine.
 func (s *Session) runAheadFor(c ipc.Control) ipc.Control {

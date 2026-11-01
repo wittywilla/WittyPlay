@@ -95,6 +95,31 @@ func TestASteadyGameIgnoresPresses(t *testing.T) {
 	}
 }
 
+func TestSoundFromAChipIsThinnedToWhatCanBeUsed(t *testing.T) {
+	r := &runner{}
+	if got := r.audioRate(48000); got != 48000 || r.audioStep != 1 {
+		t.Fatalf("an ordinary rate became %v, step %d", got, r.audioStep)
+	}
+	got := r.audioRate(2097152)
+	if r.audioStep != 43 || got < 48000 || got > 49000 {
+		t.Fatalf("a chip's rate became %v, step %d", got, r.audioStep)
+	}
+	// Twice the step's worth, in two uneven pieces, gives two samples of the average.
+	in := make([]int16, r.audioStep*2*2)
+	for i := range in {
+		if i%2 == 0 {
+			in[i] = 1000
+		} else {
+			in[i] = -1000
+		}
+	}
+	out := append([]int16(nil), r.thinAudio(in[:10])...)
+	out = append(out, r.thinAudio(in[10:])...)
+	if len(out) != 4 || out[0] != 1000 || out[1] != -1000 || out[2] != 1000 || out[3] != -1000 {
+		t.Fatalf("got %v", out)
+	}
+}
+
 func TestFrameShiftsAreBounded(t *testing.T) {
 	r := &runner{}
 	r.pads.pressed = make(chan struct{}, 1)

@@ -59,6 +59,11 @@ type runner struct {
 
 	rumble map[[2]int]int // what each motor was last told
 
+	audioStep            int // how many samples make one, for a core far above any usable rate
+	audioHeld            int
+	audioSumL, audioSumR int64
+	audioThin            []int16
+
 	stamp      bool // draw the frame and input numbers into each picture
 	frameSeq   uint32
 	runStart   int64 // when the core began the frame it's on
@@ -70,6 +75,37 @@ func (r *runner) write(t byte, parts ...[]byte) {
 		return
 	}
 	r.send(t, parts...)
+}
+
+// A core may make sound at the speed of the chip it emulates, millions of samples a second.
+// Nothing after this point takes that, and nobody can hear it, so it's averaged down here.
+const audioRateLimit = 192000
+
+// audioRate says what a core's sample rate comes to, and sets up anything that takes.
+func (r *runner) audioRate(rate float64) float64 {
+	r.audioStep = 1
+	if rate > audioRateLimit {
+		r.audioStep = int(rate / 48000)
+		return rate / float64(r.audioStep)
+	}
+	return rate
+}
+
+// thinAudio averages each run of stereo samples into one. It can be given part of a run,
+// and carries the rest over to the next call.
+func (r *runner) thinAudio(s []int16) []int16 {
+	out := r.audioThin[:0]
+	for i := 0; i+1 < len(s); i += 2 {
+		r.audioSumL += int64(s[i])
+		r.audioSumR += int64(s[i+1])
+		if r.audioHeld++; r.audioHeld == r.audioStep {
+			n := int64(r.audioStep)
+			out = append(out, int16(r.audioSumL/n), int16(r.audioSumR/n))
+			r.audioSumL, r.audioSumR, r.audioHeld = 0, 0, 0
+		}
+	}
+	r.audioThin = out
+	return out
 }
 
 // timing describes the picture that's just been finished.
@@ -216,6 +252,9 @@ func (r *runner) handlers() engine.Handlers {
 			}
 		},
 		Audio: func(s []int16) {
+			if r.audioStep > 1 {
+				s = r.thinAudio(s)
+			}
 			for _, v := range s {
 				r.audio = binary.LittleEndian.AppendUint16(r.audio, uint16(v))
 			}
@@ -250,6 +289,7 @@ func (r *runner) handlers() engine.Handlers {
 		Rotation: func(n int) { r.event(ipc.Event{Type: "rotation", Turns: n}) },
 		AVInfo: func(a engine.AVInfo) {
 			r.fps = a.FPS
+			a.SampleRate = r.audioRate(a.SampleRate)
 			r.event(ipc.Event{Type: "avinfo", Width: a.BaseWidth, Height: a.BaseHeight, Aspect: a.Aspect, FPS: a.FPS, Rate: a.SampleRate})
 		},
 		Shutdown: func() { r.event(ipc.Event{Type: "shutdown"}); r.stop = true },
@@ -359,6 +399,7 @@ func (r *runner) run(in io.Reader, open Open) error {
 	if av.FPS <= 0 || av.FPS > 240 {
 		av.FPS = 60
 	}
+	av.SampleRate = r.audioRate(av.SampleRate)
 	info := eng.SystemInfo()
 	renderer := ""
 	if hw, ok := eng.(interface{ Renderer() string }); ok {

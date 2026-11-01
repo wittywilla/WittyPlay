@@ -8,6 +8,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - **Latency:** from a finished frame to the screen went from 50 to 200 ms to 10 to 20 ms, and from a press to the screen from 60 to 260 ms to
   12 to 30 ms, on a home network. The browser no longer holds frames back, sound can't hold the picture back, FFmpeg's queues can't fill,
   and a new press starts the next frame at once. Pads are read every 4 ms. Frames land just before the display wants them where a browser shows it helps.
+- **Run-ahead** is on by default for one frame on the older consoles, which takes a whole frame off a game's own reaction. It's a setting.
 - **The picture:** PlayStation 2 is native size by default, which ends the bands and grid in Gran Turismo 4. Colours are right on every console:
   red was coming out orange. Pixel art is sharp from the first frame, and pictures of 640 wide or more are scaled smoothly.
 - **Speed:** PlayStation 2 goes from about 40 frames a second to 45 to 60 in a race.
