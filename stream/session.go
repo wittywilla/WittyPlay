@@ -45,7 +45,16 @@ type Config struct {
 	UDPPort   int
 	PublicIPs []string
 	STUN      []string
+	// LoopbackOnly keeps WebRTC to this machine's loopback address, for testing where a
+	// wider address would stop to ask a firewall.
+	LoopbackOnly bool
+
+	Tuning Tuning
 }
+
+// Tuning switches the latency measures, for measuring what each one is worth. The zero
+// value is what every real game runs with.
+type Tuning struct{}
 
 // Options start one game.
 type Options struct {
@@ -78,6 +87,7 @@ type Options struct {
 	SafeMode      bool                                   // started with defaults; settings aren't applied while it runs
 	Notices       []string                               // things to tell whoever started it
 	OnCoreOptions func(coreID string, list []ipc.Option) // a core has said what it offers
+	Stamp         bool                                   // draw numbers into each picture, for measuring: wittyplay-probe
 
 	keep *keptCleanup
 }
@@ -428,7 +438,9 @@ type Session struct {
 	frameFresh bool
 	shown      []byte // the frame last given to the encoders; videoLoop swaps these
 	shownHdr   ipc.VideoHeader
+	frameTrace frameTrace // the journey so far of the newest frame
 	frameReady chan struct{}
+	inputs     inputClock
 
 	viewMu        sync.Mutex
 	viewers       map[*viewer]bool
@@ -537,7 +549,7 @@ func (s *Session) start() error {
 		close(s.done)
 	}()
 
-	load, _ := json.Marshal(ipc.Load{Core: s.opt.Core, ROM: s.opt.ROM, System: s.opt.SystemDir, Save: s.opt.SaveDir, Options: s.opt.CoreOptions, Assets: s.opt.CoreAssets, PreferDevices: s.opt.PreferDevices})
+	load, _ := json.Marshal(ipc.Load{Core: s.opt.Core, ROM: s.opt.ROM, System: s.opt.SystemDir, Save: s.opt.SaveDir, Options: s.opt.CoreOptions, Assets: s.opt.CoreAssets, PreferDevices: s.opt.PreferDevices, Stamp: s.opt.Stamp})
 	if err := s.command(ipc.CmdLoad, load); err != nil {
 		s.kill()
 		return err
@@ -653,6 +665,7 @@ func (s *Session) readRunner(r io.Reader, ready chan<- error) {
 	defer s.guard("runner reader")
 	rd := ipc.NewReader(r)
 	isReady := false
+	var timing ipc.FrameTiming // what the runner says about the next picture
 	fail := func(err error) {
 		if !isReady {
 			ready <- err
@@ -688,7 +701,10 @@ func (s *Session) readRunner(r io.Reader, ready chan<- error) {
 			s.viewMu.Unlock()
 			isReady = true
 			ready <- nil
+		case ipc.MsgTiming:
+			timing, _ = ipc.ParseFrameTiming(p)
 		case ipc.MsgVideo:
+			now := time.Now().UnixNano()
 			hdr, data, err := ipc.ParseVideo(p)
 			if err != nil {
 				s.log.Warn("bad video from the runner", "err", err)
@@ -698,13 +714,18 @@ func (s *Session) readRunner(r io.Reader, ready chan<- error) {
 			s.frame = append(s.frame[:0], data...)
 			changed := hdr.Width != s.frameHdr.Width || hdr.Height != s.frameHdr.Height
 			s.frameHdr, s.frameFresh = hdr, true
+			s.frameTrace = frameTrace{FrameTiming: timing, ServerIn: now, InputServer: s.inputs.when(timing.InputSeq)}
 			s.frameMu.Unlock()
-			s.lastFrame.Store(time.Now().UnixNano())
+			s.lastFrame.Store(now)
 			s.stats.made.Add(1)
 			s.noteFrame(changed, hdr)
 			s.signalFrame()
 		case ipc.MsgDupe:
-			s.lastFrame.Store(time.Now().UnixNano())
+			now := time.Now().UnixNano()
+			s.frameMu.Lock()
+			s.frameTrace = frameTrace{FrameTiming: timing, ServerIn: now, InputServer: s.inputs.when(timing.InputSeq)}
+			s.frameMu.Unlock()
+			s.lastFrame.Store(now)
 			s.stats.made.Add(1)
 			s.signalFrame()
 		case ipc.MsgAudio:
@@ -830,6 +851,7 @@ func (s *Session) Input(p []byte) {
 	// Clients repeat their state now and then, so that a lost packet heals. A repeat
 	// isn't someone playing, so it doesn't hold off the idle limit, and the runner
 	// already has it.
+	s.inputs.note(ipc.InputStamp(p))
 	s.viewMu.Lock()
 	var full [ipc.InputSizeFull]byte
 	copy(full[:], p) // a state with no triggers has them let go

@@ -28,6 +28,7 @@ const (
 	MsgSaveRAM byte = 6  // battery save
 	MsgEvent   byte = 7  // JSON: Event
 	MsgError   byte = 8  // text, then the host exits
+	MsgTiming  byte = 9  // FrameTimingSize bytes: when the next picture was made. Optional
 	MsgProbe   byte = 20 // JSON: Probe, the answer to CmdProbe
 )
 
@@ -70,8 +71,12 @@ func limit(t byte) int {
 		return MaxJSON
 	case MsgState, MsgSaveRAM, CmdSaveRAM, CmdState:
 		return MaxBlob
-	case MsgDupe, CmdSaveState, CmdReset, CmdPause, CmdQuit, CmdInput, CmdDisc, CmdPointer, CmdDevice:
+	case MsgDupe, CmdSaveState, CmdReset, CmdPause, CmdQuit, CmdDisc, CmdPointer, CmdDevice:
 		return 16
+	case CmdInput:
+		return InputSizeStamped
+	case MsgTiming:
+		return FrameTimingSize
 	}
 	return 0
 }
@@ -165,6 +170,9 @@ type Load struct {
 	// without a game. ROM is empty then.
 	Probe  bool   `json:"probe,omitempty"`
 	Assets string `json:"assets,omitempty"` // support files of its own, if it has any
+	// Stamp draws each frame's number and the newest input it saw into the picture, for
+	// measuring a whole path by looking at what arrives. Only wittyplay-probe asks for it.
+	Stamp bool `json:"stamp,omitempty"`
 }
 
 // TestCore is the Load.Core value for the built-in test core.
@@ -329,20 +337,62 @@ func ParseVideo(p []byte) (VideoHeader, []byte, error) {
 	return h, p[VideoHeaderSize:], nil
 }
 
+// FrameTiming says when a picture was made, as Unix nanoseconds on the machine's clock.
+// A runner sends it just before the picture it describes. It's for measuring and nothing
+// else, so a runner may leave it out, and nothing depends on a value being sensible.
+type FrameTiming struct {
+	Seq      uint32 // counts frames from the start of the game
+	InputSeq uint32 // the newest numbered input this frame could have seen
+	InputAt  int64  // when that input reached the runner
+	RunStart int64  // when the core began this frame
+	RunEnd   int64  // when the picture was ready
+}
+
+// FrameTimingSize is the encoded size of a FrameTiming.
+const FrameTimingSize = 32
+
+// Append adds the timing to b.
+func (t FrameTiming) Append(b []byte) []byte {
+	b = binary.LittleEndian.AppendUint32(b, t.Seq)
+	b = binary.LittleEndian.AppendUint32(b, t.InputSeq)
+	b = binary.LittleEndian.AppendUint64(b, uint64(t.InputAt))
+	b = binary.LittleEndian.AppendUint64(b, uint64(t.RunStart))
+	return binary.LittleEndian.AppendUint64(b, uint64(t.RunEnd))
+}
+
+// ParseFrameTiming reads a MsgTiming payload.
+func ParseFrameTiming(p []byte) (FrameTiming, bool) {
+	if len(p) != FrameTimingSize {
+		return FrameTiming{}, false
+	}
+	return FrameTiming{Seq: binary.LittleEndian.Uint32(p), InputSeq: binary.LittleEndian.Uint32(p[4:]), InputAt: int64(binary.LittleEndian.Uint64(p[8:])),
+		RunStart: int64(binary.LittleEndian.Uint64(p[16:])), RunEnd: int64(binary.LittleEndian.Uint64(p[24:]))}, true
+}
+
 // InputSize is the size of a CmdInput payload: port, buttons, then the left and
 // right sticks' X and Y. A browser sends the same bytes. InputSizeFull adds how far
-// the L2 and R2 triggers are held, 0 to 255, for clients that can tell.
+// the L2 and R2 triggers are held, 0 to 255, for clients that can tell. InputSizeStamped
+// adds a u32 that names this state, so that the picture it first affects can be found.
 const (
-	InputSize     = 11
-	InputSizeFull = 13
+	InputSize        = 11
+	InputSizeFull    = 13
+	InputSizeStamped = 17
 )
 
 // ParseTriggers reads the analog triggers of a state, which are 0 when it has none.
 func ParseTriggers(p []byte) (l2, r2 uint8) {
-	if len(p) != InputSizeFull {
+	if len(p) != InputSizeFull && len(p) != InputSizeStamped {
 		return 0, 0
 	}
 	return p[11], p[12]
+}
+
+// InputStamp reads the number of a stamped state, which is 0 when it has none.
+func InputStamp(p []byte) uint32 {
+	if len(p) != InputSizeStamped {
+		return 0
+	}
+	return binary.LittleEndian.Uint32(p[13:])
 }
 
 // DeviceSize is the size of a CmdDevice payload: port, then a u32 device type.
@@ -350,7 +400,7 @@ const DeviceSize = 5
 
 // ParseInput reads one player's state.
 func ParseInput(p []byte) (port int, buttons uint16, lx, ly, rx, ry int16, ok bool) {
-	if len(p) != InputSize && len(p) != InputSizeFull {
+	if len(p) != InputSize && len(p) != InputSizeFull && len(p) != InputSizeStamped {
 		return 0, 0, 0, 0, 0, 0, false
 	}
 	return int(p[0]), binary.LittleEndian.Uint16(p[1:]), int16(binary.LittleEndian.Uint16(p[3:])), int16(binary.LittleEndian.Uint16(p[5:])),

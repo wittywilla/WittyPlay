@@ -156,6 +156,13 @@ export class InputManager {
 
   setSender(send: (msg: Uint8Array) => void) { this.send = send }
 
+  // Numbers each change of state, so that the frame it first reaches can be found. Only
+  // while something is showing those numbers.
+  private stamper: (() => number) | null = null
+  private stamped = new Uint8Array(17)
+  private stampedView = new DataView(this.stamped.buffer)
+  setStamper(s: (() => number) | null) { this.stamper = s }
+
   // The touch screen. x and y run from 0 to 1 across the picture. Sent at once, and
   // repeated on the beat because the channel may lose it: while held, and a few times
   // after, since a lost release would hold the stylus down.
@@ -474,7 +481,12 @@ export class InputManager {
         if (idle) continue // idle players need no heartbeat
       }
       prev.set(msg)
-      this.send(msg)
+      if (!same && this.stamper) {
+        // A real change, so it's worth following to the screen.
+        this.stamped.set(msg)
+        this.stampedView.setUint32(13, this.stamper(), true)
+        this.send(this.stamped)
+      } else this.send(msg)
       sent = true
     }
     if (sent) this.onActivity?.()

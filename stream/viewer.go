@@ -20,15 +20,22 @@ import (
 	"github.com/wittywilla/wittyplay/ipc"
 )
 
+// websocketBinary keeps the timing code from needing to know about WebSockets.
+const websocketBinary = websocket.MessageBinary
+
 // viewer is one browser watching a session.
 type viewer struct {
 	s       *Session
 	codec   string // h264 | vp8 | jpeg
 	waitKey atomic.Bool
 
+	// How frames are timed for this viewer.
+	wantTiming atomic.Bool
+	timing     atomic.Pointer[webrtc.DataChannel]
+
 	// WebRTC
 	pc     *webrtc.PeerConnection
-	video  *webrtc.TrackLocalStaticSample
+	video  *videoSender
 	audio  *webrtc.TrackLocalStaticSample
 	events atomic.Pointer[webrtc.DataChannel]
 
@@ -141,15 +148,18 @@ func (s *Session) snapshotViewers() []*viewer {
 	return out
 }
 
-func (s *Session) deliverVideo(codec string, au AU) {
+func (s *Session) deliverVideo(codec string, au AU, tr *frameTrace) {
 	dur := s.auDuration(codec)
 	s.bytesOut.Add(int64(len(au.Data)))
+	tr.Size, tr.Key = int32(len(au.Data)), au.Key
 	for _, v := range s.snapshotViewers() {
 		if v.codec != codec {
 			continue
 		}
 		if v.video != nil {
-			_ = v.video.WriteSample(media.Sample{Data: au.Data, Duration: dur})
+			tr.RTP = v.video.write(au.Data, dur)
+			tr.Sent = time.Now().UnixNano()
+			v.sendTiming(tr)
 			continue
 		}
 		// A viewer that fell behind waits for the next keyframe, because its
@@ -162,6 +172,8 @@ func (s *Session) deliverVideo(codec string, au AU) {
 			flags = 1
 		}
 		msg := append([]byte{wsH264, flags}, au.Data...)
+		tr.Sent = time.Now().UnixNano()
+		v.sendTiming(tr) // first, so that it's known about when the picture arrives
 		if v.send(websocket.MessageBinary, msg) {
 			v.waitKey.Store(false)
 		} else {
@@ -307,6 +319,10 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if len(cfg.PublicIPs) > 0 {
 		se.SetNAT1To1IPs(cfg.PublicIPs, webrtc.ICECandidateTypeHost)
 	}
+	if cfg.LoopbackOnly {
+		se.SetIncludeLoopbackCandidate(true)
+		se.SetIPFilter(func(ip net.IP) bool { return ip.IsLoopback() })
+	}
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithInterceptorRegistry(ir), webrtc.WithSettingEngine(se))
 	var ice []webrtc.ICEServer
 	if len(cfg.STUN) > 0 {
@@ -319,7 +335,7 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	v := &viewer{s: s, codec: codec, pc: pc}
 	fail := func(err error) (string, error) { _ = pc.Close(); return "", err }
 
-	video, err := webrtc.NewTrackLocalStaticSample(videoCap, "video", "wittyplay")
+	video, err := newVideoSender(codec, videoCap)
 	if err != nil {
 		return fail(err)
 	}
@@ -331,7 +347,7 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if err := pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: offer}); err != nil {
 		return fail(err)
 	}
-	for _, track := range []*webrtc.TrackLocalStaticSample{video, audio} {
+	for _, track := range []webrtc.TrackLocal{video.track, audio} {
 		sender, err := pc.AddTrack(track)
 		if err != nil {
 			return fail(err)
@@ -355,6 +371,13 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 			})
 		case "events":
 			dc.OnOpen(func() { v.events.Store(dc) })
+		case "timing":
+			dc.OnOpen(func() { v.timing.Store(dc) })
+			dc.OnMessage(func(m webrtc.DataChannelMessage) {
+				if !m.IsString {
+					v.timingMessage(m.Data, func(b []byte) { _ = dc.Send(b) })
+				}
+			})
 		}
 	})
 	pc.OnConnectionStateChange(func(st webrtc.PeerConnectionState) {
@@ -455,7 +478,9 @@ func (s *Session) ServeWS(w http.ResponseWriter, r *http.Request, mode string) {
 			return
 		}
 		if t == websocket.MessageBinary {
-			s.Input(b)
+			if !v.timingMessage(b, func(out []byte) { v.send(websocket.MessageBinary, out) }) {
+				s.Input(b)
+			}
 		}
 	}
 }

@@ -5,6 +5,8 @@
 //   3. WebSocket with JPEG: when nothing else works
 // docs/GAMING.md has the reasoning.
 
+import { TIMING_SUBSCRIBE, watchVideo, type LatencyMeter } from './latency'
+
 export type TransportKind = 'webrtc' | 'ws-h264' | 'ws-jpeg'
 export type Mode = 'auto' | TransportKind
 
@@ -36,8 +38,40 @@ export interface Transport {
   setAudioBuffer(b: AudioBuffer_): void
   // The stream a clip records, when this way of connecting has one.
   captureStream(): MediaStream | null
+  // Measures every stage of the path into a meter; null stops. Costs nothing until asked.
+  measure(meter: LatencyMeter | null): void
   onEvent?: (e: PlayEvent) => void
   onLost?: () => void
+}
+
+// The timing messages' common half: pings to line the clocks up, quickly at first and
+// then once in a while, and a request for frame records.
+class TimingLink {
+  meter: LatencyMeter | null = null
+  private timer = 0
+  private count = 0
+  constructor(private out: (b: ArrayBuffer) => void) {}
+
+  start(meter: LatencyMeter | null) {
+    this.meter = meter
+    this.stop()
+    const sub = new ArrayBuffer(2)
+    new DataView(sub).setUint8(0, TIMING_SUBSCRIBE)
+    new DataView(sub).setUint8(1, meter ? 1 : 0)
+    this.out(sub)
+    if (!meter) return
+    this.count = 0
+    const tick = () => {
+      if (!this.meter) return
+      this.out(this.meter.clock.ping())
+      this.timer = window.setTimeout(tick, ++this.count < 20 ? 50 : 1000)
+    }
+    tick()
+  }
+
+  stop() { clearTimeout(this.timer) }
+
+  incoming(b: ArrayBuffer) { this.meter?.message(b) }
 }
 
 export type Signal = {
@@ -79,6 +113,10 @@ class WebRTCTransport implements Transport {
   private hold = 0
   private prev: { t: number; bytes: number; frames: number } | null = null
   private closed = false
+  private timingDc: RTCDataChannel | null = null
+  private link = new TimingLink((b) => { if (this.timingDc?.readyState === 'open') { try { this.timingDc.send(b) } catch { /* the next one will do */ } } })
+  private wanted: LatencyMeter | null = null
+  private unwatch: (() => void) | null = null
 
   constructor(private signal: Signal) {
     const v = document.createElement('video')
@@ -111,6 +149,11 @@ class WebRTCTransport implements Transport {
     this.input.binaryType = 'arraybuffer'
     const events = pc.createDataChannel('events')
     events.onmessage = (m) => { try { this.onEvent?.(JSON.parse(m.data)) } catch { /* not ours */ } }
+    const timing = pc.createDataChannel('timing', { ordered: false, maxRetransmits: 0 })
+    timing.binaryType = 'arraybuffer'
+    timing.onmessage = (m) => { if (m.data instanceof ArrayBuffer) this.link.incoming(m.data) }
+    timing.onopen = () => { if (this.wanted) this.measure(this.wanted) }
+    this.timingDc = timing
     pc.onconnectionstatechange = () => {
       if (!this.closed && (pc.connectionState === 'failed' || pc.connectionState === 'closed')) this.onLost?.()
     }
@@ -154,8 +197,17 @@ class WebRTCTransport implements Transport {
 
   close() {
     this.closed = true
+    this.link.stop()
+    this.unwatch?.()
     this.pc?.close()
     this.element.srcObject = null
+  }
+
+  measure(meter: LatencyMeter | null) {
+    this.wanted = meter
+    this.unwatch?.()
+    this.unwatch = meter ? watchVideo(this.element, (p) => meter.shown(p)) : null
+    if (this.timingDc?.readyState === 'open' || !meter) this.link.start(meter)
   }
 
   async stats(): Promise<Stats> {
@@ -228,6 +280,8 @@ class WSTransport implements Transport {
   private volume = 1
   private userMuted = false
   private hold = 0
+  private meter: LatencyMeter | null = null
+  private link = new TimingLink((b) => { if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(b) })
 
   constructor(private signal: Signal, readonly kind: 'ws-h264' | 'ws-jpeg') {
     this.element = document.createElement('canvas')
@@ -262,6 +316,10 @@ class WSTransport implements Transport {
           this.element.height = f.displayHeight
         }
         this.ctx.drawImage(f, 0, 0)
+        if (this.meter) {
+          const now = performance.now()
+          this.meter.shown({ seq: f.timestamp, presented: now, displayAt: now })
+        }
         f.close()
         this.frames++
         this.first?.()
@@ -284,6 +342,12 @@ class WSTransport implements Transport {
     }
     const b = new Uint8Array(data)
     this.bytes += b.length
+    if (b[0] >= 0xf0) {
+      // The newest record is the next picture's, as the server sends them in that order.
+      if (b[0] === 0xf4) this.nextSeq = new DataView(data).getUint32(2, true)
+      this.link.incoming(data)
+      return
+    }
     switch (b[0]) {
       case MSG_H264: this.h264(b); break
       case MSG_JPEG: this.jpeg(b); break
@@ -300,9 +364,13 @@ class WSTransport implements Transport {
     if (this.decoder.decodeQueueSize > 3 && !key) { this.needKey = true; return }
     this.needKey = false
     const Chunk = (window as any).EncodedVideoChunk
+    // A frame's number goes through the decoder as its timestamp when it's being measured.
     this.ts += 16667
-    this.decoder.decode(new Chunk({ type: key ? 'key' : 'delta', timestamp: this.ts, data: b.subarray(2) }))
+    this.decoder.decode(new Chunk({ type: key ? 'key' : 'delta', timestamp: this.meter ? this.nextSeq : this.ts, data: b.subarray(2) }))
   }
+
+  private nextSeq = 0
+  measure(meter: LatencyMeter | null) { this.meter = meter; this.link.start(meter) }
 
   private jpeg(b: Uint8Array) {
     if (this.drawing) return
@@ -374,6 +442,7 @@ class WSTransport implements Transport {
 
   close() {
     this.closed = true
+    this.link.stop()
     this.ws?.close()
     try { this.decoder?.close() } catch { /* already closed */ }
     void this.audio?.close().catch(() => {})

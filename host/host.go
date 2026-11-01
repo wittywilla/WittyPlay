@@ -57,6 +57,10 @@ type runner struct {
 	ctl   *control
 
 	rumble map[[2]int]int // what each motor was last told
+
+	stamp    bool // draw the frame and input numbers into each picture
+	frameSeq uint32
+	runStart int64 // when the core began the frame it's on
 }
 
 func (r *runner) write(t byte, parts ...[]byte) {
@@ -64,6 +68,27 @@ func (r *runner) write(t byte, parts ...[]byte) {
 		return
 	}
 	r.send(t, parts...)
+}
+
+// timing describes the picture that's just been finished.
+func (r *runner) timing() ipc.FrameTiming {
+	r.frameSeq++
+	in, at := r.pads.seen()
+	return ipc.FrameTiming{Seq: r.frameSeq, InputSeq: in, InputAt: at, RunStart: r.runStart, RunEnd: time.Now().UnixNano()}
+}
+
+// sendFrame sends a picture with the timing that goes with it, in one go, so that
+// nothing can come between them.
+func (r *runner) sendFrame(t byte, tm ipc.FrameTiming, frame []byte) {
+	var head [ipc.FrameTimingSize]byte
+	r.outMu.Lock()
+	defer r.outMu.Unlock()
+	if r.writeE == nil {
+		r.writeE = ipc.Write(r.out, ipc.MsgTiming, tm.Append(head[:0]))
+	}
+	if r.writeE == nil {
+		r.writeE = ipc.Write(r.out, t, frame)
+	}
 }
 
 // send writes whatever it's given. A frame a graphics card drew comes from another
@@ -91,19 +116,21 @@ type frameSender struct {
 	wake    *sync.Cond
 	next    []byte // ready to go
 	spare   []byte
+	timing  ipc.FrameTiming
 	waiting bool
 	running bool
 	closed  bool
 }
 
 // offer takes a frame built by fill, which is given a buffer to reuse.
-func (f *frameSender) offer(r *runner, fill func(buf []byte) []byte) {
+func (f *frameSender) offer(r *runner, tm ipc.FrameTiming, fill func(buf []byte) []byte) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.closed {
 		return
 	}
 	f.next = fill(f.next[:0])
+	f.timing = tm
 	f.waiting = true
 	if !f.running {
 		f.running = true
@@ -123,11 +150,11 @@ func (f *frameSender) loop(r *runner) {
 		if f.closed {
 			return
 		}
-		frame := f.next
+		frame, tm := f.next, f.timing
 		f.next, f.spare = f.spare, nil
 		f.waiting = false
 		f.mu.Unlock()
-		r.send(ipc.MsgVideo, frame)
+		r.sendFrame(ipc.MsgVideo, tm, frame)
 		f.mu.Lock()
 		f.spare = frame
 	}
@@ -158,24 +185,32 @@ func (r *runner) handlers() engine.Handlers {
 			for y := 0; y < h; y++ {
 				r.video = append(r.video, data[y*stride:y*stride+row]...)
 			}
-			r.write(ipc.MsgVideo, r.video)
+			tm := r.timing()
+			if r.stamp {
+				stampFrame(r.video[ipc.VideoHeaderSize:], w, h, format, tm)
+			}
+			r.sendFrame(ipc.MsgVideo, tm, r.video)
 		},
 		VideoFlipped: func(data []byte, w, h, stride, format int) {
 			row := w * engine.BytesPerPixel(format)
 			if r.muted || r.ctl.dropVideo || w <= 0 || h <= 0 || row > stride || len(data) < stride*h {
 				return
 			}
-			r.frames.offer(r, func(buf []byte) []byte {
+			tm := r.timing()
+			r.frames.offer(r, tm, func(buf []byte) []byte {
 				buf = ipc.VideoHeader{Width: w, Height: h, Format: format}.Append(buf)
 				for y := h - 1; y >= 0; y-- {
 					buf = append(buf, data[y*stride:y*stride+row]...)
+				}
+				if r.stamp {
+					stampFrame(buf[ipc.VideoHeaderSize:], w, h, format, tm)
 				}
 				return buf
 			})
 		},
 		Dupe: func() {
-			if !r.muted {
-				r.write(ipc.MsgDupe)
+			if !r.muted && !r.ctl.dropVideo {
+				r.sendFrame(ipc.MsgDupe, r.timing(), nil)
 			}
 		},
 		Audio: func(s []int16) {
@@ -268,7 +303,7 @@ func (r *runner) run(in io.Reader, open Open) error {
 				// Input skips the queue: the newest state is all that matters.
 				if port, b, lx, ly, rx, ry, ok := ipc.ParseInput(p); ok && port < engine.MaxPorts {
 					l2, r2 := ipc.ParseTriggers(p)
-					r.pads.set(port, engine.PadState{Buttons: b, LX: lx, LY: ly, RX: rx, RY: ry, L2: l2, R2: r2})
+					r.pads.set(port, engine.PadState{Buttons: b, LX: lx, LY: ly, RX: rx, RY: ry, L2: l2, R2: r2}, ipc.InputStamp(p))
 				}
 				continue
 			}
@@ -300,6 +335,7 @@ func (r *runner) run(in io.Reader, open Open) error {
 	if err := json.Unmarshal(first.p, &load); err != nil {
 		return err
 	}
+	r.stamp = load.Stamp
 	h := r.handlers()
 	if load.Trace {
 		h.Trace = func(text string) { r.event(ipc.Event{Type: "trace", Text: text}) }
@@ -444,6 +480,7 @@ func (r *runner) run(in io.Reader, open Open) error {
 		if paused && !r.ctl.wantsFrame() {
 			continue
 		}
+		r.runStart = time.Now().UnixNano()
 		r.ctl.runFrame()
 		framesRun++
 		r.pads.frameDone()
@@ -502,13 +539,28 @@ type pads struct {
 	pending [engine.MaxPorts]uint16 // pressed since the last frame looked
 	active  [engine.MaxPorts]uint16 // what this frame is keeping pressed
 	snap    [engine.MaxPorts]engine.PadState
+
+	stamp    uint32 // the newest numbered state to arrive, and when
+	stampAt  int64
+	polled   uint32 // the newest the core has looked at, and when that one arrived
+	polledAt int64
 }
 
-func (p *pads) set(port int, st engine.PadState) {
+func (p *pads) set(port int, st engine.PadState, stamp uint32) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.pending[port] |= st.Buttons &^ p.state[port].Buttons
 	p.state[port] = st
+	if stamp != 0 {
+		p.stamp, p.stampAt = stamp, time.Now().UnixNano()
+	}
+}
+
+// seen says which numbered state the core last looked at, and when it arrived.
+func (p *pads) seen() (uint32, int64) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.polled, p.polledAt
 }
 
 // poll is what a core sees. It may look several times in one frame and sees the
@@ -516,6 +568,7 @@ func (p *pads) set(port int, st engine.PadState) {
 func (p *pads) poll() *[engine.MaxPorts]engine.PadState {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	p.polled, p.polledAt = p.stamp, p.stampAt
 	for i := range p.state {
 		p.active[i] |= p.pending[i]
 		p.pending[i] = 0

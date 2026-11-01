@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -56,36 +55,6 @@ func ProbeGPU(runner, dir string, log *slog.Logger) GPUProbe {
 // How long frames spend in the encoder, and how many come out: what the settings
 // and a log reader need in order to tell whether a game is keeping up.
 
-type timeRing struct {
-	mu   sync.Mutex
-	at   [128]time.Time
-	head int
-	tail int
-}
-
-func (r *timeRing) push(t time.Time) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.at[r.head%len(r.at)] = t
-	r.head++
-	if r.head-r.tail > len(r.at) {
-		r.tail = r.head - len(r.at)
-	}
-}
-
-func (r *timeRing) pop() (time.Time, bool) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.tail == r.head {
-		return time.Time{}, false
-	}
-	t := r.at[r.tail%len(r.at)]
-	r.tail++
-	return t, true
-}
-
-func (e *videoEncoder) mark() { e.sent.push(time.Now()) }
-
 // EncodeStats counts frames through the encoder.
 type EncodeStats struct {
 	made    atomic.Int64 // frames the game made, repeats included
@@ -94,12 +63,8 @@ type EncodeStats struct {
 	maxUS   atomic.Int64
 }
 
-func (st *EncodeStats) encoded(e *videoEncoder) {
-	t, ok := e.sent.pop()
-	if !ok {
-		return
-	}
-	us := time.Since(t).Microseconds()
+func (st *EncodeStats) encoded(took time.Duration) {
+	us := took.Microseconds()
 	st.frames.Add(1)
 	st.totalUS.Add(us)
 	for {

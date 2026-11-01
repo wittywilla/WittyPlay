@@ -29,6 +29,7 @@ import (
 type AU struct {
 	Data []byte
 	Key  bool
+	PTS  time.Duration // from the first frame the encoder was given
 }
 
 func pixFmt(format int) string {
@@ -156,7 +157,7 @@ type videoEncoder struct {
 	stdin   io.WriteCloser
 	cancel  context.CancelFunc
 	got     chan struct{} // closed at the first frame out
-	sent    timeRing      // when each frame still inside the encoder went in
+	inside  traceRing     // the frames that have gone in and not come out
 	gotOnce sync.Once
 	stopped chan struct{}
 	asked   atomic.Bool // stop was called, so ending without a frame is no failure
@@ -218,8 +219,13 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 		defer close(e.stopped)
 		emit := func(au AU) {
 			e.gotOnce.Do(func() { close(e.got) })
-			s.stats.encoded(e)
-			s.deliverVideo(codec, au)
+			now := time.Now().UnixNano()
+			tr, ok := e.inside.take(frameIndex(au.PTS, fps))
+			if ok {
+				tr.EncOut = now
+				s.stats.encoded(time.Duration(now - tr.EncIn))
+			}
+			s.deliverVideo(codec, au, &tr)
 		}
 		var err error
 		if codec == "vp8" {
@@ -298,6 +304,7 @@ func (s *Session) videoLoop() {
 			s.shownHdr, s.frameFresh = s.frameHdr, false
 		}
 		feed, hdr = s.shown, s.shownHdr
+		trace := s.frameTrace
 		s.frameMu.Unlock()
 		if len(feed) == 0 {
 			continue
@@ -310,7 +317,8 @@ func (s *Session) videoLoop() {
 		s.viewMu.Unlock()
 		for _, e := range []*videoEncoder{h264, vp8} {
 			if e != nil {
-				e.mark()
+				trace.EncIn = time.Now().UnixNano()
+				e.inside.push(trace)
 				if _, err := e.stdin.Write(feed); err != nil && !errors.Is(err, os.ErrClosed) {
 					s.log.Debug("writing to the encoder", "err", err)
 				}
@@ -472,7 +480,10 @@ func readFLV(r io.Reader, emit func(AU)) error {
 				out = append(out, d[:l]...)
 				d = d[l:]
 			}
-			emit(AU{Data: out, Key: key})
+			// The tag's time is in milliseconds, with the composition offset beside it.
+			ms := int64(tag[4])<<16 | int64(tag[5])<<8 | int64(tag[6]) | int64(tag[7])<<24
+			cts := int64(int32(uint32(buf[2])<<24|uint32(buf[3])<<16|uint32(buf[4])<<8) >> 8)
+			emit(AU{Data: out, Key: key, PTS: time.Duration(ms+cts) * time.Millisecond})
 		}
 	}
 }
@@ -514,6 +525,7 @@ func readIVF(r io.Reader, emit func(AU)) error {
 	if _, err := io.ReadFull(r, head[:]); err != nil {
 		return err
 	}
+	rate, scale := binary.LittleEndian.Uint32(head[16:]), binary.LittleEndian.Uint32(head[20:])
 	var fh [12]byte
 	for {
 		if _, err := io.ReadFull(r, fh[:]); err != nil {
@@ -528,7 +540,11 @@ func readIVF(r io.Reader, emit func(AU)) error {
 			return err
 		}
 		if n > 0 {
-			emit(AU{Data: b, Key: b[0]&1 == 0})
+			var pts time.Duration
+			if rate > 0 {
+				pts = time.Duration(float64(binary.LittleEndian.Uint64(fh[4:])) * float64(scale) / float64(rate) * float64(time.Second))
+			}
+			emit(AU{Data: b, Key: b[0]&1 == 0, PTS: pts})
 		}
 	}
 }
@@ -691,6 +707,9 @@ func (j *jpegEncoder) loop() {
 		}
 	}
 }
+
+// ToRGBA converts a raw frame, for tools that want to look at one.
+func ToRGBA(hdr ipc.VideoHeader, data []byte) *image.RGBA { return toRGBA(hdr, data) }
 
 // toRGBA converts a raw frame. The header and size have already been checked.
 func toRGBA(hdr ipc.VideoHeader, data []byte) *image.RGBA {
