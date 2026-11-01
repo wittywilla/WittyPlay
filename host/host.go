@@ -22,7 +22,9 @@ import (
 // Open makes the engine a Load asks for.
 type Open func(l ipc.Load, h engine.Handlers) (engine.Engine, error)
 
-const saveRAMEvery = 30 * time.Second
+// How often a battery save is looked at. It's a comparison of a few hundred KB at most and is
+// written only if it changed, and whatever hasn't been written when a machine dies is lost.
+const saveRAMEvery = 5 * time.Second
 
 // Run plays until told to quit or until in closes. Cores may keep thread-local
 // state, so it locks a thread for itself.

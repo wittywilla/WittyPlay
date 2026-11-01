@@ -18,6 +18,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
   until there's a new one. A dropped connection used to step down to a worse way of connecting for the rest of the game.
 - A game that's gone from the server, because the server or the module restarted or this device was away too long, starts again from its last save,
   in place of a frozen picture for a minute and then a message about the network. If that happens twice in two minutes, it says so instead.
+- Battery saves reach the disk within 5 seconds of changing, from 30, so a machine that dies loses less.
+- SameBoy starts: it gives its sound at the Game Boy chip's own rate, over 2 MHz, which is now averaged down.
 - **On-screen numbers** say where the delay goes, stage by stage, from a press to the screen, and what's holding things back when something is.
 - **Speed or steadiness**, under Speed and rewind, with a good automatic choice.
 - **WebRTC, drawn directly**, under Connection: for those who want to try it. It can tear.
