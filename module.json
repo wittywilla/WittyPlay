@@ -1,14 +1,14 @@
 {
   "id": "wittyplay",
   "name": "WittyPlay",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "repo": "wittywilla/WittyPlay",
   "license": "Apache-2.0",
-  "delivery": "program",
-  "entry": "wittyplay-host",
-  "api": 2,
-  "minServer": "0.4.0-alpha",
-  "maxServer": "0.5.x",
+  "delivery": "helper",
+  "entry": "wittyplay-module",
+  "api": 3,
+  "minServer": "0.6.0-alpha",
+  "maxServer": "0.6.x",
   "capabilities": {
     "ipc": [
       "1"
@@ -23,6 +23,17 @@
     "FFmpeg, which comes with the server",
     "Game cores, which you add in Settings, Consoles & cores"
   ],
-  "updates": "Running games: how the game runner uses cores, and its picture, sound and controller input.",
-  "stays": "The streaming half (WebRTC and encoding), the console tables, and the player in the app. If WittyRetroArch is installed and chosen, it runs the games instead."
+  "updates": "All of it: the console tables, the game runner, streaming, controllers and the player.",
+  "stays": "The games library, its metadata and where saves are kept stay with the server.",
+  "programs": [
+    "wittyplay-game-runner"
+  ],
+  "webEntry": "index.js",
+  "webStyle": "style.css",
+  "permissions": [
+    "network",
+    "programs",
+    "devices",
+    "data"
+  ]
 }
