@@ -38,7 +38,7 @@ github.com/pion/webrtc/v4 v4.2.26 h1:RX3FUQVHhr488sgPFJWthbbtxpuYNm3XAgYDEj4RDyQ
 github.com/pion/webrtc/v4 v4.2.26/go.mod h1:vH5Fn0zOZ8LuLhIPEtsLkoYkwnvubV4TX+ZtjV5Jqgk=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
-github.com/wittywilla/wittymodule v0.3.0 h1:v61BCB8INSZ3r3QhAVtMTeCsf5GnF+JhW9dHMq+Jf88=
+github.com/wittywilla/wittymodule v0.3.0 h1:1kyDNethANOOv7dimHUWA41myv2Yn3wnWzHsNtCmASk=
 github.com/wittywilla/wittymodule v0.3.0/go.mod h1:s4SONzwSeE/5v+HbhiO4H2CaIOxZpjS187rwwQY0kj8=
 github.com/wlynxg/anet v0.0.5 h1:J3VJGi1gvo0JwZ/P1/Yc/8p63SoW98B5dHkYDmpgvvU=
 github.com/wlynxg/anet v0.0.5/go.mod h1:eay5PRQr7fIVAMbTbchTnO9gG65Hg/uYGdc7mguHxoA=
