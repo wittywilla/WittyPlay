@@ -436,6 +436,7 @@ type Session struct {
 	frame      []byte // the newest frame from the runner, when frameFresh
 	frameHdr   ipc.VideoHeader
 	frameFresh bool
+	frameDupe  bool   // the game has said the last picture stands for this frame too
 	shown      []byte // the frame last given to the encoders; videoLoop swaps these
 	shownHdr   ipc.VideoHeader
 	frameTrace frameTrace // the journey so far of the newest frame
@@ -454,6 +455,9 @@ type Session struct {
 	jpeg          *jpegEncoder
 	encName       string
 	encLost       map[string]int // how many times each has gone away during this game
+	lastKeyAsk    time.Time      // when a viewer last asked for a keyframe
+	lastShift     time.Time      // when a viewer last moved the frames
+	lastNoEnc     time.Time      // when the log last said there's no encoder
 	audioCh       chan []byte
 	rate          float64
 	turns         int
@@ -724,6 +728,7 @@ func (s *Session) readRunner(r io.Reader, ready chan<- error) {
 			now := time.Now().UnixNano()
 			s.frameMu.Lock()
 			s.frameTrace = frameTrace{FrameTiming: timing, ServerIn: now, InputServer: s.inputs.when(timing.InputSeq)}
+			s.frameDupe = true
 			s.frameMu.Unlock()
 			s.lastFrame.Store(now)
 			s.stats.made.Add(1)

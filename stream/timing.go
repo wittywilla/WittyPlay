@@ -25,6 +25,8 @@ const (
 	timingPong      = 0xF2 // server: that f64, then an i64 of Unix nanoseconds
 	timingSubscribe = 0xF3 // client: one byte, 1 to have frame records sent
 	timingRecord    = 0xF4 // server: one frame's record
+	timingLatency   = 0xF5 // client: one byte, a LatencyMode
+	timingShift     = 0xF6 // client: an i16 of tenths of a millisecond to move the frames by
 )
 
 // frameTrace is one frame's journey, in Unix nanoseconds.
@@ -143,8 +145,44 @@ func (v *viewer) timingMessage(p []byte, reply func([]byte)) bool {
 			v.wantTiming.Store(p[1] == 1)
 		}
 		return true
+	case timingLatency:
+		if len(p) == 2 && p[1] <= byte(LatencySteady) {
+			v.setLatency(LatencyMode(p[1]))
+		}
+		return true
+	case timingShift:
+		if len(p) == 3 {
+			v.s.shiftFrames(float64(int16(binary.LittleEndian.Uint16(p[1:]))) / 10)
+		}
+		return true
 	}
 	return false
+}
+
+// setLatency applies a person's choice between speed and steadiness.
+func (v *viewer) setLatency(mode LatencyMode) {
+	if v.video != nil {
+		v.video.setLatency(mode)
+	}
+	off := mode == LatencySteady
+	_ = v.s.control(ipc.Control{NoEarlyInput: &off})
+}
+
+// shiftFrames moves when frames are made, to land them just before a viewer's display
+// wants them. It's only for a game with one viewer, whose display is the only one that
+// counts, and it's limited to a few times a second however often it's asked.
+func (s *Session) shiftFrames(ms float64) {
+	s.viewMu.Lock()
+	one := len(s.viewers) == 1
+	now := time.Now()
+	allowed := now.Sub(s.lastShift) > 200*time.Millisecond
+	if one && allowed {
+		s.lastShift = now
+	}
+	s.viewMu.Unlock()
+	if one && allowed {
+		_ = s.control(ipc.Control{ShiftMs: &ms})
+	}
 }
 
 // sendTiming gives a viewer that wants it this frame's record.

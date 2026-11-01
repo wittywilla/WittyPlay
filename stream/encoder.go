@@ -161,6 +161,44 @@ type videoEncoder struct {
 	gotOnce sync.Once
 	stopped chan struct{}
 	asked   atomic.Bool // stop was called, so ending without a frame is no failure
+	started time.Time
+	lastOut atomic.Int64 // when a frame last came out, in Unix nanoseconds
+	fedGen  uint64       // the newest picture given to it; only videoLoop touches this
+}
+
+// roomForFrame says whether it can take a frame now. FFmpeg has queues of its own between
+// its threads, which hold many frames if it's given them faster than it can encode, and
+// every one of those frames is delay. So it holds one at a time. A frame that arrives
+// meanwhile replaces the one waiting here, and the newest goes in as soon as there's room.
+// FFmpeg reads a few frames before it starts anything, so until the first comes out it
+// gets what it needs to begin.
+func (e *videoEncoder) roomForFrame() bool {
+	select {
+	case <-e.got:
+		return e.inside.len() < 1
+	default:
+		return e.inside.len() < 16
+	}
+}
+
+// How long an encoder can sit on a frame before it's thought to have stopped.
+const (
+	encoderStall = 3 * time.Second
+	encoderStart = 30 * time.Second // the first frame: a graphics card's encoder can take a while
+)
+
+// stalled says the encoder has a frame and has stopped answering.
+func (e *videoEncoder) stalled(now time.Time) bool {
+	if e.inside.len() == 0 {
+		return false
+	}
+	select {
+	case <-e.got:
+		last := e.lastOut.Load()
+		return now.Sub(time.Unix(0, last)) > encoderStall
+	default:
+		return now.Sub(e.started) > encoderStart
+	}
 }
 
 func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps float64) (*videoEncoder, error) {
@@ -214,7 +252,7 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 		cancel()
 		return nil, err
 	}
-	e := &videoEncoder{name: name, codec: codec, hdr: hdr, cmd: cmd, stdin: stdin, cancel: cancel, got: make(chan struct{}), stopped: make(chan struct{})}
+	e := &videoEncoder{name: name, codec: codec, hdr: hdr, cmd: cmd, stdin: stdin, cancel: cancel, got: make(chan struct{}), stopped: make(chan struct{}), started: time.Now()}
 	go func() {
 		defer close(e.stopped)
 		emit := func(au AU) {
@@ -225,7 +263,9 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 				tr.EncOut = now
 				s.stats.encoded(time.Duration(now - tr.EncIn))
 			}
+			e.lastOut.Store(now)
 			s.deliverVideo(codec, au, &tr)
+			s.signalFrame() // there's room for whatever has been waiting
 		}
 		var err error
 		if codec == "vp8" {
@@ -277,19 +317,23 @@ func (s *Session) videoLoop() {
 	defer s.guard("video loop")
 	var feed []byte
 	var hdr ipc.VideoHeader
+	var gen uint64 // counts pictures to send, so that each goes to each encoder once
+	var trace frameTrace
 	// A paused game makes no frames, but encoders hold on to their output until
 	// they have seen a few, and a viewer arriving now still needs a picture. So
 	// the last frame is repeated, slowly; it compresses to almost nothing.
 	idle := time.NewTicker(50 * time.Millisecond)
 	defer idle.Stop()
 	for {
+		repeat := false
 		select {
 		case <-s.done:
 			return
 		case <-s.frameReady:
 		case <-idle.C:
 			s.viewMu.Lock()
-			repeat := s.paused && len(s.viewers) > 0
+			repeat = s.paused && len(s.viewers) > 0
+			s.checkEncodersLocked(time.Now())
 			s.viewMu.Unlock()
 			if !repeat {
 				continue
@@ -302,21 +346,29 @@ func (s *Session) videoLoop() {
 		if s.frameFresh {
 			s.shown, s.frame = s.frame, s.shown
 			s.shownHdr, s.frameFresh = s.frameHdr, false
+			repeat = true
+		} else if s.frameDupe {
+			repeat = true
 		}
+		s.frameDupe = false
 		feed, hdr = s.shown, s.shownHdr
-		trace := s.frameTrace
+		if repeat {
+			gen++
+			trace = s.frameTrace
+		}
 		s.frameMu.Unlock()
 		if len(feed) == 0 {
 			continue
 		}
-		s.framePend.Store(false)
-		s.framesFed.Add(1)
 
 		s.viewMu.Lock()
 		h264, vp8, jp := s.syncEncodersLocked(hdr)
 		s.viewMu.Unlock()
 		for _, e := range []*videoEncoder{h264, vp8} {
-			if e != nil {
+			if e != nil && e.fedGen != gen && e.roomForFrame() {
+				e.fedGen = gen
+				s.framePend.Store(false)
+				s.framesFed.Add(1)
 				trace.EncIn = time.Now().UnixNano()
 				e.inside.push(trace)
 				if _, err := e.stdin.Write(feed); err != nil && !errors.Is(err, os.ErrClosed) {
@@ -324,8 +376,23 @@ func (s *Session) videoLoop() {
 				}
 			}
 		}
-		if jp != nil {
+		if jp != nil && repeat {
+			s.framePend.Store(false)
+			s.framesFed.Add(1)
 			jp.offer(hdr, feed)
+		}
+	}
+}
+
+// checkEncodersLocked ends an encoder that has stopped answering. Everything that happens
+// when one ends by itself then starts another, and the picture carries on from a keyframe.
+func (s *Session) checkEncodersLocked(now time.Time) {
+	for _, e := range []*videoEncoder{s.h264, s.vp8} {
+		if e != nil && e.stalled(now) {
+			s.log.Warn("the video encoder has stopped answering; starting another", "encoder", e.name)
+			if e.cmd.Process != nil {
+				_ = e.cmd.Process.Kill()
+			}
 		}
 	}
 }
@@ -364,7 +431,10 @@ func (s *Session) syncEncodersLocked(hdr ipc.VideoHeader) (h264, vp8 *videoEncod
 			s.log.Info("encoding video", "encoder", name, "size", fmt.Sprintf("%dx%d", hdr.Width, hdr.Height))
 			return e
 		}
-		s.log.Warn("no working encoder for this codec", "codec", codec)
+		if time.Since(s.lastNoEnc) > 10*time.Second {
+			s.lastNoEnc = time.Now()
+			s.log.Warn("no working encoder for this codec", "codec", codec)
+		}
 		return nil
 	}
 	s.h264 = ensure(s.h264, wantH264, "h264")

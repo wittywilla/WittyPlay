@@ -264,6 +264,12 @@ type Control struct {
 	Rewinding     *bool    `json:"rewinding,omitempty"`     // going backwards now
 	RunAhead      *int     `json:"runAhead,omitempty"`      // frames; 0 to RunAheadMax
 	Advance       *int     `json:"advance,omitempty"`       // frames to run while paused
+	// EarlyInput lets a new press start the next frame straight away, rather than waiting for
+	// its turn. It's on unless this says otherwise.
+	NoEarlyInput *bool `json:"noEarlyInput,omitempty"`
+	// ShiftMs moves when frames start, once, by this many milliseconds, to land them just
+	// before a viewer's display wants them. Later is positive.
+	ShiftMs *float64 `json:"shiftMs,omitempty"`
 }
 
 // Save slots: 0 is automatic and 1 to MaxStateSlot belong to a person. The other two

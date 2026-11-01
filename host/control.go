@@ -38,6 +38,8 @@ type control struct {
 	aheadOnTime int
 
 	frameTime time.Duration
+	noEarly   bool          // a new press waits for its frame's turn like anything else
+	shift     time.Duration // to move the frame schedule by, once
 
 	// What the next frame sends. A runner's write looks at these, so nothing gets out
 	// past them whichever way a core delivers its frames.
@@ -124,6 +126,14 @@ func (c *control) apply(m ipc.Control) {
 	}
 	if m.Advance != nil {
 		c.advance = min(max(*m.Advance, 0), ipc.AdvanceMax)
+	}
+	if m.NoEarlyInput != nil {
+		c.noEarly = *m.NoEarlyInput
+	}
+	if m.ShiftMs != nil && *m.ShiftMs == *m.ShiftMs { // not NaN
+		// Never more than a frame at a time, whatever it's told.
+		limit := float64(c.frameTime) / float64(time.Millisecond)
+		c.shift += time.Duration(min(max(*m.ShiftMs, -limit), limit) * float64(time.Millisecond))
 	}
 	if m.RewindSeconds != nil {
 		c.rewindSeconds = min(max(*m.RewindSeconds, 1), 600)

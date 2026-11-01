@@ -302,6 +302,9 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if err := me.RegisterCodec(webrtc.RTPCodecParameters{RTPCodecCapability: audioCap, PayloadType: 111}, webrtc.RTPCodecTypeAudio); err != nil {
 		return "", err
 	}
+	if err := me.RegisterHeaderExtension(webrtc.RTPHeaderExtensionCapability{URI: playoutDelayURI}, webrtc.RTPCodecTypeVideo); err != nil {
+		return "", err
+	}
 	ir := &interceptor.Registry{}
 	if err := webrtc.RegisterDefaultInterceptors(me, ir); err != nil {
 		return "", err
@@ -339,7 +342,10 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if err != nil {
 		return fail(err)
 	}
-	audio, err := webrtc.NewTrackLocalStaticSample(audioCap, "audio", "wittyplay")
+	// Its own stream, not the video's: tracks of one stream are held back to match each
+	// other, and sound's small buffer would become the picture's delay. Both follow the
+	// same clock in real time, so they can't drift apart.
+	audio, err := webrtc.NewTrackLocalStaticSample(audioCap, "audio", "wittyplay-audio")
 	if err != nil {
 		return fail(err)
 	}
@@ -347,16 +353,23 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if err := pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: offer}); err != nil {
 		return fail(err)
 	}
+	var videoSender *webrtc.RTPSender
 	for _, track := range []webrtc.TrackLocal{video.track, audio} {
 		sender, err := pc.AddTrack(track)
 		if err != nil {
 			return fail(err)
 		}
+		if track == webrtc.TrackLocal(video.track) {
+			videoSender = sender
+		}
 		go func() { // the interceptors act on what arrives here
-			buf := make([]byte, 1500)
 			for {
-				if _, _, err := sender.Read(buf); err != nil {
+				pkts, _, err := sender.ReadRTCP()
+				if err != nil {
 					return
+				}
+				if track == webrtc.TrackLocal(video.track) {
+					s.noteFeedback(v, pkts)
 				}
 			}
 		}()
@@ -396,6 +409,7 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if err := pc.SetLocalDescription(answer); err != nil {
 		return fail(err)
 	}
+	video.useExtensions(videoSender)
 	select {
 	case <-gathered:
 	case <-ctx.Done():

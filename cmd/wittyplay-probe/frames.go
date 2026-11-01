@@ -28,9 +28,10 @@ func frames(args []string) error {
 	seconds := fs.Float64("seconds", 60, "how long to play")
 	every := fs.Float64("every", 5, "seconds between pictures")
 	out := fs.String("out", "", "folder for the pictures")
-	press := fs.String("press", "", "buttons to press, as name@seconds, comma separated: start@40,a@45")
+	pressList := fs.String("press", "", "buttons to press, as name@seconds, comma separated: start@40,a@45")
 	state := fs.String("state", "", "a save state to start from")
 	optionsOut := fs.String("options-out", "", "write the options the core offers to this file")
+	control := fs.String("control", "", "a file to watch for lines to act on: a button name, shot, or state FILE")
 	_ = fs.Parse(args)
 	if *out == "" {
 		return fmt.Errorf("-out is needed")
@@ -38,7 +39,7 @@ func frames(args []string) error {
 	if err := os.MkdirAll(*out, 0o755); err != nil {
 		return err
 	}
-	presses, err := parsePresses(*press)
+	presses, err := parsePresses(*pressList)
 	if err != nil {
 		return err
 	}
@@ -76,12 +77,45 @@ func frames(args []string) error {
 	made := 0
 	sawReady := false
 	lastCount := time.Now()
+	wantShot := false
+	var stateTo string
+	var watched int
+	lastLook := time.Now()
 	for time.Since(start).Seconds() < *seconds {
 		t, p, err := rd.Next()
 		if err != nil {
 			return fmt.Errorf("the runner stopped: %w", err)
 		}
+		if *control != "" && time.Since(lastLook) > 200*time.Millisecond {
+			lastLook = time.Now()
+			if b, err := os.ReadFile(*control); err == nil {
+				lines := strings.Split(string(b), "\n")
+				for ; watched < len(lines)-1; watched++ {
+					line := strings.TrimSpace(lines[watched])
+					now := time.Since(start).Seconds()
+					switch {
+					case line == "shot":
+						wantShot = true
+					case strings.HasPrefix(line, "state "):
+						stateTo = strings.TrimPrefix(line, "state ")
+						var id [4]byte
+						id[0] = 7
+						_ = ipc.Write(rn.Stdin, ipc.CmdSaveState, id[:])
+					default:
+						if bn, ok := buttonNames[line]; ok {
+							presses = append(presses, press{at: now, button: bn, down: true}, press{at: now + 0.2, button: bn})
+						}
+					}
+				}
+			}
+		}
 		switch t {
+		case ipc.MsgState:
+			if stateTo != "" && len(p) > 4 {
+				_ = os.WriteFile(stateTo, p[4:], 0o644)
+				fmt.Println("wrote the state", stateTo, len(p)-4)
+				stateTo = ""
+			}
 		case ipc.MsgReady:
 			fmt.Println("ready:", string(p))
 			sawReady = true
@@ -119,7 +153,8 @@ func frames(args []string) error {
 			}
 			made++
 			now := time.Since(start).Seconds()
-			if sawReady && now >= nextShot {
+			if sawReady && (now >= nextShot || wantShot) {
+				wantShot = false
 				name := filepath.Join(*out, fmt.Sprintf("raw-%03d-%ds-%dx%d.png", shot, int(now), hdr.Width, hdr.Height))
 				if err := writePNG(name, hdr, data); err != nil {
 					return err

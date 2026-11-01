@@ -30,6 +30,7 @@ func Run(in io.Reader, out io.Writer, open Open) error {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	r := &runner{out: out}
+	r.pads.pressed = make(chan struct{}, 1)
 	r.ctl = newControl(r)
 	err := r.run(in, open)
 	if err != nil && !errors.Is(err, io.EOF) {
@@ -58,9 +59,10 @@ type runner struct {
 
 	rumble map[[2]int]int // what each motor was last told
 
-	stamp    bool // draw the frame and input numbers into each picture
-	frameSeq uint32
-	runStart int64 // when the core began the frame it's on
+	stamp      bool // draw the frame and input numbers into each picture
+	frameSeq   uint32
+	runStart   int64 // when the core began the frame it's on
+	frameTimer *time.Timer
 }
 
 func (r *runner) write(t byte, parts ...[]byte) {
@@ -480,6 +482,7 @@ func (r *runner) run(in io.Reader, open Open) error {
 		if paused && !r.ctl.wantsFrame() {
 			continue
 		}
+		r.pads.looked()
 		r.runStart = time.Now().UnixNano()
 		r.ctl.runFrame()
 		framesRun++
@@ -515,10 +518,12 @@ func (r *runner) run(in io.Reader, open Open) error {
 			next = now
 			continue
 		}
-		next = next.Add(time.Duration(float64(frame) / r.ctl.pace()))
+		step := time.Duration(float64(frame) / r.ctl.pace())
+		next = next.Add(step + r.ctl.shift)
+		r.ctl.shift = 0
 		r.ctl.lag = 0
 		if d := next.Sub(now); d > 0 {
-			time.Sleep(d)
+			r.waitForFrame(d, step)
 		} else if r.ctl.lag = -d; d < -5*frame {
 			next = now // too far behind to catch up: the machine is overloaded
 		}
@@ -528,6 +533,28 @@ func (r *runner) run(in io.Reader, open Open) error {
 		r.write(ipc.MsgSaveRAM, ram)
 	}
 	return r.writeErr()
+}
+
+// waitForFrame sleeps until the next frame is due. A button pressed in the meantime ends
+// the wait, because the next frame is the one that will show it, and every moment spent
+// here is delay nobody can get back. Frames stay on the same schedule afterwards, so the
+// game keeps its speed: this frame comes a little early, and the gap after it is that much
+// longer. Once a frame has come early, nothing brings the one after it forward as well.
+func (r *runner) waitForFrame(d, step time.Duration) {
+	if r.ctl.noEarly || d > step || r.ctl.pace() != 1 {
+		time.Sleep(d)
+		return
+	}
+	if r.frameTimer == nil {
+		r.frameTimer = time.NewTimer(d)
+	} else {
+		r.frameTimer.Reset(d)
+	}
+	select {
+	case <-r.frameTimer.C:
+	case <-r.pads.pressed:
+		r.frameTimer.Stop()
+	}
 }
 
 // pads holds the players' input. A press and its release can arrive together, in a
@@ -544,15 +571,32 @@ type pads struct {
 	stampAt  int64
 	polled   uint32 // the newest the core has looked at, and when that one arrived
 	polledAt int64
+
+	pressed chan struct{} // something changed that the next frame should show
 }
 
 func (p *pads) set(port int, st engine.PadState, stamp uint32) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	changed := st.Buttons != p.state[port].Buttons
 	p.pending[port] |= st.Buttons &^ p.state[port].Buttons
 	p.state[port] = st
 	if stamp != 0 {
 		p.stamp, p.stampAt = stamp, time.Now().UnixNano()
+	}
+	if changed {
+		select {
+		case p.pressed <- struct{}{}:
+		default:
+		}
+	}
+}
+
+// looked is for just before a frame starts: anything pressed before now, it will see.
+func (p *pads) looked() {
+	select {
+	case <-p.pressed:
+	default:
 	}
 }
 
