@@ -105,9 +105,13 @@ var traits = map[string]CoreTraits{
 	"play": {GPU: true, OwnHome: true},
 	"ppsspp": {GPU: true, Assets: "PPSSPP", Options: map[string]string{"ppsspp_backend": "opengl"},
 		Resolution: pick("ppsspp_internal_resolution", "480x272", "960x544", "1440x816", "1920x1088")},
-	"flycast": {GPU: true, Options: map[string]string{"reicast_alpha_sorting": "per-triangle (normal)"},
+	// Left to itself, Flycast keeps memory cards in the system folder, which a running core
+	// can't write to, so nothing a game saved to one would last. These are in the save folder.
+	"flycast": {GPU: true, Options: map[string]string{"reicast_alpha_sorting": "per-triangle (normal)", "reicast_per_content_vmus": "All VMUs"},
 		Resolution: pick("reicast_internal_resolution", "640x480", "1280x960", "1920x1440", "2560x1920")},
-	"swanstation": {GPU: true, Options: map[string]string{"swanstation_GPU_Renderer": "OpenGL"},
+	// SwanStation lays out the PlayStation's memory through shared memory, and can't start
+	// without it.
+	"swanstation": {GPU: true, SharedMemory: true, Options: map[string]string{"swanstation_GPU_Renderer": "OpenGL"},
 		Resolution: pick("swanstation_GPU_ResolutionScale", "1", "2", "3", "4")},
 	"mednafen_psx_hw": {GPU: true, Options: map[string]string{"beetle_psx_hw_renderer": "hardware_gl"},
 		Resolution: pick("beetle_psx_hw_internal_resolution", "1x(native)", "2x", "4x", "4x")},

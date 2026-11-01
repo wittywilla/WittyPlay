@@ -60,15 +60,14 @@ const (
 	r10
 )
 
-func (a *armAsm) emit(w uint32)                 { a.words = append(a.words, w) }
-func (a *armAsm) label(name string)             { a.labels[name] = len(a.words) }
-func (a *armAsm) svc(n uint32)                  { a.emit(0xEF000000 | n) }
-func (a *armAsm) movImm(d, imm uint32)          { a.emit(0xE3A00000 | d<<12 | imm) } // up to 255
-func (a *armAsm) addImm(d, n, imm uint32)       { a.emit(0xE2800000 | n<<16 | d<<12 | imm) }
-func (a *armAsm) andImm(d, n, imm uint32)       { a.emit(0xE2000000 | n<<16 | d<<12 | imm) }
-func (a *armAsm) subsImm(d, n, imm uint32)      { a.emit(0xE2500000 | n<<16 | d<<12 | imm) }
-func (a *armAsm) orrShift(d, n, m, left uint32) { a.emit(0xE1800000 | n<<16 | d<<12 | left<<7 | m) }
-func (a *armAsm) strNext(d, base uint32)        { a.emit(0xE4800004 | base<<16 | d<<12) } // str d,[base],#4
+func (a *armAsm) emit(w uint32)            { a.words = append(a.words, w) }
+func (a *armAsm) label(name string)        { a.labels[name] = len(a.words) }
+func (a *armAsm) svc(n uint32)             { a.emit(0xEF000000 | n) }
+func (a *armAsm) movImm(d, imm uint32)     { a.emit(0xE3A00000 | d<<12 | imm) } // up to 255
+func (a *armAsm) addImm(d, n, imm uint32)  { a.emit(0xE2800000 | n<<16 | d<<12 | imm) }
+func (a *armAsm) andImm(d, n, imm uint32)  { a.emit(0xE2000000 | n<<16 | d<<12 | imm) }
+func (a *armAsm) subsImm(d, n, imm uint32) { a.emit(0xE2500000 | n<<16 | d<<12 | imm) }
+func (a *armAsm) strbNext(d, base uint32)  { a.emit(0xE4C00001 | base<<16 | d<<12) } // strb d,[base],#1
 func (a *armAsm) constant(d, v uint32) {
 	a.loads[len(a.words)] = v
 	a.emit(0xE59F0000 | d<<12) // ldr d,[pc,#later]
@@ -113,12 +112,10 @@ func testProgram() []byte {
 	a.label("frame")
 	a.addImm(r7, r7, 1)
 	a.andImm(r10, r7, 0xFF)
-	a.orrShift(r10, r10, r10, 8)
-	a.orrShift(r10, r10, r10, 16)
 	a.constant(r8, topScreen)
-	a.constant(r9, screenBytes/4)
+	a.constant(r9, screenBytes)
 	a.label("fill")
-	a.strNext(r10, r8)
+	a.strbNext(r10, r8) // a byte at a time, as not every core takes more at once here
 	a.subsImm(r9, r9, 1)
 	a.branch(1, "fill") // not yet zero
 	a.constant(r0, 16666667)

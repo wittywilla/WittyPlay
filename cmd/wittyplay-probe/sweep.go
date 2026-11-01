@@ -19,6 +19,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -50,6 +51,7 @@ type sweepResult struct {
 	Renderer    string  `json:"renderer"`    // the graphics card, for a game drawn on one
 	Size        string  `json:"size"`        // the picture, once it's running
 	EndedEarly  bool    `json:"endedEarly"`  // the game went before the time was up
+	CleanExit   bool    `json:"cleanExit"`   // its runner stopped when asked, without complaint
 	Error       string  `json:"error"`       // why it didn't start, or how it ended
 	Verdict     string  `json:"verdict"`     // ok, ran-still, slow, failed
 	RunnerSaid  string  `json:"runnerSaid"`  // the end of what the runner printed
@@ -71,9 +73,10 @@ func sweep(args []string) error {
 	loadLimit := fs.Duration("load-limit", 5*time.Minute, "how long it may take to load")
 	label := fs.String("label", "", "a name for this run")
 	stamp := fs.Bool("stamp", false, "draw numbers into each picture, as the other measurements do")
+	exercise := fs.Bool("exercise", false, "also use what a player can: run-ahead, rewind, save slots, reset and fast forward")
 	_ = fs.Parse(args)
 	r := sweepResult{Console: g.console, Core: g.coreID, Game: filepath.Base(g.rom)}
-	err := playSweep(g, &r, *seconds, *ffmpeg, *encoders, *shots, *label, *loadLimit, *stamp)
+	err := playSweep(g, &r, *seconds, *ffmpeg, *encoders, *shots, *label, *loadLimit, *stamp, *exercise)
 	if err != nil {
 		r.Error = err.Error()
 	}
@@ -118,16 +121,37 @@ func loadAverage() float64 {
 
 // tailLog keeps what the session logs at warning level or above, as that holds what the
 // runner printed on its way out.
-type tailLog struct{ b strings.Builder }
+type tailLog struct {
+	mu sync.Mutex
+	b  strings.Builder
+}
 
 func (t *tailLog) Write(p []byte) (int, error) {
-	if t.b.Len() < 1<<16 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.b.Len() < 1<<18 {
 		t.b.Write(p)
 	}
 	return len(p), nil
 }
 
-func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shots, label string, loadLimit time.Duration, stamp bool) error {
+func (t *tailLog) String() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.b.String()
+}
+
+// cleanExit says whether the runner ended without complaint when it was asked to.
+func cleanExit(said string) bool {
+	_, after, found := strings.Cut(said, `msg="the runner ended"`)
+	if !found {
+		return false
+	}
+	line, _, _ := strings.Cut(after, "\n")
+	return strings.Contains(line, "err=<nil>")
+}
+
+func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shots, label string, loadLimit time.Duration, stamp, exercise bool) error {
 	if err := os.MkdirAll(g.save, 0o755); err != nil {
 		return err
 	}
@@ -163,7 +187,8 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 		}
 	}
 	said := &tailLog{}
-	log := slog.New(slog.NewTextHandler(said, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	// Debug, as how a runner went when it was asked to go is only said at that level.
+	log := slog.New(slog.NewTextHandler(said, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	mgr := stream.NewManager(stream.Config{Runner: g.runner, FFmpeg: ffmpeg, HWEncoders: hw, GPUEncoders: hw, HaveEncoder: func(n string) bool { return slices.Contains(names, n) }, Log: log})
 	load, runnerArgs := g.load()
 	gpu := g.coreID != "" && wittyplay.Traits(g.coreID).GPU
@@ -172,7 +197,7 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	sess, err := mgr.Start(stream.Options{Control: &ipc.Control{RunAhead: &ahead}, UserID: 1, ItemID: 1, Title: filepath.Base(g.rom), Console: g.console, Core: g.core, ROM: g.rom, SystemDir: g.system, SaveDir: g.save,
 		GPU: gpu, RunnerArgs: runnerArgs, CoreID: g.coreID, CoreOptions: load.Options, CoreAssets: load.Assets, LoadLimit: loadLimit, NoAutoSave: true, Stamp: stamp, PreferDevices: wittyplay.Pad(g.console).PreferDevices})
 	if err != nil {
-		r.RunnerSaid = tail(said.b.String(), 3000)
+		r.RunnerSaid = tail(said.String(), 3000)
 		return err
 	}
 	defer sess.Stop()
@@ -262,6 +287,9 @@ loop:
 			press(id, true)
 			time.AfterFunc(150*time.Millisecond, func() { press(id, false) })
 		}
+		if exercise {
+			exerciseStep(sess, i, r)
+		}
 		st := sess.Stats()
 		r.Size, r.Encoder = fmt.Sprintf("%dx%d", st.Width, st.Height), st.Encoder
 		if el > limit/3 { // the first third is for caches and first-launch stalls
@@ -297,11 +325,49 @@ loop:
 	cancel()
 	_ = vf.Close()
 	r.Decoded = decodedFrames(ffmpeg, video, shots, label)
-	r.RunnerSaid = tail(said.b.String(), 3000)
+	time.Sleep(100 * time.Millisecond) // the runner's last words reach the log just after it's done
+	r.CleanExit = cleanExit(said.String())
+	r.RunnerSaid = tail(said.String(), 3000)
 	if r.EndedEarly {
 		return errors.New("the game ended by itself after " + time.Since(started).Round(time.Second).String())
 	}
 	return nil
+}
+
+// exerciseStep does one thing a player might, at a given second of the game.
+func exerciseStep(sess *stream.Session, second int, r *sweepResult) {
+	note := func(what string, err error) {
+		if err != nil {
+			r.SpeedNote += what + ": " + err.Error() + "; "
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	switch second {
+	case 2:
+		ahead := 1
+		note("run-ahead", sess.Apply(ipc.Control{RunAhead: &ahead}, nil))
+	case 6:
+		ahead := 0
+		size, keep := int64(64<<20), 30
+		note("rewind on", sess.Apply(ipc.Control{RunAhead: &ahead, RewindBytes: &size, RewindSeconds: &keep}, nil))
+	case 10:
+		note("rewinding", sess.SetRewinding(true))
+	case 11:
+		note("rewinding", sess.SetRewinding(false))
+	case 12:
+		note("save slot", sess.SaveState(ctx, 1))
+	case 14:
+		note("load slot", sess.LoadState(1))
+	case 16:
+		note("reset", sess.Reset())
+	case 18:
+		_, err := sess.SetSpeed(2)
+		note("fast forward", err)
+	case 20:
+		_, err := sess.SetSpeed(1)
+		note("normal speed", err)
+	}
 }
 
 func tail(s string, n int) string {

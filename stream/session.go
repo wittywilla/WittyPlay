@@ -522,6 +522,11 @@ func (s *Session) start() error {
 	if err := os.MkdirAll(s.opt.SaveDir, 0o700); err != nil {
 		return noRunner(err)
 	}
+	if rom, err := discFolder(s.opt.ROM, s.opt.SaveDir); err != nil {
+		s.log.Warn("couldn't line up the names in a disc's sheet", "err", err)
+	} else {
+		s.opt.ROM = rom
+	}
 	system, releaseSystem, err := ownSystem(s.opt.CoreID, s.opt.SystemDir, s.opt.SaveDir, s.opt.CoreOptions)
 	if err != nil {
 		// It can still be played, and saved with save slots.
@@ -1162,6 +1167,7 @@ func (s *Session) cleanup() {
 		if s.box != nil {
 			s.box()
 		}
+		_ = os.RemoveAll(filepath.Join(s.opt.SaveDir, discFolderName))
 		if s.opt.Cleanup != nil {
 			s.opt.Cleanup()
 		}

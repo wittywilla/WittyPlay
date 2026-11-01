@@ -550,7 +550,8 @@ func (m *Manager) ProbeOptions(ctx context.Context, core, systemDir, tmp string)
 	args := append(append([]string(nil), cfg.RunnerArgs...), "-save", dir, "-memory-mb", strconv.FormatInt(cfg.MemoryMB, 10))
 	cmd := exec.CommandContext(ctx, cfg.Runner, args...)
 	cmd.Dir = dir
-	cmd.Env = runnerEnv()
+	// A home folder, for the cores that stop without one. This one's thrown away.
+	cmd.Env = append(runnerEnv(), "HOME="+dir)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
