@@ -13,6 +13,7 @@ import {
 
 export const MAX_PLAYERS = 4
 const HEARTBEAT_MS = 250
+const PAD_READ_MS = 4
 const SEATS_KEY = 'wittyplay.seats'
 // A motor's effect runs for this long, and is renewed while the game wants it, so a
 // lost stop can't leave a pad shaking for good.
@@ -94,6 +95,7 @@ export class InputManager {
   private scratch = new Uint8Array(13)
   private scratchView = new DataView(this.scratch.buffer)
   private raf = 0
+  private padTimer = 0
   private beat = 0
   private enabled = true
   private polling = false
@@ -212,6 +214,8 @@ export class InputManager {
     this.polling = false
     cancelAnimationFrame(this.raf)
     this.raf = 0
+    clearTimeout(this.padTimer)
+    this.padTimer = 0
     clearInterval(this.beat)
     this.stopRumble()
     window.removeEventListener('keydown', this.keydown)
@@ -226,6 +230,12 @@ export class InputManager {
   // no frames are asked for at all.
   private tick = () => {
     this.raf = 0
+    if (!this.polling) return
+    this.poll()
+  }
+
+  private padTick = () => {
+    this.padTimer = 0
     if (!this.polling) return
     this.poll()
   }
@@ -395,7 +405,12 @@ export class InputManager {
 
   private poll() {
     if (this.readPads()) this.flush()
-    if (this.polling && !this.raf && this.wantFrames()) this.raf = requestAnimationFrame(this.tick)
+    if (!this.polling || this.raf || this.padTimer || !this.wantFrames()) return
+    // Reading a pad once per screen refresh would hold a press back for half of one on
+    // average, and browsers update pads several times as often. Nothing's read twice: a
+    // pad whose timestamp hasn't moved costs a comparison. A TV is left to the screen's pace.
+    if (this.slots.size > 0 && !this.tv) this.padTimer = window.setTimeout(this.padTick, PAD_READ_MS)
+    else this.raf = requestAnimationFrame(this.tick)
   }
 
   // Reads everything connected. True if anything may have changed.
