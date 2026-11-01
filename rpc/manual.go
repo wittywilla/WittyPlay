@@ -38,13 +38,41 @@ var safeClient = &http.Client{Timeout: 15 * time.Minute, Transport: &http.Transp
 			return err
 		}
 		ip := net.ParseIP(host)
-		if ip == nil || ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast() || ip.IsUnspecified() {
+		if ip == nil || !onTheInternet(ip) {
 			return fmt.Errorf("%s isn't on the internet", host)
 		}
 		return nil
 	}}).DialContext,
 	TLSHandshakeTimeout: 30 * time.Second,
 }}
+
+// notInternet are ranges that aren't the internet, beyond those the standard library names: shared
+// address space, documentation, and benchmarks.
+var notInternet = []string{"0.0.0.0/8", "100.64.0.0/10", "192.0.0.0/24", "192.0.2.0/24", "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "240.0.0.0/4", "2001:db8::/32", "fec0::/10"}
+
+// onTheInternet is what a fetched address has to be, including inside the IPv6 addresses that carry
+// an IPv4 one for a gateway to unwrap.
+func onTheInternet(ip net.IP) bool {
+	if v6 := ip.To16(); v6 != nil && ip.To4() == nil {
+		switch {
+		case v6[0] == 0x00 && v6[1] == 0x64 && v6[2] == 0xff && v6[3] == 0x9b:
+			ip = net.IP(v6[12:16])
+		case v6[0] == 0x20 && v6[1] == 0x02:
+			ip = net.IP(v6[2:6])
+		case v6[0] == 0x20 && v6[1] == 0x01 && v6[2] == 0 && v6[3] == 0:
+			return false // Teredo
+		}
+	}
+	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast() || ip.IsUnspecified() {
+		return false
+	}
+	for _, s := range notInternet {
+		if _, n, err := net.ParseCIDR(s); err == nil && n.Contains(ip) {
+			return false
+		}
+	}
+	return true
+}
 
 func resolveManager(json.RawMessage) (*stream.Manager, error) { return Mgr, nil }
 
