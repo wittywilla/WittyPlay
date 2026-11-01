@@ -26,6 +26,10 @@ type CoreTraits struct {
 	Assets string
 	// RequiredBIOS is set when the core can't start without a BIOS file.
 	RequiredBIOS *BIOSRule
+	// SavesIn is a folder under the system folder where the core keeps saves, such as
+	// memory cards. A running core can't write to the system folder, which everyone
+	// shares, so this core gets a system folder of its own in the player's save folder.
+	SavesIn string
 	// Options are always passed. Each one makes the core use what this runner has.
 	Options map[string]string
 	// Resolution gives the options for an internal resolution, 1 to 4 times native.
@@ -74,7 +78,7 @@ var traits = map[string]CoreTraits{
 		Resolution: pick("mupen64plus-43screensize", "640x480", "1280x960", "1920x1440", "2560x1920")},
 	"parallel_n64": {GPU: true, Options: map[string]string{"parallel-n64-gfxplugin": "gliden64"},
 		Resolution: pick("parallel-n64-screensize", "640x480", "1280x960", "1920x1440", "2880x2160")},
-	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, Options: map[string]string{"pcsx2_renderer": "OpenGL"},
+	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards", Options: map[string]string{"pcsx2_renderer": "OpenGL"},
 		Resolution: pick("pcsx2_upscale_multiplier", "1x (Native)", "2x", "4x", "4x")},
 	"play": {GPU: true},
 	"ppsspp": {GPU: true, Assets: "PPSSPP", Options: map[string]string{"ppsspp_backend": "opengl"},
