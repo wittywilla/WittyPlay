@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"sync"
@@ -214,6 +215,7 @@ func (s *Session) Apply(c ipc.Control, coreOptions map[string]string) error {
 	if s.opt.SafeMode {
 		return nil
 	}
+	c = s.runAheadFor(c)
 	s.ctlMu.Lock()
 	send := diffControl(s.want, c)
 	s.want = c
@@ -240,6 +242,25 @@ func (s *Session) Apply(c ipc.Control, coreOptions map[string]string) error {
 	return nil
 }
 
+// quickStates are the cores whose whole state saves in a fraction of a millisecond to a
+// few milliseconds, measured on real games, so running a frame ahead costs next to
+// nothing. A frame is about as much as all the rest of the path put together.
+var quickStates = map[string]bool{"fceumm": true, "nestopia": true, "mesen": true, "gambatte": true, "sameboy": true, "mgba": true, "vba_next": true, "gearsystem": true, "smsplus": true, "mesen-s": true, "mednafen_supafaust": true, "mednafen_pce_fast": true, "mednafen_wswan": true, "mednafen_ngp": true, "handy": true, "stella": true, "stella2014": true, "prosystem": true}
+
+// runAheadFor settles what "automatic" means for this core, on this machine.
+func (s *Session) runAheadFor(c ipc.Control) ipc.Control {
+	if c.RunAhead == nil || *c.RunAhead != ipc.RunAheadAuto {
+		return c
+	}
+	frames := 0
+	if quickStates[s.opt.CoreID] && runtime.NumCPU() >= 4 {
+		frames = 1
+	}
+	quiet := true
+	c.RunAhead, c.QuietAhead = &frames, &quiet
+	return c
+}
+
 // SetAutoSave says whether leaving writes the resume state.
 func (s *Session) SetAutoSave(on bool) { s.noAutoSave.Store(!on) }
 
@@ -250,6 +271,7 @@ func diffControl(a, b ipc.Control) ipc.Control {
 	}
 	if b.RunAhead != nil && (a.RunAhead == nil || *a.RunAhead != *b.RunAhead) {
 		d.RunAhead = b.RunAhead
+		d.QuietAhead = b.QuietAhead
 	}
 	if b.RewindBytes != nil && (a.RewindBytes == nil || *a.RewindBytes != *b.RewindBytes) {
 		d.RewindBytes = b.RewindBytes
@@ -405,10 +427,11 @@ func (s *Session) sendStart() {
 		return
 	}
 	if s.opt.Control != nil {
+		c := s.runAheadFor(*s.opt.Control)
 		s.ctlMu.Lock()
-		s.want = *s.opt.Control
+		s.want = c
 		s.ctlMu.Unlock()
-		_ = s.control(*s.opt.Control)
+		_ = s.control(c)
 	}
 	if len(s.opt.Cheats) > 0 {
 		_ = s.SetCheats(s.opt.Cheats)

@@ -137,7 +137,8 @@ var Settings = []Setting{
 	{Key: "emulation.rewind", Group: GroupEmulation, Section: "Rewind", Label: "Rewind", Help: "Keeps the last few seconds in memory on the server. Off by default, as it costs a little all the time.", Kind: KindToggle, Default: false},
 	{Key: "emulation.rewindSeconds", Group: GroupEmulation, Section: "Rewind", Label: "How far back", Help: "The server's memory limit can make it less.", Kind: KindSlider, Default: 20.0, Min: 5, Max: 120, Step: 5, Unit: "s"},
 	{Key: "emulation.latency", Group: GroupEmulation, Section: "Latency", Label: "Speed or steadiness", Help: "Fastest shows every frame the moment it arrives. Steadiest lets your browser hold frames back to smooth out a poor connection, which adds delay. Automatic is Fastest until the connection turns uneven, then Balanced until it settles.", Kind: KindChoice, Default: "auto", Choices: choices("auto", "Automatic", "fastest", "Fastest", "balanced", "Balanced", "steady", "Steadiest")},
-	{Key: "emulation.runAhead", Group: GroupEmulation, Section: "Latency", Label: "Run-ahead", Help: "Takes frames off the delay by running the game ahead and going back. Costs the server more, and can glitch on some games. It turns itself off when it doesn't fit.", Kind: KindSlider, Default: 0.0, Min: 0, Max: 3, Step: 1, Unit: " frames"},
+	{Key: "emulation.runAheadAuto", Group: GroupEmulation, Section: "Latency", Label: "Automatic run-ahead", Help: "Games take a frame or two to react to a button, as they did on the real console. For the older consoles, whose whole state saves in a moment, this shows the picture from a frame ahead, so that the game reacts a frame sooner. It's off for a game if the server can't keep up. A rare game may show a small glitch, and this is what to turn off if one does.", Kind: KindToggle, Default: true},
+	{Key: "emulation.runAhead", Group: GroupEmulation, Section: "Latency", Label: "Run-ahead", Help: "Takes frames off the delay by running the game ahead and going back, on any core that can. Costs the server more, and can glitch on some games. It turns itself off when it doesn't fit.", Kind: KindSlider, Default: 0.0, Min: 0, Max: 3, Step: 1, Unit: " frames"},
 	{Key: "emulation.pauseHidden", Group: GroupEmulation, Section: "When you step away", Label: "Pause when this tab is hidden", Kind: KindToggle, Default: true},
 
 	{Key: "audio.volume", Group: GroupAudio, Label: "Volume", Kind: KindSlider, Default: 1.0, Min: 0, Max: 1, Step: 0.05},
@@ -512,6 +513,9 @@ func ControlFor(values map[string]any, lim Limits) ipc.Control {
 	ahead := 0
 	if lim.RunAhead {
 		ahead = int(asFloat(values["emulation.runAhead"]))
+		if on, set := values["emulation.runAheadAuto"].(bool); ahead == 0 && (on || !set) {
+			ahead = ipc.RunAheadAuto
+		}
 	}
 	var rewind int64
 	if on, _ := values["emulation.rewind"].(bool); on {

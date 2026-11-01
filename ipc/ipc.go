@@ -267,6 +267,8 @@ type Control struct {
 	// EarlyInput lets a new press start the next frame straight away, rather than waiting for
 	// its turn. It's on unless this says otherwise.
 	NoEarlyInput *bool `json:"noEarlyInput,omitempty"`
+	// QuietAhead: run-ahead wasn't anyone's choice, so turning itself off isn't worth a message.
+	QuietAhead *bool `json:"quietAhead,omitempty"`
 	// ShiftMs moves when frames start, once, by this many milliseconds, to land them just
 	// before a viewer's display wants them. Later is positive.
 	ShiftMs *float64 `json:"shiftMs,omitempty"`
@@ -294,6 +296,7 @@ const (
 	FrameSkipAuto  = -1
 	FrameSkipMax   = 8
 	RunAheadMax    = 3
+	RunAheadAuto   = -1 // from a setting: whatever suits this core. A runner is never sent it.
 	RewindBytesMax = 512 << 20
 	AdvanceMax     = 60
 )

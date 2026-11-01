@@ -58,6 +58,7 @@ func addRigFlags(fs *flag.FlagSet) *rigFlags {
 	fs.StringVar(&f.latency, "latency", "", "auto, fastest, balanced or steady; empty for the player's default")
 	fs.IntVar(&f.udpPort, "udp-port", 0, "the UDP port for WebRTC; with -impair, one is chosen if this isn't set")
 	fs.StringVar(&f.impair, "impair", "", "a network to go through: delay=30,jitter=5,loss=2,kbps=3000,queue=100, in ms, percent and kilobits")
+	fs.BoolVar(&f.noAutoAhead, "no-auto-run-ahead", false, "leave automatic run-ahead off")
 	fs.StringVar(&f.shots, "shots", "", "a folder for pictures of what the browser shows and what the core made, side by side")
 	return f
 }
@@ -256,6 +257,15 @@ func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
 	return r, nil
 }
 
+// control is what the settings would say, with nobody having changed them.
+func (f *rigFlags) control() *ipc.Control {
+	if f.noAutoAhead {
+		return nil
+	}
+	ahead := ipc.RunAheadAuto
+	return &ipc.Control{RunAhead: &ahead}
+}
+
 // startGame starts the game, or starts it again after it has gone.
 func (r *rig) startGame() error {
 	g := r.f.game
@@ -265,7 +275,7 @@ func (r *rig) startGame() error {
 	if _, err := os.Stat(filepath.Join(g.save, "auto.state")); err == nil {
 		resume = true
 	}
-	sess, err := r.mgr.Start(stream.Options{UserID: 1, ItemID: 1, Title: filepath.Base(g.rom), Console: g.console, Core: g.core, ROM: g.rom, SystemDir: g.system, SaveDir: g.save,
+	sess, err := r.mgr.Start(stream.Options{Control: r.f.control(), UserID: 1, ItemID: 1, Title: filepath.Base(g.rom), Console: g.console, Core: g.core, ROM: g.rom, SystemDir: g.system, SaveDir: g.save,
 		Resume: resume, GPU: gpu, RunnerArgs: runnerArgs, CoreID: g.coreID, CoreOptions: load.Options, CoreAssets: load.Assets, LoadLimit: 5 * time.Minute, Stamp: true, NoAutoSave: true})
 	if err != nil {
 		return err

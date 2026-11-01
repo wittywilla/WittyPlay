@@ -37,9 +37,10 @@ type control struct {
 	aheadLate   int
 	aheadOnTime int
 
-	frameTime time.Duration
-	noEarly   bool          // a new press waits for its frame's turn like anything else
-	shift     time.Duration // to move the frame schedule by, once
+	frameTime  time.Duration
+	noEarly    bool          // a new press waits for its frame's turn like anything else
+	quietAhead bool          // run-ahead turning itself off needs no message
+	shift      time.Duration // to move the frame schedule by, once
 
 	// What the next frame sends. A runner's write looks at these, so nothing gets out
 	// past them whichever way a core delivers its frames.
@@ -129,6 +130,9 @@ func (c *control) apply(m ipc.Control) {
 	}
 	if m.NoEarlyInput != nil {
 		c.noEarly = *m.NoEarlyInput
+	}
+	if m.QuietAhead != nil {
+		c.quietAhead = *m.QuietAhead
 	}
 	if m.ShiftMs != nil && *m.ShiftMs == *m.ShiftMs { // not NaN
 		// Never more than a frame at a time, whatever it's told.
@@ -366,7 +370,9 @@ func (c *control) runAheadFrame(show bool) {
 	}
 	if !c.eng.LoadState(state) {
 		c.runAhead = 0
-		c.r.event(ipc.Event{Type: "message", Text: "Run-ahead is off: this core can’t go back to a state that quickly."})
+		if !c.quietAhead {
+			c.r.event(ipc.Event{Type: "message", Text: "Run-ahead is off: this core can’t go back to a state that quickly."})
+		}
 	}
 	c.quiet = false
 	// What counts is whether the game has fallen behind its schedule. Timing this work
@@ -384,7 +390,9 @@ func (c *control) runAheadFrame(show bool) {
 	} else if now.Sub(c.aheadSince) >= 2*time.Second {
 		if c.aheadLate > 3*c.aheadOnTime {
 			c.runAhead = 0
-			c.r.event(ipc.Event{Type: "message", Text: "Run-ahead is off: this server can’t keep up with it on this game."})
+			if !c.quietAhead {
+				c.r.event(ipc.Event{Type: "message", Text: "Run-ahead is off: this server can’t keep up with it on this game."})
+			}
 		}
 		c.aheadSince, c.aheadLate, c.aheadOnTime = now, 0, 0
 	}
