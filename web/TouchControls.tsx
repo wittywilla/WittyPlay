@@ -42,8 +42,15 @@ const SHAPES: Record<string, React.ReactNode> = {
   '✕': <path d="M32 32l36 36M68 32L32 68" />,
 }
 
+// A stick's directions on separate buttons, as on a three-handled pad.
+const ARROW: Record<string, string> = { up: 'M50 26l24 42H26z', down: 'M50 74L26 32h48z', left: 'M26 50l42-24v48z', right: 'M74 50L32 74V26z' }
+
 function ButtonFace({ c, active }: { c: Control; active: boolean }) {
+  const direction = /^C (up|down|left|right)$/.exec(c.label)?.[1]
   const shape = SHAPES[c.label]
+  if (direction) {
+    return <span className={'wp-face wp-face-' + c.kind + (active ? ' on' : '')}><svg viewBox="0 0 100 100" aria-hidden="true" className="wp-arrow"><path d={ARROW[direction]} /></svg></span>
+  }
   const long = c.label.length > 2
   return (
     <span className={'wp-face wp-face-' + c.kind + (active ? ' on' : '') + (long ? ' long' : '')}>

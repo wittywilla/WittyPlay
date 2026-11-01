@@ -66,6 +66,7 @@
 .wp-face-label { display: block; transform: translateY(.02em); }
 .wp-face.long .wp-face-label { font-size: .72em; }
 .wp-shape { width: 68%; height: 68%; fill: none; stroke: currentColor; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.wp-arrow { width: 52%; height: 52%; fill: currentColor; }
 .wp-face-shoulder { border-radius: .55em .55em 1em 1em; }
 .wp-face-meta { border-radius: 999px; font-weight: 600; white-space: nowrap; overflow: hidden; padding: 0 .5em; }
 .wp-pad-six .wp-face-face, .wp-pad-six .wp-face-shoulder { border-radius: 36%; }
