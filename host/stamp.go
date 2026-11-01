@@ -40,4 +40,34 @@ func stampFrame(frame []byte, w, h, format int, t ipc.FrameTiming) {
 			}
 		}
 	}
+	// Known colours under the numbers, each two cells wide, for seeing what the path has
+	// done to them.
+	if ch*2 > h {
+		return
+	}
+	for i, c := range StampColours {
+		px := pixelBytes(c, format)
+		for y := ch; y < ch*2; y++ {
+			row := frame[y*w*bpp+i*2*cw*bpp:][:2*cw*bpp]
+			for x := 0; x+bpp <= len(row); x += bpp {
+				copy(row[x:], px)
+			}
+		}
+	}
+}
+
+// StampColours are the colours drawn, red, green and blue. web/latency.ts has them too.
+var StampColours = [][3]byte{{255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0}, {0, 255, 255}, {255, 0, 255}, {128, 128, 128}, {64, 128, 192}, {192, 96, 48}}
+
+func pixelBytes(c [3]byte, format int) []byte {
+	r, g, b := uint16(c[0]), uint16(c[1]), uint16(c[2])
+	switch format {
+	case engine.FormatXRGB8888:
+		return []byte{c[2], c[1], c[0], 0xff}
+	case engine.FormatRGB565:
+		v := r>>3<<11 | g>>2<<5 | b>>3
+		return []byte{byte(v), byte(v >> 8)}
+	}
+	v := r>>3<<10 | g>>3<<5 | b>>3
+	return []byte{byte(v), byte(v >> 8)}
 }

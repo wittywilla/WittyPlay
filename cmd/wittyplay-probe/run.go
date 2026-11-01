@@ -59,6 +59,10 @@ type pageResults struct {
 	Shifted    float64            `json:"shifted"`
 	Recoveries []float64          `json:"recoveries"`
 	Heap       int64              `json:"heap"`
+	Colours    struct {
+		Error int     `json:"error"`
+		Seen  [][]int `json:"seen"`
+	} `json:"colours"`
 }
 
 func report(b []byte, label, out string, sess *stream.Session) error {
@@ -97,6 +101,7 @@ func report(b []byte, label, out string, sess *stream.Session) error {
 	}
 	fmt.Println("  browser:", strings.Join(parts, " "))
 	fmt.Println("  pixels:", r.Pixels, "records against pixels:", r.Mis)
+	fmt.Println("  colours, worst error out of 255:", r.Colours.Error, "seen:", r.Colours.Seen)
 	fmt.Printf("  moved frames by %.1f ms; waits for the display over time: %v\n", r.Shifted, r.Waits)
 	if len(r.Recoveries) > 0 {
 		fmt.Println("  came back after a lost connection, ms:", r.Recoveries)

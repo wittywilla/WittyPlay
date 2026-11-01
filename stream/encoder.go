@@ -214,7 +214,9 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 		gop = 10
 	}
 	encArgs, inputArgs, upload := encoderArgs(name, bps, gop)
-	vf := fmt.Sprintf("scale=trunc(iw*%d/2)*2:trunc(ih*%d/2)*2:flags=neighbor,format=%s", scale, scale, encoderPixFmt(name))
+	// The matrix used to make the frame has to be the one the browser undoes. Left unsaid, a
+	// browser assumes BT.709, FFmpeg's scaler uses BT.601, and red comes out orange.
+	vf := fmt.Sprintf("scale=trunc(iw*%d/2)*2:trunc(ih*%d/2)*2:flags=neighbor:out_color_matrix=bt709:out_range=tv,format=%s", scale, scale, encoderPixFmt(name))
 	if upload != "" {
 		vf += "," + upload
 	}
@@ -231,6 +233,12 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 	}
 	args = append(args, "-c:v", name)
 	args = append(args, encArgs...)
+	// NVENC's own conversion, taking a frame straight in, is BT.601 whatever it's told.
+	matrix := "bt709"
+	if direct {
+		matrix = "smpte170m"
+	}
+	args = append(args, "-colorspace", matrix, "-color_primaries", matrix, "-color_trc", matrix, "-color_range", "tv")
 	args = append(args, "-fps_mode", "passthrough", "-flush_packets", "1")
 	if codec == "vp8" {
 		args = append(args, "-f", "ivf", "pipe:1")

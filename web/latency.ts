@@ -382,6 +382,7 @@ export function watchVideo(v: HTMLVideoElement, onFrame: (p: Presented, meta: an
 
 // The number strip host/stamp.go draws, for the test page. Each cell is read at its middle.
 export const STAMP_BITS = 32
+const STAMP_COLOURS = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [0, 255, 255], [255, 0, 255], [128, 128, 128], [64, 128, 192], [192, 96, 48]]
 
 export class StampReader {
   private c: CanvasRenderingContext2D
@@ -393,6 +394,30 @@ export class StampReader {
     canvas.height = this.h
     this.c = canvas.getContext('2d', { willReadFrequently: true })!
     this.c.imageSmoothingEnabled = false
+  }
+
+  // How far the known colours under the numbers are from what was drawn: the largest error
+  // in any channel of each, out of 255.
+  colours(source: HTMLVideoElement | HTMLCanvasElement, srcW: number, srcH: number): { error: number; seen: number[][] } | null {
+    if (!srcW || !srcH) return null
+    const cw = Math.max(Math.floor(srcW / 40), 4)
+    const ch = Math.max(Math.floor(srcH / 28), 4)
+    const canvas = document.createElement('canvas')
+    canvas.width = cw * 2 * STAMP_COLOURS.length
+    canvas.height = ch
+    const c = canvas.getContext('2d', { willReadFrequently: true })
+    if (!c) return null
+    try {
+      c.drawImage(source, 0, ch, canvas.width, ch, 0, 0, canvas.width, ch)
+      const seen: number[][] = []
+      let error = 0
+      STAMP_COLOURS.forEach((want, i) => {
+        const d = c.getImageData(i * cw * 2 + cw, ch >> 1, 1, 1).data
+        seen.push([d[0], d[1], d[2]])
+        for (let k = 0; k < 3; k++) error = Math.max(error, Math.abs(d[k] - want[k]))
+      })
+      return { error, seen }
+    } catch { return null }
   }
 
   read(source: HTMLVideoElement | HTMLCanvasElement, srcW: number, srcH: number): { seq: number; input: number } | null {

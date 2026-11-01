@@ -225,8 +225,20 @@ async function main() {
   await sleep(200)
   settle()
   const stats = await chromeStats(current)
-  await post('/results', report(win, stats))
+  await post('/shot', await picture())
+  await post('/results', { ...report(win, stats), colours: current && reader.colours(current.element, (current.element as HTMLVideoElement).videoWidth, (current.element as HTMLVideoElement).videoHeight) })
   say('done')
+}
+
+// What's on the screen now, exactly as the browser decoded it.
+async function picture() {
+  const v = current?.element as HTMLVideoElement | undefined
+  if (!v?.videoWidth) return { png: '' }
+  const c = document.createElement('canvas')
+  c.width = v.videoWidth
+  c.height = v.videoHeight
+  c.getContext('2d')!.drawImage(v, 0, 0)
+  return { png: c.toDataURL('image/png'), seq: reader.read(v, v.videoWidth, v.videoHeight)?.seq }
 }
 
 async function chromeStats(t: any) {

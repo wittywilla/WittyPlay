@@ -1,11 +1,24 @@
 package stream
 
+import "github.com/wittywilla/wittyplay/ipc"
+
 // ProcessIDs names what's running for a game, for tools that watch or test it.
 type ProcessIDs struct {
 	Runner      int `json:"runner"`
 	Video       int `json:"video"`
 	Audio       int `json:"audio"`
 	VideoStarts int `json:"videoStarts"`
+}
+
+// RawFrame is a copy of the newest picture to leave the core, for comparing with what a
+// viewer sees.
+func (s *Session) RawFrame() (ipc.VideoHeader, []byte) {
+	s.frameMu.Lock()
+	defer s.frameMu.Unlock()
+	if s.frameFresh {
+		return s.frameHdr, append([]byte(nil), s.frame...)
+	}
+	return s.shownHdr, append([]byte(nil), s.shown...)
 }
 
 // Processes says what's running for this game right now. Anything not running is 0.

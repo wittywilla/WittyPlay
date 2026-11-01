@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"image/png"
 	"io"
 	"log/slog"
 	"net"
@@ -35,7 +37,7 @@ type rigFlags struct {
 	seconds, every, udpPort                          int
 	browser, browserArgs, listen, host, ffmpeg       string
 	encoders, kind, label, state, profile, latency   string
-	impair                                           string
+	impair, shots                                    string
 	loopback                                         bool
 }
 
@@ -56,6 +58,7 @@ func addRigFlags(fs *flag.FlagSet) *rigFlags {
 	fs.StringVar(&f.latency, "latency", "", "auto, fastest, balanced or steady; empty for the player's default")
 	fs.IntVar(&f.udpPort, "udp-port", 0, "the UDP port for WebRTC; with -impair, one is chosen if this isn't set")
 	fs.StringVar(&f.impair, "impair", "", "a network to go through: delay=30,jitter=5,loss=2,kbps=3000,queue=100, in ms, percent and kilobits")
+	fs.StringVar(&f.shots, "shots", "", "a folder for pictures of what the browser shows and what the core made, side by side")
 	return f
 }
 
@@ -182,6 +185,30 @@ func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
 		select {
 		case r.results <- b:
 		default:
+		}
+	})
+	mux.HandleFunc("/shot", func(_ http.ResponseWriter, q *http.Request) {
+		var s struct {
+			PNG string `json:"png"`
+			Seq int    `json:"seq"`
+		}
+		if json.NewDecoder(io.LimitReader(q.Body, 64<<20)).Decode(&s) != nil || f.shots == "" {
+			return
+		}
+		_, data, ok := strings.Cut(s.PNG, ",")
+		if !ok {
+			return
+		}
+		if b, err := base64.StdEncoding.DecodeString(data); err == nil {
+			_ = os.MkdirAll(f.shots, 0o755)
+			_ = os.WriteFile(filepath.Join(f.shots, f.label+"-browser.png"), b, 0o644)
+			// And what left the core at about the same moment, before any encoder.
+			if hdr, raw := r.session().RawFrame(); raw != nil {
+				if out, err := os.Create(filepath.Join(f.shots, f.label+"-core.png")); err == nil {
+					_ = png.Encode(out, stream.ToRGBA(hdr, raw))
+					out.Close()
+				}
+			}
 		}
 	})
 	mux.HandleFunc("/partial", func(_ http.ResponseWriter, q *http.Request) {
