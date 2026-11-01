@@ -593,7 +593,7 @@ export function PatchesPanel({ host, itemId, say, onRestart }: { host: SettingsH
   if (!list) return <p className="wp-muted" role="status">Loading…</p>
   return (
     <>
-      <p className="wp-muted wp-small">IPS and BPS patches of your own, such as translations and fixes. They’re applied to a copy each time the game starts: your game file is never changed, and they’re for you only.</p>
+      <p className="wp-muted wp-small">IPS and BPS patches of your own, such as translations and fixes. They’re applied to a copy each time the game starts: your game file is never changed, and they’re for you only. <a className="wp-link" href="/help/games#patches-and-uploads" target="_blank" rel="noreferrer">How patches work</a></p>
       {list.length === 0 && <p className="wp-muted">No patches for this game yet.</p>}
       <ul className="wp-list">
         {list.map((p) => (

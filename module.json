@@ -1,7 +1,7 @@
 {
   "id": "wittyplay",
   "name": "WittyPlay",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repo": "wittywilla/WittyPlay",
   "license": "Apache-2.0",
   "delivery": "helper",

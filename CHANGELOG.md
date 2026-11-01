@@ -5,6 +5,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
+- The patches panel links to the guide in Help. The message about an encrypted 3DS file no longer suggests where else a game might come from.
 - **Latency:** from a finished frame to the screen went from 65 to 235 ms to 9 to 22 ms, and from a press to the screen from 75 to 270 ms to
   11 to 31 ms, or about 50 on PlayStation 2, which takes most of a frame to run. Those are medians with the server and browser on one machine;
   a wired network adds about 1 ms, Wi-Fi more. The browser no longer holds frames back, sound can't hold the picture back, FFmpeg's queues can't fill,

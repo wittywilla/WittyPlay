@@ -16,7 +16,7 @@ import (
 // with words a person can act on rather than a core's failure.
 
 // ErrEncrypted3DS is why an encrypted 3DS file won't play.
-var ErrEncrypted3DS = errors.New("This 3DS game file is encrypted: its program is scrambled, as it came from the console or the store. It can't be played here, and this server won't decrypt it. A copy dumped in decrypted form will play")
+var ErrEncrypted3DS = errors.New("This 3DS game file is encrypted: its program is scrambled, as it came from the console or the store. It can't be played here, and this server won't decrypt it")
 
 // Azahar, like the 3DS, starts as the older model unless it's told otherwise. A game made
 // for the New 3DS, whose header says so, won't run on that.
