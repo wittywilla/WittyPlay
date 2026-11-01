@@ -184,6 +184,10 @@ func inspectCIA(f io.ReaderAt, size int64) (ThreeDSFile, error) {
 	// where it belongs can't happen by accident in something scrambled, and some tools
 	// that took a package's encryption off left the mark on.
 	inner, err := inspectNCCH(f, contents, n)
+	if err != nil && binary.BigEndian.Uint16(rec[6:])&1 != 0 {
+		// Too short to read, and marked encrypted: there's no more to find out.
+		inner, err = ThreeDSFile{Encrypted: true}, nil
+	}
 	inner.Package, inner.Program, inner.ProgramLen = true, contents, n
 	return inner, err
 }
