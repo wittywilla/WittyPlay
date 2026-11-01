@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { Control, ControlsData, Layout, Orientation } from './consoles'
+import { DOWN, LEFT, RIGHT, UP, type Control, type ControlsData, type Layout, type Orientation } from './consoles'
 import { clamp, isStick, layoutFor, onStick as fingerOnStick, touchMask, touchStick } from './touch'
 
 // The on-screen controller, and the editor that rearranges it. Fingers are tracked
@@ -33,24 +33,59 @@ function useSize(ref: React.RefObject<HTMLElement | null>) {
   return size
 }
 
-function ControlFace({ c, active, knob }: { c: Control; active: boolean; knob?: { x: number; y: number } }) {
+// The shapes some consoles print on their buttons, drawn rather than typed: a character's
+// size and position change from one phone's font to the next, and these sit dead centre.
+const SHAPES: Record<string, React.ReactNode> = {
+  '□': <rect x="33" y="33" width="34" height="34" rx="2" />,
+  '△': <path d="M50 28l23 40H27z" />,
+  '○': <circle cx="50" cy="50" r="21" />,
+  '✕': <path d="M32 32l36 36M68 32L32 68" />,
+}
+
+// A stick's directions on separate buttons, as on a three-handled pad.
+const ARROW: Record<string, string> = { up: 'M50 26l24 42H26z', down: 'M50 74L26 32h48z', left: 'M26 50l42-24v48z', right: 'M74 50L32 74V26z' }
+
+function ButtonFace({ c, active }: { c: Control; active: boolean }) {
+  const direction = /^C (up|down|left|right)$/.exec(c.label)?.[1]
+  const shape = SHAPES[c.label]
+  if (direction) {
+    return <span className={'wp-face wp-face-' + c.kind + (active ? ' on' : '')}><svg viewBox="0 0 100 100" aria-hidden="true" className="wp-arrow"><path d={ARROW[direction]} /></svg></span>
+  }
+  const long = c.label.length > 2
+  return (
+    <span className={'wp-face wp-face-' + c.kind + (active ? ' on' : '') + (long ? ' long' : '')}>
+      {shape ? <svg viewBox="0 0 100 100" aria-hidden="true" className="wp-shape">{shape}</svg> : <span className="wp-face-label">{c.label}</span>}
+    </span>
+  )
+}
+
+function ControlFace({ c, active, mask, knob }: { c: Control; active: boolean; mask?: number; knob?: { x: number; y: number } }) {
   if (isStick(c)) {
     return (
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <circle className="wp-dpad-shape" cx="50" cy="50" r="46" />
-        <circle className="wp-dpad-arrows" cx={50 + (knob?.x || 0) * 26} cy={50 + (knob?.y || 0) * 26} r="20" />
+      <svg viewBox="0 0 100 100" aria-hidden="true" className="wp-stick">
+        <circle className="wp-stick-well" cx="50" cy="50" r="47" />
+        <circle className="wp-stick-ring" cx="50" cy="50" r="30" />
+        <g style={{ transform: `translate(${(knob?.x || 0) * 26}px, ${(knob?.y || 0) * 26}px)` }}>
+          <circle className="wp-stick-cap" cx="50" cy="50" r="24" />
+          <circle className="wp-stick-dimple" cx="50" cy="50" r="14" />
+        </g>
       </svg>
     )
   }
   if (c.kind === 'dpad') {
+    const on = (bit: number) => (mask !== undefined && (mask & (1 << bit)) ? ' on' : '')
     return (
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <path className="wp-dpad-shape" d="M36 4h28a4 4 0 014 4v24h24a4 4 0 014 4v28a4 4 0 01-4 4H68v24a4 4 0 01-4 4H36a4 4 0 01-4-4V68H8a4 4 0 01-4-4V36a4 4 0 014-4h24V8a4 4 0 014-4z" />
-        <path className="wp-dpad-arrows" d="M50 12l9 12H41zM50 88l-9-12h18zM12 50l12-9v18zM88 50l-12 9V41z" />
+      <svg viewBox="0 0 100 100" aria-hidden="true" className="wp-dpad">
+        <path className="wp-dpad-shape" d="M37 3h26a5 5 0 015 5v24h24a5 5 0 015 5v26a5 5 0 01-5 5H68v24a5 5 0 01-5 5H37a5 5 0 01-5-5V68H8a5 5 0 01-5-5V37a5 5 0 015-5h24V8a5 5 0 015-5z" />
+        <circle className="wp-dpad-hub" cx="50" cy="50" r="9" />
+        <path className={'wp-dpad-arrow' + on(UP)} d="M50 11l9 11H41z" />
+        <path className={'wp-dpad-arrow' + on(DOWN)} d="M50 89l-9-11h18z" />
+        <path className={'wp-dpad-arrow' + on(LEFT)} d="M11 50l11-9v18z" />
+        <path className={'wp-dpad-arrow' + on(RIGHT)} d="M89 50l-11 9V41z" />
       </svg>
     )
   }
-  return <span className={'wp-btn-face wp-btn-' + c.kind + (active ? ' on' : '')}>{c.label}</span>
+  return <ButtonFace c={c} active={active} />
 }
 
 // On a console with a touch screen, a finger that isn't on a button is the stylus.
@@ -118,15 +153,15 @@ export function TouchControls({ data, orientation, onMask, onStick, onPoint }: {
   }
   const unit = Math.min(size.w, size.h)
   return (
-    <div ref={area} className="wp-touch" aria-hidden="true" onPointerDown={(e) => { e.preventDefault(); try { (e.target as Element).setPointerCapture?.(e.pointerId) } catch { /* fine */ } track(e) }} onPointerMove={(e) => { if (points.current.has(e.pointerId) || stylus.current === e.pointerId) track(e) }}
+    <div ref={area} className={'wp-touch wp-pad-' + (data.pad?.art || 'dual')} aria-hidden="true" onPointerDown={(e) => { e.preventDefault(); try { (e.target as Element).setPointerCapture?.(e.pointerId) } catch { /* fine */ } track(e) }} onPointerMove={(e) => { if (points.current.has(e.pointerId) || stylus.current === e.pointerId) track(e) }}
       onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release} onContextMenu={(e) => e.preventDefault()}>
       {size.w > 0 && controls.map((c) => {
         const p = layout[c.key]
         if (!p || p.hidden) return null
         const px = p.size * unit
         return (
-          <div key={c.key} className={'wp-ctl wp-ctl-' + c.kind} style={{ left: p.x * size.w - px / 2, top: p.y * size.h - px / 2, width: px, height: c.kind === 'meta' ? px * 0.55 : c.kind === 'shoulder' ? px * 0.7 : px, opacity: p.opacity, fontSize: px * (c.kind === 'meta' ? 0.24 : 0.36) }}>
-            <ControlFace c={c} active={c.kind !== 'dpad' && c.kind !== 'stick' && !!(mask & (1 << c.id))} knob={isStick(c) ? knob : undefined} />
+          <div key={c.key} className={'wp-ctl wp-ctl-' + c.kind} style={{ left: p.x * size.w - px / 2, top: p.y * size.h - px / 2, width: px, height: c.kind === 'meta' ? px * 0.55 : c.kind === 'shoulder' ? px * 0.62 : px, opacity: p.opacity, fontSize: px * (c.kind === 'meta' ? 0.26 : 0.38) }}>
+            <ControlFace c={c} active={c.kind !== 'dpad' && c.kind !== 'stick' && !!(mask & (1 << c.id))} mask={c.kind === 'dpad' ? mask : undefined} knob={isStick(c) ? knob : undefined} />
           </div>
         )
       })}
@@ -145,7 +180,9 @@ export function TouchEditor({ data, orientation, onSave, onClose }: { data: Cont
   const [sel, setSel] = useState<string>(controls[0]?.key || '')
   const [grabbed, setGrabbed] = useState(false)
   const [note, setNote] = useState('')
+  const [tucked, setTucked] = useState(false) // the panel out of the way, to see all of the layout
   const drag = useRef<{ id: number; key: string; dx: number; dy: number } | null>(null)
+  const scaleFrom = useRef<Layout | null>(null)
   useEffect(() => { setLayout(layoutFor(data, orientation)) }, [data, orientation])
 
   const change = (k: string, patch: Partial<Layout[string]>) => setLayout((l) => ({ ...l, [k]: { ...l[k], ...patch } }))
@@ -188,7 +225,8 @@ export function TouchEditor({ data, orientation, onSave, onClose }: { data: Cont
   }
 
   return (
-    <div className="wp-editor" role="dialog" aria-label={`Touch controls for ${orientation} screens`}>
+    <div className={'wp-editor' + (tucked ? ' tucked' : '') + ' wp-pad-' + (data.pad?.art || 'dual')} role="dialog" aria-label={`Touch controls for ${orientation} screens`}>
+      <button type="button" className="wp-btn wp-editor-tuck" onClick={() => setTucked((t) => !t)} aria-expanded={!tucked}>{tucked ? 'Show options' : 'Hide options'}</button>
       <div ref={area} className="wp-editor-area" onPointerMove={moveDrag} onPointerUp={() => { drag.current = null }} onPointerCancel={() => { drag.current = null }}>
         {size.w > 0 && controls.map((c) => {
           const p = layout[c.key]
@@ -196,7 +234,7 @@ export function TouchEditor({ data, orientation, onSave, onClose }: { data: Cont
           const px = p.size * unit
           return (
             <button key={c.key} type="button" className={'wp-ctl wp-ctl-' + c.kind + ' wp-ctl-edit' + (sel === c.key ? ' selected' : '') + (p.hidden ? ' hidden' : '')}
-              style={{ left: p.x * size.w - px / 2, top: p.y * size.h - px / 2, width: px, height: c.kind === 'meta' ? px * 0.55 : c.kind === 'shoulder' ? px * 0.7 : px, opacity: p.hidden ? 0.25 : p.opacity, fontSize: px * (c.kind === 'meta' ? 0.24 : 0.36) }}
+              style={{ left: p.x * size.w - px / 2, top: p.y * size.h - px / 2, width: px, height: c.kind === 'meta' ? px * 0.55 : c.kind === 'shoulder' ? px * 0.62 : px, opacity: p.hidden ? 0.25 : p.opacity, fontSize: px * (c.kind === 'meta' ? 0.26 : 0.38) }}
               aria-label={`${c.label}: press to pick up, then move with the arrow keys`} aria-pressed={sel === c.key && grabbed}
               onPointerDown={(e) => startDrag(e, c.key)} onFocus={() => { setSel(c.key); setGrabbed(false) }} onKeyDown={nudge}>
               <ControlFace c={c} active={false} />
@@ -222,6 +260,13 @@ export function TouchEditor({ data, orientation, onSave, onClose }: { data: Cont
             </label>
           ))}
         </fieldset>
+        <label className="wp-editor-all">All controls’ size
+          <input type="range" min={0.6} max={1.5} step={0.05} defaultValue={1} onPointerDown={() => { scaleFrom.current = layout }} onFocus={() => { scaleFrom.current = layout }} onChange={(e) => {
+            const v = Number(e.target.value)
+            const from = scaleFrom.current || layout
+            setLayout(Object.fromEntries(Object.entries(from).map(([k, p]) => [k, { ...p, size: clamp(p.size * v, 0.05, 0.6) }])))
+          }} />
+        </label>
         <label className="wp-editor-all">All controls’ opacity
           <input type="range" min={0.1} max={1} step={0.05} defaultValue={selP?.opacity ?? 0.55} onChange={(e) => {
             const v = Number(e.target.value)

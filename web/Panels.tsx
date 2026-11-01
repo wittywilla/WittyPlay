@@ -607,6 +607,10 @@ export function SlotsPanel({ host, schema, itemId, kind, confirm, act, say, onDo
   const [manage, setManage] = useState(false)
   const load = useCallback(() => host.request<SaveSlot[]>('GET', `/games/${itemId}/saves`).then(setSlots).catch(() => setSlots([])), [host, itemId])
   useEffect(() => { void load() }, [load])
+  // The list arrives after the screen opens, and that's where a remote should start.
+  const list = useRef<HTMLDivElement>(null)
+  const found = slots !== null
+  useEffect(() => { if (found) list.current?.querySelector<HTMLElement>('.wp-slot:not([disabled])')?.focus({ preventScroll: true }) }, [found])
   const go = async (n: number) => {
     const occupied = slots?.some((s) => s.slot === n)
     if (kind === 'save' && occupied && confirm && arming !== n) { setArming(n); return }
@@ -646,7 +650,7 @@ export function SlotsPanel({ host, schema, itemId, kind, confirm, act, say, onDo
   const nextFree = (() => { for (let n = 1; n <= max; n++) if (!used.has(n)) return n; return 0 })()
   return (
     <>
-      <div className="wp-slots">
+      <div className="wp-slots" ref={list}>
         {nums.map((n) => {
           const s = slots?.find((x) => x.slot === n)
           const name = slotName(n, schema)

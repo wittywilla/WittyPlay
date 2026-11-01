@@ -16,7 +16,14 @@ import (
 // with words a person can act on rather than a core's failure.
 
 // ErrEncrypted3DS is why an encrypted 3DS file won't play.
-var ErrEncrypted3DS = errors.New("This 3DS game file is encrypted, so it can't be played here, and this server won't decrypt it. A copy in decrypted form will play")
+var ErrEncrypted3DS = errors.New("This 3DS game file is encrypted: its program is scrambled, as it came from the console or the store. It can't be played here, and this server won't decrypt it. A copy dumped in decrypted form will play")
+
+// Azahar, like the 3DS, starts as the older model unless it's told otherwise. A game made
+// for the New 3DS, whose header says so, won't run on that.
+const (
+	NewThreeDSOption = "citra_is_new_3ds"
+	NewThreeDSValue  = "New 3DS"
+)
 
 // ThreeDSFile is what a 3DS file's headers say.
 type ThreeDSFile struct {
@@ -26,11 +33,14 @@ type ThreeDSFile struct {
 	Program    int64
 	ProgramLen int64
 	Package    bool
+	// NewOnly: this game only runs on a New 3DS, so a core has to be told to be one.
+	NewOnly bool
 }
 
 const (
 	ncchFlags    = 0x188 // eight flag bytes
 	ncchNoCrypto = 0x04  // in the last of them
+	ncchNew3DS   = 0x02  // in the fifth: the platform, set for a New 3DS
 	mediaUnit    = 0x200
 	ciaAlign     = 64
 )
@@ -53,8 +63,7 @@ func Inspect3DS(path string) (ThreeDSFile, error) {
 	case ".3ds", ".cci":
 		return inspectCCI(f, st.Size())
 	case ".cxi", ".app":
-		enc, err := ncchEncrypted(f, 0, st.Size())
-		return ThreeDSFile{Encrypted: enc}, err
+		return inspectNCCH(f, 0, st.Size())
 	}
 	return ThreeDSFile{}, nil
 }
@@ -65,6 +74,19 @@ func readAt(f io.ReaderAt, off int64, n int) ([]byte, error) {
 		return nil, fmt.Errorf("this 3DS file is cut short or isn't what its name says: %w", err)
 	}
 	return b, nil
+}
+
+// inspectNCCH says what one program's header says.
+func inspectNCCH(f io.ReaderAt, off, size int64) (ThreeDSFile, error) {
+	enc, err := ncchEncrypted(f, off, size)
+	if err != nil {
+		return ThreeDSFile{}, err
+	}
+	out := ThreeDSFile{Encrypted: enc}
+	if flags, err := readAt(f, off+ncchFlags, 8); err == nil && flags[4]&ncchNew3DS != 0 {
+		out.NewOnly = true
+	}
+	return out, nil
 }
 
 // ncchEncrypted looks at one program's header. Its magic number sits outside what
@@ -105,8 +127,7 @@ func inspectCCI(f io.ReaderAt, size int64) (ThreeDSFile, error) {
 	if off <= 0 || n <= 0 || off+n > size {
 		return ThreeDSFile{}, errors.New("this 3DS game card image has no usable game inside")
 	}
-	enc, err := ncchEncrypted(f, off, n)
-	return ThreeDSFile{Encrypted: enc}, err
+	return inspectNCCH(f, off, n)
 }
 
 func alignCIA(n int64) int64 { return (n + ciaAlign - 1) &^ (ciaAlign - 1) }
@@ -155,18 +176,16 @@ func inspectCIA(f io.ReaderAt, size int64) (ThreeDSFile, error) {
 	if err != nil {
 		return ThreeDSFile{}, err
 	}
-	kind := binary.BigEndian.Uint16(rec[6:])
 	n := int64(binary.BigEndian.Uint64(rec[8:]))
 	if n <= 0 || n > contentLen {
 		return ThreeDSFile{}, errors.New("this 3DS install package has a table of contents that can't be read")
 	}
-	out := ThreeDSFile{Package: true, Program: contents, ProgramLen: n}
-	if kind&1 != 0 { // the package says this content is encrypted
-		out.Encrypted = true
-		return out, nil
-	}
-	out.Encrypted, err = ncchEncrypted(f, contents, n)
-	return out, err
+	// A package also marks each content as encrypted or not. The bytes are what count: NCCH
+	// where it belongs can't happen by accident in something scrambled, and some tools
+	// that took a package's encryption off left the mark on.
+	inner, err := inspectNCCH(f, contents, n)
+	inner.Package, inner.Program, inner.ProgramLen = true, contents, n
+	return inner, err
 }
 
 // CopyProgram writes the program out of an unencrypted package to a file of its
