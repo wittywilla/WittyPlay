@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/wittywilla/wittyplay/ipc"
 	"github.com/wittywilla/wittyplay/stream"
 )
 
@@ -18,12 +19,18 @@ func run(args []string) error {
 	fs := flag.NewFlagSet("run", flag.ExitOnError)
 	f := addRigFlags(fs)
 	out := fs.String("out", "", "add the results to this JSON lines file")
+	ahead := fs.Int("run-ahead", 0, "frames of run-ahead")
 	_ = fs.Parse(args)
 	r, err := f.start(nil)
 	if err != nil {
 		return err
 	}
 	defer r.close()
+	if *ahead > 0 {
+		if err := r.session().Apply(ipc.Control{RunAhead: ahead}, nil); err != nil {
+			return err
+		}
+	}
 	limit := time.Duration(f.seconds+90) * time.Second
 	select {
 	case b := <-r.results:

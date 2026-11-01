@@ -175,8 +175,7 @@ func TestFramesAreMeasuredAndMayNotWait(t *testing.T) {
 	}
 }
 
-// A press made while the game is waiting for its next frame should reach a frame at once,
-// and the frames after it should keep to the same schedule.
+// An encoder that dies should be replaced with no help from anyone, however many times.
 func TestAStoppedEncoderIsReplaced(t *testing.T) {
 	m := newManager(t)
 	s := startGame(t, m, t.TempDir(), false)
