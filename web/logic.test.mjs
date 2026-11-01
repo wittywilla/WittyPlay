@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { computeLayout } from './layout.ts'
 import { Hotkeys } from './hotkeys.ts'
+import { explain, familyOf } from './words.ts'
 
 const base = { areaW: 1920, areaH: 1080, srcW: 256, srcH: 240, aspect: 4 / 3, mode: 'original', custom: 0, integer: false, cropX: 0, cropY: 0, turns: 0, inset: 0 }
 
@@ -139,4 +140,23 @@ test('a disabled menu state passes everything through', () => {
   h.enabled = false
   assert.equal(h.filter(BIT.select | BIT.r), BIT.select | BIT.r)
   assert.deepEqual(fired, [])
+})
+
+test('a controller is known by whatever the browser calls it', () => {
+  assert.equal(familyOf('Xbox 360 Controller (XInput STANDARD GAMEPAD Vendor: 045e Product: 028e)'), 'xbox')
+  assert.equal(familyOf('DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)'), 'playstation')
+  assert.equal(familyOf('054c-0ce6-Wireless Controller'), 'playstation')
+  assert.equal(familyOf('Pro Controller (STANDARD GAMEPAD Vendor: 057e Product: 2009)'), 'nintendo')
+  assert.equal(familyOf('USB Gamepad (Vendor: 0810 Product: 0001)'), 'generic')
+})
+
+test('a problem says what can be done, and only an administrator is sent to fix it', () => {
+  assert.equal(explain('No core is installed for PS2.', { needCore: true }, true, 'PS2').fix, 'settings')
+  assert.equal(explain('No core is installed for PS2.', { needCore: true }, false, 'PS2').fix, undefined)
+  assert.equal(explain('needs a BIOS', { needBios: true }, false, 'PS2').fix, undefined)
+  assert.equal(explain('nope', { encrypted: true }, true, '3DS').retry, undefined, 'trying an encrypted file again gets nowhere')
+  assert.ok(explain('too many games', { status: 503 }, true, 'NES').retry)
+  const other = explain('The core stopped', null, true, 'NES')
+  assert.ok(other.retry && other.defaults)
+  assert.equal(other.body, 'The core stopped')
 })

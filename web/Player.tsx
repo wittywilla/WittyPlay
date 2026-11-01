@@ -7,7 +7,8 @@ import { computeLayout } from './layout'
 import type { ControllerData } from './mapping'
 import { Osd } from './Osd'
 import { MenuFrame, Tile, TileGrid } from './QuickMenu'
-import { explain, LoadingScreen, ProblemScreen, type LoadStage, type ProblemData } from './Screens'
+import { LoadingScreen, ProblemScreen, type LoadStage } from './Screens'
+import { explain, type ProblemData } from './words'
 import { CheatsPanel, CorePanel, JsonEditor, PatchesPanel, SettingsPanel, SlotsPanel, type LevelChoice } from './Panels'
 import { downloadBlob, fileName, loadSchema, useSettings, type Level, type Schema, type SettingsHost } from './settings'
 import { ControllerStudio, type PortChoice, type ProfileHost } from './Studio'
@@ -591,6 +592,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   noGameRef.current = noGame
   const problem = error ? explain(error, errorData, host.isAdmin, host.consoleName) : null
   const tile = { onClickCapture: noteTile }
+  const rewindOn = values['emulation.rewind'] === true
   return (
     <div ref={root} className={`wp-root wp-${orientation}${touchShown ? ' wp-with-touch' : ''}${paused || noGame ? '' : ' wp-playing'}`}>
       <div ref={areaRef} className="wp-video-area" style={bezel === 'color' ? { background: String(values['display.bezelColor'] || '#000') } : undefined}>
@@ -615,7 +617,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
 
       {needsTap && !paused && <button type="button" className="wp-tap" onClick={tap}>Tap for sound</button>}
 
-      {!noGame && <button type="button" className={'wp-menu-btn' + (padName ? ' faint' : '')} onClick={() => setPanel('menu')} aria-label="Game menu"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" /></svg></button>}
+      {!noGame && !paused && <button type="button" className={'wp-menu-btn' + (padName ? ' faint' : '')} onClick={() => setPanel('menu')} aria-label="Game menu"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" /></svg></button>}
 
       {values['hotkeys.touchBar'] === true && !paused && (
         <div className="wp-touchbar" role="group" aria-label="Shortcuts">
@@ -674,7 +676,11 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
                   <Tile id="load" icon="load" label="Load" sub="Choose a save" onClick={() => setPanel('load')} />
                   <Tile id="qsave" icon="quickSave" label="Quick save" sub={`Slot ${quickSlot()}`} onClick={() => { fire('quickSave', true); setPanel(null) }} />
                   <Tile id="qload" icon="quickLoad" label="Quick load" sub={`Slot ${quickSlot()}`} onClick={() => { fire('quickLoad', true); setPanel(null) }} />
-                  <Tile id="rewind" icon="rewind" label="Rewind" sub="Until you press anything" onClick={() => { setPanel(null); window.setTimeout(() => { setRewinding(true); setRewindHeld(true); act('rewind', undefined, true).catch((e) => { setRewinding(false); setRewindHeld(false); say(e?.message || 'Rewind isn’t available') }) }, 80) }} />
+                  <Tile id="rewind" icon="rewind" label="Rewind" sub={rewindOn ? 'Until you press anything' : 'Off: press to turn on'} onClick={() => {
+                    if (!rewindOn) { settings.set('person', 'emulation.rewind', true); say('Rewind is on. It can go back to about now, and no further.'); setPanel(null); return }
+                    setPanel(null)
+                    window.setTimeout(() => { setRewinding(true); setRewindHeld(true); act('rewind', undefined, true).catch((e) => { setRewinding(false); setRewindHeld(false); say(e?.message || 'Rewind isn’t available') }) }, 80)
+                  }} />
                   <Tile id="ff" icon="ff" label={fastForward ? 'Normal speed' : 'Fast forward'} pressed={fastForward} onClick={() => { setPanel(null); window.setTimeout(() => setFastForward((x) => !x), 50) }} />
                   <Tile id="shot" icon="camera" label="Screenshot" onClick={() => { setPanel(null); window.setTimeout(() => void screenshot(), 120) }} />
                   <Tile id="pads" icon="pad" label="Controllers" sub={padName ? 'Connected' : 'Mapping'} onClick={() => setPanel('controllers')} />

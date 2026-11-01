@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { familyOf, type PadFamily } from './words'
 import './prompts.css'
 
 // Button prompts that match what's in someone's hands: a controller's own letters or
@@ -6,18 +7,10 @@ import './prompts.css'
 // prompts without loading the player. The shapes are drawn here as plain geometry, with
 // no maker's marks.
 
-export type PadFamily = 'xbox' | 'playstation' | 'nintendo' | 'generic'
+export type { PadFamily }
+
 export type InputKind = 'pad' | 'keyboard' | 'remote' | 'pointer'
 export type PromptButton = 'confirm' | 'back' | 'west' | 'north' | 'lb' | 'rb' | 'lt' | 'rt' | 'start' | 'select' | 'dpad' | 'stick'
-
-// Which family a controller belongs to, from how the browser describes it.
-export function familyOf(id: string): PadFamily {
-  const s = id.toLowerCase()
-  if (/nintendo|pro controller|joy-?con|vendor: 057e|^057e-/.test(s)) return 'nintendo'
-  if (/playstation|dualshock|dualsense|sony|vendor: 054c|^054c-/.test(s)) return 'playstation'
-  if (/xbox|xinput|microsoft|vendor: 045e|^045e-/.test(s)) return 'xbox'
-  return 'generic'
-}
 
 const isTV = () => (window.matchMedia?.('(pointer: none)').matches ?? false) || /\b(TV|AFT[A-Z]*|BRAVIA|GoogleTV|SmartTV|CrKey|Tizen|Web0S)\b/.test(navigator.userAgent)
 
