@@ -28,7 +28,8 @@ func TestRefusal(t *testing.T) {
 		{"game.cci", "3ds", fakeCCI(fakeNCCH(false, size)), "encrypted"},
 		{"game.cxi", "3ds", fakeNCCH(false, size), "encrypted"},
 		{"game.cxi", "3ds", fakeNCCH(true, size), ""},
-		{"game.cia", "3ds", fakeCIA(fakeNCCH(true, size), 1), "encrypted"},
+		{"game.cia", "3ds", fakeCIA(fakeNCCH(true, size), 1), ""}, // the mark says encrypted; the bytes say otherwise
+		{"game.cia", "3ds", fakeCIA(scrambled(size), 1), "encrypted"},
 		{"game.cia", "3ds", fakeCIA(scrambled(size), 0), "encrypted"}, // no readable program inside
 		{"game.cia", "3ds", fakeCIA(fakeNCCH(true, size), 0), ""},     // the server copies the program out
 		{"game.3ds", "3ds", []byte("too short to say"), ""},
