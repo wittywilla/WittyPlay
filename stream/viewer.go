@@ -285,7 +285,14 @@ func (s *Session) opusSender() {
 		}
 		// A steady schedule, not a gap after each: timers run late, and sound mustn't.
 		now := time.Now()
-		if now.Sub(next) > 3*packet {
+		// After a gap, the sound's own clock has to jump over it. A game that stalls for a
+		// second otherwise looks like a network that held a packet up for a second, and a
+		// browser then holds back up to a second of sound for half a minute, in case.
+		var gap uint16
+		if late := now.Sub(next); late > 3*packet {
+			if !next.IsZero() {
+				gap = uint16(min(late/packet, 60000))
+			}
 			next = now
 		}
 		if wait := next.Sub(now); wait > 0 && len(s.opusOut) < opusBacklog {
@@ -299,7 +306,7 @@ func (s *Session) opusSender() {
 		next = next.Add(packet)
 		for _, v := range s.snapshotViewers() {
 			if v.audio != nil {
-				_ = v.audio.WriteSample(media.Sample{Data: p, Duration: packet})
+				_ = v.audio.WriteSample(media.Sample{Data: p, Duration: packet, PrevDroppedPackets: gap})
 			}
 		}
 	}
