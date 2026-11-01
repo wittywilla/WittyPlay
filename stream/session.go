@@ -432,6 +432,8 @@ type Session struct {
 
 	viewMu        sync.Mutex
 	viewers       map[*viewer]bool
+	pending       []*viewer // WebRTC peers that haven't connected yet
+	viewSeq       uint64
 	paused        bool // what the runner was last told; it starts paused
 	menuPaused    bool // someone has a menu open
 	noViewerSince time.Time
