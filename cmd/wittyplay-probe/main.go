@@ -18,6 +18,8 @@ func main() {
 		err = frames(os.Args[2:])
 	case "run":
 		err = run(os.Args[2:])
+	case "install":
+		err = install(os.Args[2:])
 	default:
 		err = fmt.Errorf("no such command: %s", os.Args[1])
 	}

@@ -4,6 +4,8 @@
   var TIMING_PONG = 242;
   var TIMING_SUBSCRIBE = 243;
   var TIMING_RECORD = 244;
+  var TIMING_LATENCY = 245;
+  var TIMING_SHIFT = 246;
   var RECORD_SIZE = 1 + 1 + 4 * 4 + 8 * 8;
   function parseRecord(b, toLocal) {
     if (b.byteLength !== RECORD_SIZE) return null;
@@ -168,6 +170,23 @@
       if (this.pressAt.size > 64) this.pressAt.delete(this.pressAt.keys().next().value);
       return this.pressSeq;
     }
+    // What the numbers on screen show: the middle of recent frames and presses.
+    summary() {
+      const f = this.frames;
+      if (f.total.count < 10) return null;
+      const value = (s) => s.count ? s.median : void 0;
+      return {
+        press: this.presses.photon.count >= 3 ? this.presses.photon.median : void 0,
+        total: f.total.median,
+        core: value(f.core),
+        encode: value(f.encode),
+        toNetwork: (value(f.toServer) ?? 0) + (value(f.queue) ?? 0) + (value(f.send) ?? 0),
+        network: value(f.network),
+        decode: value(f.decode),
+        display: value(f.display),
+        worst: f.total.p95
+      };
+    }
     join(r, p) {
       const f = this.frames;
       const t = {
@@ -204,6 +223,83 @@
         this.presses.waitCore.add(it.waitCore);
         this.presses.photon.add(it.photon);
         this.log?.push(it);
+      }
+    }
+  };
+  var PhaseLock = class {
+    constructor(send, margin = 3) {
+      this.send = send;
+      this.margin = margin;
+    }
+    waits = [];
+    floor = Infinity;
+    lastDecision = 0;
+    lastShift = 0;
+    settled = false;
+    period = 16.7;
+    lastDisplay = 0;
+    shifted = 0;
+    margin;
+    shown(p) {
+      const wait = p.displayAt - p.presented;
+      if (!Number.isFinite(wait) || wait < 0) return;
+      if (this.lastDisplay) {
+        const d = p.displayAt - this.lastDisplay;
+        if (d > 4 && d < 60) this.period += (d - this.period) * 0.02;
+      }
+      this.lastDisplay = p.displayAt;
+      this.waits.push(wait);
+      const now = p.presented;
+      if (this.waits.length < 20 || now - this.lastDecision < 500) return;
+      const sorted = [...this.waits].sort((a, b) => a - b);
+      this.waits = [];
+      this.lastDecision = now;
+      this.decide(sorted[sorted.length >> 1]);
+    }
+    decide(wait) {
+      const T = this.period;
+      if (wait - this.floor > T / 2) {
+        const back = T - (wait - this.floor) + this.margin + Math.max(this.lastShift, 0);
+        this.move(-Math.min(back, T));
+        this.settled = true;
+        return;
+      }
+      if (wait < this.floor) this.floor = wait;
+      if (!this.settled) {
+        this.move(Math.min(2, T / 8));
+        return;
+      }
+      const over = wait - this.floor - this.margin;
+      if (over > 2) this.move(Math.min(over, T / 4));
+    }
+    move(ms) {
+      this.lastShift = ms;
+      this.shifted += ms;
+      this.send(ms);
+    }
+  };
+  var SteadinessWatch = class {
+    constructor(say2) {
+      this.say = say2;
+    }
+    gaps = new Series(120);
+    last = 0;
+    uneven = false;
+    since = 0;
+    shown(p) {
+      if (this.last) this.gaps.add(p.presented - this.last);
+      this.last = p.presented;
+      if (this.gaps.count < 120) return;
+      const typical = this.gaps.median;
+      const bad = this.gaps.p95 > typical * 2.5 + 8;
+      if (bad === this.uneven) {
+        this.since = p.presented;
+        return;
+      }
+      if (p.presented - this.since > (bad ? 3e3 : 2e4)) {
+        this.uneven = bad;
+        this.since = p.presented;
+        this.say(bad);
       }
     }
   };
@@ -289,6 +385,18 @@
     incoming(b) {
       this.meter?.message(b);
     }
+    setLatency(mode) {
+      const b = new ArrayBuffer(2);
+      new DataView(b).setUint8(0, TIMING_LATENCY);
+      new DataView(b).setUint8(1, mode === "balanced" ? 1 : mode === "steady" ? 2 : 0);
+      this.out(b);
+    }
+    shift(ms) {
+      const b = new ArrayBuffer(3);
+      new DataView(b).setUint8(0, TIMING_SHIFT);
+      new DataView(b).setInt16(1, Math.max(-32e3, Math.min(32e3, Math.round(ms * 10))), true);
+      this.out(b);
+    }
   };
   function make(kind, signal) {
     if (kind === "webrtc") return new WebRTCTransport(signal);
@@ -328,6 +436,8 @@
     });
     wanted = null;
     unwatch = null;
+    latency = "auto";
+    unlock = null;
     async connect() {
       const pc = new RTCPeerConnection();
       this.pc = pc;
@@ -361,6 +471,7 @@
       };
       timing.onopen = () => {
         if (this.wanted) this.measure(this.wanted);
+        this.setLatency(this.latency);
       };
       this.timingDc = timing;
       pc.onconnectionstatechange = () => {
@@ -423,6 +534,7 @@
       this.closed = true;
       this.link.stop();
       this.unwatch?.();
+      this.unlock?.();
       this.pc?.close();
       this.element.srcObject = null;
     }
@@ -431,6 +543,33 @@
       this.unwatch?.();
       this.unwatch = meter ? watchVideo(this.element, (p) => meter.shown(p)) : null;
       if (this.timingDc?.readyState === "open" || !meter) this.link.start(meter);
+    }
+    // Says how to trade speed against steadiness. Fastest and balanced also land frames just
+    // before the display wants them. Both hold good for the rest of the connection.
+    setLatency(mode) {
+      this.latency = mode;
+      if (this.timingDc?.readyState !== "open") return;
+      this.unlock?.();
+      this.unlock = null;
+      if (mode === "steady") {
+        this.link.setLatency("steady");
+        return;
+      }
+      let now = mode === "balanced" ? "balanced" : "fastest";
+      this.link.setLatency(now);
+      const margin = () => now === "fastest" ? 3 : 6;
+      const lock = new PhaseLock((ms) => this.link.shift(ms), margin());
+      const auto = mode === "auto" ? new SteadinessWatch((uneven) => {
+        const next = uneven ? "balanced" : "fastest";
+        if (next === now) return;
+        now = next;
+        lock.margin = margin();
+        this.link.setLatency(next);
+      }) : null;
+      this.unlock = watchVideo(this.element, (p) => {
+        lock.shown(p);
+        auto?.shown(p);
+      });
     }
     async stats() {
       const out = {};
@@ -623,6 +762,9 @@
     measure(meter) {
       this.meter = meter;
       this.link.start(meter);
+    }
+    setLatency(mode) {
+      this.link.setLatency(mode);
     }
     jpeg(b) {
       if (this.drawing) return;
