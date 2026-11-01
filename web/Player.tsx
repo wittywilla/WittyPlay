@@ -6,6 +6,8 @@ import { deviceId, InputManager, load, onTV, padSupport, save } from './input'
 import { computeLayout } from './layout'
 import type { ControllerData } from './mapping'
 import { Osd } from './Osd'
+import { MenuFrame, Tile, TileGrid } from './QuickMenu'
+import { explain, LoadingScreen, ProblemScreen, type LoadStage, type ProblemData } from './Screens'
 import { CheatsPanel, CorePanel, JsonEditor, PatchesPanel, SettingsPanel, SlotsPanel, type LevelChoice } from './Panels'
 import { downloadBlob, fileName, loadSchema, useSettings, type Level, type Schema, type SettingsHost } from './settings'
 import { ControllerStudio, type PortChoice, type ProfileHost } from './Studio'
@@ -28,6 +30,9 @@ export interface PlayHost extends SettingsHost {
   consoleName: string
   resume: boolean
   safeMode: boolean
+  startSlot?: number // load this save state as soon as the game is running
+  cover?: string // the game's cover, for the loading screen and the menu
+  openSettings?(): void // where an administrator goes to install a core
   // Gets a game ready, for one that has to be unpacked first. Called until it's ready.
   prepare?(): Promise<PrepareStatus>
   start(resume: boolean, safeMode: boolean): Promise<SessionInfo>
@@ -45,7 +50,10 @@ export interface PlayHost extends SettingsHost {
 }
 
 type SettingsGroup = 'display' | 'osd' | 'emulation' | 'audio' | 'states' | 'hotkeys'
-type Panel = null | 'menu' | 'save' | 'load' | 'controllers' | 'connection' | 'touch' | 'discs' | SettingsGroup | 'core' | 'cheats' | 'patches' | 'json'
+type Panel = null | 'menu' | 'more' | 'settings' | 'save' | 'load' | 'controllers' | 'connection' | 'touch' | 'discs' | SettingsGroup | 'core' | 'cheats' | 'patches' | 'json'
+// What Back goes to from each screen. Anything not listed goes to the game menu.
+const PARENT: Partial<Record<NonNullable<Panel>, NonNullable<Panel>>> = { display: 'settings', osd: 'settings', emulation: 'settings', audio: 'settings', states: 'settings', hotkeys: 'settings', core: 'settings', cheats: 'settings', patches: 'settings', json: 'settings', connection: 'more', discs: 'more' }
+const parentOf = (p: NonNullable<Panel>): Panel => (p === 'menu' ? null : PARENT[p] || 'menu')
 
 const MODE_KEY = 'wittyplay.mode'
 const TOUCH_KEY = 'wittyplay.touch'
@@ -57,7 +65,7 @@ const GROUP_TITLES: Record<SettingsGroup, string> = { display: 'Picture', osd: '
 
 // prepared waits for a game that has to be unpacked before it can start, saying how
 // that's going. A large disc can take minutes on a small server.
-async function prepared(host: PlayHost, say: (s: string) => void, cancelled: () => boolean) {
+async function prepared(host: PlayHost, say: (s: string, percent?: number) => void, cancelled: () => boolean) {
   if (!host.prepare) return
   for (let waited = false; ; waited = true) {
     const p = await host.prepare()
@@ -67,7 +75,7 @@ async function prepared(host: PlayHost, say: (s: string) => void, cancelled: () 
       return
     }
     if (p.state === 'waiting') say('Waiting for another game to finish unpacking…')
-    else say(p.state === 'unpacking' && p.total > 0 ? `Unpacking the game… ${Math.min(99, Math.floor((p.done / p.total) * 100))}%` : 'Unpacking the game…')
+    else if (p.state === 'unpacking' && p.total > 0) { const n = Math.min(99, Math.floor((p.done / p.total) * 100)); say(`Unpacking the game… ${n}%`, n) } else say('Unpacking the game…')
     await new Promise((r) => setTimeout(r, 1000))
   }
 }
@@ -83,17 +91,22 @@ export default function GamePlayer({ host }: { host: PlayHost }) {
   }, [host])
   if (error) {
     return (
-      <div className="wp-root"><div className="wp-error" role="alert"><p>{error}</p><div className="wp-row wp-wrap wp-center"><button type="button" className="wp-btn primary" onClick={() => host.close()}>Back</button></div></div></div>
+      <div className="wp-root"><ProblemScreen title={host.title} cover={host.cover} problem={explain(error, null, host.isAdmin, host.consoleName)} onBack={() => host.close()} onRetry={() => host.relaunch({ resume: host.resume, safeMode: host.safeMode })} onDefaults={() => host.relaunch({ resume: host.resume, safeMode: true })} /></div>
     )
   }
-  return controls ? <Playing host={host} initial={controls} known={known} /> : <div className="wp-root"><div className="wp-status" role="status"><span className="wp-spinner" aria-hidden="true" />Starting the game…</div></div>
+  return controls ? <Playing host={host} initial={controls} known={known} /> : <div className="wp-root"><LoadingScreen title={host.title} consoleName={host.consoleName} cover={host.cover} stage="prepare" status="Getting the game ready…" onCancel={() => host.close()} /></div>
 }
 
 function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsData; known: ControllerData | null }) {
   const [controls, setControls] = useState(initial)
   const [info, setInfo] = useState<SessionInfo | null>(null)
   const [error, setError] = useState('')
-  const [status, setStatus] = useState('Starting the game…')
+  const [errorData, setErrorData] = useState<ProblemData | null>(null)
+  const [status, setStatus] = useState('Getting the game ready…')
+  const [stage, setStage] = useState<LoadStage>('prepare')
+  const [percent, setPercent] = useState<number | undefined>(undefined)
+  const [rewindHeld, setRewindHeld] = useState(false) // rewinding from the menu, until anything's pressed
+  const [touchOverPad, setTouchOverPad] = useState(false) // asked for touch controls even with a controller
   const [transport, setTransport] = useState<Transport | null>(null)
   const [panel, setPanel] = useState<Panel>(null)
   const [needsTap, setNeedsTap] = useState(false)
@@ -135,6 +148,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   const transportRef = useRef<Transport | null>(null)
   const closing = useRef(false)
   const attempts = useRef(0)
+  const slotLoaded = useRef(false)
 
   const say = useCallback((t: string) => setToast(t), [])
   useEffect(() => {
@@ -189,7 +203,8 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     for (const kind of plan(m, (s.modes || []).map((x) => x.id))) {
       if (skip.has(kind)) continue
       if (stale()) return
-      setStatus(kind === 'webrtc' ? 'Connecting…' : 'Trying another way to connect…')
+      setStage('connect')
+      setStatus(kind === 'webrtc' ? 'Connecting to this device…' : 'Trying another way to connect…')
       const t = make(kind, signal)
       t.onEvent = onEvent
       try {
@@ -206,6 +221,10 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
         setTransport(t)
         setStatus('')
         setNeedsTap(t.needsUnmute())
+        if (host.startSlot && !slotLoaded.current) {
+          slotLoaded.current = true
+          void host.action(s.id, 'load', host.startSlot).then(() => say(`Loaded slot ${host.startSlot}`), (e) => say(e?.message || 'That save couldn’t be loaded'))
+        }
         // A picture has arrived, so the real size of the game's pixels is known now.
         host.request<SessionInfo>('GET', `/play/${s.id}?client=browser`).then((now) => setInfo((i) => i && ({ ...i, width: now.width, height: now.height }))).catch(() => {})
         return
@@ -218,13 +237,20 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       }
     }
     host.report?.('error', 'Every way of connecting to the game failed')
+    setErrorData({ connect: true })
     setError('The game is running, but this browser couldn’t connect to it' + (last ? `: ${last}` : '.'))
   }, [host, input, onEvent])
 
   useEffect(() => {
     let cancelled = false
     closing.current = false
-    prepared(host, setStatus, () => cancelled).then(() => (cancelled ? Promise.reject(new Error('stopped')) : host.start(host.resume, host.safeMode))).then((s) => {
+    prepared(host, (t, n) => { setStatus(t); setPercent(n) }, () => cancelled).then(() => {
+      if (cancelled) return Promise.reject(new Error('stopped'))
+      setPercent(undefined)
+      setStage('start')
+      setStatus(host.resume ? 'Starting the console, and your save…' : 'Starting the console…')
+      return host.start(host.resume, host.safeMode)
+    }).then((s) => {
       if (cancelled) { void host.stop(s.id).catch(() => {}); return }
       sessionRef.current = s
       setInfo(s)
@@ -232,7 +258,12 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       else if (s.safeMode) say('Safe mode: your settings, cheats and patches aren’t being used')
       else if (s.resumed) say('Back where you left off')
       void connect(s, mode)
-    }).catch((e) => { if (cancelled) return; host.report?.('error', `The game could not start: ${e?.message || e}`); setError(e?.message || 'The game could not start.') })
+    }).catch((e) => {
+      if (cancelled) return
+      host.report?.('error', `The game could not start: ${e?.message || e}`)
+      setErrorData({ ...(e?.data || {}), status: e?.status })
+      setError(e?.message || 'The game could not start.')
+    })
     input.start()
     input.onChange = () => {
       const pads = input.listPads()
@@ -251,6 +282,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
 
   // Tell people what a controller did when it was connected.
   const lastPads = useRef('')
+  const noGameRef = useRef(true)
   useEffect(() => {
     if (padName && padName !== lastPads.current) say(padName)
     else if (!padName && lastPads.current) say('Controller disconnected')
@@ -268,6 +300,8 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     else done()
   }, [host, input])
   const leave = useCallback(() => leaveThen(() => host.close()), [host, leaveThen])
+  const leaveRef = useRef(leave)
+  leaveRef.current = leave
 
   // Menus stop the game and take the keyboard. So does stepping away, when that's the
   // setting. Pausing by hand leaves the controls alone, so that a frame can be stepped
@@ -422,16 +456,35 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       case 'osd': settings.set('person', 'osd.on', v['osd.on'] !== true); break
     }
   }, [act, say, screenshot, settings.set])
+  const stopRewind = useCallback(() => {
+    setRewindHeld(false)
+    setRewinding(false)
+    act('rewind', undefined, false).catch(() => {})
+  }, [act])
+  const rewindHeldRef = useRef(rewindHeld)
+  rewindHeldRef.current = rewindHeld
+  useEffect(() => {
+    if (!rewindHeld) return
+    const stop = (e: Event) => { e.preventDefault(); stopRewind() }
+    window.addEventListener('keydown', stop, true)
+    window.addEventListener('pointerdown', stop, true)
+    return () => { window.removeEventListener('keydown', stop, true); window.removeEventListener('pointerdown', stop, true) }
+  }, [rewindHeld, stopRewind])
   const frozenRef = useRef(frozen)
   frozenRef.current = frozen
   const hot = useMemo(() => new Hotkeys((a, d) => fireRef.current(a, d), (code) => input.isBound(code)), [input])
+  const stopRewindRef = useRef(stopRewind)
+  stopRewindRef.current = stopRewind
   const fireRef = useRef(fire)
   fireRef.current = fire
   useEffect(() => { hot.configure(values) }, [hot, values])
   useEffect(() => { hot.enabled = panel === null }, [hot, panel])
   useEffect(() => {
     hot.start()
-    input.filter = (port, mask) => (port === 0 ? hot.filter(mask) : mask)
+    input.filter = (port, mask) => {
+      if (mask && rewindHeldRef.current) { stopRewindRef.current(); return 0 }
+      return port === 0 ? hot.filter(mask) : mask
+    }
     return () => { hot.stop(); input.filter = undefined }
   }, [hot, input])
   // Nobody can let go of a button in a menu they've gone into.
@@ -457,8 +510,9 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       const typing = (e.target as Element | null)?.matches?.('input:not([type=range]):not([type=checkbox]):not([type=color]), textarea')
       if (!['Escape', 'F1', 'GoBack', 'BrowserBack', 'Back', 'XF86Back'].includes(e.key) && !(tv && e.key === 'Backspace' && !typing)) return
       e.preventDefault()
+      if (noGameRef.current) { leaveRef.current(); return }
       if (!mayLeave.current()) return
-      setPanel((p) => (p === 'touch' ? p : p ? (p === 'menu' ? null : 'menu') : 'menu'))
+      setPanel((p) => (p === 'touch' ? p : p ? parentOf(p) : 'menu'))
     }
     window.addEventListener('keydown', key)
     input.onMenu = () => { if (mayLeave.current()) setPanel((x) => (x ? null : 'menu')) }
@@ -466,13 +520,22 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   }, [tv, input])
 
   // A menu's contents change without it closing, so focus has to be put back in by
-  // hand, or a remote would have nothing to move from.
+  // hand, or a remote would have nothing to move from. Coming back to a screen lands on
+  // the tile that was used to leave it.
   const menuRef = useRef<HTMLDivElement>(null)
+  const lastTile = useRef<Partial<Record<string, string>>>({})
   useEffect(() => {
     if (menuRef.current) menuRef.current.scrollTop = 0
-    const first = menuRef.current?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled]), a[href]')
+    const remembered = panel && lastTile.current[panel]
+    const back = remembered ? menuRef.current?.querySelector<HTMLElement>(`[data-tile="${remembered}"]:not([disabled])`) : null
+    const first = back || menuRef.current?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled]), a[href]')
     first?.focus({ preventScroll: true })
   }, [panel])
+  const noteTile = (e: React.MouseEvent) => {
+    const id = (e.target as Element).closest?.('[data-tile]')?.getAttribute('data-tile')
+    if (id && panel) lastTile.current[panel] = id
+  }
+  const up = () => setPanel((p) => (p ? parentOf(p) : p))
 
   const press = (id: number) => { setPanel(null); setTimeout(() => input.pulse(id), 150) }
 
@@ -522,31 +585,37 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   const stageMove = (e: React.PointerEvent) => { if (stylusDown.current) onPoint(e.clientX, e.clientY, 'move') }
   const stageUp = (e: React.PointerEvent) => { if (stylusDown.current) { stylusDown.current = false; onPoint(e.clientX, e.clientY, 'up') } }
 
+  // With a controller in hand, touch controls get out of the way unless asked for.
+  const touchShown = touchOn && (!padName || touchOverPad)
+  const noGame = !!error || !transport
+  noGameRef.current = noGame
+  const problem = error ? explain(error, errorData, host.isAdmin, host.consoleName) : null
+  const tile = { onClickCapture: noteTile }
   return (
-    <div ref={root} className={`wp-root wp-${orientation}${touchOn ? ' wp-with-touch' : ''}${paused ? '' : ' wp-playing'}`}>
+    <div ref={root} className={`wp-root wp-${orientation}${touchShown ? ' wp-with-touch' : ''}${paused || noGame ? '' : ' wp-playing'}`}>
       <div ref={areaRef} className="wp-video-area" style={bezel === 'color' ? { background: String(values['display.bezelColor'] || '#000') } : undefined}>
         {bezel === 'image' && !!values['display.bezelImage'] && <img className="wp-bezel-img" src={host.mediaUrl(`/api/game-bezels/${values['display.bezelImage']}`)} alt="" />}
         <div className={'wp-stage' + (hasPointer ? ' wp-has-pointer' : '')} style={{ width: layout.boxW, height: layout.boxH }}
           onPointerDown={stageDown} onPointerMove={stageMove} onPointerUp={stageUp} onPointerCancel={stageUp}>
           <div ref={pic} className="wp-pic" style={{ width: layout.picW, height: layout.picH, transform: `translate(-50%, -50%) rotate(${turns * 90}deg)` }} />
         </div>
-        {status && !error && <div className="wp-status" role="status"><span className="wp-spinner" aria-hidden="true" />{status}</div>}
-        {error && (
-          <div className="wp-error" role="alert">
-            <p>{error}</p>
-            <div className="wp-row wp-wrap wp-center">
-              <button type="button" className="wp-btn primary" onClick={leave}>Back</button>
-              {!safe && <button type="button" className="wp-btn" onClick={() => host.relaunch({ resume: false, safeMode: true })}>Start with default settings</button>}
-            </div>
-          </div>
-        )}
       </div>
+      {status && !error && !transport && <LoadingScreen title={host.title} consoleName={host.consoleName} cover={host.cover} stage={stage} status={status} percent={percent} onCancel={leave} />}
+      {status && !error && transport && <div className="wp-status" role="status"><span className="wp-spinner" aria-hidden="true" />{status}</div>}
+      {problem && (
+        <ProblemScreen title={host.title} cover={host.cover} problem={problem} onBack={leave}
+          onRetry={() => host.relaunch({ resume: host.resume, safeMode: host.safeMode })}
+          onDefaults={safe ? undefined : () => host.relaunch({ resume: host.resume, safeMode: true })}
+          onSettings={host.openSettings ? () => leaveThen(() => host.openSettings!()) : undefined} />
+      )}
 
-      {touchOn && transport && !paused && <TouchControls data={controls} orientation={orientation} onMask={onMask} onStick={onStick} onPoint={hasPointer ? onPoint : undefined} />}
+      {touchShown && transport && !paused && <TouchControls data={controls} orientation={orientation} onMask={onMask} onStick={onStick} onPoint={hasPointer ? onPoint : undefined} />}
+
+      {touchShown && transport && !paused && <button type="button" className="wp-touch-hide" aria-label="Hide touch controls" title="Hide touch controls" onClick={() => { setTouchOverPad(false); toggleTouch() }}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 6c5 0 8.7 3.6 10 6-.6 1.100-1.600 2.500-3 3.700l-1.400-1.400c1-.8 1.800-1.700 2.200-2.300C18.500 10.100 15.700 8 12 8c-.7 0-1.300.1-1.900.2L8.500 6.600C9.600 6.200 10.800 6 12 6zM3.700 2.300l18 18-1.400 1.400-3.100-3.100c-1.500.8-3.200 1.400-5.200 1.400-5 0-8.700-3.600-10-6 .7-1.300 2-3 3.800-4.300L2.300 3.700zM7.200 8.900C5.900 9.800 4.900 11 4.300 12c1.200 1.900 4 4 7.700 4 1.400 0 2.700-.3 3.800-.8l-1.800-1.800a3 3 0 01-4-4z" /></svg></button>}
 
       {needsTap && !paused && <button type="button" className="wp-tap" onClick={tap}>Tap for sound</button>}
 
-      <button type="button" className="wp-menu-btn" onClick={() => setPanel('menu')} aria-label="Game menu"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" /></svg></button>
+      {!noGame && <button type="button" className={'wp-menu-btn' + (padName ? ' faint' : '')} onClick={() => setPanel('menu')} aria-label="Game menu"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" /></svg></button>}
 
       {values['hotkeys.touchBar'] === true && !paused && (
         <div className="wp-touchbar" role="group" aria-label="Shortcuts">
@@ -565,9 +634,10 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       {!paused && (frozen || rewinding || heldSpeed !== 1 || recording) && (
         <div className="wp-state" role="status">
           {recording && <span>● Recording</span>}
-          {rewinding && <span>Rewinding</span>}
+          {rewinding && <span>{rewindHeld ? 'Rewinding: press anything to stop' : 'Rewinding'}</span>}
           {heldSpeed > 1 && <span>{heldSpeed}× speed</span>}
           {heldSpeed < 1 && <span>{heldSpeed}× speed</span>}
+          {heldSpeed !== 1 && (fastForward || slow) && <button type="button" className="wp-btn" onClick={() => { setFastForward(false); setSlow(false) }}>Normal speed</button>}
           {frozen && (
             <>
               <span>Paused</span>
@@ -593,63 +663,71 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
         }} />}
 
       {panel && panel !== 'touch' && panel !== 'controllers' && (
-        <div className={'wp-menu-back' + (SIDE_PANELS.includes(panel) ? ' wp-side' : '')} onClick={() => { if (mayLeavePanel()) setPanel(null) }}>
-          <div ref={menuRef} className="wp-menu" role="dialog" aria-modal="true" aria-label={panelTitle(panel, host.title)} onClick={(e) => e.stopPropagation()}>
+        <div className={'wp-menu-back' + (SIDE_PANELS.includes(panel) ? ' wp-side' : '') + (panel === 'menu' || panel === 'settings' || panel === 'more' ? ' wp-big' : '')} onClick={() => { if (mayLeavePanel()) setPanel(null) }}>
+          <div ref={menuRef} className="wp-menu" role="dialog" aria-modal="true" aria-label={panelTitle(panel, host.title)} onClick={(e) => e.stopPropagation()} {...tile}>
             {panel === 'menu' && (
-              <>
-                <h2>{host.title}</h2>
-                <nav className="wp-menu-list" aria-label="Game menu">
-                  <button type="button" autoFocus className="wp-btn primary" onClick={() => setPanel(null)}>Resume</button>
-                  <div className="wp-menu-row">
-                    <button type="button" className="wp-btn" onClick={() => { fire('quickSave', true); setPanel(null) }}>Quick save</button>
-                    <button type="button" className="wp-btn" onClick={() => { fire('quickLoad', true); setPanel(null) }}>Quick load</button>
-                    <button type="button" className="wp-btn" onClick={() => act('undo').then(() => { say('Undone'); setPanel(null) }, (e) => say(e?.message || 'There’s nothing to undo'))}>Undo load</button>
-                  </div>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('save')}>Save state…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('load')}>Load state…</button>
-                  {(info?.discs || 0) > 1 && <button type="button" className="wp-btn" onClick={() => setPanel('discs')}>Change disc…</button>}
-                  <div className="wp-menu-row">
-                    <button type="button" className="wp-btn" aria-pressed={fastForward} onClick={() => { setPanel(null); setTimeout(() => setFastForward((x) => !x), 50) }}>{fastForward ? 'Normal speed' : 'Fast-forward'}</button>
-                    <button type="button" className="wp-btn" aria-pressed={slow} onClick={() => { setPanel(null); setTimeout(() => setSlow((x) => !x), 50) }}>{slow ? 'Normal speed' : 'Slow motion'}</button>
-                    <button type="button" className="wp-btn" aria-pressed={frozen} onClick={() => { setFrozen((x) => !x); setPanel(null) }}>{frozen ? 'Unpause' : 'Pause'}</button>
-                  </div>
-                  <div className="wp-menu-row">
-                    <button type="button" className="wp-btn" onClick={() => { setPanel(null); setTimeout(() => void screenshot(), 120) }}>Screenshot</button>
-                    {canClip && <button type="button" className="wp-btn" onClick={() => { toggleClip(); setPanel(null) }}>{recording ? 'Stop the clip' : 'Record a clip'}</button>}
-                  </div>
-                  <h3>Settings</h3>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('display')}>Picture…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('osd')}>On-screen numbers…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('emulation')}>Speed and rewind…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('audio')}>Sound…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('states')}>Saves…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('core')}>Core options…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('cheats')}>Cheats…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('patches')}>Patches…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('hotkeys')}>Shortcuts…</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('json')}>Custom settings file…</button>
-                  <h3>This game</h3>
-                  <button type="button" className="wp-btn" onClick={() => press(START)}>Press Start</button>
-                  <button type="button" className="wp-btn" onClick={() => press(SELECT)}>Press Select</button>
-                  <button type="button" className="wp-btn" onClick={() => setPanel('controllers')}>Controllers…</button>
-                  {!tv && <button type="button" className="wp-btn" onClick={() => setPanel('touch')}>Edit touch controls…</button>}
-                  {!tv && <label className="wp-check"><input type="checkbox" checked={touchOn} onChange={toggleTouch} /> Show touch controls</label>}
-                  <button type="button" className="wp-btn" onClick={() => setPanel('connection')}>Connection…</button>
-                  <button type="button" className="wp-btn" onClick={fullscreen}>Full screen</button>
-                  <button type="button" className="wp-btn" onClick={() => { const s = sessionRef.current; if (s) void host.action(s.id, 'reset').then(() => { say('Reset'); setPanel(null) }) }}>Reset the game</button>
-                  {!safe && <button type="button" className="wp-btn" onClick={() => leaveThen(() => host.relaunch({ resume: true, safeMode: true }))}>Restart with default settings</button>}
-                  {safe && <button type="button" className="wp-btn" onClick={() => leaveThen(() => host.relaunch({ resume: true, safeMode: false }))}>Restart with my settings</button>}
-                  <button type="button" className="wp-btn danger" onClick={leave}>Save and quit</button>
-                </nav>
-                {!padName && padSupport() === 'insecure' && <p className="wp-muted wp-small">Using a gamepad? Most browsers only show them to secure pages. Open this server over https, or at localhost on this computer.</p>}
-                {info && <p className="wp-muted wp-small">{info.core}</p>}
-              </>
+              <MenuFrame title={host.title} sub={[host.consoleName, info?.core].filter(Boolean).join(' · ')} cover={host.cover}
+                foot={!padName && padSupport() === 'insecure' ? <p className="wp-muted wp-small">Using a gamepad? Most browsers only show them to secure pages. Open this server over https, or at localhost on this computer.</p> : undefined}>
+                <TileGrid label="Game menu">
+                  <Tile id="resume" icon="play" label="Resume" primary wide onClick={() => setPanel(null)} />
+                  <Tile id="save" icon="save" label="Save" sub="Choose a slot" onClick={() => setPanel('save')} />
+                  <Tile id="load" icon="load" label="Load" sub="Choose a save" onClick={() => setPanel('load')} />
+                  <Tile id="qsave" icon="quickSave" label="Quick save" sub={`Slot ${quickSlot()}`} onClick={() => { fire('quickSave', true); setPanel(null) }} />
+                  <Tile id="qload" icon="quickLoad" label="Quick load" sub={`Slot ${quickSlot()}`} onClick={() => { fire('quickLoad', true); setPanel(null) }} />
+                  <Tile id="rewind" icon="rewind" label="Rewind" sub="Until you press anything" onClick={() => { setPanel(null); window.setTimeout(() => { setRewinding(true); setRewindHeld(true); act('rewind', undefined, true).catch((e) => { setRewinding(false); setRewindHeld(false); say(e?.message || 'Rewind isn’t available') }) }, 80) }} />
+                  <Tile id="ff" icon="ff" label={fastForward ? 'Normal speed' : 'Fast forward'} pressed={fastForward} onClick={() => { setPanel(null); window.setTimeout(() => setFastForward((x) => !x), 50) }} />
+                  <Tile id="shot" icon="camera" label="Screenshot" onClick={() => { setPanel(null); window.setTimeout(() => void screenshot(), 120) }} />
+                  <Tile id="pads" icon="pad" label="Controllers" sub={padName ? 'Connected' : 'Mapping'} onClick={() => setPanel('controllers')} />
+                  {!tv && <Tile id="touch" icon="touch" label={touchShown ? 'Hide touch' : 'Show touch'} sub="Controls on screen" pressed={touchShown} onClick={() => { if (touchShown) { setTouchOverPad(false); if (touchOn) toggleTouch() } else { setTouchOverPad(true); if (!touchOn) toggleTouch() } }} />}
+                  <Tile id="settings" icon="settings" label="Settings" sub="Picture, sound, cheats" onClick={() => setPanel('settings')} />
+                  <Tile id="more" icon="more" label="More" onClick={() => setPanel('more')} />
+                  <Tile id="quit" icon="quit" label="Save and quit" danger onClick={leave} />
+                </TileGrid>
+              </MenuFrame>
+            )}
+            {panel === 'settings' && (
+              <MenuFrame title="Settings" sub={host.title}>
+                <TileGrid label="Settings">
+                  <Tile id="display" icon="picture" label="Picture" sub="Shape, filters, frame" onClick={() => setPanel('display')} />
+                  <Tile id="audio" icon="sound" label="Sound" sub="Volume, delay" onClick={() => setPanel('audio')} />
+                  <Tile id="emulation" icon="speed" label="Speed and rewind" onClick={() => setPanel('emulation')} />
+                  <Tile id="states" icon="saves" label="Saves" sub="Slots, resuming" onClick={() => setPanel('states')} />
+                  <Tile id="cheats" icon="cheat" label="Cheats" onClick={() => setPanel('cheats')} />
+                  <Tile id="hotkeys" icon="keys" label="Shortcuts" onClick={() => setPanel('hotkeys')} />
+                  <Tile id="osd" icon="numbers" label="On-screen numbers" onClick={() => setPanel('osd')} />
+                  <Tile id="core" icon="core" label="Core options" sub="Advanced" onClick={() => setPanel('core')} />
+                  <Tile id="patches" icon="patch" label="Patches" sub="Advanced" onClick={() => setPanel('patches')} />
+                  <Tile id="json" icon="file" label="Settings file" sub="Advanced" onClick={() => setPanel('json')} />
+                  <Tile id="back" icon="back" label="Back" onClick={() => setPanel('menu')} />
+                </TileGrid>
+              </MenuFrame>
+            )}
+            {panel === 'more' && (
+              <MenuFrame title="More" sub={host.title}>
+                <TileGrid label="More">
+                  {(info?.discs || 0) > 1 && <Tile id="disc" icon="disc" label="Change disc" sub={`Disc ${(info?.disc || 0) + 1} of ${info?.discs}`} onClick={() => setPanel('discs')} />}
+                  <Tile id="undo" icon="reset" label="Undo load" onClick={() => act('undo').then(() => { say('Undone'); setPanel(null) }, (e) => say(e?.message || 'There’s nothing to undo'))} />
+                  <Tile id="pause" icon="pause" label={frozen ? 'Unpause' : 'Pause'} pressed={frozen} onClick={() => { setFrozen((x) => !x); setPanel(null) }} />
+                  <Tile id="slow" icon="slow" label={slow ? 'Normal speed' : 'Slow motion'} pressed={slow} onClick={() => { setPanel(null); window.setTimeout(() => setSlow((x) => !x), 50) }} />
+                  {canClip && <Tile id="clip" icon="record" label={recording ? 'Stop the clip' : 'Record a clip'} sub="Up to a minute" pressed={recording} onClick={() => { toggleClip(); setPanel(null) }} />}
+                  <Tile id="start" icon="play" label="Press Start" onClick={() => press(START)} />
+                  <Tile id="select" icon="more" label="Press Select" onClick={() => press(SELECT)} />
+                  {!tv && <Tile id="edit" icon="touch" label="Arrange touch controls" onClick={() => setPanel('touch')} />}
+                  <Tile id="connection" icon="connection" label="Connection" onClick={() => setPanel('connection')} />
+                  <Tile id="full" icon="full" label="Full screen" onClick={fullscreen} />
+                  <Tile id="reset" icon="reset" label="Reset the game" onClick={() => { const s = sessionRef.current; if (s) void host.action(s.id, 'reset').then(() => { say('Reset'); setPanel(null) }) }} />
+                  {!safe && <Tile id="defaults" icon="settings" label="Restart with default settings" onClick={() => leaveThen(() => host.relaunch({ resume: true, safeMode: true }))} />}
+                  {safe && <Tile id="mine" icon="settings" label="Restart with my settings" onClick={() => leaveThen(() => host.relaunch({ resume: true, safeMode: false }))} />}
+                  <Tile id="back" icon="back" label="Back" onClick={() => setPanel('menu')} />
+                </TileGrid>
+              </MenuFrame>
             )}
             {(panel === 'save' || panel === 'load') && (
               <>
                 <h2>{panel === 'save' ? 'Save state' : 'Load state'}</h2>
                 <SlotsPanel host={host} schema={schema} itemId={host.itemId} kind={panel} confirm={values['states.confirm'] !== false} core={info?.core} say={say}
                   act={async (n) => { const s = sessionRef.current; if (s) await host.action(s.id, panel, n) }} onDone={(closed) => setPanel(closed ? null : 'menu')} />
+                <Back onClick={up} />
               </>
             )}
             {panel && panel in GROUP_TITLES && schema && settings.view && (
@@ -658,35 +736,35 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
                 {safe && <p className="wp-caution" role="note">Safe mode: changes here are kept for later, but this game is running with defaults.</p>}
                 <SettingsPanel schema={schema} api={settings} view={settings.view} groups={[panel as string]} level={level} levels={levels} onLevel={setLevel} consoleName={host.consoleName} host={host} say={say}
                   presets={panel === 'display' ? [...schema.presets, ...settings.view.resolved.presets] : undefined} />
-                <Back onClick={() => setPanel('menu')} />
+                <Back onClick={up} />
               </>
             )}
             {panel === 'core' && settings.view && schema && (
               <>
                 <h2>Core options</h2>
                 <CorePanel host={host} itemId={host.itemId} api={settings} view={settings.view} level={level} levels={levels} onLevel={setLevel} consoleName={host.consoleName} say={say} onJson={() => setPanel('json')} />
-                <Back onClick={() => setPanel('menu')} />
+                <Back onClick={up} />
               </>
             )}
             {panel === 'json' && settings.view && (
               <>
                 <h2>Custom settings file</h2>
                 <JsonEditor host={host} api={settings} view={settings.view} scope={{ item: host.itemId }} level={level} levels={levels} onLevel={setLevel} consoleName={host.consoleName} title={host.title} say={say} itemId={host.itemId} onDirty={noteJsonDirty} />
-                <Back onClick={() => { if (mayLeavePanel()) setPanel('menu') }} />
+                <Back onClick={() => { if (mayLeavePanel()) up() }} />
               </>
             )}
             {panel === 'cheats' && (
               <>
                 <h2>Cheats</h2>
                 <CheatsPanel host={host} itemId={host.itemId} title={host.title} say={say} />
-                <Back onClick={() => setPanel('menu')} />
+                <Back onClick={up} />
               </>
             )}
             {panel === 'patches' && (
               <>
                 <h2>Patches</h2>
                 <PatchesPanel host={host} itemId={host.itemId} say={say} onRestart={() => leaveThen(() => host.relaunch({ resume: true, safeMode: false }))} />
-                <Back onClick={() => setPanel('menu')} />
+                <Back onClick={up} />
               </>
             )}
             {panel === 'discs' && (
@@ -700,7 +778,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
                     }}>Disc {n + 1}{n === (info?.disc || 0) ? ' (in the drive)' : ''}</button>
                   ))}
                 </nav>
-                <div className="wp-row"><span className="wp-grow" /><button type="button" className="wp-btn" onClick={() => setPanel('menu')}>Back</button></div>
+                <Back onClick={up} />
               </>
             )}
             {panel === 'connection' && (
@@ -714,7 +792,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
                 </fieldset>
                 <p className="wp-muted wp-small">Now using: {transport ? TRANSPORT_LABELS[transport.kind] : 'nothing yet'}</p>
                 <label className="wp-check"><input type="checkbox" checked={values['osd.on'] === true} onChange={(e) => settings.set('person', 'osd.on', e.target.checked)} /> Show connection numbers while playing</label>
-                <div className="wp-row"><span className="wp-grow" /><button type="button" className="wp-btn" onClick={() => setPanel('menu')}>Back</button></div>
+                <Back onClick={up} />
               </>
             )}
           </div>
@@ -780,6 +858,6 @@ export function ControllersPage({ profiles, controls, controllers, consoles, con
   )
 }
 
-const panelTitle = (p: Panel, title: string) => ({ menu: title, save: 'Save state', load: 'Load state', controllers: 'Controllers', connection: 'Connection', touch: 'Touch controls', discs: 'Change disc', core: 'Core options', cheats: 'Cheats', patches: 'Patches', json: 'Custom settings file', ...GROUP_TITLES } as Record<string, string>)[p as string]
+const panelTitle = (p: Panel, title: string) => ({ menu: title, settings: 'Settings', more: 'More', save: 'Save state', load: 'Load state', controllers: 'Controllers', connection: 'Connection', touch: 'Touch controls', discs: 'Change disc', core: 'Core options', cheats: 'Cheats', patches: 'Patches', json: 'Custom settings file', ...GROUP_TITLES } as Record<string, string>)[p as string]
 
 const Back = ({ onClick }: { onClick: () => void }) => <div className="wp-row"><span className="wp-grow" /><button type="button" className="wp-btn" onClick={onClick}>Back</button></div>

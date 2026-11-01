@@ -40,17 +40,38 @@
 .wp-toast:not(:empty) { background: rgba(10, 12, 18, .85); padding: 8px 14px; border-radius: 8px; }
 .wp-stats { position: absolute; top: 8px; left: 8px; z-index: 6; display: flex; flex-wrap: wrap; gap: 4px 10px; max-width: 70vw; background: rgba(0, 0, 0, .6); padding: 4px 8px; border-radius: 6px; font: 12px/1.4 ui-monospace, monospace; pointer-events: none; }
 
-/* Touch controls */
+/* Touch controls. Glass with no blur: a dark tint, a thin bright edge and a soft light from
+   above, all static, so that a cheap phone spends nothing on them. A press only changes
+   one element's fill. Each console's shapes differ a little, as its real pad does. */
 .wp-touch { position: absolute; inset: 0; z-index: 5; touch-action: none; padding-bottom: env(safe-area-inset-bottom); }
-.wp-ctl { position: absolute; display: grid; place-items: center; color: #fff; font-weight: 700; pointer-events: none; }
-.wp-ctl svg { width: 100%; height: 100%; display: block; }
-.wp-dpad-shape { fill: rgba(30, 32, 42, .9); stroke: rgba(255, 255, 255, .55); stroke-width: 2; }
-.wp-dpad-arrows { fill: rgba(255, 255, 255, .85); }
-.wp-btn-face { width: 100%; height: 100%; display: grid; place-items: center; background: rgba(30, 32, 42, .9); border: 2px solid rgba(255, 255, 255, .55); line-height: 1; }
-.wp-btn-face.on { background: rgba(255, 255, 255, .85); color: #000; }
-.wp-btn-face.wp-btn-face { border-radius: 50%; }
-.wp-btn-shoulder, .wp-btn-meta { border-radius: 10px !important; }
-.wp-btn-meta { border-radius: 999px !important; white-space: nowrap; overflow: hidden; }
+.wp-touch, .wp-editor { --wp-glass: rgb(16 18 26 / .5); --wp-edge: rgb(255 255 255 / .42); --wp-sheen: rgb(255 255 255 / .1); --wp-ink: rgb(255 255 255 / .95); --wp-hit: rgb(255 255 255 / .92); --wp-hit-ink: rgb(10 12 18); --wp-face-radius: 50%; --wp-edge-w: 1.5px; }
+.wp-pad-two { --wp-glass: rgb(38 18 20 / .52); }
+.wp-pad-one { --wp-glass: rgb(40 28 14 / .5); }
+.wp-pad-four { --wp-glass: rgb(26 20 44 / .5); }
+.wp-pad-six { --wp-glass: rgb(14 26 44 / .52); }
+.wp-pad-handle { --wp-glass: rgb(14 32 30 / .5); }
+.wp-pad-dual { --wp-glass: rgb(16 20 34 / .5); }
+.wp-ctl { position: absolute; display: grid; place-items: center; color: var(--wp-ink); font-weight: 700; pointer-events: none; }
+.wp-ctl svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.wp-dpad-shape { fill: var(--wp-glass); stroke: var(--wp-edge); stroke-width: 1.5; }
+.wp-dpad-hub { fill: var(--wp-sheen); }
+.wp-dpad-arrow { fill: var(--wp-ink); opacity: .75; }
+.wp-dpad-arrow.on { fill: var(--wp-hit); opacity: 1; }
+.wp-stick-well { fill: var(--wp-glass); stroke: var(--wp-edge); stroke-width: 1.5; }
+.wp-stick-ring { fill: none; stroke: var(--wp-sheen); stroke-width: 2; }
+.wp-stick-cap { fill: rgb(255 255 255 / .22); stroke: var(--wp-edge); stroke-width: 1.5; }
+.wp-stick-dimple { fill: var(--wp-sheen); }
+.wp-face { position: relative; width: 100%; height: 100%; display: grid; place-items: center; border-radius: var(--wp-face-radius); background: radial-gradient(120% 90% at 50% 0%, var(--wp-sheen), transparent 60%), var(--wp-glass); box-shadow: inset 0 0 0 var(--wp-edge-w) var(--wp-edge); line-height: 1; letter-spacing: .02em; }
+.wp-face.on { background: var(--wp-hit); color: var(--wp-hit-ink); }
+.wp-face-label { display: block; transform: translateY(.02em); }
+.wp-face.long .wp-face-label { font-size: .72em; }
+.wp-shape { width: 68%; height: 68%; fill: none; stroke: currentColor; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.wp-face-shoulder { border-radius: .55em .55em 1em 1em; }
+.wp-face-meta { border-radius: 999px; font-weight: 600; white-space: nowrap; overflow: hidden; padding: 0 .5em; }
+.wp-pad-six .wp-face-face, .wp-pad-six .wp-face-shoulder { border-radius: 36%; }
+.wp-pad-handle .wp-face-face { box-shadow: inset 0 0 0 2px var(--wp-edge); }
+.wp-touch-hide { position: absolute; top: max(8px, env(safe-area-inset-top)); right: calc(56px + env(safe-area-inset-right)); width: 40px; height: 40px; z-index: 6; border: 0; border-radius: 10px; background: rgba(20, 22, 30, .4); color: #fff; cursor: pointer; display: grid; place-items: center; opacity: .75; }
+.wp-touch-hide:hover, .wp-touch-hide:focus-visible { background: rgba(40, 44, 60, .9); opacity: 1; }
 
 /* The touch editor */
 .wp-editor { position: absolute; inset: 0; z-index: 20; background: #05060a; display: flex; }
@@ -254,6 +275,84 @@
 .wp-accepts li { display: flex; flex-direction: column; overflow-wrap: anywhere; }
 .wp-accepts small { font-size: 11.5px; }
 .wp-section > summary { cursor: pointer; min-height: 32px; }
+
+/* The loading and problem screens: the game's cover beside what's happening. */
+.wp-load { position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; gap: clamp(20px, 5vw, 64px); padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); background: radial-gradient(90% 90% at 30% 20%, #1a1d29 0%, #07080c 75%); color: #f2f4f8; overflow: auto; touch-action: auto; animation: wp-in .16s ease-out; }
+@keyframes wp-in { from { opacity: 0; } to { opacity: 1; } }
+.wp-load-cover { flex: 0 1 auto; width: auto; height: auto; max-width: min(34vw, 340px); max-height: min(72vh, 460px); border-radius: 10px; box-shadow: 0 18px 48px rgb(0 0 0 / .6); object-fit: contain; }
+.wp-load-body { flex: 0 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.wp-load-console { margin: 0; color: #aab1c0; font-size: 14px; font-weight: 500; }
+.wp-load h1 { margin: 0; font-size: clamp(24px, 4.2vw, 38px); line-height: 1.15; overflow-wrap: anywhere; font-weight: 700; }
+.wp-load-steps { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; color: #7f8797; font-size: 15px; }
+.wp-load-steps li { display: flex; align-items: center; gap: 10px; min-height: 24px; }
+.wp-load-steps li.now { color: #fff; font-weight: 600; }
+.wp-load-steps li.done { color: #c6ccd8; }
+.wp-load-mark { flex: none; display: grid; place-items: center; width: 20px; height: 20px; }
+.wp-load-mark svg { width: 20px; height: 20px; color: #6fdc9b; }
+.wp-load-steps li:not(.now):not(.done) .wp-load-mark::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #3a3f4c; }
+.wp-load-bar { height: 6px; border-radius: 3px; background: #2a2e3a; overflow: hidden; }
+.wp-load-bar i { display: block; height: 100%; background: #fff; transform-origin: left; transition: transform .3s linear; }
+.wp-load .wp-muted { color: #aab1c0; }
+.wp-load .wp-btn { border-color: rgb(255 255 255 / .35); color: #f2f4f8; }
+.wp-load .wp-btn.primary { background: #f2f4f8; color: #0b0d12; border-color: transparent; }
+.wp-load .wp-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.wp-load-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 6px; }
+.wp-load-tip { margin: 0; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; color: #aab1c0; font-size: 13px; --fg: #f2f4f8; --bg-4: #2a2e38; --border-strong: #5a5f6b; }
+.wp-problem-text { margin: 0; color: #d4d8e0; line-height: 1.5; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+@media (max-width: 640px), (max-height: 460px) {
+  .wp-load { align-items: flex-start; }
+  .wp-portrait .wp-load { flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; }
+  .wp-portrait .wp-load-cover { max-width: 46vw; max-height: 34vh; }
+  .wp-portrait .wp-load-body { flex: none; width: 100%; align-items: center; }
+  .wp-portrait .wp-load-steps { align-self: stretch; }
+  .wp-portrait .wp-load-bar { align-self: stretch; }
+}
+
+/* The game menu: large tiles, with the game paused behind. */
+.wp-big { padding: 0; background: rgb(4 5 8 / .72); align-items: center; justify-content: center; }
+.wp-big .wp-menu { width: min(1080px, 100%); max-height: 100%; background: transparent; border: 0; border-radius: 0; color: #f2f4f8; padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); gap: 16px; --wp-muted: #aab1c0; --fg: #f2f4f8; --fg-2: #c8ccd4; --bg-4: #2a2e38; --border-strong: #5a5f6b; }
+.wp-qm-head { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.wp-qm-cover { flex: none; height: 72px; width: auto; max-width: 72px; object-fit: contain; border-radius: 6px; box-shadow: 0 6px 16px rgb(0 0 0 / .5); }
+.wp-qm-title { min-width: 0; }
+.wp-menu .wp-qm-title h2 { margin: 0; font-size: clamp(20px, 3vw, 30px); line-height: 1.15; overflow-wrap: anywhere; }
+.wp-qm-title p { margin: 2px 0 0; font-size: 14px; }
+.wp-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(168px, 44%), 1fr)); gap: 10px; }
+.wp-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 8px; min-height: 104px; padding: 14px; border: 1px solid rgb(255 255 255 / .14); border-radius: 12px; background: rgb(30 33 44 / .92); color: #f2f4f8; font: inherit; text-align: left; cursor: pointer; transition: transform .09s ease-out, background-color .09s; min-width: 0; }
+.wp-tile svg { width: 26px; height: 26px; flex: none; opacity: .92; }
+.wp-tile-text { display: grid; gap: 1px; min-width: 0; }
+.wp-tile b { font-size: 15px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.wp-tile small { font-size: 12px; color: #aab1c0; line-height: 1.25; }
+.wp-tile:hover { background: rgb(46 50 66 / .96); }
+.wp-tile:focus-visible { outline: 3px solid #fff; outline-offset: 2px; background: rgb(46 50 66 / 1); transform: scale(1.03); }
+.wp-tile:active { transform: scale(.975); }
+.wp-tile:disabled { opacity: .45; cursor: default; }
+.wp-tile.primary { background: #f2f4f8; color: #0b0d12; border-color: transparent; }
+.wp-tile.primary small { color: #454b58; }
+.wp-tile.primary:hover, .wp-tile.primary:focus-visible { background: #fff; }
+.wp-tile.danger { background: rgb(92 28 34 / .95); }
+.wp-tile.danger:hover, .wp-tile.danger:focus-visible { background: rgb(124 36 44 / 1); }
+.wp-tile[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #f2f4f8; }
+.wp-tile.wide { grid-column: span 2; }
+.wp-qm-prompts { margin-top: 4px; }
+@media (max-width: 520px) {
+  .wp-tile { min-height: 84px; padding: 10px 12px; }
+  .wp-qm-cover { height: 56px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .wp-tile { min-height: 64px; flex-direction: row; align-items: center; justify-content: flex-start; padding: 8px 12px; }
+  .wp-tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .wp-qm-cover { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .wp-tile, .wp-load { transition: none; animation: none; } }
+@media (forced-colors: active) { .wp-tile:focus-visible { outline: 3px solid Highlight; } }
+
+.wp-slots { grid-template-columns: repeat(auto-fill, minmax(min(150px, 44%), 1fr)); }
+.wp-menu:has(.wp-slots) { width: min(720px, 100%); }
+.wp-menu-btn.faint { opacity: .45; }
+.wp-menu-btn.faint:hover, .wp-menu-btn.faint:focus-visible { opacity: 1; }
+
+.wp-editor.tucked .wp-editor-panel { display: none; }
+.wp-editor-tuck { position: absolute; z-index: 2; top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); background: rgb(16 18 26 / .85); color: #f2f4f8; }
 
 /* What's on top of the game */
 .wp-osd { position: absolute; z-index: 6; display: flex; flex-direction: column; gap: 1px; max-width: min(60vw, 320px); background: rgba(0, 0, 0, .66); color: #fff; padding: 4px 8px; border-radius: 6px; font: 12px/1.45 ui-monospace, monospace; pointer-events: none; }
