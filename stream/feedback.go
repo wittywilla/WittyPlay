@@ -15,7 +15,9 @@ func (s *Session) noteFeedback(v *viewer, pkts []rtcp.Packet) {
 	for _, p := range pkts {
 		switch r := p.(type) {
 		case *rtcp.PictureLossIndication, *rtcp.FullIntraRequest:
-			s.keyframeAsked(v.codec)
+			if !v.direct.Load() {
+				s.keyframeAsked(v.codec)
+			}
 		case *rtcp.ReceiverReport:
 			// What was sent before the browser had finished connecting counts as lost, so the
 			// first reports say nothing about the network.

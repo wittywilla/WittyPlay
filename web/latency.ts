@@ -45,6 +45,8 @@ export const TIMING_SUBSCRIBE = 0xf3
 export const TIMING_RECORD = 0xf4
 export const TIMING_LATENCY = 0xf5
 export const TIMING_SHIFT = 0xf6
+export const TIMING_KEYFRAME = 0xf7
+export const TIMING_DIRECT = 0xf8
 
 const RECORD_SIZE = 1 + 1 + 4 * 4 + 8 * 8
 

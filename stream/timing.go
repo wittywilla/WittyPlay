@@ -27,6 +27,8 @@ const (
 	timingRecord    = 0xF4 // server: one frame's record
 	timingLatency   = 0xF5 // client: one byte, a LatencyMode
 	timingShift     = 0xF6 // client: an i16 of tenths of a millisecond to move the frames by
+	timingKeyframe  = 0xF7 // client: it needs a keyframe
+	timingDirect    = 0xF8 // client: it decodes frames itself, so its browser's requests mean nothing
 )
 
 // frameTrace is one frame's journey, in Unix nanoseconds.
@@ -154,6 +156,12 @@ func (v *viewer) timingMessage(p []byte, reply func([]byte)) bool {
 		if len(p) == 3 {
 			v.s.shiftFrames(float64(int16(binary.LittleEndian.Uint16(p[1:]))) / 10)
 		}
+		return true
+	case timingKeyframe:
+		v.s.keyframeAsked(v.codec)
+		return true
+	case timingDirect:
+		v.direct.Store(true)
 		return true
 	}
 	return false

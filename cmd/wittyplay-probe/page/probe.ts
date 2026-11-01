@@ -123,8 +123,7 @@ function settle() {
 function watch(t: Transport) {
   unwatch?.()
   const v = t.element as HTMLVideoElement
-  if (v.tagName !== 'VIDEO') return
-  unwatch = watchVideo(v, (p: Presented) => {
+  const seen = (p: Presented) => {
     totalFrames++
     if (lastShown) win.gaps.add(p.presented - lastShown)
     lastShown = p.presented
@@ -134,7 +133,8 @@ function watch(t: Transport) {
       win.waitTrace.push(round(traceWaits[15]))
       traceWaits = []
     }
-    const s = reader.read(v, v.videoWidth, v.videoHeight)
+    const size = (v as any).videoWidth ? [v.videoWidth, v.videoHeight] : [(v as any).width, (v as any).height]
+    const s = reader.read(v, size[0], size[1])
     if (!s) { win.bad++; return }
     win.read++
     if (lastSeq >= 0) {
@@ -151,7 +151,18 @@ function watch(t: Transport) {
       const at = pressedAt.get(s.input)
       if (at != null) { win.photon.add(p.displayAt - at); pressedAt.delete(s.input) }
     }
-  })
+  }
+  if (v.tagName === 'VIDEO') { unwatch = watchVideo(v, seen); return }
+  // Drawn directly: it's on the canvas the moment the transport says so.
+  const direct = (t as any).video
+  if (direct) {
+    const inner = direct.onFrame
+    direct.onFrame = (f: any) => {
+      inner?.(f)
+      seen({ rtp: f.rtp, received: f.received, presented: f.drawn, displayAt: f.drawn })
+    }
+    unwatch = () => { direct.onFrame = inner }
+  }
 }
 
 // Presses come at no fixed rhythm against the frames, as a person's do. The same state
@@ -226,19 +237,20 @@ async function main() {
   settle()
   const stats = await chromeStats(current)
   await post('/shot', await picture())
-  await post('/results', { ...report(win, stats), colours: current && reader.colours(current.element, (current.element as HTMLVideoElement).videoWidth, (current.element as HTMLVideoElement).videoHeight) })
+  await post('/results', { ...report(win, stats), colours: current && reader.colours(current.element, (current.element as any).videoWidth || (current.element as any).width, (current.element as any).videoHeight || (current.element as any).height) })
   say('done')
 }
 
 // What's on the screen now, exactly as the browser decoded it.
 async function picture() {
-  const v = current?.element as HTMLVideoElement | undefined
-  if (!v?.videoWidth) return { png: '' }
+  const v = current?.element as any
+  const w = v?.videoWidth || v?.width, h = v?.videoHeight || v?.height
+  if (!w) return { png: '' }
   const c = document.createElement('canvas')
-  c.width = v.videoWidth
-  c.height = v.videoHeight
+  c.width = w
+  c.height = h
   c.getContext('2d')!.drawImage(v, 0, 0)
-  return { png: c.toDataURL('image/png'), seq: reader.read(v, v.videoWidth, v.videoHeight)?.seq }
+  return { png: c.toDataURL('image/png'), seq: reader.read(v, w, h)?.seq }
 }
 
 async function chromeStats(t: any) {

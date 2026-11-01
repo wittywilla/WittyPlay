@@ -33,6 +33,7 @@ type viewer struct {
 	wantTiming atomic.Bool
 	timing     atomic.Pointer[webrtc.DataChannel]
 	connected  atomic.Value // when, a time.Time
+	direct     atomic.Bool  // it decodes frames itself, and asks for keyframes itself
 	videoSSRC  atomic.Uint32
 
 	// WebRTC

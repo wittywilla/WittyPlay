@@ -212,7 +212,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       if (stale()) return
       if (!recovering) {
         setStage('connect')
-        setStatus(kind === 'webrtc' ? 'Connecting to this device…' : 'Trying another way to connect…')
+        setStatus(kind === 'webrtc' || kind === 'webrtc-direct' ? 'Connecting to this device…' : 'Trying another way to connect…')
       }
       const t = make(kind, signal)
       t.onEvent = onEvent
@@ -818,7 +818,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
                 <h2>Connection</h2>
                 <fieldset className="wp-radios">
                   <legend>How the game reaches this browser</legend>
-                  {(['auto', 'webrtc', 'ws-h264', 'ws-jpeg'] as Mode[]).map((m) => (
+                  {(['auto', 'webrtc', 'webrtc-direct', 'ws-h264', 'ws-jpeg'] as Mode[]).map((m) => (
                     <label key={m}><input type="radio" name="wp-mode" checked={mode === m} onChange={() => setMode(m)} /> {m === 'auto' ? 'Automatic (recommended)' : TRANSPORT_LABELS[m as TransportKind]}</label>
                   ))}
                 </fieldset>

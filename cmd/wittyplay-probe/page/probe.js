@@ -6,6 +6,8 @@
   var TIMING_RECORD = 244;
   var TIMING_LATENCY = 245;
   var TIMING_SHIFT = 246;
+  var TIMING_KEYFRAME = 247;
+  var TIMING_DIRECT = 248;
   var RECORD_SIZE = 1 + 1 + 4 * 4 + 8 * 8;
   function parseRecord(b, toLocal) {
     if (b.byteLength !== RECORD_SIZE) return null;
@@ -386,6 +388,114 @@
     }
   };
 
+  // ../../../../WittyPlay/.claude/worktrees/games-streaming/web/direct.ts
+  var hasDirect = () => typeof window.VideoDecoder !== "undefined" && typeof window.EncodedVideoChunk !== "undefined" && typeof RTCRtpReceiver !== "undefined" && "createEncodedStreams" in RTCRtpReceiver.prototype;
+  var DirectVideo = class {
+    constructor(signal2) {
+      this.signal = signal2;
+      this.canvas.width = 256;
+      this.canvas.height = 224;
+      this.ctx = this.canvas.getContext("2d", { alpha: false, desynchronized: true });
+    }
+    canvas = document.createElement("canvas");
+    onFrame;
+    framesDrawn = 0;
+    ctx;
+    decoder = null;
+    needKey = true;
+    closed = false;
+    receivedAt = /* @__PURE__ */ new Map();
+    lastAsk = 0;
+    async start() {
+      const VD = window.VideoDecoder;
+      const config = { codec: "avc1.42E01F", optimizeForLatency: true, hardwareAcceleration: "prefer-hardware" };
+      const ok = await VD.isConfigSupported(config).catch(() => null);
+      const use = ok?.supported ? config : { codec: "avc1.42E01F", optimizeForLatency: true };
+      this.decoder = new VD({
+        output: (f) => this.draw(f),
+        error: () => {
+          this.needKey = true;
+          this.askForKey();
+          if (!this.closed) this.restart(use);
+        }
+      });
+      this.decoder.configure(use);
+      this.tellServer();
+    }
+    restart(config) {
+      try {
+        this.decoder?.close();
+      } catch {
+      }
+      const VD = window.VideoDecoder;
+      this.decoder = new VD({ output: (f) => this.draw(f), error: () => {
+        this.needKey = true;
+        this.askForKey();
+      } });
+      this.decoder.configure(config);
+    }
+    // Tells the server that the browser's own requests for keyframes mean nothing now. Its
+    // decoder never sees a frame, so it keeps asking.
+    tellServer() {
+      const b = new ArrayBuffer(1);
+      new DataView(b).setUint8(0, TIMING_DIRECT);
+      this.signal(b);
+    }
+    askForKey() {
+      const now = performance.now();
+      if (now - this.lastAsk < 500) return;
+      this.lastAsk = now;
+      const b = new ArrayBuffer(1);
+      new DataView(b).setUint8(0, TIMING_KEYFRAME);
+      this.signal(b);
+    }
+    // Takes whole frames from the receiver for as long as there are any.
+    async pump(readable) {
+      const reader2 = readable.getReader();
+      for (; ; ) {
+        const { value: frame, done } = await reader2.read();
+        if (done || this.closed) return;
+        const key = frame.type === "key";
+        if (this.needKey && !key) {
+          this.askForKey();
+          continue;
+        }
+        if (!this.decoder || this.decoder.state !== "configured") continue;
+        if (this.decoder.decodeQueueSize > 2 && !key) {
+          this.needKey = true;
+          this.askForKey();
+          continue;
+        }
+        this.needKey = false;
+        const rtp = frame.timestamp >>> 0;
+        this.receivedAt.set(rtp, performance.now());
+        if (this.receivedAt.size > 16) this.receivedAt.delete(this.receivedAt.keys().next().value);
+        const Chunk = window.EncodedVideoChunk;
+        this.decoder.decode(new Chunk({ type: key ? "key" : "delta", timestamp: rtp, data: frame.data }));
+      }
+    }
+    draw(f) {
+      if (this.canvas.width !== f.displayWidth || this.canvas.height !== f.displayHeight) {
+        this.canvas.width = f.displayWidth;
+        this.canvas.height = f.displayHeight;
+      }
+      this.ctx.drawImage(f, 0, 0);
+      const rtp = f.timestamp >>> 0;
+      f.close();
+      this.framesDrawn++;
+      const received = this.receivedAt.get(rtp);
+      this.receivedAt.delete(rtp);
+      this.onFrame?.({ rtp, received: received ?? performance.now(), drawn: performance.now() });
+    }
+    close() {
+      this.closed = true;
+      try {
+        this.decoder?.close();
+      } catch {
+      }
+    }
+  };
+
   // ../../../../WittyPlay/.claude/worktrees/games-streaming/web/transport.ts
   var AUDIO_HOLD = { lowest: 0, balanced: 0.06, smooth: 0.15 };
   var TimingLink = class {
@@ -432,6 +542,7 @@
   };
   function make(kind, signal2) {
     if (kind === "webrtc") return new WebRTCTransport(signal2);
+    if (kind === "webrtc-direct") return new DirectTransport(signal2);
     return new WSTransport(signal2, kind);
   }
   var FIRST_FRAME_MS = 12e3;
@@ -660,6 +771,183 @@
             out.fps = Math.round((s.framesDecoded - this.prev.frames) / dt);
           }
           this.prev = { t: now, bytes: s.bytesReceived, frames: s.framesDecoded };
+        }
+        if (s.type === "candidate-pair" && s.nominated && s.currentRoundTripTime != null) out.rttMs = Math.round(s.currentRoundTripTime * 1e3);
+      });
+      return out;
+    }
+  };
+  var DirectTransport = class {
+    constructor(signal2) {
+      this.signal = signal2;
+      this.video = new DirectVideo((b) => {
+        if (this.timingDc?.readyState === "open") {
+          try {
+            this.timingDc.send(b);
+          } catch {
+          }
+        }
+      });
+      this.element = this.video.canvas;
+      this.video.onFrame = (f) => this.meter?.shown({ rtp: f.rtp, received: f.received, presented: f.drawn, displayAt: f.drawn });
+    }
+    kind = "webrtc-direct";
+    element;
+    onEvent;
+    onLost;
+    pc = null;
+    input = null;
+    timingDc = null;
+    link = new TimingLink((b) => {
+      if (this.timingDc?.readyState === "open") {
+        try {
+          this.timingDc.send(b);
+        } catch {
+        }
+      }
+    });
+    video;
+    sound = document.createElement("audio");
+    muted = false;
+    userMuted = false;
+    closed = false;
+    gone = false;
+    meter = null;
+    watchdog = 0;
+    seen = 0;
+    seenAt = 0;
+    leaving = 0;
+    prev = null;
+    async connect() {
+      if (!hasDirect()) throw new Error("this browser cannot take frames as they arrive");
+      await this.video.start();
+      const pc = new RTCPeerConnection({ encodedInsertableStreams: true });
+      this.pc = pc;
+      const sound = new MediaStream();
+      this.sound.srcObject = sound;
+      this.sound.autoplay = true;
+      pc.ontrack = (e) => {
+        const r = e.receiver;
+        const { readable, writable } = r.createEncodedStreams();
+        if (e.track.kind === "video") {
+          void this.video.pump(readable).catch(() => this.lost());
+          return;
+        }
+        if ("jitterBufferTarget" in r) r.jitterBufferTarget = 0;
+        void readable.pipeTo(writable).catch(() => {
+        });
+        sound.addTrack(e.track);
+      };
+      pc.addTransceiver("video", { direction: "recvonly" });
+      pc.addTransceiver("audio", { direction: "recvonly" });
+      this.input = pc.createDataChannel("input", { ordered: false, maxRetransmits: 0 });
+      this.input.binaryType = "arraybuffer";
+      const events = pc.createDataChannel("events");
+      events.onmessage = (m) => {
+        try {
+          this.onEvent?.(JSON.parse(m.data));
+        } catch {
+        }
+      };
+      const timing = pc.createDataChannel("timing", { ordered: false, maxRetransmits: 0 });
+      timing.binaryType = "arraybuffer";
+      timing.onmessage = (m) => {
+        if (m.data instanceof ArrayBuffer) this.link.incoming(m.data);
+      };
+      timing.onopen = () => {
+        this.video.tellServer();
+        if (this.meter) this.link.start(this.meter);
+      };
+      this.timingDc = timing;
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "failed" || pc.connectionState === "closed") this.lost();
+        clearTimeout(this.leaving);
+        if (pc.connectionState === "disconnected") this.leaving = window.setTimeout(() => this.lost(), DISCONNECTED_MS);
+      };
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await gathered(pc, 1500);
+      const answer = await this.signal.answer(pc.localDescription.sdp);
+      await pc.setRemoteDescription({ type: "answer", sdp: answer });
+      void this.sound.play().catch(() => {
+        this.muted = true;
+      });
+      const start = performance.now();
+      while (this.video.framesDrawn === 0) {
+        if (performance.now() - start > FIRST_FRAME_MS) throw new Error("no picture arrived");
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      this.seenAt = performance.now();
+      this.watchdog = window.setInterval(() => {
+        if (document.hidden || this.video.framesDrawn !== this.seen) {
+          this.seen = this.video.framesDrawn;
+          this.seenAt = performance.now();
+        } else if (performance.now() - this.seenAt > STALLED_MS) this.lost();
+      }, 1e3);
+    }
+    lost() {
+      if (this.closed || this.gone) return;
+      this.gone = true;
+      this.onLost?.();
+    }
+    send(msg) {
+      if (this.input?.readyState === "open") {
+        try {
+          this.input.send(msg);
+        } catch {
+        }
+      }
+    }
+    close() {
+      this.closed = true;
+      this.link.stop();
+      clearTimeout(this.leaving);
+      clearInterval(this.watchdog);
+      this.video.close();
+      this.pc?.close();
+      this.sound.srcObject = null;
+    }
+    measure(meter) {
+      this.meter = meter;
+      if (this.timingDc?.readyState === "open" || !meter) this.link.start(meter);
+    }
+    // There's no buffer here to choose the size of.
+    setLatency(_mode) {
+    }
+    needsUnmute() {
+      return this.muted && !this.userMuted;
+    }
+    unmute() {
+      this.muted = false;
+      this.sound.muted = this.userMuted;
+      void this.sound.play().catch(() => {
+      });
+    }
+    setVolume(volume, muted) {
+      this.userMuted = muted;
+      this.sound.volume = Math.max(0, Math.min(1, volume));
+      this.sound.muted = muted;
+    }
+    setAudioBuffer(_b) {
+    }
+    captureStream() {
+      return this.element.captureStream?.(30) || null;
+    }
+    async stats() {
+      const out = { codec: "H264" };
+      if (!this.pc) return out;
+      const report2 = await this.pc.getStats();
+      report2.forEach((s) => {
+        if (s.type === "inbound-rtp" && s.kind === "video") {
+          out.lost = s.packetsLost;
+          out.jitterMs = s.jitter != null ? Math.round(s.jitter * 1e3) : void 0;
+          const now = s.timestamp;
+          if (this.prev && now > this.prev.t) {
+            const dt = (now - this.prev.t) / 1e3;
+            out.kbps = Math.round((s.bytesReceived - this.prev.bytes) * 8 / 1e3 / dt);
+            out.fps = Math.round((this.video.framesDrawn - this.prev.frames) / dt);
+          }
+          this.prev = { t: now, bytes: s.bytesReceived, frames: this.video.framesDrawn };
         }
         if (s.type === "candidate-pair" && s.nominated && s.currentRoundTripTime != null) out.rttMs = Math.round(s.currentRoundTripTime * 1e3);
       });
@@ -1057,8 +1345,7 @@
   function watch(t) {
     unwatch?.();
     const v = t.element;
-    if (v.tagName !== "VIDEO") return;
-    unwatch = watchVideo(v, (p) => {
+    const seen = (p) => {
       totalFrames++;
       if (lastShown) win.gaps.add(p.presented - lastShown);
       lastShown = p.presented;
@@ -1068,7 +1355,8 @@
         win.waitTrace.push(round(traceWaits[15]));
         traceWaits = [];
       }
-      const s = reader.read(v, v.videoWidth, v.videoHeight);
+      const size = v.videoWidth ? [v.videoWidth, v.videoHeight] : [v.width, v.height];
+      const s = reader.read(v, size[0], size[1]);
       if (!s) {
         win.bad++;
         return;
@@ -1091,7 +1379,22 @@
           pressedAt.delete(s.input);
         }
       }
-    });
+    };
+    if (v.tagName === "VIDEO") {
+      unwatch = watchVideo(v, seen);
+      return;
+    }
+    const direct = t.video;
+    if (direct) {
+      const inner = direct.onFrame;
+      direct.onFrame = (f) => {
+        inner?.(f);
+        seen({ rtp: f.rtp, received: f.received, presented: f.drawn, displayAt: f.drawn });
+      };
+      unwatch = () => {
+        direct.onFrame = inner;
+      };
+    }
   }
   function startPressing() {
     const msg = new Uint8Array(17);
@@ -1174,17 +1477,18 @@
     settle();
     const stats = await chromeStats(current);
     await post("/shot", await picture());
-    await post("/results", { ...report(win, stats), colours: current && reader.colours(current.element, current.element.videoWidth, current.element.videoHeight) });
+    await post("/results", { ...report(win, stats), colours: current && reader.colours(current.element, current.element.videoWidth || current.element.width, current.element.videoHeight || current.element.height) });
     say("done");
   }
   async function picture() {
     const v = current?.element;
-    if (!v?.videoWidth) return { png: "" };
+    const w = v?.videoWidth || v?.width, h = v?.videoHeight || v?.height;
+    if (!w) return { png: "" };
     const c = document.createElement("canvas");
-    c.width = v.videoWidth;
-    c.height = v.videoHeight;
+    c.width = w;
+    c.height = h;
     c.getContext("2d").drawImage(v, 0, 0);
-    return { png: c.toDataURL("image/png"), seq: reader.read(v, v.videoWidth, v.videoHeight)?.seq };
+    return { png: c.toDataURL("image/png"), seq: reader.read(v, w, h)?.seq };
   }
   async function chromeStats(t) {
     const pc = t?.pc;

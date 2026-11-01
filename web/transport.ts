@@ -5,14 +5,16 @@
 //   3. WebSocket with JPEG: when nothing else works
 // docs/GAMING.md has the reasoning.
 
+import { DirectVideo, hasDirect } from './direct'
 import { PhaseLock, SteadinessWatch, TIMING_LATENCY, TIMING_SHIFT, TIMING_SUBSCRIBE, watchVideo, type LatencyMeter } from './latency'
 
 export type LatencyMode = 'auto' | 'fastest' | 'balanced' | 'steady'
-export type TransportKind = 'webrtc' | 'ws-h264' | 'ws-jpeg'
+export type TransportKind = 'webrtc' | 'webrtc-direct' | 'ws-h264' | 'ws-jpeg'
 export type Mode = 'auto' | TransportKind
 
 export const TRANSPORT_LABELS: Record<TransportKind, string> = {
   webrtc: 'WebRTC (lowest latency)',
+  'webrtc-direct': 'WebRTC, drawn directly (can be faster on some screens, and can tear)',
   'ws-h264': 'WebSocket with H.264',
   'ws-jpeg': 'WebSocket with JPEG (most compatible)',
 }
@@ -102,6 +104,9 @@ const hasWebCodecs = () => typeof (window as any).VideoDecoder !== 'undefined' &
 // What this browser can try, best first.
 // The server says which modes it has (`allowed`); this says which this browser can use.
 export function plan(mode: Mode, allowed: string[]): TransportKind[] {
+  // Drawn directly is one that someone has to ask for. If it can't work here, the usual
+  // way takes over.
+  if (mode === 'webrtc-direct') return ['webrtc-direct', ...plan('auto', allowed)]
   if (mode !== 'auto') return [mode]
   const out: TransportKind[] = []
   if (hasWebRTC()) out.push('webrtc')
@@ -112,6 +117,7 @@ export function plan(mode: Mode, allowed: string[]): TransportKind[] {
 
 export function make(kind: TransportKind, signal: Signal): Transport {
   if (kind === 'webrtc') return new WebRTCTransport(signal)
+  if (kind === 'webrtc-direct') return new DirectTransport(signal)
   return new WSTransport(signal, kind)
 }
 
@@ -313,6 +319,156 @@ class WebRTCTransport implements Transport {
           out.fps = Math.round((s.framesDecoded - this.prev.frames) / dt)
         }
         this.prev = { t: now, bytes: s.bytesReceived, frames: s.framesDecoded }
+      }
+      if (s.type === 'candidate-pair' && s.nominated && s.currentRoundTripTime != null) out.rttMs = Math.round(s.currentRoundTripTime * 1000)
+    })
+    return out
+  }
+}
+
+// WebRTC with frames taken as soon as they're whole, and drawn at once: see direct.ts.
+class DirectTransport implements Transport {
+  readonly kind = 'webrtc-direct'
+  readonly element: HTMLCanvasElement
+  onEvent?: (e: PlayEvent) => void
+  onLost?: () => void
+  private pc: RTCPeerConnection | null = null
+  private input: RTCDataChannel | null = null
+  private timingDc: RTCDataChannel | null = null
+  private link = new TimingLink((b) => { if (this.timingDc?.readyState === 'open') { try { this.timingDc.send(b) } catch { /* the next one will do */ } } })
+  private video: DirectVideo
+  private sound = document.createElement('audio')
+  private muted = false
+  private userMuted = false
+  private closed = false
+  private gone = false
+  private meter: LatencyMeter | null = null
+  private watchdog = 0
+  private seen = 0
+  private seenAt = 0
+  private leaving = 0
+  private prev: { t: number; bytes: number; frames: number } | null = null
+
+  constructor(private signal: Signal) {
+    this.video = new DirectVideo((b) => { if (this.timingDc?.readyState === 'open') { try { this.timingDc.send(b) } catch { /* it will ask again */ } } })
+    this.element = this.video.canvas
+    this.video.onFrame = (f) => this.meter?.shown({ rtp: f.rtp, received: f.received, presented: f.drawn, displayAt: f.drawn })
+  }
+
+  async connect() {
+    if (!hasDirect()) throw new Error('this browser cannot take frames as they arrive')
+    await this.video.start()
+    const pc = new RTCPeerConnection({ encodedInsertableStreams: true } as RTCConfiguration)
+    this.pc = pc
+    const sound = new MediaStream()
+    this.sound.srcObject = sound
+    this.sound.autoplay = true
+    pc.ontrack = (e) => {
+      const r = e.receiver as any
+      const { readable, writable } = r.createEncodedStreams()
+      if (e.track.kind === 'video') {
+        void this.video.pump(readable).catch(() => this.lost())
+        return
+      }
+      if ('jitterBufferTarget' in r) r.jitterBufferTarget = 0
+      void readable.pipeTo(writable).catch(() => {})
+      sound.addTrack(e.track)
+    }
+    pc.addTransceiver('video', { direction: 'recvonly' })
+    pc.addTransceiver('audio', { direction: 'recvonly' })
+    this.input = pc.createDataChannel('input', { ordered: false, maxRetransmits: 0 })
+    this.input.binaryType = 'arraybuffer'
+    const events = pc.createDataChannel('events')
+    events.onmessage = (m) => { try { this.onEvent?.(JSON.parse(m.data)) } catch { /* not ours */ } }
+    const timing = pc.createDataChannel('timing', { ordered: false, maxRetransmits: 0 })
+    timing.binaryType = 'arraybuffer'
+    timing.onmessage = (m) => { if (m.data instanceof ArrayBuffer) this.link.incoming(m.data) }
+    timing.onopen = () => {
+      this.video.tellServer()
+      if (this.meter) this.link.start(this.meter)
+    }
+    this.timingDc = timing
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') this.lost()
+      clearTimeout(this.leaving)
+      if (pc.connectionState === 'disconnected') this.leaving = window.setTimeout(() => this.lost(), DISCONNECTED_MS)
+    }
+    const offer = await pc.createOffer()
+    await pc.setLocalDescription(offer)
+    await gathered(pc, 1500)
+    const answer = await this.signal.answer(pc.localDescription!.sdp)
+    await pc.setRemoteDescription({ type: 'answer', sdp: answer })
+    // Not waited for: it finishes when sound arrives, and some games take a while to make any.
+    void this.sound.play().catch(() => { this.muted = true })
+    const start = performance.now()
+    while (this.video.framesDrawn === 0) {
+      if (performance.now() - start > FIRST_FRAME_MS) throw new Error('no picture arrived')
+      await new Promise((r) => setTimeout(r, 20))
+    }
+    this.seenAt = performance.now()
+    this.watchdog = window.setInterval(() => {
+      if (document.hidden || this.video.framesDrawn !== this.seen) {
+        this.seen = this.video.framesDrawn
+        this.seenAt = performance.now()
+      } else if (performance.now() - this.seenAt > STALLED_MS) this.lost()
+    }, 1000)
+  }
+
+  private lost() {
+    if (this.closed || this.gone) return
+    this.gone = true
+    this.onLost?.()
+  }
+
+  send(msg: Uint8Array) {
+    if (this.input?.readyState === 'open') {
+      try { this.input.send(msg as Uint8Array<ArrayBuffer>) } catch { /* the next state corrects it */ }
+    }
+  }
+
+  close() {
+    this.closed = true
+    this.link.stop()
+    clearTimeout(this.leaving)
+    clearInterval(this.watchdog)
+    this.video.close()
+    this.pc?.close()
+    this.sound.srcObject = null
+  }
+
+  measure(meter: LatencyMeter | null) {
+    this.meter = meter
+    if (this.timingDc?.readyState === 'open' || !meter) this.link.start(meter)
+  }
+
+  // There's no buffer here to choose the size of.
+  setLatency(_mode: LatencyMode) {}
+
+  needsUnmute() { return this.muted && !this.userMuted }
+  unmute() { this.muted = false; this.sound.muted = this.userMuted; void this.sound.play().catch(() => {}) }
+  setVolume(volume: number, muted: boolean) {
+    this.userMuted = muted
+    this.sound.volume = Math.max(0, Math.min(1, volume))
+    this.sound.muted = muted
+  }
+  setAudioBuffer(_b: AudioBuffer_) {}
+  captureStream() { return (this.element as any).captureStream?.(30) || null }
+
+  async stats(): Promise<Stats> {
+    const out: Stats = { codec: 'H264' }
+    if (!this.pc) return out
+    const report = await this.pc.getStats()
+    report.forEach((s: any) => {
+      if (s.type === 'inbound-rtp' && s.kind === 'video') {
+        out.lost = s.packetsLost
+        out.jitterMs = s.jitter != null ? Math.round(s.jitter * 1000) : undefined
+        const now = s.timestamp as number
+        if (this.prev && now > this.prev.t) {
+          const dt = (now - this.prev.t) / 1000
+          out.kbps = Math.round(((s.bytesReceived - this.prev.bytes) * 8) / 1000 / dt)
+          out.fps = Math.round((this.video.framesDrawn - this.prev.frames) / dt)
+        }
+        this.prev = { t: now, bytes: s.bytesReceived, frames: this.video.framesDrawn }
       }
       if (s.type === 'candidate-pair' && s.nominated && s.currentRoundTripTime != null) out.rttMs = Math.round(s.currentRoundTripTime * 1000)
     })

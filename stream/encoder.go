@@ -219,7 +219,12 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 	encArgs, inputArgs, upload := encoderArgs(name, bps, gop)
 	// The matrix used to make the frame has to be the one the browser undoes. Left unsaid, a
 	// browser assumes BT.709, FFmpeg's scaler uses BT.601, and red comes out orange.
-	vf := fmt.Sprintf("scale=trunc(iw*%d/2)*2:trunc(ih*%d/2)*2:flags=neighbor:out_color_matrix=bt709:out_range=tv,format=%s", scale, scale, encoderPixFmt(name))
+	// VP8 has only the one: BT.601.
+	matrix, tag := "bt709", "bt709"
+	if codec == "vp8" {
+		matrix, tag = "bt601", "smpte170m"
+	}
+	vf := fmt.Sprintf("scale=trunc(iw*%d/2)*2:trunc(ih*%d/2)*2:flags=neighbor:out_color_matrix=%s:out_range=tv,format=%s", scale, scale, matrix, encoderPixFmt(name))
 	if upload != "" {
 		vf += "," + upload
 	}
@@ -234,7 +239,7 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 	args = append(args, "-vf", vf)
 	args = append(args, "-c:v", name)
 	args = append(args, encArgs...)
-	args = append(args, "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv")
+	args = append(args, "-colorspace", tag, "-color_primaries", tag, "-color_trc", tag, "-color_range", "tv")
 	args = append(args, "-fps_mode", "passthrough", "-flush_packets", "1")
 	if codec == "vp8" {
 		args = append(args, "-f", "ivf", "pipe:1")
