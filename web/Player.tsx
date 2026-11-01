@@ -12,6 +12,7 @@ import { explain, type ProblemData } from './words'
 import { CheatsPanel, CorePanel, JsonEditor, PatchesPanel, SettingsPanel, SlotsPanel, type LevelChoice } from './Panels'
 import { downloadBlob, fileName, loadSchema, useSettings, type Level, type Schema, type SettingsHost } from './settings'
 import { ControllerStudio, type PortChoice, type ProfileHost } from './Studio'
+import { ConsoleChips } from './Panels'
 import { TouchControls, TouchEditor, useOrientation } from './TouchControls'
 import { make, plan, TRANSPORT_LABELS, type AudioBuffer_, type Mode, type PlayEvent, type Transport, type TransportKind } from './transport'
 import './play.css'
@@ -856,9 +857,7 @@ export function ControllersPage({ profiles, controls, controllers, consoles, con
         ? <TouchEditor data={data} orientation={orientation} onClose={() => setTouch(false)} onSave={async (l) => { await saveControl(consoleId, { kind: 'touch', key: deviceId(), orientation, data: l }); await refresh() }} />
         : <ControllerStudio key={data.console} host={profiles} data={data} known={known} input={input} consoleName={current?.short || consoleId} refresh={refresh} onClose={onClose} onTouch={onTV() ? undefined : () => setTouch(true)}
             consolePicker={(
-              <div className="wps-consoles" role="group" aria-label="Which console">
-                {consoles.map((c) => <button key={c.id} type="button" aria-pressed={c.id === consoleId} className={'wp-btn wps-small' + (c.id === consoleId ? ' primary' : '')} onClick={() => onConsole(c.id)}>{c.short}</button>)}
-              </div>
+              <ConsoleChips consoles={consoles} chosen={consoleId} onChoose={onConsole} />
             )} />}
     </div>
   )
