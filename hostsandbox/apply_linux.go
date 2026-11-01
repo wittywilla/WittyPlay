@@ -16,6 +16,27 @@ import (
 // this, and setting it only skips the restart: Apply still limits its own thread.
 const restartedEnv = "WITTYPLAY_WRITES_LIMITED"
 
+// PrivateSharedMemoryEnv is set by whoever starts a runner in a mount namespace of its own,
+// and only then: without one, this would mount over the whole machine's /dev/shm.
+const PrivateSharedMemoryEnv = "WITTYPLAY_PRIVATE_SHM"
+
+// makePrivateSharedMemory puts an empty folder over /dev/shm, seen by this process alone.
+// A core that writes to shared memory then has nothing of anyone else's to reach, and leaves
+// nothing behind. If it can't be done, the rule in landlock still covers the system's.
+func makePrivateSharedMemory(l Limits) {
+	if err := unix.Mount("", "/", "", unix.MS_REC|unix.MS_PRIVATE, ""); err != nil {
+		fmt.Fprintln(os.Stderr, "sandbox: no private shared memory:", err)
+		return
+	}
+	size := l.MemoryMB
+	if size <= 0 {
+		size = 2048
+	}
+	if err := unix.Mount("tmpfs", "/dev/shm", "tmpfs", unix.MS_NOSUID|unix.MS_NODEV, fmt.Sprintf("size=%dm,mode=700", size)); err != nil {
+		fmt.Fprintln(os.Stderr, "sandbox: no private shared memory:", err)
+	}
+}
+
 // Confine limits writing for every thread this process will ever have. Landlock
 // belongs to the thread that asks for it and what that thread starts, and Go is
 // already running others. So one thread asks, then becomes this same program again:
@@ -29,7 +50,14 @@ func Confine(l Limits) error {
 		return os.Unsetenv(restartedEnv)
 	}
 	runtime.LockOSThread() // never undone: the limit belongs to this thread until it restarts
-	if unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != nil || landlock(l) != nil {
+	private := os.Getenv(PrivateSharedMemoryEnv) != ""
+	_ = os.Unsetenv(PrivateSharedMemoryEnv)
+	if private {
+		makePrivateSharedMemory(l)
+		// What let it make that goes now, and starting again takes the rest.
+		_ = unix.Prctl(unix.PR_CAP_AMBIENT, unix.PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0)
+	}
+	if (unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != nil || landlock(l) != nil) && !private {
 		return nil
 	}
 	exe, err := os.Executable()
@@ -64,7 +92,7 @@ func Apply(l Limits) error {
 		// Graphics drivers map far more address space than a machine has memory, so
 		// with one loaded only the data limit applies.
 		if !l.GPU {
-			as := addressSpace(l.MemoryMB)
+			as := l.addressLimit()
 			if err := unix.Setrlimit(unix.RLIMIT_AS, &unix.Rlimit{Cur: as, Max: as}); err != nil {
 				errs = append(errs, err)
 			}

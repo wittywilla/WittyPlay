@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/wittywilla/wittyplay/hostsandbox"
 )
 
 func hideWindow(cmd *exec.Cmd) {}
@@ -29,6 +31,23 @@ func prepareSandbox(cmd *exec.Cmd, saveDir string, log *slog.Logger) {
 	attr.UidMappings = []syscall.SysProcIDMap{{ContainerID: uid, HostID: uid, Size: 1}}
 	attr.GidMappings = []syscall.SysProcIDMap{{ContainerID: gid, HostID: gid, Size: 1}}
 	attr.GidMappingsEnableSetgroups = false
+}
+
+// privateSharedMemory gives a runner a shared memory folder of its own, for a core that
+// can't run without one. The runner makes it from the capability it gets here, then starts
+// itself again without that. Nothing else can see the folder, and it goes when the runner
+// does, however that happens. It needs the namespaces, so where they aren't allowed the core
+// has the system's /dev/shm.
+func privateSharedMemory(cmd *exec.Cmd, log *slog.Logger) bool {
+	attr := cmd.SysProcAttr
+	if attr == nil || attr.Cloneflags&syscall.CLONE_NEWUSER == 0 {
+		return false
+	}
+	const capSysAdmin = 21
+	attr.Cloneflags |= syscall.CLONE_NEWNS
+	attr.AmbientCaps = []uintptr{capSysAdmin}
+	cmd.Env = append(cmd.Env, hostsandbox.PrivateSharedMemoryEnv+"=1")
+	return true
 }
 
 // userNamespacesAllowed tries one, because the settings that control this differ

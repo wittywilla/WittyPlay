@@ -10,7 +10,7 @@ const (
 	semNoOpenFileErrorBox = 0x8000
 )
 
-func openLibrary(path string) (uintptr, error) {
+func openLibrary(path, _ string) (uintptr, error) {
 	_, _, _ = syscall.NewLazyDLL("kernel32.dll").NewProc("SetErrorMode").Call(semFailCriticalErrors | semNoGPFaultErrorBox | semNoOpenFileErrorBox)
 	h, err := syscall.LoadLibrary(path)
 	return uintptr(h), err

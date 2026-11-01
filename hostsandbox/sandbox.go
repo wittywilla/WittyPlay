@@ -15,6 +15,24 @@ type Limits struct {
 	// twice has no other way of doing. Only for a core known to, as they're shared with
 	// whatever else runs under this account. docs/GAMING.md says what that opens.
 	SharedMemory bool
+	// LargeAddressSpace is for a core that reserves far more address space than it ever uses.
+	// It's a reservation, with nothing behind it until it's touched, so the data limit still
+	// holds what it really uses to MemoryMB.
+	LargeAddressSpace bool
+}
+
+// largeAddressSpace is the ceiling for a core that asks for one. melonDS reserves 16 GiB of
+// empty address space to lay out the DS's memory, and writes through a failed reservation if
+// it doesn't get it.
+const largeAddressSpace = 64 << 30
+
+// addressLimit is the ceiling on address space for these limits.
+func (l Limits) addressLimit() uint64 {
+	n := addressSpace(l.MemoryMB)
+	if l.LargeAddressSpace && unsafe.Sizeof(uintptr(0)) == 8 && n < largeAddressSpace {
+		return largeAddressSpace
+	}
+	return n
 }
 
 // maxFileSize stops a core filling the disk from its save folder. The largest thing

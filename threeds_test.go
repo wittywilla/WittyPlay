@@ -78,6 +78,9 @@ func TestInspect3DS(t *testing.T) {
 		{"plain.cxi", fakeNCCH(true, size), false, false},
 		{"encrypted.cxi", fakeNCCH(false, size), true, false},
 		{"plain.cia", fakeCIA(fakeNCCH(true, size), 0), false, false},
+		// A tool took the encryption off and changed nothing else: it's marked encrypted, and
+		// it isn't. The bytes count.
+		{"decrypted-still-marked.cia", fakeCIA(fakeNCCH(true, size), 1), false, false},
 		{"title-key.cia", fakeCIA(scrambled(size), 1), true, false},
 		{"marked-plain-but-scrambled.cia", fakeCIA(scrambled(size), 0), true, false},
 		{"inner-crypto.cia", fakeCIA(fakeNCCH(false, size), 0), true, false},

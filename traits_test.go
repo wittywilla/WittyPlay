@@ -1,9 +1,9 @@
 package wittyplay
 
 import (
-	"slices"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -40,7 +40,7 @@ func TestEveryConsolePlayable(t *testing.T) {
 }
 
 func TestRunnerArgs(t *testing.T) {
-	for id, want := range map[string]string{"fceumm": "", "melonds": "-normal-priority", "mupen64plus_next": "-gpu -normal-priority", "someone_elses_core": "-gpu -normal-priority"} {
+	for id, want := range map[string]string{"fceumm": "", "melonds": "-normal-priority -shared-memory -large-address-space", "play": "-gpu -normal-priority -own-home", "mupen64plus_next": "-gpu -normal-priority", "someone_elses_core": "-gpu -normal-priority"} {
 		if got := strings.Join(RunnerArgs(id), " "); got != want {
 			t.Errorf("RunnerArgs(%q) = %q, want %q", id, got, want)
 		}

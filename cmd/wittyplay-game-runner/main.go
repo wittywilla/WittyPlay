@@ -33,13 +33,15 @@ func main() {
 	gpu := flag.Bool("gpu", false, "this game draws with a graphics card, so allow what a driver needs")
 	normal := flag.Bool("normal-priority", false, "this game can't play at low priority")
 	sharedMemory := flag.Bool("shared-memory", false, "this core maps its code through /dev/shm, so allow files there")
+	largeAddresses := flag.Bool("large-address-space", false, "this core reserves far more address space than it uses, so allow that")
+	_ = flag.Bool("own-home", false, "this core has its save folder as a home folder, which whoever starts this sets up")
 	probe := flag.Bool("probe-gpu", false, "say which graphics card games would draw with, and stop")
 	flag.Parse()
 	if flag.NArg() > 0 {
 		fmt.Fprintln(os.Stderr, "wittyplay-game-runner is started by WittyMediaServer")
 		os.Exit(2)
 	}
-	limits := hostsandbox.Limits{SaveDir: *saveDir, MemoryMB: *memory, GPU: *gpu || *probe, Normal: *normal, SharedMemory: *sharedMemory}
+	limits := hostsandbox.Limits{SaveDir: *saveDir, MemoryMB: *memory, GPU: *gpu || *probe, Normal: *normal, SharedMemory: *sharedMemory, LargeAddressSpace: *largeAddresses}
 	// This starts the program again, so it comes before anything that can't happen twice.
 	if err := hostsandbox.Confine(limits); err != nil {
 		fmt.Fprintln(os.Stderr, "sandbox:", err)

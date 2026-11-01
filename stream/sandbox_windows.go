@@ -21,6 +21,9 @@ func runnerEnv() []string {
 	return []string{"SystemRoot=" + os.Getenv("SystemRoot")}
 }
 
+// privateSharedMemory is for Linux's namespaces.
+func privateSharedMemory(*exec.Cmd, *slog.Logger) bool { return false }
+
 // prepareSandbox gives the runner a low-integrity token: it can read what the
 // account can read, but can only write where a low-integrity label allows, which
 // is its save folder. If that fails (older Windows, unusual accounts) the job

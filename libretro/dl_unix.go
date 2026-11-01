@@ -8,13 +8,16 @@ import "github.com/ebitengine/purego"
 // are built for link it themselves. This runner doesn't, so it opens it for them.
 var mathLibraries = []string{"libm.so.6", "libm.so", "libm.dylib"}
 
-func openLibrary(path string) (uintptr, error) {
+// openLibrary opens a core. scratch is a folder it may write to if it has to.
+func openLibrary(path, scratch string) (uintptr, error) {
 	for _, name := range mathLibraries {
 		if _, err := purego.Dlopen(name, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 			break
 		}
 	}
-	return purego.Dlopen(path, purego.RTLD_NOW|purego.RTLD_LOCAL)
+	return withoutExecStack(path, scratch, func(p string) (uintptr, error) {
+		return purego.Dlopen(p, purego.RTLD_NOW|purego.RTLD_LOCAL)
+	})
 }
 
 func symbol(lib uintptr, name string) (uintptr, error) { return purego.Dlsym(lib, name) }

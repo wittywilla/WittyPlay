@@ -30,6 +30,14 @@ func main() {
 		err = cia(os.Args[2:])
 	case "install":
 		err = install(os.Args[2:])
+	case "sweep":
+		err = sweep(os.Args[2:])
+	case "test-cia":
+		err = testcia(os.Args[2:])
+	case "test-rom":
+		err = testrom(os.Args[2:])
+	case "cia-info":
+		err = ciaInfo(os.Args[2:])
 	default:
 		err = fmt.Errorf("no such command: %s", os.Args[1])
 	}

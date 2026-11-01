@@ -9,6 +9,9 @@ func hideWindow(cmd *exec.Cmd) {}
 
 func runnerEnv() []string { return []string{"PATH=/usr/bin:/bin", "HOME=/nonexistent"} }
 
+// privateSharedMemory is for Linux's namespaces.
+func privateSharedMemory(*exec.Cmd, *slog.Logger) bool { return false }
+
 // prepareSandbox wraps the runner in sandbox-exec, Apple's own tool: no network,
 // and writing only to the save folder. Apple has marked the tool deprecated, but
 // it still ships, and if it is ever removed the runner keeps its resource limits.

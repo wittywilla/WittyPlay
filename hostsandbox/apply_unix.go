@@ -13,7 +13,7 @@ func Apply(l Limits) error {
 	if l.MemoryMB > 0 {
 		data := rlimit(l.MemoryMB << 20)
 		_ = syscall.Setrlimit(syscall.RLIMIT_DATA, &syscall.Rlimit{Cur: data, Max: data})
-		as := rlimit(int64(addressSpace(l.MemoryMB)))
+		as := rlimit(int64(l.addressLimit()))
 		_ = syscall.Setrlimit(syscall.RLIMIT_AS, &syscall.Rlimit{Cur: as, Max: as})
 	}
 	moreLimits(l)

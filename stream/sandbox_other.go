@@ -11,6 +11,9 @@ func hideWindow(cmd *exec.Cmd) {}
 
 func runnerEnv() []string { return []string{"PATH=/usr/bin:/bin", "HOME=/nonexistent"} }
 
+// privateSharedMemory is for Linux's namespaces.
+func privateSharedMemory(*exec.Cmd, *slog.Logger) bool { return false }
+
 // prepareSandbox has nothing to add here: the host sets its own resource limits
 // and priority, and docs/GAMING.md says plainly that that's all it gets.
 func prepareSandbox(cmd *exec.Cmd, saveDir string, log *slog.Logger) {

@@ -34,6 +34,12 @@ type CoreTraits struct {
 	// SharedMemory is set when the core can't run without making files in /dev/shm, as a
 	// core that maps its recompiled code twice can't.
 	SharedMemory bool
+	// LargeAddressSpace is set when the core reserves far more address space than a game
+	// normally gets: reservations, not memory, which stays limited as for any other game.
+	LargeAddressSpace bool
+	// OwnHome is set when the core won't start without a home folder it can write to. It gets
+	// its save folder as one, which is where what it keeps there belongs.
+	OwnHome bool
 	// CacheIn is a folder under the system folder where the core keeps what it has worked out,
 	// such as compiled shaders, kept between games for a core with a system folder of its own.
 	CacheIn string
@@ -91,10 +97,12 @@ var traits = map[string]CoreTraits{
 		// Waiting for the graphics card at every read-back, and running VU1 on the game's own
 		// thread, held a real game to 41 frames a second where it can do 60. The core's own
 		// database still turns VU1's thread off for the games known to hang with it.
-		Options:  map[string]string{"pcsx2_renderer": "OpenGL", "pcsx2_hw_download_mode": "Unsynchronized"},
-		Threaded: map[string]string{"pcsx2_mtvu": "enabled"},
+		Options:    map[string]string{"pcsx2_renderer": "OpenGL", "pcsx2_hw_download_mode": "Unsynchronized"},
+		Threaded:   map[string]string{"pcsx2_mtvu": "enabled"},
 		Resolution: pick("pcsx2_upscale_multiplier", "1x (Native)", "2x", "4x", "4x")},
-	"play": {GPU: true},
+	// Play! keeps its settings and memory cards under the home folder, and stops if it
+	// can't make one.
+	"play": {GPU: true, OwnHome: true},
 	"ppsspp": {GPU: true, Assets: "PPSSPP", Options: map[string]string{"ppsspp_backend": "opengl"},
 		Resolution: pick("ppsspp_internal_resolution", "480x272", "960x544", "1440x816", "1920x1088")},
 	"flycast": {GPU: true, Options: map[string]string{"reicast_alpha_sorting": "per-triangle (normal)"},
@@ -105,8 +113,9 @@ var traits = map[string]CoreTraits{
 		Resolution: pick("beetle_psx_hw_internal_resolution", "1x(native)", "2x", "4x", "4x")},
 	// The DS cores read the stylus from the pointer device. Their software renderers
 	// are all a DS needs, so these need no graphics card at all. melonDS's fast memory
-	// faults on purpose, in a way this runner's process can't recover from.
-	"melonds": {Demanding: true, Options: map[string]string{"melonds_touch_mode": "Touch", "melonds_screen_layout": "Top/Bottom", "melonds_jit_fast_memory": "disabled", "melonds_threaded_renderer": "enabled"}},
+	// faults on purpose, in a way this runner's process can't recover from. It reserves
+	// its address space for that whether it's on or not.
+	"melonds": {Demanding: true, LargeAddressSpace: true, SharedMemory: true, Options: map[string]string{"melonds_touch_mode": "Touch", "melonds_screen_layout": "Top/Bottom", "melonds_jit_fast_memory": "disabled", "melonds_threaded_renderer": "enabled"}},
 	"desmume": {Demanding: true, Options: map[string]string{"desmume_pointer_type": "touch", "desmume_pointer_mouse": "enabled", "desmume_screens_layout": "top/bottom", "desmume_opengl_mode": "disabled"}},
 	"azahar": {GPU: true, Options: map[string]string{"citra_enable_touch_touchscreen": "enabled", "citra_enable_mouse_touchscreen": "disabled", "citra_enable_touch_pointer_timeout": "disabled", "citra_layout_option": "default"},
 		Resolution: pick("citra_resolution_factor", "1", "2", "3", "4")},
@@ -138,6 +147,12 @@ func RunnerArgs(coreID string) []string {
 	}
 	if t.SharedMemory {
 		out = append(out, "-shared-memory")
+	}
+	if t.LargeAddressSpace {
+		out = append(out, "-large-address-space")
+	}
+	if t.OwnHome {
+		out = append(out, "-own-home")
 	}
 	return out
 }
