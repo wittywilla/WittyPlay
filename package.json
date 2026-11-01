@@ -7,8 +7,7 @@
   "type": "module",
   "main": "./web/index.ts",
   "exports": {
-    ".": "./web/index.ts",
-    "./web/prompts": "./web/prompts.tsx"
+    ".": "./web/index.ts"
   },
   "files": ["web", "LICENSE", "NOTICE"],
   "repository": "github:wittywilla/WittyPlay",
