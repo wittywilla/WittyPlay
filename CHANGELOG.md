@@ -5,6 +5,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
+- The display preview needs no inline style, so the page policy can leave it out.
 - **Security:** a core can't remove a file's access list or other extended attributes, or use `userfaultfd`.
 - **Security:** one game takes at most 8 viewers and 4 connecting at once. Past that the oldest goes, so someone allowed to play can't run the machine out of sockets and memory.
 - WittyPlay is now a project of its own, developed and released from this repository.

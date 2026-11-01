@@ -275,5 +275,6 @@
 .wp-screen-body { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .wp-screen-panel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .wp-screen-preview { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; z-index: 1; background: var(--bg, transparent); padding-bottom: 6px; }
+.wp-preview-stage .wp-media:not(.wp-gl) { position: absolute; width: var(--wp-media-w); height: var(--wp-media-h); left: var(--wp-media-x); top: var(--wp-media-y); }
 .wp-preview-stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: 40vh; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 8px; }
 .wp-preview-box { position: relative; flex: none; overflow: hidden; background: #000; }
