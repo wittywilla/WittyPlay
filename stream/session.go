@@ -310,7 +310,7 @@ func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {
 	id := newID()
 	s := &Session{id: id, runnerSaid: tailWriter{max: 16 << 10}, m: m, opt: opt, cfg: cfg, log: m.log.With("game", opt.Title, "session", id), done: make(chan struct{}), paused: true, controlState: controlState{speed: 1, optionsSet: make(chan struct{})},
 		spawned: make(chan struct{}), viewers: map[*viewer]bool{}, stateWait: map[uint32]chan []byte{}, frameReady: make(chan struct{}, 1), lastInput: time.Now(), noViewerSince: time.Now(),
-		audioCh: make(chan []byte, 32), stderr: &tailWriter{max: 1 << 16}}
+		audioCh: make(chan []byte, 32), opusOut: make(chan []byte, 32), stderr: &tailWriter{max: 1 << 16}}
 	m.sessions[id] = s
 	m.mu.Unlock()
 	if err := s.start(); err != nil {
@@ -457,6 +457,8 @@ type Session struct {
 	lastShift     time.Time    // when a viewer last moved the frames
 	lastNoEnc     time.Time    // when the log last said there's no encoder
 	audioCh       chan []byte
+	opusOut       chan []byte
+	opusStarted   atomic.Int64 // when the sound encoder last started, in Unix nanoseconds
 	rate          float64
 	turns         int
 	stats         EncodeStats
@@ -541,6 +543,7 @@ func (s *Session) start() error {
 	go s.audioLoop()
 	go s.videoLoop()
 	go s.watchEncoders()
+	go s.opusSender()
 	go s.logStats()
 	go func() {
 		// Wait closes the pipes, so it comes after the last save has been read.

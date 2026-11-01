@@ -700,6 +700,7 @@ func (s *Session) startOpusLocked() {
 		return
 	}
 	me := &audioEncoder{cmd: cmd, stdin: stdin, cancel: cancel}
+	s.opusStarted.Store(time.Now().UnixNano())
 	s.opus = me
 	go func() {
 		_ = readOgg(stdout, s.deliverOpus)

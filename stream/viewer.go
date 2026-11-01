@@ -194,13 +194,63 @@ func (s *Session) deliverJPEG(b []byte) {
 	}
 }
 
+// deliverOpus queues a packet of sound for sending. Sound comes from a game in lumps, a
+// frame's worth at a time, and a browser takes lumps for an uneven network and holds back
+// enough to cover them: over 100 ms. Sent evenly, it holds a fraction of that.
 func (s *Session) deliverOpus(p []byte) {
-	for _, v := range s.snapshotViewers() {
-		if v.audio != nil {
-			_ = v.audio.WriteSample(media.Sample{Data: p, Duration: 10 * time.Millisecond})
+	select {
+	case s.opusOut <- p:
+	default: // something has stuck, and the sound is better for losing a moment than for lagging
+	}
+}
+
+// opusSender sends sound evenly, as fast as it plays. A backlog is sent as it comes, so that
+// delay can't grow. The lump an encoder gives when it starts is dropped, as a browser would
+// only hold on to it and be that much later for good.
+func (s *Session) opusSender() {
+	const packet = 10 * time.Millisecond
+	var next time.Time
+	timer := time.NewTimer(time.Hour)
+	defer timer.Stop()
+	for {
+		var p []byte
+		select {
+		case <-s.done:
+			return
+		case p = <-s.opusOut:
+		}
+		if time.Since(time.Unix(0, s.opusStarted.Load())) < opusSettle {
+			continue
+		}
+		// A steady schedule, not a gap after each: timers run late, and sound mustn't.
+		now := time.Now()
+		if now.Sub(next) > 3*packet {
+			next = now
+		}
+		if wait := next.Sub(now); wait > 0 && len(s.opusOut) < opusBacklog {
+			timer.Reset(wait)
+			select {
+			case <-s.done:
+				return
+			case <-timer.C:
+			}
+		}
+		next = next.Add(packet)
+		for _, v := range s.snapshotViewers() {
+			if v.audio != nil {
+				_ = v.audio.WriteSample(media.Sample{Data: p, Duration: packet})
+			}
 		}
 	}
 }
+
+// opusBacklog is how many packets may wait before sending stops being paced: a game's frame
+// of sound can be 2 of them at 60 frames a second, and 4 at 30. opusSettle is how long after
+// an encoder starts that what it gives is dropped.
+const (
+	opusBacklog = 6
+	opusSettle  = 300 * time.Millisecond
+)
 
 func (s *Session) deliverPCM(b []byte) {
 	vs := s.snapshotViewers()

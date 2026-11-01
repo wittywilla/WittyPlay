@@ -5,6 +5,19 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
+- **Latency:** from a finished frame to the screen went from 50 to 200 ms to 10 to 20 ms, and from a press to the screen from 60 to 260 ms to
+  12 to 30 ms, on a home network. The browser no longer holds frames back, sound can't hold the picture back, FFmpeg's queues can't fill,
+  and a new press starts the next frame at once. Pads are read every 4 ms. Frames land just before the display wants them where a browser shows it helps.
+- **The picture:** PlayStation 2 is native size by default, which ends the bands and grid in Gran Turismo 4. Colours are right on every console:
+  red was coming out orange. Pixel art is sharp from the first frame, and pictures of 640 wide or more are scaled smoothly.
+- **Speed:** PlayStation 2 goes from about 40 frames a second to 45 to 60 in a race.
+- **Poor networks:** bitrate follows the connection, keyframes can't flood a slow link, and a browser's request for a keyframe is answered.
+- **Reliability:** a stuck or dead encoder, a dropped network and a stalled picture all come back by themselves, with the last picture up
+  until there's a new one. A dropped connection used to step down to a worse way of connecting for the rest of the game.
+- **On-screen numbers** say where the delay goes, stage by stage, from a press to the screen, and what's holding things back when something is.
+- **Speed or steadiness**, under Speed and rewind, with a good automatic choice.
+- **WebRTC, drawn directly**, under Connection: for those who want to try it. It can tear.
+- `wittyplay-probe` measures all of it on real frames, in a real browser, and can run through an impaired network, for hours, or killing each process in turn.
 - The controller screen and the game settings screen are redrawn to match the host app: tabs along a line, chips to choose from,
   cards, switches and sliders in the app's own shapes, button prompts along the bottom, and 44px targets on a phone. Choosing a
   console on the settings screen is a row of chips (`ConsoleChips`) rather than a drop-down list.
