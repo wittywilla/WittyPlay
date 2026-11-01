@@ -1335,14 +1335,6 @@ var Handlers = map[string]service.Handler{
 		err = recv.LoadState(a0)
 		return nil, back, err
 	},
-	"stream.Session.MarshalJSON": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		recv, err := resolveSession(rawRecv)
-		if err != nil {
-			return nil, nil, err
-		}
-		r0, err := recv.MarshalJSON()
-		return []any{r0}, back, err
-	},
 	"stream.Session.Pause": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 bool
 		if err := service.Arg(args, 0, &a0); err != nil {
