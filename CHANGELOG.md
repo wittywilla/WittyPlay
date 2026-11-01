@@ -20,6 +20,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - **Speed or steadiness**, under Speed and rewind, with a good automatic choice.
 - **WebRTC, drawn directly**, under Connection: for those who want to try it. It can tear.
 - `wittyplay-probe` measures all of it on real frames, in a real browser, and can run through an impaired network, for hours, or killing each process in turn.
+- WittyPlay is now a service of its own, with nothing compiled into a server: `wittyplay-module` holds the games being played and answers a server's calls, and `wittyplay-host` is now called `wittyplay-game-runner`.
 - The display preview needs no inline style, so the page policy can leave it out.
 - **Security:** a core can't remove a file's access list or other extended attributes, or use `userfaultfd`.
 - **Security:** one game takes at most 8 viewers and 4 connecting at once. Past that the oldest goes, so someone allowed to play can't run the machine out of sockets and memory.

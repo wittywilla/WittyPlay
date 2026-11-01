@@ -10,6 +10,7 @@ require (
 	github.com/pion/rtcp v1.2.20
 	github.com/pion/rtp v1.10.6
 	github.com/pion/webrtc/v4 v4.2.26
+	github.com/wittywilla/wittymodule v0.3.0
 	golang.org/x/sys v0.49.0
 )
 

@@ -13,7 +13,7 @@ display of the derivative work.
 
 Third-party components:
 
-- ebitengine/purego (Apache-2.0), linked into wittyplay-host only.
+- ebitengine/purego (Apache-2.0), linked into wittyplay-game-runner only.
 - pion/webrtc and its dependencies (MIT), linked into the stream package.
 - coder/websocket (ISC), linked into the stream package.
 - The libretro API (MIT): constants and struct layouts are written from the

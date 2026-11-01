@@ -28,7 +28,7 @@ import (
 
 // Config is how the server runs games.
 type Config struct {
-	Runner      string   // the wittyplay-host program, or another runner speaking ipc
+	Runner      string   // the wittyplay-game-runner program, or another runner speaking ipc
 	RunnerArgs  []string // extra arguments, before the ones added here
 	FFmpeg      string
 	HWEncoders  []string          // hardware encoders known to work here and switched on, best first
@@ -479,6 +479,13 @@ type Session struct {
 
 // ID is the session's unguessable name.
 func (s *Session) ID() string { return s.id }
+
+// MarshalJSON names a session to a server, which reaches it by that name.
+func (s *Session) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		ID string `json:"id"`
+	}{s.id})
+}
 
 // UserID is the account that started it.
 func (s *Session) UserID() int64 { return s.opt.UserID }

@@ -18,7 +18,7 @@ import (
 
 // ProbeOptions test-load one core file.
 type ProbeOptions struct {
-	Runner    string // wittyplay-host: this is a question for our own runner
+	Runner    string // wittyplay-game-runner: this is a question for our own runner
 	Core      string
 	SystemDir string
 	WorkDir   string        // an empty folder, the only one the runner may write to
@@ -70,7 +70,7 @@ func Probe(ctx context.Context, opt ProbeOptions) (*ProbeResult, error) {
 		opt.Log = slog.New(slog.NewTextHandler(io.Discard, nil))
 	}
 	if opt.Runner == "" {
-		return nil, &ProbeError{ProbeRunner, "the game runner (wittyplay-host) is missing from this install, so nothing can be tested"}
+		return nil, &ProbeError{ProbeRunner, "the game runner (wittyplay-game-runner) is missing from this install, so nothing can be tested"}
 	}
 	if why := pathTooLong(opt.WorkDir, opt.Core); why != "" {
 		return nil, &ProbeError{ProbeRunner, why}
@@ -213,7 +213,7 @@ func exitDetail(err error) string {
 	return " (" + ee.String() + ")"
 }
 
-// sandboxNote finds the line wittyplay-host writes when a layer couldn't apply.
+// sandboxNote finds the line wittyplay-game-runner writes when a layer couldn't apply.
 func sandboxNote(stderr string) string {
 	for _, line := range strings.Split(stderr, "\n") {
 		if strings.HasPrefix(line, "sandbox: ") {

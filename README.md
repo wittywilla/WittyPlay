@@ -14,7 +14,7 @@ WittyPlay is made for [WittyMediaServer](https://github.com/wittywilla/WittyMedi
 |---|---|
 | `wittyplay` | The consoles: extensions, recommended cores and their licences, sorting a file into a console, and each controller as data. Every setting as data, settings layers and custom settings files. No dependencies |
 | `ipc` | The protocol between a server and a game runner, over pipes |
-| `host`, `cmd/wittyplay-host` | The runner: a separate program that runs one game |
+| `host`, `cmd/wittyplay-game-runner` | The runner: a separate program that runs one game |
 | `libretro` | The libretro frontend inside the runner, with no cgo |
 | `hostsandbox` | What the runner does to box itself in before it loads a core |
 | `testcore` | A tiny game written in Go, so everything can be tested with no third-party code |
@@ -27,7 +27,7 @@ WittyPlay is made for [WittyMediaServer](https://github.com/wittywilla/WittyMedi
 ## Playing a game from Go
 
 ```go
-m := stream.NewManager(stream.Config{Runner: "wittyplay-host", FFmpeg: "ffmpeg"})
+m := stream.NewManager(stream.Config{Runner: "wittyplay-game-runner", FFmpeg: "ffmpeg"})
 s, err := m.Start(stream.Options{
     UserID: 1, ItemID: 7, Title: "My game",
     Core: "/path/to/some_libretro.so", ROM: "/path/to/game", SystemDir: "/path/to/bios", SaveDir: "/path/to/saves",
@@ -54,7 +54,7 @@ runner with the test core, a real FFmpeg and a real WebRTC peer, and are skipped
 To build the runner for FreeBSD without cgo:
 
 ```bash
-GOOS=freebsd CGO_ENABLED=0 go build -gcflags="github.com/ebitengine/purego/internal/fakecgo=-std" ./cmd/wittyplay-host
+GOOS=freebsd CGO_ENABLED=0 go build -gcflags="github.com/ebitengine/purego/internal/fakecgo=-std" ./cmd/wittyplay-game-runner
 ```
 
 ## Legal
@@ -72,7 +72,7 @@ how you use it. This isn't legal advice.
 
 A version tag builds a program for every platform, signs the checksum list, and publishes a release that servers can install.
 
-Versions move in small steps as work lands. `go run github.com/wittywilla/wittymodule/cmd/wittymodule@v0.2.1 bump .` raises it
+Versions move in small steps as work lands. `go run github.com/wittywilla/wittymodule/cmd/wittymodule@v0.3.0 bump .` raises it
 everywhere it is written (add `-part minor` for a bigger step). A bump isn't a release: nothing is
 tagged or published until you tag it. CI fails when code changed since the last tag and the version
 didn't, because tags never move.

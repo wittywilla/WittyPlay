@@ -1,4 +1,4 @@
-// Command wittyplay-host runs one game for WittyMediaServer: it loads a libretro
+// Command wittyplay-game-runner runs one game for WittyMediaServer: it loads a libretro
 // core, or the built-in test core, and speaks the ipc protocol on stdin and
 // stdout. It has no options a person needs. docs/GAMING.md explains why it is
 // a process of its own.
@@ -35,7 +35,7 @@ func main() {
 	probe := flag.Bool("probe-gpu", false, "say which graphics card games would draw with, and stop")
 	flag.Parse()
 	if flag.NArg() > 0 {
-		fmt.Fprintln(os.Stderr, "wittyplay-host is started by WittyMediaServer")
+		fmt.Fprintln(os.Stderr, "wittyplay-game-runner is started by WittyMediaServer")
 		os.Exit(2)
 	}
 	limits := hostsandbox.Limits{SaveDir: *saveDir, MemoryMB: *memory, GPU: *gpu || *probe, Normal: *normal}
@@ -46,7 +46,7 @@ func main() {
 	// Cores print to stdout, so the protocol goes elsewhere before one is loaded.
 	out, err := hostsandbox.ClaimStdout()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "wittyplay-host:", err)
+		fmt.Fprintln(os.Stderr, "wittyplay-game-runner:", err)
 		os.Exit(1)
 	}
 	// The sandbox goes on from the thread that will run the core, as some of its
@@ -84,7 +84,7 @@ func main() {
 		err = runErr
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "wittyplay-host:", err)
+		fmt.Fprintln(os.Stderr, "wittyplay-game-runner:", err)
 		os.Exit(1)
 	}
 }

@@ -2,7 +2,7 @@
 // library the user installed), runs it one frame at a time and hands back raw
 // video and audio. It uses no cgo, so one Go toolchain builds it everywhere.
 //
-// This package is only linked into wittyplay-host, the separate sandboxed
+// This package is only linked into wittyplay-game-runner, the separate sandboxed
 // process that runs a game. The server never loads a core itself.
 package libretro
 

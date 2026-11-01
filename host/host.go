@@ -1,6 +1,6 @@
 // Package host is the program that runs one game: it reads commands on one
 // stream, writes frames on another and paces the engine at its own frame rate.
-// cmd/wittyplay-host wraps it in a process; tests run it directly.
+// cmd/wittyplay-game-runner wraps it in a process; tests run it directly.
 package host
 
 import (

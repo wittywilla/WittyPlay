@@ -23,7 +23,7 @@ func init() {
 		API     int    `json:"api"`
 	}
 	if err := json.Unmarshal(wittyplay.ManifestJSON, &m); err != nil {
-		fmt.Fprintln(os.Stderr, "wittyplay-host:", err)
+		fmt.Fprintln(os.Stderr, "wittyplay-game-runner:", err)
 		os.Exit(1)
 	}
 	b, _ := json.Marshal(map[string]any{"module": m.ID, "version": m.Version, "api": m.API})
