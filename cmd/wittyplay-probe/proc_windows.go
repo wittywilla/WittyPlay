@@ -22,9 +22,9 @@ type memoryCounters struct {
 }
 
 var (
-	kernel32           = windows.NewLazySystemDLL("kernel32.dll")
-	getProcessMemory   = kernel32.NewProc("K32GetProcessMemoryInfo")
-	getProcessHandleN  = kernel32.NewProc("GetProcessHandleCount")
+	kernel32          = windows.NewLazySystemDLL("kernel32.dll")
+	getProcessMemory  = kernel32.NewProc("K32GetProcessMemoryInfo")
+	getProcessHandleN = kernel32.NewProc("GetProcessHandleCount")
 )
 
 // procInfo says how much memory a process holds, and how many handles it has open.

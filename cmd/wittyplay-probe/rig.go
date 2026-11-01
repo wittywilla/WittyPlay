@@ -33,12 +33,12 @@ var page embed.FS
 // rigFlags say how to set a game up in front of a real browser. Every kind of test here
 // starts with one of these.
 type rigFlags struct {
-	game                                             *gameFlags
-	seconds, every, udpPort                          int
-	browser, browserArgs, listen, host, ffmpeg       string
-	encoders, kind, label, state, profile, latency   string
-	impair, shots                                    string
-	loopback                                         bool
+	game                                           *gameFlags
+	seconds, every, udpPort                        int
+	browser, browserArgs, listen, host, ffmpeg     string
+	encoders, kind, label, state, profile, latency string
+	impair, shots                                  string
+	loopback                                       bool
 }
 
 func addRigFlags(fs *flag.FlagSet) *rigFlags {

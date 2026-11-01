@@ -99,7 +99,6 @@ export class InputManager {
   private scratch = new Uint8Array(13)
   private scratchView = new DataView(this.scratch.buffer)
   private raf = 0
-  private padTimer = 0
   private beat = 0
   private enabled = true
   private polling = false
@@ -218,8 +217,6 @@ export class InputManager {
     this.polling = false
     cancelAnimationFrame(this.raf)
     this.raf = 0
-    clearTimeout(this.padTimer)
-    this.padTimer = 0
     clearInterval(this.beat)
     clearInterval(this.late)
     this.late = 0
@@ -241,15 +238,9 @@ export class InputManager {
     this.poll()
   }
 
-  private padTick = () => {
-    this.padTimer = 0
-    if (!this.polling) return
-    this.poll()
-  }
-
   private lastFrame = 0
   private late = 0
-  private lateCheck = () => { if (performance.now() - this.lastFrame >= FRAME_LATE_MS) this.poll() }
+  private lateCheck = () => { if (!this.tv || performance.now() - this.lastFrame >= FRAME_LATE_MS) this.poll() }
 
   private wantFrames() {
     return !this.hidden && (this.slots.size > 0 || (this.keyboardTurbo !== 0 && this.held.size > 0))
@@ -417,19 +408,16 @@ export class InputManager {
   private poll() {
     if (this.readPads()) this.flush()
     if (!this.polling) return
-    if (!this.wantFrames()) {
-      if (this.late) { clearInterval(this.late); this.late = 0 }
-      return
+    if (this.wantFrames()) {
+      if (!this.raf) this.raf = requestAnimationFrame(this.tick)
+      // Reading a pad once per screen refresh would hold a press back for half of one on
+      // average, and browsers update pads several times as often. Nothing's read twice: a
+      // pad whose timestamp hasn't moved costs a comparison. A TV keeps to the screen's pace.
+      if (!this.late) this.late = window.setInterval(this.lateCheck, this.tv ? LATE_CHECK_MS : PAD_READ_MS)
+    } else if (this.late) {
+      clearInterval(this.late)
+      this.late = 0
     }
-    // Reading a pad once per screen refresh would hold a press back for half of one on
-    // average, and browsers update pads several times as often. Nothing's read twice: a
-    // pad whose timestamp hasn't moved costs a comparison. A TV is left to the screen's pace.
-    if (this.slots.size > 0 && !this.tv) {
-      if (!this.padTimer) this.padTimer = window.setTimeout(this.padTick, PAD_READ_MS)
-      return
-    }
-    if (!this.raf) this.raf = requestAnimationFrame(this.tick)
-    if (!this.late) this.late = window.setInterval(this.lateCheck, LATE_CHECK_MS)
   }
 
   // Reads everything connected. True if anything may have changed.

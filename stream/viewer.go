@@ -32,6 +32,8 @@ type viewer struct {
 	// How frames are timed for this viewer.
 	wantTiming atomic.Bool
 	timing     atomic.Pointer[webrtc.DataChannel]
+	connected  atomic.Value // when, a time.Time
+	videoSSRC  atomic.Uint32
 
 	// WebRTC
 	pc     *webrtc.PeerConnection
@@ -349,6 +351,7 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 		return "", err
 	}
 	v := &viewer{s: s, codec: codec, pc: pc}
+	v.connected.Store(time.Now())
 	fail := func(err error) (string, error) { _ = pc.Close(); return "", err }
 
 	video, err := newVideoSender(codec, videoCap)
@@ -409,6 +412,7 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	pc.OnConnectionStateChange(func(st webrtc.PeerConnectionState) {
 		switch st {
 		case webrtc.PeerConnectionStateConnected:
+			v.connected.Store(time.Now())
 			s.attach(v)
 		case webrtc.PeerConnectionStateFailed, webrtc.PeerConnectionStateClosed:
 			v.close()
@@ -423,6 +427,9 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 		return fail(err)
 	}
 	video.useExtensions(videoSender)
+	if enc := videoSender.GetParameters().Encodings; len(enc) > 0 {
+		v.videoSSRC.Store(uint32(enc[0].SSRC))
+	}
 	select {
 	case <-gathered:
 	case <-ctx.Done():

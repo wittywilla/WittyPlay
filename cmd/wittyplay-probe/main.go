@@ -22,6 +22,10 @@ func main() {
 		err = soak(os.Args[2:])
 	case "chaos":
 		err = chaos(os.Args[2:])
+	case "sheet":
+		err = sheet(os.Args[2:])
+	case "cia":
+		err = cia(os.Args[2:])
 	case "install":
 		err = install(os.Args[2:])
 	default:

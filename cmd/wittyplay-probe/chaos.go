@@ -244,4 +244,3 @@ func killPID(pid int) error {
 	}
 	return p.Kill()
 }
-

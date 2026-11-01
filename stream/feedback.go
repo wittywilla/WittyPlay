@@ -17,8 +17,15 @@ func (s *Session) noteFeedback(v *viewer, pkts []rtcp.Packet) {
 		case *rtcp.PictureLossIndication, *rtcp.FullIntraRequest:
 			s.keyframeAsked(v.codec)
 		case *rtcp.ReceiverReport:
+			// What was sent before the browser had finished connecting counts as lost, so the
+			// first reports say nothing about the network.
+			if time.Since(v.connected.Load().(time.Time)) < rateSettle {
+				continue
+			}
 			for _, rep := range r.Reports {
-				s.noteReport(v, rep)
+				if rep.SSRC == v.videoSSRC.Load() {
+					s.noteReport(v, rep)
+				}
 			}
 		}
 	}
@@ -69,28 +76,30 @@ func (s *Session) restartEncoderLocked(codec string, now time.Time) {
 // it comes down quickly and goes back up slowly. A change means a new encoder and so a
 // keyframe, which is itself a burst on the network, so changes are kept far apart.
 const (
-	rateLossLimit   = 0.03                   // more than this lost means the network is full
-	rateRTTGrowth   = 40 * time.Millisecond  // round trips this far over the best seen mean its queues are filling
-	rateChangeEvery = 5 * time.Second        // the least time between changes
-	rateRecovery    = 20 * time.Second       // how long it has to be calm before going back up
-	rateDown        = 0.7                    // the step down
-	rateUp          = 1.25                   // the step up
-	rateFloor       = 0.1                    // never less than this share of the full rate
-	rateHeavyLoss   = 0.15                   // more than this lost is a network far too small
-	rateMargin      = 0.85                   // how far under what got through to aim
+	rateLossLimit   = 0.03                    // more than this lost means the network is full
+	rateRTTGrowth   = 40 * time.Millisecond   // round trips this far over the best seen mean its queues are filling
+	rateChangeEvery = 5 * time.Second         // the least time between changes
+	rateRecovery    = 20 * time.Second        // how long it has to be calm before going back up
+	rateDown        = 0.7                     // the step down
+	rateUp          = 1.25                    // the step up
+	rateFloor       = 0.1                     // never less than this share of the full rate
+	rateHeavyLoss   = 0.15                    // more than this lost is a network far too small
+	rateMargin      = 0.85                    // how far under what got through to aim
 	rateChangeHeavy = 1500 * time.Millisecond // the least time between changes for that
-	rateRTTMemory   = 30 * time.Second       // how long the best round trip counts for
+	rateRTTMemory   = 30 * time.Second        // how long the best round trip counts for
+	rateSettle      = 3 * time.Second         // how long after connecting before reports count
 )
 
 // rateControl is how much of its full bitrate the game's video gets, for all its viewers.
 type rateControl struct {
-	mu          sync.Mutex
-	scale       float64
-	badReports  int
-	lastChange  time.Time
-	lastBad     time.Time
-	bestRTT     time.Duration
-	bestRTTAt   time.Time
+	mu           sync.Mutex
+	scale        float64
+	badReports   int
+	heavyReports int
+	lastChange   time.Time
+	lastBad      time.Time
+	bestRTT      time.Duration
+	bestRTTAt    time.Time
 }
 
 // rate is the share of the full bitrate to encode at.
@@ -112,10 +121,15 @@ func (c *rateControl) note(lost float64, rtt time.Duration, now time.Time) bool 
 	}
 	// Heavy loss says how much is getting through, so it can go straight there rather
 	// than finding it a step at a time while nothing arrives. That's worth a change at once.
-	if lost > rateHeavyLoss && now.Sub(c.lastChange) >= rateChangeHeavy && c.scale > rateFloor {
-		c.scale = max(c.scale*(1-lost)*rateMargin, rateFloor)
-		c.lastChange, c.lastBad, c.badReports = now, now, 0
-		return true
+	if lost > rateHeavyLoss {
+		c.heavyReports++
+		if c.heavyReports >= 2 && now.Sub(c.lastChange) >= rateChangeHeavy && c.scale > rateFloor {
+			c.scale = max(c.scale*(1-lost)*rateMargin, rateFloor)
+			c.lastChange, c.lastBad, c.badReports, c.heavyReports = now, now, 0, 0
+			return true
+		}
+	} else {
+		c.heavyReports = 0
 	}
 	if rtt > 0 && (c.bestRTT == 0 || rtt < c.bestRTT || now.Sub(c.bestRTTAt) > rateRTTMemory) {
 		c.bestRTT, c.bestRTTAt = rtt, now

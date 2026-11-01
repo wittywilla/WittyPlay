@@ -50,9 +50,11 @@ func bitrate(quality string, w, h int) int {
 	case "low":
 		kbps = 400 + px/500
 	case "high":
-		kbps = 2000 + px/40
+		kbps = 5000 + px/40
 	default:
-		kbps = 1000 + px/120
+		// Small, sharp-edged pictures need more for their size than a film does. A network
+		// that can't carry this says so within a couple of seconds, and it comes down.
+		kbps = 3000 + px/80
 	}
 	return kbps * 1000
 }
@@ -76,14 +78,15 @@ func isHardware(name string) bool {
 
 // encoderArgs are the low-latency settings for each encoder: no B-frames, no
 // lookahead, its fastest preset, and a keyframe every second so a lost packet
-// heals quickly. What a frame may use up is held to a tenth of a second's worth: left
+// heals quickly. What a frame may use up is held to a quarter of a second's worth: left
 // alone, encoders allow a keyframe a second's worth of bits or more, which is a burst that
 // a slow network drops, and then the browser asks for another one, and so on for good.
+// Much less than this and a keyframe of pixel art turns to blocks.
 func encoderArgs(name string, bps int, gop int) (args, inputArgs []string, upload string) {
 	b := strconv.Itoa(bps)
 	g := strconv.Itoa(gop)
 	half := strconv.Itoa(bps / 2)
-	vbv := strconv.Itoa(bps / 10)
+	vbv := strconv.Itoa(bps / 4)
 	switch name {
 	case "h264_nvenc":
 		// -delay 0: left alone, NVENC keeps several finished frames in a queue.

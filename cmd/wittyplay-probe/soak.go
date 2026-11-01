@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strconv"
 	"time"
-
 )
 
 // soak plays one game for a long time and writes down everything that would give away a
@@ -74,11 +73,11 @@ func soak(args []string) error {
 }
 
 type soakLine struct {
-	cells                                           []string
-	gameFps, glass, runnerMB, serverMB, encoderMB   float64
-	browserMB                                       float64
-	goroutines                                      int
-	handles                                         int
+	cells                                         []string
+	gameFps, glass, runnerMB, serverMB, encoderMB float64
+	browserMB                                     float64
+	goroutines                                    int
+	handles                                       int
 }
 
 func (r *rig) soakSample(minute int, p *pageResults, prevBytes *float64) soakLine {
@@ -142,4 +141,3 @@ func judgeSoak(first, last []soakLine, minutes int) error {
 	}
 	return nil
 }
-
