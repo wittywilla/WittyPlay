@@ -170,7 +170,9 @@ export class DisplayEngine {
     if (!media) return
     const smooth = this.values['display.scaling'] === 'smooth'
     const pixel = this.values['display.scaling'] === 'pixel'
-    media.style.imageRendering = smooth ? 'auto' : 'pixelated'
+    // Keeping pixels crisp is for pixel art. A picture a console drew at 640 wide or more,
+    // stretched a number of times that isn't whole, only shows uneven steps along its edges.
+    media.style.imageRendering = smooth || (!pixel && this.srcW >= 600) ? 'auto' : 'pixelated'
     let want: DisplayMode = 'plain'
     if (wantsShader(this.values)) want = this.failed || this.lost ? 'css' : 'shader'
     if (want === 'shader' && !this.ensureGL()) want = 'css'
