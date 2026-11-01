@@ -8,6 +8,7 @@ require (
 	github.com/pion/ice/v4 v4.4.8
 	github.com/pion/interceptor v0.1.51
 	github.com/pion/webrtc/v4 v4.2.26
+	github.com/wittywilla/wittymodule v0.3.0
 	golang.org/x/sys v0.49.0
 )
 

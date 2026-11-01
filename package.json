@@ -10,12 +10,22 @@
     ".": "./web/index.ts"
   },
   "scripts": {
-    "build:bundle": "node build-bundle.mjs"
+    "build:bundle": "node build-bundle.mjs",
+    "test": "node --experimental-strip-types --test web/logic.test.mjs && node scripts/test-web.mjs"
   },
-  "files": ["web", "LICENSE", "NOTICE"],
+  "files": [
+    "web",
+    "LICENSE",
+    "NOTICE"
+  ],
   "repository": "github:wittywilla/WittyPlay",
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "vite": "^6.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }
