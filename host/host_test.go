@@ -115,6 +115,9 @@ func TestLargeFramesNeverWaitOnTheServer(t *testing.T) {
 			t.Fatal("frames queued up instead of replacing each other")
 		}
 		typ, p, err := rd.Next()
+		if err == nil && typ == ipc.MsgTiming { // each picture says when it was made
+			typ, p, err = rd.Next()
+		}
 		if err != nil || typ != ipc.MsgVideo {
 			t.Fatalf("%d %v", typ, err)
 		}

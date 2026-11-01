@@ -74,7 +74,9 @@ var traits = map[string]CoreTraits{
 		Resolution: pick("mupen64plus-43screensize", "640x480", "1280x960", "1920x1440", "2560x1920")},
 	"parallel_n64": {GPU: true, Options: map[string]string{"parallel-n64-gfxplugin": "gliden64"},
 		Resolution: pick("parallel-n64-screensize", "640x480", "1280x960", "1920x1440", "2880x2160")},
-	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, Options: map[string]string{"pcsx2_renderer": "OpenGL"},
+	// Shared memory cards live in the system folder, which a game's sandbox can't write to:
+	// the game then finds no card at all. A card per game goes in the player's own save folder.
+	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, Options: map[string]string{"pcsx2_renderer": "OpenGL", "pcsx2_shared_memory_cards": "disabled"},
 		Resolution: pick("pcsx2_upscale_multiplier", "1x (Native)", "2x", "4x", "4x")},
 	"play": {GPU: true},
 	"ppsspp": {GPU: true, Assets: "PPSSPP", Options: map[string]string{"ppsspp_backend": "opengl"},
@@ -124,9 +126,15 @@ func RunnerArgs(coreID string) []string {
 // DefaultResolution is how many times native a console renders at with the
 // setting on Automatic. Sharp enough to be worth the graphics card, small enough
 // to stream well.
+//
+// PlayStation 2 stays native. Its games draw full-screen effects in small tiles, and the
+// fixes that hold those together when upscaled are worked out per game by the core's own
+// database, which doesn't always succeed: Gran Turismo 4 at 2x comes out in bands of the
+// wrong colour with a grid over them. At native size no such seams exist, and a frame
+// has a quarter of the pixels to draw, encode and send.
 func DefaultResolution(consoleID string) int {
 	switch consoleID {
-	case "n64", "ps1", "ps2", "psp", "dc":
+	case "n64", "ps1", "psp", "dc":
 		return 2
 	}
 	return 1

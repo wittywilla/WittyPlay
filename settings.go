@@ -122,6 +122,7 @@ var Settings = []Setting{
 	{Key: "osd.fps", Group: GroupOSD, Section: "What to show", Label: "Frames shown here", Kind: KindToggle, Default: true},
 	{Key: "osd.gameFps", Group: GroupOSD, Section: "What to show", Label: "Frames the game ran", Kind: KindToggle, Default: true},
 	{Key: "osd.latency", Group: GroupOSD, Section: "What to show", Label: "Network delay", Kind: KindToggle, Default: true},
+	{Key: "osd.stages", Group: GroupOSD, Section: "What to show", Label: "Where the delay goes", Help: "From a press to the screen, and each stage on the way: the game, the encoder, the network, decoding and the display.", Kind: KindToggle, Default: true},
 	{Key: "osd.encode", Group: GroupOSD, Section: "What to show", Label: "Encode time", Kind: KindToggle, Default: false},
 	{Key: "osd.bitrate", Group: GroupOSD, Section: "What to show", Label: "Bitrate", Kind: KindToggle, Default: false},
 	{Key: "osd.dropped", Group: GroupOSD, Section: "What to show", Label: "Dropped frames", Kind: KindToggle, Default: false},
@@ -135,6 +136,7 @@ var Settings = []Setting{
 	{Key: "emulation.slowSpeed", Group: GroupEmulation, Section: "Speed", Label: "Slow-motion speed", Kind: KindSlider, Default: 0.5, Min: 0.1, Max: 0.9, Step: 0.05, Unit: "×"},
 	{Key: "emulation.rewind", Group: GroupEmulation, Section: "Rewind", Label: "Rewind", Help: "Keeps the last few seconds in memory on the server. Off by default, as it costs a little all the time.", Kind: KindToggle, Default: false},
 	{Key: "emulation.rewindSeconds", Group: GroupEmulation, Section: "Rewind", Label: "How far back", Help: "The server's memory limit can make it less.", Kind: KindSlider, Default: 20.0, Min: 5, Max: 120, Step: 5, Unit: "s"},
+	{Key: "emulation.latency", Group: GroupEmulation, Section: "Latency", Label: "Speed or steadiness", Help: "Fastest shows every frame the moment it arrives. Steadiest lets your browser hold frames back to smooth out a poor connection, which adds delay. Automatic is Fastest until the connection turns uneven, then Balanced until it settles.", Kind: KindChoice, Default: "auto", Choices: choices("auto", "Automatic", "fastest", "Fastest", "balanced", "Balanced", "steady", "Steadiest")},
 	{Key: "emulation.runAhead", Group: GroupEmulation, Section: "Latency", Label: "Run-ahead", Help: "Takes frames off the delay by running the game ahead and going back. Costs the server more, and can glitch on some games. It turns itself off when it doesn't fit.", Kind: KindSlider, Default: 0.0, Min: 0, Max: 3, Step: 1, Unit: " frames"},
 	{Key: "emulation.pauseHidden", Group: GroupEmulation, Section: "When you step away", Label: "Pause when this tab is hidden", Kind: KindToggle, Default: true},
 

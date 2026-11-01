@@ -5,8 +5,9 @@
 //   3. WebSocket with JPEG: when nothing else works
 // docs/GAMING.md has the reasoning.
 
-import { TIMING_SUBSCRIBE, watchVideo, type LatencyMeter } from './latency'
+import { PhaseLock, SteadinessWatch, TIMING_LATENCY, TIMING_SHIFT, TIMING_SUBSCRIBE, watchVideo, type LatencyMeter } from './latency'
 
+export type LatencyMode = 'auto' | 'fastest' | 'balanced' | 'steady'
 export type TransportKind = 'webrtc' | 'ws-h264' | 'ws-jpeg'
 export type Mode = 'auto' | TransportKind
 
@@ -40,6 +41,8 @@ export interface Transport {
   captureStream(): MediaStream | null
   // Measures every stage of the path into a meter; null stops. Costs nothing until asked.
   measure(meter: LatencyMeter | null): void
+  // How to trade speed against steadiness, where this way of connecting has the choice.
+  setLatency(mode: LatencyMode): void
   onEvent?: (e: PlayEvent) => void
   onLost?: () => void
 }
@@ -72,6 +75,20 @@ class TimingLink {
   stop() { clearTimeout(this.timer) }
 
   incoming(b: ArrayBuffer) { this.meter?.message(b) }
+
+  setLatency(mode: LatencyMode) {
+    const b = new ArrayBuffer(2)
+    new DataView(b).setUint8(0, TIMING_LATENCY)
+    new DataView(b).setUint8(1, mode === 'balanced' ? 1 : mode === 'steady' ? 2 : 0)
+    this.out(b)
+  }
+
+  shift(ms: number) {
+    const b = new ArrayBuffer(3)
+    new DataView(b).setUint8(0, TIMING_SHIFT)
+    new DataView(b).setInt16(1, Math.max(-32000, Math.min(32000, Math.round(ms * 10))), true)
+    this.out(b)
+  }
 }
 
 export type Signal = {
@@ -117,6 +134,8 @@ class WebRTCTransport implements Transport {
   private link = new TimingLink((b) => { if (this.timingDc?.readyState === 'open') { try { this.timingDc.send(b) } catch { /* the next one will do */ } } })
   private wanted: LatencyMeter | null = null
   private unwatch: (() => void) | null = null
+  private latency: LatencyMode = 'auto'
+  private unlock: (() => void) | null = null
 
   constructor(private signal: Signal) {
     const v = document.createElement('video')
@@ -152,7 +171,10 @@ class WebRTCTransport implements Transport {
     const timing = pc.createDataChannel('timing', { ordered: false, maxRetransmits: 0 })
     timing.binaryType = 'arraybuffer'
     timing.onmessage = (m) => { if (m.data instanceof ArrayBuffer) this.link.incoming(m.data) }
-    timing.onopen = () => { if (this.wanted) this.measure(this.wanted) }
+    timing.onopen = () => {
+      if (this.wanted) this.measure(this.wanted)
+      this.setLatency(this.latency)
+    }
     this.timingDc = timing
     pc.onconnectionstatechange = () => {
       if (!this.closed && (pc.connectionState === 'failed' || pc.connectionState === 'closed')) this.onLost?.()
@@ -199,6 +221,7 @@ class WebRTCTransport implements Transport {
     this.closed = true
     this.link.stop()
     this.unwatch?.()
+    this.unlock?.()
     this.pc?.close()
     this.element.srcObject = null
   }
@@ -208,6 +231,32 @@ class WebRTCTransport implements Transport {
     this.unwatch?.()
     this.unwatch = meter ? watchVideo(this.element, (p) => meter.shown(p)) : null
     if (this.timingDc?.readyState === 'open' || !meter) this.link.start(meter)
+  }
+
+  // Says how to trade speed against steadiness. Fastest and balanced also land frames just
+  // before the display wants them. Both hold good for the rest of the connection.
+  setLatency(mode: LatencyMode) {
+    this.latency = mode
+    if (this.timingDc?.readyState !== 'open') return // sent when it opens
+    this.unlock?.()
+    this.unlock = null
+    if (mode === 'steady') {
+      this.link.setLatency('steady')
+      return
+    }
+    // Automatic starts as fastest and goes to balanced while frames arrive unevenly.
+    let now: 'fastest' | 'balanced' = mode === 'balanced' ? 'balanced' : 'fastest'
+    this.link.setLatency(now)
+    const margin = () => (now === 'fastest' ? 3 : 6)
+    const lock = new PhaseLock((ms) => this.link.shift(ms), margin())
+    const auto = mode === 'auto' ? new SteadinessWatch((uneven) => {
+      const next = uneven ? 'balanced' : 'fastest'
+      if (next === now) return
+      now = next
+      lock.margin = margin()
+      this.link.setLatency(next)
+    }) : null
+    this.unlock = watchVideo(this.element, (p) => { lock.shown(p); auto?.shown(p) })
   }
 
   async stats(): Promise<Stats> {
@@ -371,6 +420,7 @@ class WSTransport implements Transport {
 
   private nextSeq = 0
   measure(meter: LatencyMeter | null) { this.meter = meter; this.link.start(meter) }
+  setLatency(mode: LatencyMode) { this.link.setLatency(mode) }
 
   private jpeg(b: Uint8Array) {
     if (this.drawing) return

@@ -43,6 +43,8 @@ export const TIMING_PING = 0xf1
 export const TIMING_PONG = 0xf2
 export const TIMING_SUBSCRIBE = 0xf3
 export const TIMING_RECORD = 0xf4
+export const TIMING_LATENCY = 0xf5
+export const TIMING_SHIFT = 0xf6
 
 const RECORD_SIZE = 1 + 1 + 4 * 4 + 8 * 8
 
@@ -204,6 +206,19 @@ export class LatencyMeter {
     return this.pressSeq
   }
 
+  // What the numbers on screen show: the middle of recent frames and presses.
+  summary(): LatencySummary | null {
+    const f = this.frames
+    if (f.total.count < 10) return null
+    const value = (s: Series) => (s.count ? s.median : undefined)
+    return {
+      press: this.presses.photon.count >= 3 ? this.presses.photon.median : undefined,
+      total: f.total.median, core: value(f.core), encode: value(f.encode),
+      toNetwork: (value(f.toServer) ?? 0) + (value(f.queue) ?? 0) + (value(f.send) ?? 0),
+      network: value(f.network), decode: value(f.decode), display: value(f.display), worst: f.total.p95,
+    }
+  }
+
   private join(r: FrameRecord, p: Presented) {
     const f = this.frames
     const t: StageTimes = {
@@ -231,6 +246,113 @@ export class LatencyMeter {
       this.presses.waitCore.add(it.waitCore)
       this.presses.photon.add(it.photon)
       this.log?.push(it)
+    }
+  }
+}
+
+export type LatencySummary = { press?: number; total: number; core?: number; encode?: number; toNetwork?: number; network?: number; decode?: number; display?: number; worst: number }
+
+// What's holding things back, in words, once there's something a person can do about it
+// or a reason to stop looking for one. It says one thing: the biggest limit that's real.
+export function adviceFor(s: LatencySummary, c: { fps: number; gameFps?: number; rttMs?: number; jitterMs?: number; lost?: number }): string {
+  const frame = 1000 / (c.fps || 60)
+  if (c.gameFps != null && c.gameFps > 0 && c.gameFps < c.fps * 0.85) return `The server can't keep this game at full speed: ${Math.round(c.gameFps)} of ${Math.round(c.fps)} frames a second. It may be busy, or the game may need a lower internal resolution.`
+  if ((c.rttMs ?? 0) > 40 || (s.network ?? 0) > 25) return 'Most of the delay is the network between here and the server. A wired connection, or being closer to it, is what would help.'
+  if ((c.jitterMs ?? 0) > 15 || (s.worst - s.total) > frame * 3) return 'The connection is uneven, so some frames arrive late. Wired is steadier than Wi-Fi. "Balanced" under Speed and rewind trades a little delay for smoothness.'
+  if ((s.encode ?? 0) > frame * 0.8) return 'The server is taking too long to encode each frame. A graphics card with a video encoder would help, or a lower internal resolution.'
+  if ((s.decode ?? 0) > frame * 0.8) return 'This device is struggling to decode the video. Hardware decoding, a lower stream quality or another browser may help.'
+  return ''
+}
+
+// PhaseLock lands frames just before the display wants them. A frame that arrives just
+// after the display has taken its last picture waits almost a whole refresh for the next,
+// and the game's clock and the display's have no reason to agree on where that is. So this
+// watches how long frames wait, and moves when the game makes them, a little at a time,
+// until they arrive with just enough time to spare. Waiting less here takes the same time
+// off everything before it: a press is read that much later, and reaches the glass just
+// as soon. It's a nudge to the game's clock, which then runs on as before.
+//
+// Nothing says how much of the wait can be got rid of, since the browser needs some of it
+// itself. So it moves frames later until they start missing, which shows as a jump of a
+// whole refresh, then goes back a little and stays there.
+export class PhaseLock {
+  private waits: number[] = []
+  private floor = Infinity
+  private lastDecision = 0
+  private lastShift = 0
+  private settled = false
+  private period = 16.7
+  private lastDisplay = 0
+  shifted = 0
+  margin: number
+
+  constructor(private send: (ms: number) => void, margin = 3) { this.margin = margin }
+
+  shown(p: Presented) {
+    const wait = p.displayAt - p.presented
+    if (!Number.isFinite(wait) || wait < 0) return
+    if (this.lastDisplay) {
+      const d = p.displayAt - this.lastDisplay
+      if (d > 4 && d < 60) this.period += (d - this.period) * 0.02
+    }
+    this.lastDisplay = p.displayAt
+    this.waits.push(wait)
+    const now = p.presented
+    if (this.waits.length < 20 || now - this.lastDecision < 500) return
+    const sorted = [...this.waits].sort((a, b) => a - b)
+    this.waits = []
+    this.lastDecision = now
+    this.decide(sorted[sorted.length >> 1])
+  }
+
+  private decide(wait: number) {
+    const T = this.period
+    // A wait that has jumped by more than half a refresh is frames missing their turn.
+    if (wait - this.floor > T / 2) {
+      // Back to before the edge, with room to spare.
+      const back = T - (wait - this.floor) + this.margin + Math.max(this.lastShift, 0)
+      this.move(-Math.min(back, T))
+      this.settled = true
+      return
+    }
+    if (wait < this.floor) this.floor = wait
+    if (!this.settled) {
+      this.move(Math.min(2, T / 8))
+      return
+    }
+    // Clocks drift: this is the one that shows the game running ahead of the display.
+    const over = wait - this.floor - this.margin
+    if (over > 2) this.move(Math.min(over, T / 4))
+  }
+
+  private move(ms: number) {
+    this.lastShift = ms
+    this.shifted += ms
+    this.send(ms)
+  }
+}
+
+// SteadinessWatch says when frames are arriving too unevenly to show as they come. It's
+// slow to change its mind, as a choice that flips back and forth is worse than either.
+export class SteadinessWatch {
+  private gaps = new Series(120)
+  private last = 0
+  private uneven = false
+  private since = 0
+  constructor(private say: (uneven: boolean) => void) {}
+
+  shown(p: Presented) {
+    if (this.last) this.gaps.add(p.presented - this.last)
+    this.last = p.presented
+    if (this.gaps.count < 120) return
+    const typical = this.gaps.median
+    const bad = this.gaps.p95 > typical * 2.5 + 8
+    if (bad === this.uneven) { this.since = p.presented; return }
+    // Uneven for 3 seconds to slow down, and steady for 20 to speed up again.
+    if (p.presented - this.since > (bad ? 3000 : 20000)) {
+      this.uneven = bad
+      this.since = p.presented
+      this.say(bad)
     }
   }
 }

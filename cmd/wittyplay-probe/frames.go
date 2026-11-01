@@ -101,6 +101,14 @@ func frames(args []string) error {
 						var id [4]byte
 						id[0] = 7
 						_ = ipc.Write(rn.Stdin, ipc.CmdSaveState, id[:])
+					case strings.HasPrefix(line, "option "):
+						k, v, _ := strings.Cut(strings.TrimPrefix(line, "option "), "=")
+						b, _ := json.Marshal(ipc.OptionSet{Key: k, Value: v})
+						_ = ipc.Write(rn.Stdin, ipc.CmdOption, b)
+					case strings.HasPrefix(line, "load "):
+						if b, err := os.ReadFile(strings.TrimPrefix(line, "load ")); err == nil {
+							_ = ipc.Write(rn.Stdin, ipc.CmdState, b)
+						}
 					default:
 						if bn, ok := buttonNames[line]; ok {
 							presses = append(presses, press{at: now, button: bn, down: true}, press{at: now + 0.2, button: bn})
@@ -138,6 +146,10 @@ func frames(args []string) error {
 				switch e.Type {
 				case "message", "statefail":
 					fmt.Println("core says:", e.Type, e.Text)
+				case "log":
+					if g.verbose {
+						fmt.Println("core log:", e.Text)
+					}
 				case "options":
 					if *optionsOut != "" {
 						if b, err := json.MarshalIndent(e.Options, "", " "); err == nil {

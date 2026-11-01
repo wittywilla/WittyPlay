@@ -10,7 +10,7 @@ import { CheatsPanel, CorePanel, JsonEditor, PatchesPanel, SettingsPanel, SlotsP
 import { downloadBlob, fileName, loadSchema, useSettings, type Level, type Schema, type SettingsHost } from './settings'
 import { ControllerStudio, type PortChoice, type ProfileHost } from './Studio'
 import { TouchControls, TouchEditor, useOrientation } from './TouchControls'
-import { make, plan, TRANSPORT_LABELS, type AudioBuffer_, type Mode, type PlayEvent, type Transport, type TransportKind } from './transport'
+import { make, plan, TRANSPORT_LABELS, type AudioBuffer_, type LatencyMode, type Mode, type PlayEvent, type Transport, type TransportKind } from './transport'
 import './play.css'
 
 // The player: one game, full window. The server does the running; this shows it
@@ -341,6 +341,11 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     transport.setAudioBuffer((values['audio.latency'] as AudioBuffer_) || 'lowest')
   }, [transport, values])
 
+  // How to trade speed against steadiness.
+  const latencyChoice = values['emulation.latency'] as LatencyMode | undefined
+  useEffect(() => { transport?.setLatency(latencyChoice || 'auto') }, [transport, latencyChoice])
+  const stampInput = useCallback((next: (() => number) | null) => input.setStamper(next), [input])
+
   // How fast the game goes. A speed is always sent by a reliable request: a lost "let go
   // of fast-forward" would be a stuck game.
   const wanted = fastForward ? Number(values['emulation.ffSpeed'] || 4) : slow ? Number(values['emulation.slowSpeed'] || 0.5) : 1
@@ -560,7 +565,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
         </div>
       )}
 
-      {values['osd.on'] === true && <Osd host={host} session={info} transport={transport} values={values} />}
+      {values['osd.on'] === true && <Osd host={host} session={info} transport={transport} values={values} stampInput={stampInput} />}
 
       {!paused && (frozen || rewinding || heldSpeed !== 1 || recording) && (
         <div className="wp-state" role="status">
