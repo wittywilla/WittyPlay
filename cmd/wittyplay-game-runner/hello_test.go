@@ -15,7 +15,7 @@ import (
 
 // The hello a server checks a new version by, and leaving when the pipe closes.
 func TestHello(t *testing.T) {
-	exe := filepath.Join(t.TempDir(), "wittyplay-host")
+	exe := filepath.Join(t.TempDir(), "wittyplay-game-runner")
 	if runtime.GOOS == "windows" {
 		exe += ".exe"
 	}

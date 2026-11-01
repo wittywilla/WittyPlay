@@ -31,11 +31,11 @@ func controlManager(t *testing.T) *Manager {
 		if err != nil {
 			t.Fatal(err)
 		}
-		controlRunner = filepath.Join(dir, "wittyplay-host")
+		controlRunner = filepath.Join(dir, "wittyplay-game-runner")
 		if runtime.GOOS == "windows" {
 			controlRunner += ".exe"
 		}
-		cmd := exec.Command("go", "build", "-o", controlRunner, "../cmd/wittyplay-host")
+		cmd := exec.Command("go", "build", "-o", controlRunner, "../cmd/wittyplay-game-runner")
 		cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
 		if b, err := cmd.CombinedOutput(); err != nil {
 			t.Fatalf("building the host: %v\n%s", err, b)

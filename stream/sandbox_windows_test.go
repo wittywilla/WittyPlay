@@ -98,7 +98,7 @@ func TestProbeGPUInSandbox(t *testing.T) {
 
 func TestAPathTooLongForWindowsIsSaidPlainly(t *testing.T) {
 	deep := `C:\` + strings.Repeat("d", 250)
-	_, err := Probe(context.Background(), ProbeOptions{Runner: "wittyplay-host", Core: `C:\core.dll`, WorkDir: deep})
+	_, err := Probe(context.Background(), ProbeOptions{Runner: "wittyplay-game-runner", Core: `C:\core.dll`, WorkDir: deep})
 	var pe *ProbeError
 	if !errors.As(err, &pe) || !strings.Contains(pe.Reason, "shorter path") {
 		t.Errorf("got %v", err)

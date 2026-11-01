@@ -15,15 +15,15 @@ import (
 	"github.com/wittywilla/wittyplay/testcore/fakecore"
 )
 
-// buildProbeRunner builds the real wittyplay-host once per test run.
+// buildProbeRunner builds the real wittyplay-game-runner once per test run.
 func buildProbeRunner(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	out := filepath.Join(dir, "wittyplay-host")
+	out := filepath.Join(dir, "wittyplay-game-runner")
 	if runtime.GOOS == "windows" {
 		out += ".exe"
 	}
-	b := exec.Command("go", "build", "-o", out, "../cmd/wittyplay-host")
+	b := exec.Command("go", "build", "-o", out, "../cmd/wittyplay-game-runner")
 	b.Env = append(os.Environ(), "CGO_ENABLED=0")
 	if msg, err := b.CombinedOutput(); err != nil {
 		t.Fatalf("building the runner: %v\n%s", err, msg)

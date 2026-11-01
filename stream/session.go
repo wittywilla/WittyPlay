@@ -28,7 +28,7 @@ import (
 
 // Config is how the server runs games.
 type Config struct {
-	Runner      string   // the wittyplay-host program, or another runner speaking ipc
+	Runner      string   // the wittyplay-game-runner program, or another runner speaking ipc
 	RunnerArgs  []string // extra arguments, before the ones added here
 	FFmpeg      string
 	HWEncoders  []string          // hardware encoders known to work here and switched on, best first

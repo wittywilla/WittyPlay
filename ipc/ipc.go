@@ -1,7 +1,7 @@
 // Package ipc is the protocol between the server and a game runner process:
 // length-prefixed messages over the runner's stdin and stdout.
 //
-// A runner is wittyplay-host, or any other program that speaks this protocol,
+// A runner is wittyplay-game-runner, or any other program that speaks this protocol,
 // such as WittyRetroArch. Talking over pipes is what keeps a GPL runner a
 // separate program from the Apache-licensed server, so this package is the
 // whole of what they share. docs/GAMING.md has the licensing reasons.

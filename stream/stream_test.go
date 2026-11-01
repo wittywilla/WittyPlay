@@ -25,7 +25,7 @@ import (
 	"github.com/wittywilla/wittyplay/ipc"
 )
 
-// These tests run the real thing: the wittyplay-host program with its built-in
+// These tests run the real thing: the wittyplay-game-runner program with its built-in
 // test core, a real FFmpeg, and a real WebRTC peer on the other end.
 
 // One build for the whole run. A new program can be held for half a minute the first
@@ -35,11 +35,11 @@ var runnerOnce = sync.OnceValues(func() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	out := filepath.Join(dir, "wittyplay-host")
+	out := filepath.Join(dir, "wittyplay-game-runner")
 	if runtime.GOOS == "windows" {
 		out += ".exe"
 	}
-	cmd := exec.Command("go", "build", "-o", out, "../cmd/wittyplay-host")
+	cmd := exec.Command("go", "build", "-o", out, "../cmd/wittyplay-game-runner")
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
 	if b, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("%w\n%s", err, b)

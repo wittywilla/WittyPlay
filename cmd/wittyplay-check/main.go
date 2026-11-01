@@ -46,7 +46,7 @@ func main() {
 	flag.StringVar(&c.coresDir, "cores-dir", "", "folder holding the cores; installs go here")
 	flag.StringVar(&c.systemDir, "system", "", "BIOS folder (default: an empty folder in the report folder)")
 	flag.StringVar(&c.out, "out", "", "report folder, outside the repository")
-	flag.StringVar(&c.runner, "runner", "", "runner program (default: wittyplay-host beside this program, then on the PATH)")
+	flag.StringVar(&c.runner, "runner", "", "runner program (default: wittyplay-game-runner beside this program, then on the PATH)")
 	flag.StringVar(&c.sevenZip, "7z", "", "7-Zip program for .7z games (default: 7z or 7zz on the PATH)")
 	flag.IntVar(&c.jobs, "jobs", max(1, runtime.NumCPU()/2), "games to run at once")
 	flag.IntVar(&c.memoryMB, "memory-mb", 2048, "the runner's memory limit, as on a server")
@@ -413,7 +413,7 @@ func outsideRepo(dir string) (string, error) {
 }
 
 func findRunner() (string, error) {
-	name := "wittyplay-host"
+	name := "wittyplay-game-runner"
 	if runtime.GOOS == "windows" {
 		name += ".exe"
 	}
