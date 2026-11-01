@@ -108,7 +108,8 @@ var traits = map[string]CoreTraits{
 		Resolution: pick("ppsspp_internal_resolution", "480x272", "960x544", "1440x816", "1920x1088")},
 	// Left to itself, Flycast keeps memory cards in the system folder, which a running core
 	// can't write to, so nothing a game saved to one would last. These are in the save folder.
-	"flycast": {GPU: true, Options: map[string]string{"reicast_alpha_sorting": "per-triangle (normal)", "reicast_per_content_vmus": "All VMUs"},
+	// It also lays out the console's memory through shared memory, where it can.
+	"flycast": {GPU: true, SharedMemory: true, Options: map[string]string{"reicast_alpha_sorting": "per-triangle (normal)", "reicast_per_content_vmus": "All VMUs"},
 		Resolution: pick("reicast_internal_resolution", "640x480", "1280x960", "1920x1440", "2560x1920")},
 	// SwanStation lays out the PlayStation's memory through shared memory, and can't start
 	// without it.
