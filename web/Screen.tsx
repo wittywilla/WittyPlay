@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DisplayEngine, type DisplayMode } from './display'
 import { computeLayout } from './layout'
-import { CheatsPanel, CorePanel, JsonEditor, PatchesPanel, SettingsPanel, type LevelChoice } from './Panels'
+import { CheatsPanel, ConsoleChips, CorePanel, JsonEditor, PatchesPanel, SettingsPanel, type LevelChoice } from './Panels'
+import { PromptBar } from './prompts'
 import { levelName, loadSchema, useSettings, type Level, type Schema, type SettingsHost } from './settings'
 import './play.css'
 
@@ -108,15 +109,13 @@ export function GameSettingsScreen({ host, consoles, itemId, itemTitle, consoleI
   return (
     <div className="wp-screen">
       {!itemId && (
-        <label className="wp-screen-console">Settings for
-          <select className="wp-select" value={chosenConsole} onChange={(e) => { setChosenConsole(e.target.value); setLevel(e.target.value ? 'console' : 'person') }}>
-            <option value="">All my games</option>
-            {consoles.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </label>
+        <div className="wp-chips">
+          <span className="wp-chips-label">Settings for</span>
+          <ConsoleChips consoles={consoles} chosen={chosenConsole} first="All my games" label="Settings for" onChoose={(id) => { setChosenConsole(id); setLevel(id ? 'console' : 'person') }} />
+        </div>
       )}
       <div className="wp-tabs" role="tablist" aria-label="Settings">
-        {tabs.map((t) => <button key={t.id} type="button" role="tab" aria-selected={t.id === current.id} className={'wp-chip' + (t.id === current.id ? ' on' : '')} onClick={() => setTab(t.id)}>{t.label}</button>)}
+        {tabs.map((t) => <button key={t.id} type="button" role="tab" aria-selected={t.id === current.id} className="wp-tab" onClick={() => setTab(t.id)}>{t.label}</button>)}
       </div>
       <div className={'wp-screen-body' + (current.id === 'display' ? ' with-preview' : '')}>
         {current.id === 'display' && (
@@ -133,6 +132,7 @@ export function GameSettingsScreen({ host, consoles, itemId, itemTitle, consoleI
           {current.id === 'json' && <JsonEditor {...common} host={host} scope={scope} title={itemTitle || consoleName || 'games'} say={onError} itemId={itemId} />}
         </div>
       </div>
+      <PromptBar className="wps-prompts" items={[{ button: 'dpad', label: 'Move' }, { button: 'dpad', label: 'Left and right change a value', key: '←→' }, { button: 'back', label: 'Back' }]} />
     </div>
   )
 }
