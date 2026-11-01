@@ -123,7 +123,16 @@ func TestControlIsHeldToTheServersLimits(t *testing.T) {
 	if *c.FrameSkip != -1 {
 		t.Errorf("frame skip %d", *c.FrameSkip)
 	}
-	c = ControlFor(map[string]any{"emulation.frameSkip": "2", "emulation.rewind": false}, Limits{RewindBytes: 1 << 20, RunAhead: true})
+	if c := ControlFor(map[string]any{"emulation.runAheadAuto": true}, Limits{RunAhead: true}); *c.RunAhead != ipc.RunAheadAuto {
+		t.Errorf("automatic run-ahead came out as %d", *c.RunAhead)
+	}
+	if c := ControlFor(map[string]any{"emulation.runAheadAuto": false}, Limits{RunAhead: true}); *c.RunAhead != 0 {
+		t.Errorf("turned off, run-ahead came out as %d", *c.RunAhead)
+	}
+	if c := ControlFor(map[string]any{"emulation.runAheadAuto": true, "emulation.runAhead": 2.0}, Limits{RunAhead: true}); *c.RunAhead != 2 {
+		t.Errorf("a choice of two frames came out as %d", *c.RunAhead)
+	}
+	c = ControlFor(map[string]any{"emulation.frameSkip": "2", "emulation.rewind": false, "emulation.runAheadAuto": false}, Limits{RewindBytes: 1 << 20, RunAhead: true})
 	if *c.FrameSkip != 2 || *c.RewindBytes != 0 {
 		t.Errorf("frame skip %d, rewind %d", *c.FrameSkip, *c.RewindBytes)
 	}

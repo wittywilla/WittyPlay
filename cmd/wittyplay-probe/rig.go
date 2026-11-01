@@ -38,7 +38,7 @@ type rigFlags struct {
 	browser, browserArgs, listen, host, ffmpeg     string
 	encoders, kind, label, state, profile, latency string
 	impair, shots                                  string
-	loopback                                       bool
+	loopback, noAutoAhead                          bool
 }
 
 func addRigFlags(fs *flag.FlagSet) *rigFlags {
