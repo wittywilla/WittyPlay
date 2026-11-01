@@ -215,7 +215,7 @@ export class LatencyMeter {
     const value = (s: Series) => (s.count ? s.median : undefined)
     return {
       press: this.presses.photon.count >= 3 ? this.presses.photon.median : undefined,
-      total: f.total.median, core: value(f.core), encode: value(f.encode),
+      frames: f.total.count, total: f.total.median, core: value(f.core), encode: value(f.encode),
       toNetwork: (value(f.toServer) ?? 0) + (value(f.queue) ?? 0) + (value(f.send) ?? 0),
       network: value(f.network), decode: value(f.decode), display: value(f.display), worst: f.total.p95,
     }
@@ -252,15 +252,17 @@ export class LatencyMeter {
   }
 }
 
-export type LatencySummary = { press?: number; total: number; core?: number; encode?: number; toNetwork?: number; network?: number; decode?: number; display?: number; worst: number }
+export type LatencySummary = { frames?: number; press?: number; total: number; core?: number; encode?: number; toNetwork?: number; network?: number; decode?: number; display?: number; worst: number }
 
 // What's holding things back, in words, once there's something a person can do about it
 // or a reason to stop looking for one. It says one thing: the biggest limit that's real.
 export function adviceFor(s: LatencySummary, c: { fps: number; gameFps?: number; rttMs?: number; jitterMs?: number; lost?: number }): string {
   const frame = 1000 / (c.fps || 60)
+  // Nothing is steady in the first moments of a connection, and it needn't be remarked on.
+  if ((s.frames ?? 0) < 300) return ''
   if (c.gameFps != null && c.gameFps > 0 && c.gameFps < c.fps * 0.85) return `The server can't keep this game at full speed: ${Math.round(c.gameFps)} of ${Math.round(c.fps)} frames a second. It may be busy, or the game may need a lower internal resolution.`
   if ((c.rttMs ?? 0) > 40 || (s.network ?? 0) > 25) return 'Most of the delay is the network between here and the server. A wired connection, or being closer to it, is what would help.'
-  if ((c.jitterMs ?? 0) > 15 || (s.worst - s.total) > frame * 3) return 'The connection is uneven, so some frames arrive late. Wired is steadier than Wi-Fi. "Balanced" under Speed and rewind trades a little delay for smoothness.'
+  if ((c.jitterMs ?? 0) > 25 || (s.worst - s.total) > frame * 3) return 'The connection is uneven, so some frames arrive late. Wired is steadier than Wi-Fi. "Balanced" under Speed and rewind trades a little delay for smoothness.'
   if ((s.encode ?? 0) > frame * 0.8) return 'The server is taking too long to encode each frame. A graphics card with a video encoder would help, or a lower internal resolution.'
   if ((s.decode ?? 0) > frame * 0.8) return 'This device is struggling to decode the video. Hardware decoding, a lower stream quality or another browser may help.'
   return ''

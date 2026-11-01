@@ -192,7 +192,7 @@ describe('a connection turning uneven', () => {
 })
 
 describe('what a person is told', () => {
-  const fine = { total: 15, worst: 20, core: 2, encode: 3, toNetwork: 1, network: 1, decode: 1, display: 6 }
+  const fine = { frames: 1000, total: 15, worst: 20, core: 2, encode: 3, toNetwork: 1, network: 1, decode: 1, display: 6 }
   test('is nothing when all is well', () => {
     assert.equal(adviceFor(fine, { fps: 60, gameFps: 60, rttMs: 2, jitterMs: 1 }), '')
   })
