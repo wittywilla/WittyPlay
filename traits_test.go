@@ -1,6 +1,7 @@
 package wittyplay
 
 import (
+	"slices"
 	"os"
 	"path/filepath"
 	"strings"
@@ -158,6 +159,19 @@ func TestIsBIOSFile(t *testing.T) {
 	} {
 		if got := IsBIOSFile(c.console, c.name); got != c.want {
 			t.Errorf("IsBIOSFile(%q, %q) = %v", c.console, c.name, got)
+		}
+	}
+}
+
+// Only a core known to need it asks for shared memory.
+func TestRunnerArgsAskForSharedMemoryOnlyWhenNeeded(t *testing.T) {
+	has := func(core string) bool { return slices.Contains(RunnerArgs(core), "-shared-memory") }
+	if !has("pcsx2") {
+		t.Error("PlayStation 2's core crashes without it")
+	}
+	for _, core := range []string{"fceumm", "play", "mupen64plus_next", "custom-anything", ""} {
+		if has(core) {
+			t.Errorf("%q has no reason to have it", core)
 		}
 	}
 }

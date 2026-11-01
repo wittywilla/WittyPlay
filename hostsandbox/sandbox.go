@@ -11,6 +11,10 @@ type Limits struct {
 	MemoryMB int64  // memory it may use; 0 for no limit
 	GPU      bool   // a graphics driver will load: docs/GAMING.md says what that opens
 	Normal   bool   // keep normal priority: a demanding game can't play at low priority
+	// SharedMemory lets it make files in /dev/shm, which a core that maps its recompiled code
+	// twice has no other way of doing. Only for a core known to, as they're shared with
+	// whatever else runs under this account. docs/GAMING.md says what that opens.
+	SharedMemory bool
 }
 
 // maxFileSize stops a core filling the disk from its save folder. The largest thing

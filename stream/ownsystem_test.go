@@ -89,3 +89,36 @@ func TestOtherCoresKeepTheSharedSystemFolder(t *testing.T) {
 		t.Fatalf("made %d things in the save folder", len(ents))
 	}
 }
+
+// What a core works out, such as compiled shaders, costs seconds of stutter to work out again, so
+// it stays with the save between games. The firmware beside it doesn't.
+func TestOwnSystemKeepsTheCache(t *testing.T) {
+	system, save := t.TempDir(), t.TempDir()
+	dir, release, err := ownSystem("pcsx2", system, save, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := filepath.Join(dir, "pcsx2", "cache", "shaders.bin")
+	other := filepath.Join(dir, "pcsx2", "other", "thing.bin")
+	for _, p := range []string{cache, other} {
+		if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	release()
+	if _, err := os.Stat(cache); err != nil {
+		t.Errorf("the shader cache went at the end of the game: %v", err)
+	}
+	if _, err := os.Stat(other); !os.IsNotExist(err) {
+		t.Errorf("anything else should go: %v", err)
+	}
+	if _, _, err := ownSystem("pcsx2", system, save, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(cache); err != nil {
+		t.Errorf("the next game's set-up took the shader cache away: %v", err)
+	}
+}

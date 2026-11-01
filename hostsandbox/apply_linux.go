@@ -29,7 +29,7 @@ func Confine(l Limits) error {
 		return os.Unsetenv(restartedEnv)
 	}
 	runtime.LockOSThread() // never undone: the limit belongs to this thread until it restarts
-	if unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != nil || landlock(l.SaveDir, l.GPU) != nil {
+	if unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != nil || landlock(l) != nil {
 		return nil
 	}
 	exe, err := os.Executable()
@@ -77,7 +77,7 @@ func Apply(l Limits) error {
 	if err := unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); err != nil {
 		errs = append(errs, err)
 	} else {
-		if err := landlock(l.SaveDir, l.GPU); err != nil {
+		if err := landlock(l); err != nil {
 			errs = append(errs, err)
 		}
 		if err := seccomp(); err != nil {
@@ -124,9 +124,10 @@ var truncateLimited bool
 var gpuDevices = []string{"/dev/dri", "/dev/dxg", "/dev/kfd", "/dev/nvidiactl", "/dev/nvidia0", "/dev/nvidia1", "/dev/nvidia2", "/dev/nvidia3", "/dev/nvidia-modeset", "/dev/nvidia-uvm", "/dev/nvidia-uvm-tools"}
 
 // landlock leaves reading alone (a core may load libraries from anywhere) and
-// limits writing to the save folder, and to the graphics devices for a game that
-// draws on one.
-func landlock(saveDir string, gpu bool) error {
+// limits writing to the save folder, to the graphics devices for a game that draws
+// on one, and to shared memory for a core that can't run without it.
+func landlock(l Limits) error {
+	saveDir, gpu := l.SaveDir, l.GPU
 	access, deviceAccess := uint64(writeAccess), uint64(accessFSWriteFile)
 	// A kernel refuses a right newer than it knows of, so it's asked which version it has.
 	if v, _, e := syscall.Syscall(sysLandlockCreateRuleset, 0, 0, landlockCreateRulesetVersion); e == 0 && v >= 3 {
@@ -152,6 +153,19 @@ func landlock(saveDir string, gpu bool) error {
 		*(*int32)(unsafe.Pointer(&rule[8])) = int32(dir)
 		if _, _, e := syscall.Syscall6(sysLandlockAddRule, fd, landlockRulePathBeneath, uintptr(unsafe.Pointer(&rule[0])), 0, 0, 0); e != 0 {
 			return e
+		}
+	}
+	if l.SharedMemory {
+		// Not there is fine, as with a device: the core says what it does about that.
+		if dir, err := unix.Open("/dev/shm", unix.O_PATH|unix.O_CLOEXEC, 0); err == nil {
+			var rule [12]byte
+			*(*uint64)(unsafe.Pointer(&rule[0])) = access
+			*(*int32)(unsafe.Pointer(&rule[8])) = int32(dir)
+			_, _, e := syscall.Syscall6(sysLandlockAddRule, fd, landlockRulePathBeneath, uintptr(unsafe.Pointer(&rule[0])), 0, 0, 0)
+			unix.Close(dir)
+			if e != 0 {
+				return e
+			}
 		}
 	}
 	if gpu {

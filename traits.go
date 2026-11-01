@@ -31,6 +31,12 @@ type CoreTraits struct {
 	// memory cards. A running core can't write to the system folder, which everyone
 	// shares, so this core gets a system folder of its own in the player's save folder.
 	SavesIn string
+	// SharedMemory is set when the core can't run without making files in /dev/shm, as a
+	// core that maps its recompiled code twice can't.
+	SharedMemory bool
+	// CacheIn is a folder under the system folder where the core keeps what it has worked out,
+	// such as compiled shaders, kept between games for a core with a system folder of its own.
+	CacheIn string
 	// Options are always passed. Each one makes the core use what this runner has.
 	Options map[string]string
 	// Threaded are options for a machine with threads to spare, of four or more.
@@ -81,7 +87,7 @@ var traits = map[string]CoreTraits{
 		Resolution: pick("mupen64plus-43screensize", "640x480", "1280x960", "1920x1440", "2560x1920")},
 	"parallel_n64": {GPU: true, Options: map[string]string{"parallel-n64-gfxplugin": "gliden64"},
 		Resolution: pick("parallel-n64-screensize", "640x480", "1280x960", "1920x1440", "2880x2160")},
-	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards",
+	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards", CacheIn: "pcsx2/cache", SharedMemory: true,
 		// Waiting for the graphics card at every read-back, and running VU1 on the game's own
 		// thread, held a real game to 41 frames a second where it can do 60. The core's own
 		// database still turns VU1's thread off for the games known to hang with it.
@@ -129,6 +135,9 @@ func RunnerArgs(coreID string) []string {
 	}
 	if t.GPU || t.Demanding {
 		out = append(out, "-normal-priority")
+	}
+	if t.SharedMemory {
+		out = append(out, "-shared-memory")
 	}
 	return out
 }
