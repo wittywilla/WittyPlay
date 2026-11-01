@@ -257,7 +257,11 @@ func (m *Manager) sharedUDP(port int) (ice.UDPMux, error) {
 		_ = m.udp.mux.Close()
 		m.udp = nil
 	}
-	conn, err := net.ListenPacket("udp", net.JoinHostPort("", itoa(port)))
+	bind := ""
+	if m.cfg.LoopbackOnly {
+		bind = "127.0.0.1"
+	}
+	conn, err := net.ListenPacket("udp", net.JoinHostPort(bind, itoa(port)))
 	if err != nil {
 		return nil, err
 	}
@@ -273,6 +277,12 @@ func itoa(n int) string {
 
 // MaxOfferSize bounds an SDP offer; a real one is a few kilobytes.
 const MaxOfferSize = 64 << 10
+
+const (
+	iceDisconnected = 3 * time.Second
+	iceFailed       = 6 * time.Second
+	iceKeepalive    = time.Second
+)
 
 // Answer connects a browser over WebRTC: it takes the browser's offer and returns
 // the answer. prefer is "" or "vp8". Which codec is used depends on what the
@@ -322,6 +332,9 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if len(cfg.PublicIPs) > 0 {
 		se.SetNAT1To1IPs(cfg.PublicIPs, webrtc.ICECandidateTypeHost)
 	}
+	// A connection that has really gone should pause the game quickly, not run it unwatched
+	// for the half minute the defaults allow.
+	se.SetICETimeouts(iceDisconnected, iceFailed, iceKeepalive)
 	if cfg.LoopbackOnly {
 		se.SetIncludeLoopbackCandidate(true)
 		se.SetIPFilter(func(ip net.IP) bool { return ip.IsLoopback() })

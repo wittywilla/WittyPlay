@@ -60,6 +60,7 @@ const parentOf = (p: NonNullable<Panel>): Panel => (p === 'menu' ? null : PARENT
 const MODE_KEY = 'wittyplay.mode'
 const TOUCH_KEY = 'wittyplay.touch'
 const LEVEL_KEY = 'wittyplay.level'
+const RECONNECT_TRIES = 8 // about a minute, with the waits between them
 
 // The screens that want the game in view, so that a change can be seen as it's made.
 const SIDE_PANELS: Panel[] = ['display', 'osd', 'audio', 'core']
@@ -190,13 +191,17 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
 
   // Tries each way of connecting in turn until one shows a picture. A later failure
   // starts the list again, skipping what has already failed this session.
-  const connect = useCallback(async (s: SessionInfo, m: Mode, skip: Set<TransportKind> = new Set()) => {
+  const connect = useCallback(async (s: SessionInfo, m: Mode, skip: Set<TransportKind> = new Set(), recovering = 0) => {
     // Only the newest attempt counts: changing the mode twice quickly abandons the first.
     const attempt = ++attempts.current
     const stale = () => closing.current || attempt !== attempts.current
-    transportRef.current?.close()
-    transportRef.current = null
-    setTransport(null)
+    // After a lost connection, the last picture stays up until there's a new one to show.
+    const old = transportRef.current
+    if (!recovering) {
+      old?.close()
+      transportRef.current = null
+      setTransport(null)
+    }
     const signal = {
       answer: (sdp: string, prefer?: string) => host.answer(s.id, sdp, prefer),
       wsUrl: (video: string) => host.wsUrl(s.id, video),
@@ -205,20 +210,25 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     for (const kind of plan(m, (s.modes || []).map((x) => x.id))) {
       if (skip.has(kind)) continue
       if (stale()) return
-      setStage('connect')
-      setStatus(kind === 'webrtc' ? 'Connecting to this device…' : 'Trying another way to connect…')
+      if (!recovering) {
+        setStage('connect')
+        setStatus(kind === 'webrtc' ? 'Connecting to this device…' : 'Trying another way to connect…')
+      }
       const t = make(kind, signal)
       t.onEvent = onEvent
       try {
         await t.connect()
         if (stale()) { t.close(); return }
+        // A network that changed or a tab that was asleep is no reason to give up on the
+        // best way of connecting, so a lost connection starts the whole list again.
         t.onLost = () => {
           if (closing.current || transportRef.current !== t) return
-          host.report?.('error', `The game stream was lost (${kind})`)
-          skip.add(kind)
-          void connect(s, m, skip)
+          host.report?.('warn', `The game stream was lost (${kind}); reconnecting`)
+          say('The connection dropped. Reconnecting…')
+          void connect(s, m, new Set(), 1)
         }
         transportRef.current = t
+        if (recovering) old?.close()
         input.setSender((msg) => t.send(msg))
         setTransport(t)
         setStatus('')
@@ -237,6 +247,16 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
         host.report?.('error', `The game stream could not connect (${kind}): ${last}`)
         skip.add(kind)
       }
+    }
+    // The network may just be down for a moment. The server keeps the game for a minute.
+    if (recovering && recovering < RECONNECT_TRIES) {
+      setTimeout(() => { if (!stale()) void connect(s, m, new Set(), recovering + 1) }, recovering * 2000)
+      return
+    }
+    if (recovering) {
+      old?.close()
+      transportRef.current = null
+      setTransport(null)
     }
     host.report?.('error', 'Every way of connecting to the game failed')
     setErrorData({ connect: true })

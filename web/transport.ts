@@ -116,6 +116,8 @@ export function make(kind: TransportKind, signal: Signal): Transport {
 }
 
 const FIRST_FRAME_MS = 12000
+const DISCONNECTED_MS = 2500
+const STALLED_MS = 4000
 
 class WebRTCTransport implements Transport {
   readonly kind = 'webrtc'
@@ -137,6 +139,11 @@ class WebRTCTransport implements Transport {
   private latency: LatencyMode = 'auto'
   private unlock: (() => void) | null = null
   lock: PhaseLock | null = null // what's moving the frames, for the test page to look at
+  private leaving = 0
+  private watchdog = 0
+  private framesSeen = -1
+  private framesAt = 0
+  private gone = false
 
   constructor(private signal: Signal) {
     const v = document.createElement('video')
@@ -178,7 +185,10 @@ class WebRTCTransport implements Transport {
     }
     this.timingDc = timing
     pc.onconnectionstatechange = () => {
-      if (!this.closed && (pc.connectionState === 'failed' || pc.connectionState === 'closed')) this.onLost?.()
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') this.lost()
+      // A browser waits half a minute before it calls this failed. Nobody playing a game should.
+      clearTimeout(this.leaving)
+      if (pc.connectionState === 'disconnected') this.leaving = window.setTimeout(() => this.lost(), DISCONNECTED_MS)
     }
     const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
@@ -187,6 +197,26 @@ class WebRTCTransport implements Transport {
     await pc.setRemoteDescription({ type: 'answer', sdp: answer })
     await this.play()
     await firstFrame(this.element, FIRST_FRAME_MS)
+    this.watchdog = window.setInterval(() => this.checkFrames(), 1000)
+  }
+
+  private lost() {
+    if (this.closed || this.gone) return
+    this.gone = true
+    this.onLost?.()
+  }
+
+  // The server keeps sending frames even while a game is paused or loading, so a picture
+  // that has stopped on a page someone can see means something in between has stuck: the
+  // decoder, the network or the browser. Starting the connection again clears any of them.
+  private checkFrames() {
+    const now = performance.now()
+    if (document.hidden) { this.framesAt = now; return } // nothing is drawn in a hidden tab
+    const count = this.element.getVideoPlaybackQuality?.().totalVideoFrames ?? -1
+    if (count !== this.framesSeen) {
+      this.framesSeen = count
+      this.framesAt = now
+    } else if (count >= 0 && now - this.framesAt > STALLED_MS) this.lost()
   }
 
   private async play() {
@@ -223,6 +253,8 @@ class WebRTCTransport implements Transport {
     this.link.stop()
     this.unwatch?.()
     this.unlock?.()
+    clearTimeout(this.leaving)
+    clearInterval(this.watchdog)
     this.pc?.close()
     this.element.srcObject = null
   }

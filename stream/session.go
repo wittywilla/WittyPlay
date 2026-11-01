@@ -48,13 +48,7 @@ type Config struct {
 	// LoopbackOnly keeps WebRTC to this machine's loopback address, for testing where a
 	// wider address would stop to ask a firewall.
 	LoopbackOnly bool
-
-	Tuning Tuning
 }
-
-// Tuning switches the latency measures, for measuring what each one is worth. The zero
-// value is what every real game runs with.
-type Tuning struct{}
 
 // Options start one game.
 type Options struct {
@@ -456,6 +450,9 @@ type Session struct {
 	encName       string
 	encLost       map[string]int // how many times each has gone away during this game
 	lastKeyAsk    time.Time      // when a viewer last asked for a keyframe
+	rates         rateControl
+	videoStarts   int // how many times a video encoder has been started in this game
+	opusLost      int            // how many times the sound encoder has gone away during this game
 	lastShift     time.Time      // when a viewer last moved the frames
 	lastNoEnc     time.Time      // when the log last said there's no encoder
 	audioCh       chan []byte
@@ -542,6 +539,7 @@ func (s *Session) start() error {
 	go s.readRunner(stdout, readyCh)
 	go s.audioLoop()
 	go s.videoLoop()
+	go s.watchEncoders()
 	go s.logStats()
 	go func() {
 		// Wait closes the pipes, so it comes after the last save has been read.

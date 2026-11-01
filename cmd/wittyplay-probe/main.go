@@ -18,6 +18,10 @@ func main() {
 		err = frames(os.Args[2:])
 	case "run":
 		err = run(os.Args[2:])
+	case "soak":
+		err = soak(os.Args[2:])
+	case "chaos":
+		err = chaos(os.Args[2:])
 	case "install":
 		err = install(os.Args[2:])
 	default:

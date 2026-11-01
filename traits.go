@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -32,6 +33,8 @@ type CoreTraits struct {
 	SavesIn string
 	// Options are always passed. Each one makes the core use what this runner has.
 	Options map[string]string
+	// Threaded are options for a machine with threads to spare, of four or more.
+	Threaded map[string]string
 	// Resolution gives the options for an internal resolution, 1 to 4 times native.
 	Resolution func(times int) map[string]string
 }
@@ -78,7 +81,12 @@ var traits = map[string]CoreTraits{
 		Resolution: pick("mupen64plus-43screensize", "640x480", "1280x960", "1920x1440", "2560x1920")},
 	"parallel_n64": {GPU: true, Options: map[string]string{"parallel-n64-gfxplugin": "gliden64"},
 		Resolution: pick("parallel-n64-screensize", "640x480", "1280x960", "1920x1440", "2880x2160")},
-	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards", Options: map[string]string{"pcsx2_renderer": "OpenGL"},
+	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards",
+		// Waiting for the graphics card at every read-back, and running VU1 on the game's own
+		// thread, held a real game to 41 frames a second where it can do 60. The core's own
+		// database still turns VU1's thread off for the games known to hang with it.
+		Options:  map[string]string{"pcsx2_renderer": "OpenGL", "pcsx2_hw_download_mode": "Unsynchronized"},
+		Threaded: map[string]string{"pcsx2_mtvu": "enabled"},
 		Resolution: pick("pcsx2_upscale_multiplier", "1x (Native)", "2x", "4x", "4x")},
 	"play": {GPU: true},
 	"ppsspp": {GPU: true, Assets: "PPSSPP", Options: map[string]string{"ppsspp_backend": "opengl"},
@@ -153,6 +161,11 @@ func StartOptions(consoleID, coreID, resolution, systemDir string) map[string]st
 	}
 	for k, v := range t.Options {
 		out[k] = v
+	}
+	if runtime.NumCPU() >= 4 {
+		for k, v := range t.Threaded {
+			out[k] = v
+		}
 	}
 	times, err := strconv.Atoi(resolution)
 	if err != nil || times < 1 || times > 4 {

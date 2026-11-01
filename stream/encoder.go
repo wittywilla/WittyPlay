@@ -76,35 +76,38 @@ func isHardware(name string) bool {
 
 // encoderArgs are the low-latency settings for each encoder: no B-frames, no
 // lookahead, its fastest preset, and a keyframe every second so a lost packet
-// heals quickly.
+// heals quickly. What a frame may use up is held to a tenth of a second's worth: left
+// alone, encoders allow a keyframe a second's worth of bits or more, which is a burst that
+// a slow network drops, and then the browser asks for another one, and so on for good.
 func encoderArgs(name string, bps int, gop int) (args, inputArgs []string, upload string) {
 	b := strconv.Itoa(bps)
 	g := strconv.Itoa(gop)
 	half := strconv.Itoa(bps / 2)
+	vbv := strconv.Itoa(bps / 10)
 	switch name {
 	case "h264_nvenc":
 		// -delay 0: left alone, NVENC keeps several finished frames in a queue.
-		args = []string{"-preset", "p1", "-tune", "ull", "-zerolatency", "1", "-delay", "0", "-rc", "cbr", "-b:v", b, "-bf", "0", "-profile:v", "baseline"}
+		args = []string{"-preset", "p1", "-tune", "ull", "-zerolatency", "1", "-delay", "0", "-rc", "cbr", "-b:v", b, "-maxrate", b, "-bufsize", vbv, "-bf", "0", "-profile:v", "baseline"}
 	case "h264_qsv":
-		args = []string{"-preset", "veryfast", "-async_depth", "1", "-look_ahead", "0", "-b:v", b, "-bf", "0", "-profile:v", "baseline"}
+		args = []string{"-preset", "veryfast", "-async_depth", "1", "-look_ahead", "0", "-b:v", b, "-maxrate", b, "-bufsize", vbv, "-bf", "0", "-profile:v", "baseline"}
 	case "h264_amf":
-		args = []string{"-usage", "ultralowlatency", "-quality", "speed", "-rc", "cbr", "-b:v", b, "-bf", "0", "-profile:v", "constrained_baseline"}
+		args = []string{"-usage", "ultralowlatency", "-quality", "speed", "-rc", "cbr", "-b:v", b, "-maxrate", b, "-bufsize", vbv, "-bf", "0", "-profile:v", "constrained_baseline"}
 	case "h264_vaapi":
 		inputArgs = []string{"-vaapi_device", "/dev/dri/renderD128"}
 		upload = "hwupload"
-		args = []string{"-rc_mode", "CBR", "-b:v", b, "-bf", "0", "-profile:v", "constrained_baseline"}
+		args = []string{"-rc_mode", "CBR", "-b:v", b, "-maxrate", b, "-bufsize", vbv, "-bf", "0", "-profile:v", "constrained_baseline"}
 	case "h264_videotoolbox":
 		args = []string{"-realtime", "1", "-prio_speed", "1", "-b:v", b, "-bf", "0", "-profile:v", "baseline", "-allow_sw", "1"}
 	case "libx264":
 		// Sliced threads, a few at most: frame threads hold back a frame per thread,
 		// which came to a quarter of a second on a machine with many cores.
 		threads := strconv.Itoa(min(runtime.NumCPU(), 4))
-		args = []string{"-preset", "ultrafast", "-tune", "zerolatency", "-profile:v", "baseline", "-b:v", b, "-maxrate", b, "-bufsize", half,
+		args = []string{"-preset", "ultrafast", "-tune", "zerolatency", "-profile:v", "baseline", "-b:v", b, "-maxrate", b, "-bufsize", vbv,
 			"-x264-params", "scenecut=0:rc-lookahead=0:sync-lookahead=0:sliced-threads=1:threads=" + threads}
 	case "libopenh264":
 		args = []string{"-b:v", b, "-profile:v", "constrained_baseline", "-rc_mode", "bitrate"}
 	case "libvpx":
-		args = []string{"-deadline", "realtime", "-cpu-used", "8", "-lag-in-frames", "0", "-error-resilient", "1", "-b:v", b, "-maxrate", b, "-minrate", half, "-bufsize", half, "-threads", "2"}
+		args = []string{"-deadline", "realtime", "-cpu-used", "8", "-lag-in-frames", "0", "-error-resilient", "1", "-b:v", b, "-maxrate", b, "-minrate", half, "-bufsize", vbv, "-threads", "2"}
 	}
 	return append(args, "-g", g, "-keyint_min", g), inputArgs, upload
 }
@@ -162,6 +165,7 @@ type videoEncoder struct {
 	stopped chan struct{}
 	asked   atomic.Bool // stop was called, so ending without a frame is no failure
 	started time.Time
+	killed  atomic.Bool  // it stopped answering and has been told to go
 	lastOut atomic.Int64 // when a frame last came out, in Unix nanoseconds
 	fedGen  uint64       // the newest picture given to it; only videoLoop touches this
 }
@@ -204,7 +208,7 @@ func (e *videoEncoder) stalled(now time.Time) bool {
 func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps float64) (*videoEncoder, error) {
 	hardware := isHardware(name)
 	scale := scaleFor(hdr.Width, hardware)
-	bps := bitrate(s.opt.Quality, hdr.Width*scale, hdr.Height*scale)
+	bps := int(float64(bitrate(s.opt.Quality, hdr.Width*scale, hdr.Height*scale)) * s.rates.rate())
 	gop := int(fps + 0.5)
 	if gop < 10 {
 		gop = 10
@@ -331,9 +335,11 @@ func (s *Session) videoLoop() {
 			return
 		case <-s.frameReady:
 		case <-idle.C:
+			// Loading, a game can go a long time without a frame too, and a viewer's
+			// player takes a picture that has stopped for one that has stuck.
+			quiet := time.Since(time.Unix(0, s.lastFrame.Load())) > quietRepeat
 			s.viewMu.Lock()
-			repeat = s.paused && len(s.viewers) > 0
-			s.checkEncodersLocked(time.Now())
+			repeat = (s.paused || quiet) && len(s.viewers) > 0
 			s.viewMu.Unlock()
 			if !repeat {
 				continue
@@ -384,14 +390,31 @@ func (s *Session) videoLoop() {
 	}
 }
 
-// checkEncodersLocked ends an encoder that has stopped answering. Everything that happens
-// when one ends by itself then starts another, and the picture carries on from a keyframe.
-func (s *Session) checkEncodersLocked(now time.Time) {
-	for _, e := range []*videoEncoder{s.h264, s.vp8} {
-		if e != nil && e.stalled(now) {
-			s.log.Warn("the video encoder has stopped answering; starting another", "encoder", e.name)
-			if e.cmd.Process != nil {
-				_ = e.cmd.Process.Kill()
+// quietRepeat is how long a running game can go without a frame before the last one is sent
+// again, as a paused game's is.
+const quietRepeat = 500 * time.Millisecond
+
+// watchEncoders ends an encoder that has stopped answering. Everything that happens when
+// one ends by itself then starts another, and the picture carries on from a keyframe. It's
+// a loop of its own because what's stuck may be videoLoop, writing to that encoder.
+func (s *Session) watchEncoders() {
+	tick := time.NewTicker(500 * time.Millisecond)
+	defer tick.Stop()
+	for {
+		select {
+		case <-s.done:
+			return
+		case now := <-tick.C:
+			s.viewMu.Lock()
+			encoders := []*videoEncoder{s.h264, s.vp8}
+			s.viewMu.Unlock()
+			for _, e := range encoders {
+				if e != nil && e.stalled(now) && e.killed.CompareAndSwap(false, true) {
+					s.log.Warn("the video encoder has stopped answering; starting another", "encoder", e.name)
+					if e.cmd.Process != nil {
+						_ = e.cmd.Process.Kill()
+					}
+				}
 			}
 		}
 	}
@@ -428,6 +451,7 @@ func (s *Session) syncEncodersLocked(hdr ipc.VideoHeader) (h264, vp8 *videoEncod
 				continue
 			}
 			s.encName = name
+			s.videoStarts++
 			s.log.Info("encoding video", "encoder", name, "size", fmt.Sprintf("%dx%d", hdr.Width, hdr.Height))
 			return e
 		}
@@ -456,6 +480,9 @@ func (s *Session) encoderLost(e *videoEncoder) {
 	if s.encLost == nil {
 		s.encLost = map[string]int{}
 	}
+	if !e.started.IsZero() && time.Since(e.started) > encoderTrusted {
+		s.encLost[e.name] = 0 // it had been fine for a good while
+	}
 	s.encLost[e.name]++
 	lost := s.encLost[e.name]
 	s.viewMu.Unlock()
@@ -466,8 +493,11 @@ func (s *Session) encoderLost(e *videoEncoder) {
 	s.encoderDied(e)
 }
 
-// encoderLives is how many times an encoder may stop in one game.
-const encoderLives = 3
+// encoderLives is how many times running an encoder may stop without lasting encoderTrusted.
+const (
+	encoderLives   = 3
+	encoderTrusted = time.Minute
+)
 
 func (s *Session) encoderDied(e *videoEncoder) {
 	s.viewMu.Lock()
@@ -623,6 +653,7 @@ func readIVF(r io.Reader, emit func(AU)) error {
 
 // audioEncoder turns PCM into Opus packets for WebRTC.
 type audioEncoder struct {
+	cmd    *exec.Cmd
 	stdin  io.WriteCloser
 	cancel context.CancelFunc
 }
@@ -656,11 +687,24 @@ func (s *Session) startOpusLocked() {
 		s.log.Warn("starting the audio encoder", "err", err)
 		return
 	}
-	s.opus = &audioEncoder{stdin: stdin, cancel: cancel}
+	me := &audioEncoder{cmd: cmd, stdin: stdin, cancel: cancel}
+	s.opus = me
 	go func() {
 		_ = readOgg(stdout, s.deliverOpus)
-		if err := cmd.Wait(); err != nil && ctx.Err() == nil {
-			s.log.Warn("the audio encoder stopped during the game", "err", err)
+		err := cmd.Wait()
+		if ctx.Err() != nil {
+			return
+		}
+		s.log.Warn("the audio encoder stopped during the game; starting another", "err", err)
+		s.viewMu.Lock()
+		defer s.viewMu.Unlock()
+		if s.opus != me {
+			return
+		}
+		s.opus = nil
+		s.opusLost++
+		if s.opusLost <= encoderLives*2 && s.anyWebRTCLocked() {
+			s.startOpusLocked()
 		}
 	}()
 }

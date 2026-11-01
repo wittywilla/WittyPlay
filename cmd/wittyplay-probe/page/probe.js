@@ -404,15 +404,16 @@
       this.out(b);
     }
   };
-  function make(kind, signal) {
-    if (kind === "webrtc") return new WebRTCTransport(signal);
-    return new WSTransport(signal, kind);
+  function make(kind, signal2) {
+    if (kind === "webrtc") return new WebRTCTransport(signal2);
+    return new WSTransport(signal2, kind);
   }
   var FIRST_FRAME_MS = 12e3;
+  var DISCONNECTED_MS = 2500;
+  var STALLED_MS = 4e3;
   var WebRTCTransport = class {
-    // what's moving the frames, for the test page to look at
-    constructor(signal) {
-      this.signal = signal;
+    constructor(signal2) {
+      this.signal = signal2;
       const v = document.createElement("video");
       v.playsInline = true;
       v.autoplay = true;
@@ -446,6 +447,12 @@
     latency = "auto";
     unlock = null;
     lock = null;
+    // what's moving the frames, for the test page to look at
+    leaving = 0;
+    watchdog = 0;
+    framesSeen = -1;
+    framesAt = 0;
+    gone = false;
     async connect() {
       const pc = new RTCPeerConnection();
       this.pc = pc;
@@ -483,7 +490,9 @@
       };
       this.timingDc = timing;
       pc.onconnectionstatechange = () => {
-        if (!this.closed && (pc.connectionState === "failed" || pc.connectionState === "closed")) this.onLost?.();
+        if (pc.connectionState === "failed" || pc.connectionState === "closed") this.lost();
+        clearTimeout(this.leaving);
+        if (pc.connectionState === "disconnected") this.leaving = window.setTimeout(() => this.lost(), DISCONNECTED_MS);
       };
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
@@ -492,6 +501,27 @@
       await pc.setRemoteDescription({ type: "answer", sdp: answer });
       await this.play();
       await firstFrame(this.element, FIRST_FRAME_MS);
+      this.watchdog = window.setInterval(() => this.checkFrames(), 1e3);
+    }
+    lost() {
+      if (this.closed || this.gone) return;
+      this.gone = true;
+      this.onLost?.();
+    }
+    // The server keeps sending frames even while a game is paused or loading, so a picture
+    // that has stopped on a page someone can see means something in between has stuck: the
+    // decoder, the network or the browser. Starting the connection again clears any of them.
+    checkFrames() {
+      const now = performance.now();
+      if (document.hidden) {
+        this.framesAt = now;
+        return;
+      }
+      const count = this.element.getVideoPlaybackQuality?.().totalVideoFrames ?? -1;
+      if (count !== this.framesSeen) {
+        this.framesSeen = count;
+        this.framesAt = now;
+      } else if (count >= 0 && now - this.framesAt > STALLED_MS) this.lost();
     }
     async play() {
       try {
@@ -543,6 +573,8 @@
       this.link.stop();
       this.unwatch?.();
       this.unlock?.();
+      clearTimeout(this.leaving);
+      clearInterval(this.watchdog);
       this.pc?.close();
       this.element.srcObject = null;
     }
@@ -583,12 +615,12 @@
     async stats() {
       const out = {};
       if (!this.pc) return out;
-      const report = await this.pc.getStats();
+      const report2 = await this.pc.getStats();
       const codecs = /* @__PURE__ */ new Map();
-      report.forEach((s) => {
+      report2.forEach((s) => {
         if (s.type === "codec") codecs.set(s.id, s.mimeType);
       });
-      report.forEach((s) => {
+      report2.forEach((s) => {
         if (s.type === "inbound-rtp" && s.kind === "video") {
           out.lost = s.packetsLost;
           out.dropped = s.framesDropped;
@@ -637,8 +669,8 @@
   var MSG_JPEG = 2;
   var MSG_PCM = 3;
   var WSTransport = class {
-    constructor(signal, kind) {
-      this.signal = signal;
+    constructor(signal2, kind) {
+      this.signal = signal2;
       this.kind = kind;
       this.element = document.createElement("canvas");
       this.element.width = 256;
@@ -884,157 +916,246 @@
   };
 
   // ../../../../WittyPlay/.claude/worktrees/games-streaming/cmd/wittyplay-probe/page/probe.ts
+  var q = new URLSearchParams(location.search);
+  var setup = {
+    seconds: Number(q.get("seconds") || 30),
+    kind: q.get("kind") || "webrtc",
+    pressMs: Number(q.get("pressMs") || 250),
+    label: q.get("label") || "",
+    every: Number(q.get("every") || 0),
+    // post what's been seen this often, for a long run
+    latency: q.get("latency")
+  };
   var say = (s) => {
     const e = document.getElementById("status");
     if (e) e.textContent = s;
   };
-  async function main() {
-    const q = new URLSearchParams(location.search);
-    const setup = { seconds: Number(q.get("seconds") || 30), kind: q.get("kind") || "webrtc", pressMs: Number(q.get("pressMs") || 250), label: q.get("label") || "" };
-    const signal = {
-      answer: async (sdp) => {
-        const r = await fetch("/answer", { method: "POST", body: sdp });
-        if (!r.ok) throw new Error(await r.text());
-        return r.text();
-      },
-      wsUrl: (video) => `ws://${location.host}/ws?video=${video}`
-    };
+  var round = (n) => Math.round(n * 100) / 100;
+  var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  var post = (path, o) => fetch(path, { method: "POST", body: JSON.stringify(o) });
+  var summary = (s) => ({ p50: round(s.median), p95: round(s.p95), n: s.count });
+  var signal = {
+    answer: async (sdp) => {
+      const r = await fetch("/answer", { method: "POST", body: sdp });
+      if (!r.ok) throw new Error(await r.text());
+      return r.text();
+    },
+    wsUrl: (video) => `ws://${location.host}/ws?video=${video}`
+  };
+  var Window = class {
+    meter = new LatencyMeter();
+    glass = new Series(1e5);
+    photon = new Series(1e5);
+    handed = new Series(1e5);
+    gaps = new Series(1e5);
+    misfiled = {};
+    waitTrace = [];
+    bad = 0;
+    read = 0;
+    skipped = 0;
+    out = 0;
+    presses = 0;
+  };
+  var current = null;
+  var win = new Window();
+  var meterShared = win.meter;
+  var lostAt = 0;
+  var recoveries = [];
+  var totalFrames = 0;
+  var lastFrameSeq = 0;
+  var reconnecting = false;
+  async function connect(first) {
     const t = make(setup.kind, signal);
-    const meter = new LatencyMeter();
-    meter.log = [];
-    t.onLost = () => post({ error: "lost" });
-    if (q.get("latency")) t.setLatency(q.get("latency"));
-    document.getElementById("stage").appendChild(t.element);
-    say("connecting");
-    try {
-      await t.connect();
-    } catch (e) {
-      await post({ error: String(e?.message || e) });
-      return;
-    }
+    t.onLost = () => {
+      if (current !== t || reconnecting) return;
+      lostAt = performance.now();
+      void reconnect();
+    };
+    await t.connect();
+    const old = current;
+    current = t;
     t.unmute();
     t.setVolume(0, true);
-    say("warming up");
-    t.measure(meter);
-    await sleep(3e3);
-    for (const s of [...Object.values(meter.frames), ...Object.values(meter.presses)]) s.clear();
-    meter.log = [];
-    meter.framesSeen = 0;
-    const reader = new StampReader();
-    const stampLatency = new Series(1e5);
-    const glass = new Series(1e5);
-    const photon = new Series(1e5);
-    const presses = /* @__PURE__ */ new Map();
-    let bad = 0, read = 0, firstSeq = -1, lastSeq = -1, skipped = 0, out = 0;
-    let seenInput = 0;
-    const v = t.element;
-    const interval = new Series(1e5);
-    const misfiled = {};
-    const later = /* @__PURE__ */ new Map();
-    const settle = () => {
-      for (const [seq, p] of later) {
-        const r = meter.bySequence(seq);
-        if (!r) continue;
-        later.delete(seq);
-        glass.add(p.displayAt - r.runEnd);
-        stampLatency.add(p.presented - r.runEnd);
-        if (p.rtp != null) {
-          const byTime = meter.byRtp(p.rtp);
-          if (byTime) {
-            const k = String(byTime.seq - r.seq | 0);
-            misfiled[k] = (misfiled[k] || 0) + 1;
-          }
+    if (setup.latency) t.setLatency(setup.latency);
+    document.getElementById("stage").replaceChildren(t.element);
+    old?.close();
+    t.measure(meterShared);
+    watch(t);
+    if (lostAt) {
+      recoveries.push(round(performance.now() - lostAt));
+      lostAt = 0;
+    }
+    if (first) say("warming up");
+  }
+  async function reconnect() {
+    reconnecting = true;
+    for (let i = 0; i < 30; i++) {
+      try {
+        await connect(false);
+        reconnecting = false;
+        return;
+      } catch {
+        await sleep(1e3);
+      }
+    }
+    reconnecting = false;
+    await post("/results", { error: "it never came back" });
+  }
+  var reader = new StampReader();
+  var pressedAt = /* @__PURE__ */ new Map();
+  var later = /* @__PURE__ */ new Map();
+  var unwatch = null;
+  var lastSeq = -1;
+  var seenInput = 0;
+  var lastShown = 0;
+  var traceWaits = [];
+  function settle() {
+    for (const [seq, p] of later) {
+      const r = win.meter.bySequence(seq);
+      if (!r) {
+        if (later.size > 64) later.delete(seq);
+        continue;
+      }
+      later.delete(seq);
+      win.glass.add(p.displayAt - r.runEnd);
+      win.handed.add(p.presented - r.runEnd);
+      if (p.rtp != null) {
+        const byTime = win.meter.byRtp(p.rtp);
+        if (byTime) {
+          const k = String(byTime.seq - r.seq | 0);
+          win.misfiled[k] = (win.misfiled[k] || 0) + 1;
         }
       }
-    };
-    let lastShown = 0;
-    const waitTrace = [];
-    let traceWaits = [];
-    const stop = watchVideo(v, (p) => {
-      const s = reader.read(v, v.videoWidth, v.videoHeight);
-      if (lastShown) interval.add(p.presented - lastShown);
+    }
+  }
+  function watch(t) {
+    unwatch?.();
+    const v = t.element;
+    if (v.tagName !== "VIDEO") return;
+    unwatch = watchVideo(v, (p) => {
+      totalFrames++;
+      if (lastShown) win.gaps.add(p.presented - lastShown);
       lastShown = p.presented;
       traceWaits.push(p.displayAt - p.presented);
       if (traceWaits.length >= 30) {
         traceWaits.sort((a, b) => a - b);
-        waitTrace.push(round(traceWaits[15]));
+        win.waitTrace.push(round(traceWaits[15]));
         traceWaits = [];
       }
+      const s = reader.read(v, v.videoWidth, v.videoHeight);
       if (!s) {
-        bad++;
+        win.bad++;
         return;
       }
-      read++;
-      if (firstSeq < 0) firstSeq = s.seq;
+      win.read++;
       if (lastSeq >= 0) {
         const d = s.seq - lastSeq & 65535;
-        if (d > 1e3 || d === 0) out++;
-        else if (d > 1) skipped += d - 1;
+        if (d > 1e3 || d === 0) win.out++;
+        else if (d > 1) win.skipped += d - 1;
       }
       lastSeq = s.seq;
+      lastFrameSeq = s.seq;
       later.set(s.seq, p);
       settle();
       if (s.input !== seenInput) {
         seenInput = s.input;
-        const at = presses.get(s.input);
+        const at = pressedAt.get(s.input);
         if (at != null) {
-          photon.add(p.displayAt - at);
-          presses.delete(s.input);
+          win.photon.add(p.displayAt - at);
+          pressedAt.delete(s.input);
         }
       }
     });
+  }
+  function startPressing() {
     const msg = new Uint8Array(17);
     const view = new DataView(msg.buffer);
-    let held = false, pressCount = 0;
+    let held = false;
     const press = () => {
       held = !held;
       view.setUint16(1, held ? 1 << 8 : 0, true);
       const at = performance.now();
-      const seq = meter.press(at);
+      const seq = meterShared.press(at);
       view.setUint32(13, seq, true);
-      presses.set(seq & 65535, at);
-      t.send(msg);
-      pressCount++;
-      timer = window.setTimeout(press, setup.pressMs * (0.6 + Math.random() * 0.8));
+      pressedAt.set(seq & 65535, at);
+      if (pressedAt.size > 256) pressedAt.delete(pressedAt.keys().next().value);
+      current?.send(msg);
+      win.presses++;
+      setTimeout(press, setup.pressMs * (0.6 + Math.random() * 0.8));
     };
-    let timer = window.setTimeout(press, 100);
-    say("measuring");
-    await sleep(setup.seconds * 1e3);
-    clearTimeout(timer);
-    await sleep(200);
-    settle();
-    stop();
-    const stats = await chromeStats(t);
-    const summary = (s) => ({ p50: round(s.median), p95: round(s.p95), n: s.count });
-    await post({
+    setTimeout(press, 100);
+  }
+  function sendBeats() {
+    setInterval(() => {
+      void post("/beat", { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, heap: performance.memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {
+      });
+    }, 250);
+  }
+  function report(w, stats) {
+    const m = w.meter;
+    return {
       label: setup.label,
       kind: setup.kind,
       seconds: setup.seconds,
       ua: navigator.userAgent,
-      frames: Object.fromEntries(Object.entries(meter.frames).map(([k, s]) => [k, summary(s)])),
-      presses: Object.fromEntries(Object.entries(meter.presses).map(([k, s]) => [k, summary(s)])),
-      glass: summary(glass),
-      photon: summary(photon),
-      madeToHanded: summary(stampLatency),
-      interval: summary(interval),
-      pixels: { read, bad, skipped, out, pressCount },
-      misfiled,
+      frames: Object.fromEntries(Object.entries(m.frames).map(([k, s]) => [k, summary(s)])),
+      presses: Object.fromEntries(Object.entries(m.presses).map(([k, s]) => [k, summary(s)])),
+      glass: summary(w.glass),
+      photon: summary(w.photon),
+      madeToHanded: summary(w.handed),
+      interval: summary(w.gaps),
+      pixels: { read: w.read, bad: w.bad, skipped: w.skipped, out: w.out, pressCount: w.presses },
+      misfiled: w.misfiled,
       stats,
-      waitTrace,
-      shifted: t.lock?.shifted,
-      pressLog: meter.log.slice(0, 8)
-    });
+      waitTrace: w.waitTrace,
+      shifted: current?.lock?.shifted,
+      recoveries,
+      heap: performance.memory?.usedJSHeapSize || 0
+    };
+  }
+  function nextWindow() {
+    const old = win;
+    const fresh = new Window();
+    fresh.meter = old.meter;
+    for (const s of [...Object.values(old.meter.frames), ...Object.values(old.meter.presses)]) s.clear();
+    win = fresh;
+    return old;
+  }
+  async function main() {
+    say("connecting");
+    try {
+      await connect(true);
+    } catch (e) {
+      await post("/results", { error: String(e?.message || e) });
+      return;
+    }
+    sendBeats();
+    await sleep(3e3);
+    nextWindow();
+    startPressing();
+    say("measuring");
+    if (setup.every > 0) {
+      for (; ; ) {
+        await sleep(setup.every * 1e3);
+        settle();
+        const stats2 = await chromeStats(current);
+        await post("/partial", report(win, stats2));
+        nextWindow();
+      }
+    }
+    await sleep(setup.seconds * 1e3);
+    await sleep(200);
+    settle();
+    const stats = await chromeStats(current);
+    await post("/results", report(win, stats));
     say("done");
   }
-  var round = (n) => Math.round(n * 100) / 100;
-  var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  var post = (o) => fetch("/results", { method: "POST", body: JSON.stringify(o) });
   async function chromeStats(t) {
-    const pc = t.pc;
+    const pc = t?.pc;
     if (!pc) return {};
     const out = {};
-    const report = await pc.getStats();
-    report.forEach((s) => {
+    const report2 = await pc.getStats();
+    report2.forEach((s) => {
       if (s.type === "inbound-rtp" && s.kind === "video") {
         out.decoder = s.decoderImplementation;
         out.powerEfficient = s.powerEfficientDecoder;
@@ -1046,14 +1167,21 @@
         out.jitterBufferMs = s.jitterBufferEmittedCount ? round(s.jitterBufferDelay / s.jitterBufferEmittedCount * 1e3) : null;
         out.jitterTargetMs = s.jitterBufferEmittedCount ? round(s.jitterBufferTargetDelay / s.jitterBufferEmittedCount * 1e3) : null;
         out.decodeMs = s.framesDecoded ? round(s.totalDecodeTime / s.framesDecoded * 1e3) : null;
-        out.assemblyMs = s.framesAssembledFromMultiplePackets ? round(s.totalAssemblyTime / s.framesAssembledFromMultiplePackets * 1e3) : null;
         out.interFrameMs = s.framesDecoded ? round(s.totalInterFrameDelay / s.framesDecoded * 1e3) : null;
+        out.kbps = s.bytesReceived;
+      }
+      if (s.type === "inbound-rtp" && s.kind === "audio") {
+        out.audioBufferMs = s.jitterBufferEmittedCount ? round(s.jitterBufferDelay / s.jitterBufferEmittedCount * 1e3) : null;
+        out.audioConcealed = s.concealedSamples;
+        out.audioSamples = s.totalSamplesReceived;
+        out.audioFaster = s.removedSamplesForAcceleration;
+        out.audioSlower = s.insertedSamplesForDeceleration;
       }
       if (s.type === "candidate-pair" && s.nominated && s.currentRoundTripTime != null) out.rttMs = round(s.currentRoundTripTime * 1e3);
     });
     return out;
   }
   main().catch((e) => {
-    post({ error: String(e) });
+    void post("/results", { error: String(e) });
   });
 })();
