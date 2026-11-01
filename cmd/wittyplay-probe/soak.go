@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/wittywilla/wittyplay/stream"
 )
 
 // soak plays one game for a long time and writes down everything that would give away a
@@ -144,4 +143,3 @@ func judgeSoak(first, last []soakLine, minutes int) error {
 	return nil
 }
 
-var _ = stream.MaxOfferSize

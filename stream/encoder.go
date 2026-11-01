@@ -220,25 +220,18 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 	if upload != "" {
 		vf += "," + upload
 	}
-	// NVENC converts colours on the graphics card, so a large frame that needs no
-	// resizing goes straight in and costs no CPU to convert.
-	direct := name == "h264_nvenc" && scale == 1 && hdr.Format == engine.FormatXRGB8888 && hdr.Width%2 == 0 && hdr.Height%2 == 0
 	args := []string{"-hide_banner", "-loglevel", "error", "-nostdin"}
 	args = append(args, inputArgs...)
 	args = append(args, "-fflags", "+nobuffer", "-flags", "+low_delay",
 		"-f", "rawvideo", "-pix_fmt", pixFmt(hdr.Format), "-video_size", fmt.Sprintf("%dx%d", hdr.Width, hdr.Height),
 		"-framerate", strconv.FormatFloat(fps, 'f', 4, 64), "-i", "pipe:0", "-an")
-	if !direct {
-		args = append(args, "-vf", vf)
-	}
+	// NVENC would convert colours by itself on the graphics card, but only ever with BT.601,
+	// and browsers show unmarked frames as BT.709 and don't all read the mark. So it gets
+	// frames that are already right.
+	args = append(args, "-vf", vf)
 	args = append(args, "-c:v", name)
 	args = append(args, encArgs...)
-	// NVENC's own conversion, taking a frame straight in, is BT.601 whatever it's told.
-	matrix := "bt709"
-	if direct {
-		matrix = "smpte170m"
-	}
-	args = append(args, "-colorspace", matrix, "-color_primaries", matrix, "-color_trc", matrix, "-color_range", "tv")
+	args = append(args, "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv")
 	args = append(args, "-fps_mode", "passthrough", "-flush_packets", "1")
 	if codec == "vp8" {
 		args = append(args, "-f", "ivf", "pipe:1")
@@ -276,6 +269,9 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 				s.stats.encoded(time.Duration(now - tr.EncIn))
 			}
 			e.lastOut.Store(now)
+			if au.Key {
+				s.lastKey.Store(now)
+			}
 			s.deliverVideo(codec, au, &tr)
 			s.signalFrame() // there's room for whatever has been waiting
 		}

@@ -25,7 +25,10 @@ func (s *Session) noteFeedback(v *viewer, pkts []rtcp.Packet) {
 }
 
 // keyMinGap keeps a browser that keeps asking from holding the stream in a restart loop.
-const keyMinGap = 2 * time.Second
+const (
+	keyMinGap  = 2 * time.Second
+	keyDueSoon = 300 * time.Millisecond
+)
 
 // keyframeAsked gets a keyframe out soon. FFmpeg's command line has no way to be told, so
 // the encoder is started again, which begins with one.
@@ -37,6 +40,11 @@ func (s *Session) keyframeAsked(codec string) {
 		return
 	}
 	s.lastKeyAsk = now
+	// The picture stops for a moment while another encoder starts, so if a keyframe is due
+	// about now anyway, it's better to wait for that.
+	if due := time.Unix(0, s.lastKey.Load()).Add(time.Second); s.lastKey.Load() != 0 && due.Sub(now) < keyDueSoon {
+		return
+	}
 	s.restartEncoderLocked(codec, now)
 }
 

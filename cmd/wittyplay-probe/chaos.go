@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -246,4 +245,3 @@ func killPID(pid int) error {
 	return p.Kill()
 }
 
-var _ = strconv.Itoa

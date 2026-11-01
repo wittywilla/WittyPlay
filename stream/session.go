@@ -451,6 +451,7 @@ type Session struct {
 	encLost       map[string]int // how many times each has gone away during this game
 	lastKeyAsk    time.Time      // when a viewer last asked for a keyframe
 	rates         rateControl
+	lastKey       atomic.Int64 // when a keyframe last came out, in Unix nanoseconds
 	videoStarts   int // how many times a video encoder has been started in this game
 	opusLost      int            // how many times the sound encoder has gone away during this game
 	lastShift     time.Time      // when a viewer last moved the frames
