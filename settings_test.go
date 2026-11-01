@@ -2,6 +2,7 @@ package wittyplay
 
 import (
 	"encoding/json"
+	"github.com/wittywilla/wittyplay/ipc"
 	"strings"
 	"testing"
 )
