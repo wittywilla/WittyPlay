@@ -2,17 +2,84 @@
   "module": "wittyplay",
   "rpc": "rpc",
   "packages": [
-    {"import": "github.com/wittywilla/wittyplay/ipc", "dir": "ipc", "name": "ipc", "out": "internal/play/ipc", "outImport": "github.com/wittywilla/wittymediaserver/internal/play/ipc",
-     "manual": ["Encoder","Decoder","Conn","NewConn"]},
-    {"import": "github.com/wittywilla/wittyplay", "dir": ".", "name": "wittyplay", "out": "internal/play", "outImport": "github.com/wittywilla/wittymediaserver/internal/play",
-     "manual": ["Consoles","ManifestJSON","SetCustomConsoles"],
-     "local": ["Console.Accepts","Console.AcceptsAll"]},
-    {"import": "github.com/wittywilla/wittyplay/cores", "dir": "cores", "name": "cores", "out": "internal/play/cores", "outImport": "github.com/wittywilla/wittymediaserver/internal/play/cores",
-     "manual": ["Manager","CustomStore"],
-     "resolve": {"Manager": "resolveCores", "CustomStore": "resolveStore"}},
-    {"import": "github.com/wittywilla/wittyplay/patch", "dir": "patch", "name": "patch", "out": "internal/play/patch", "outImport": "github.com/wittywilla/wittymediaserver/internal/play/patch"},
-    {"import": "github.com/wittywilla/wittyplay/stream", "dir": "stream", "name": "stream", "out": "internal/play/stream", "outImport": "github.com/wittywilla/wittymediaserver/internal/play/stream",
-     "manual": ["Manager","Session","Config","Options","NewManager","ProbeGPU","Manager.Start","Manager.Configure","Session.Done","Session.ServeWS","Session.Input","Manager.StopAll"],
-     "resolve": {"Manager": "resolveManager", "Session": "resolveSession"}}
+    {
+      "import": "github.com/wittywilla/wittyplay/ipc",
+      "dir": "ipc",
+      "name": "ipc",
+      "out": "internal/play/ipc",
+      "outImport": "github.com/wittywilla/wittymediaserver/internal/play/ipc",
+      "manual": [
+        "Encoder",
+        "Decoder",
+        "Conn",
+        "NewConn"
+      ]
+    },
+    {
+      "import": "github.com/wittywilla/wittyplay",
+      "dir": ".",
+      "name": "wittyplay",
+      "out": "internal/play",
+      "outImport": "github.com/wittywilla/wittymediaserver/internal/play",
+      "manual": [
+        "Consoles",
+        "ManifestJSON",
+        "SetCustomConsoles"
+      ],
+      "local": [
+        "Console.Accepts",
+        "Console.AcceptsAll"
+      ]
+    },
+    {
+      "import": "github.com/wittywilla/wittyplay/cores",
+      "dir": "cores",
+      "name": "cores",
+      "out": "internal/play/cores",
+      "outImport": "github.com/wittywilla/wittymediaserver/internal/play/cores",
+      "manual": [
+        "Manager",
+        "CustomStore"
+      ],
+      "resolve": {
+        "Manager": "resolveCores",
+        "CustomStore": "resolveStore"
+      }
+    },
+    {
+      "import": "github.com/wittywilla/wittyplay/patch",
+      "dir": "patch",
+      "name": "patch",
+      "out": "internal/play/patch",
+      "outImport": "github.com/wittywilla/wittymediaserver/internal/play/patch"
+    },
+    {
+      "import": "github.com/wittywilla/wittyplay/stream",
+      "dir": "stream",
+      "name": "stream",
+      "out": "internal/play/stream",
+      "outImport": "github.com/wittywilla/wittymediaserver/internal/play/stream",
+      "manual": [
+        "Manager",
+        "Session",
+        "Config",
+        "Options",
+        "NewManager",
+        "ProbeGPU",
+        "Manager.Start",
+        "Manager.Configure",
+        "Session.Done",
+        "Session.ServeWS",
+        "Session.Input",
+        "Manager.StopAll"
+      ],
+      "resolve": {
+        "Manager": "resolveManager",
+        "Session": "resolveSession"
+      },
+      "local": [
+        "ProbeError.Error"
+      ]
+    }
   ]
 }

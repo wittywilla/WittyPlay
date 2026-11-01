@@ -99,6 +99,7 @@ type wireConfig struct {
 }
 
 func init() {
+	service.RegisterErrorType[stream.ProbeError]("stream.ProbeError")
 	Handlers["stream.Manager.Configure"] = func(_ context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
 		var c wireConfig
 		if err := service.Arg(args, 0, &c); err != nil {

@@ -1189,15 +1189,6 @@ var Handlers = map[string]service.Handler{
 		r0, err := stream.Probe(ctx, a0)
 		return []any{r0}, back, err
 	},
-	"stream.ProbeError.Error": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var recv stream.ProbeError
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		r0 := recv.Error()
-		return []any{r0}, back, err
-	},
 	"stream.Runner.Release": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var recv stream.Runner
 		if err := service.Recv(rawRecv, &recv); err != nil {
