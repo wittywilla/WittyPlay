@@ -54,7 +54,7 @@ const LISTEN_MS = 7000
 const TRY_IDLE_MS = 6000
 
 // While this is held, a pad's buttons mean nothing to the app's own navigation
-// (web/src/tv.ts). Let go a moment late, so that what was just pressed isn't also OK.
+// (the server's web/src/tv.ts). Let go a moment late, so that what was just pressed isn't also OK.
 let tvHolds = 0
 function holdTvNavigation(on: boolean) {
   tvHolds += on ? 1 : -1

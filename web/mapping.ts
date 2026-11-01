@@ -1,6 +1,6 @@
 // How a controller's raw state becomes a console's buttons. No browser objects in
 // here, so tests can feed it simulated pads. Which profile applies mirrors Resolve in
-// modules/wittyplay/profiles.go; testdata/resolve.json keeps the two the same.
+// profiles.go; testdata/resolve.json keeps the two the same.
 
 export const SELECT = 2, START = 3, UP = 4, DOWN = 5, LEFT = 6, RIGHT = 7, L2 = 12, R2 = 13
 // Everything a controller can press: 16 buttons, then each stick's four directions.

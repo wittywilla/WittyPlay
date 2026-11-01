@@ -4,7 +4,7 @@ Plays console games in a browser, from a server. Each game runs in its own sandb
 [libretro](https://www.libretro.com) core, and its picture and sound stream to the browser over WebRTC,
 with fallbacks for networks and browsers where that can't work.
 
-WittyPlay is developed as part of [WittyMediaServer](https://github.com/wittywilla/WittyMediaServer).
+WittyPlay is made for [WittyMediaServer](https://github.com/wittywilla/WittyMediaServer).
 `docs/GAMING.md` there explains the design, `docs/GAMING-API.md` is the API for clients, and
 `docs/WITTYRETROARCH.md` covers licensing.
 
