@@ -36,8 +36,20 @@ type viewer struct {
 	ws  *websocket.Conn
 	out chan wsMessage
 
+	seq       uint64 // order of attaching; the oldest gives way
+	closed    atomic.Bool
+	evicted   atomic.Bool
 	closeOnce sync.Once
 }
+
+// How many browsers one game takes. Each offer costs a peer connection, with its sockets and
+// goroutines, whether or not anything ever connects, and anyone allowed to see a game can send
+// as many as they like. Over either limit the oldest goes, so a reload or another device simply
+// carries on.
+const (
+	maxViewers        = 8 // watching
+	maxPendingViewers = 4 // offered, and not connected yet
+)
 
 type wsMessage struct {
 	typ  websocket.MessageType
@@ -54,7 +66,22 @@ const (
 // attach counts a viewer in and wakes the game up if it was the first.
 func (s *Session) attach(v *viewer) {
 	s.viewMu.Lock()
+	s.dropPendingLocked(v)
+	if v.closed.Load() { // let go while it was connecting
+		s.viewMu.Unlock()
+		return
+	}
+	s.viewSeq++
+	v.seq = s.viewSeq
 	s.viewers[v] = true
+	var oldest *viewer
+	if len(s.viewers) > maxViewers {
+		for o := range s.viewers {
+			if oldest == nil || o.seq < oldest.seq {
+				oldest = o
+			}
+		}
+	}
 	s.lastInput = time.Now()
 	// A running encoder's next keyframe may be a second away, and this viewer can
 	// show nothing until then. Starting it again sends one straight away.
@@ -71,8 +98,36 @@ func (s *Session) attach(v *viewer) {
 	}
 	s.applyPauseLocked()
 	s.viewMu.Unlock()
+	if oldest != nil {
+		oldest.evicted.Store(true)
+		oldest.close()
+	}
 	// A paused game makes no new frames, but a new viewer still needs a picture.
 	s.signalFrame()
+}
+
+// holdPending notes a peer that isn't connected yet, and lets the oldest go over the limit.
+func (s *Session) holdPending(v *viewer) {
+	s.viewMu.Lock()
+	s.pending = append(s.pending, v)
+	var oldest *viewer
+	if len(s.pending) > maxPendingViewers {
+		oldest = s.pending[0]
+		s.pending = s.pending[1:]
+	}
+	s.viewMu.Unlock()
+	if oldest != nil {
+		oldest.close()
+	}
+}
+
+func (s *Session) dropPendingLocked(v *viewer) {
+	for i, o := range s.pending {
+		if o == v {
+			s.pending = append(s.pending[:i], s.pending[i+1:]...)
+			return
+		}
+	}
 }
 
 // applyPauseLocked tells the runner whether to run: only with someone watching,
@@ -95,6 +150,7 @@ func (s *Session) applyPauseLocked() {
 // detach counts a viewer out; with none left the game pauses and encoders stop.
 func (s *Session) detach(v *viewer) {
 	s.viewMu.Lock()
+	s.dropPendingLocked(v)
 	if !s.viewers[v] {
 		s.viewMu.Unlock()
 		return
@@ -121,12 +177,17 @@ func (s *Session) anyWebRTCLocked() bool {
 
 func (v *viewer) close() {
 	v.closeOnce.Do(func() {
+		v.closed.Store(true)
 		v.s.detach(v)
 		if v.pc != nil {
 			_ = v.pc.Close()
 		}
 		if v.ws != nil {
-			_ = v.ws.Close(websocket.StatusNormalClosure, "the game has ended")
+			reason := "the game has ended"
+			if v.evicted.Load() {
+				reason = "too many people are watching this game"
+			}
+			_ = v.ws.Close(websocket.StatusNormalClosure, reason)
 		}
 	})
 }
@@ -317,7 +378,8 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 		return "", err
 	}
 	v := &viewer{s: s, codec: codec, pc: pc}
-	fail := func(err error) (string, error) { _ = pc.Close(); return "", err }
+	s.holdPending(v)
+	fail := func(err error) (string, error) { v.close(); return "", err }
 
 	video, err := webrtc.NewTrackLocalStaticSample(videoCap, "video", "wittyplay")
 	if err != nil {
@@ -383,10 +445,10 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 		select {
 		case <-time.After(30 * time.Second):
 			if pc.ConnectionState() != webrtc.PeerConnectionStateConnected {
-				_ = pc.Close()
+				v.close()
 			}
 		case <-s.done:
-			_ = pc.Close()
+			v.close()
 		}
 	}()
 	return pc.LocalDescription().SDP, nil

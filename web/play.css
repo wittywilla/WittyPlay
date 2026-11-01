@@ -423,6 +423,7 @@ html.gm-couch .wp-screen .wps-prompts { display: none; }
   .wp-screen .wp-kind-slider .wp-setting-text { flex: 1 1 150px; }
 }
 .wp-preview-stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: min(32vh, 20rem); display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: var(--r-lg, 12px); }
+.wp-preview-stage .wp-media:not(.wp-gl) { position: absolute; width: var(--wp-media-w); height: var(--wp-media-h); left: var(--wp-media-x); top: var(--wp-media-y); }
 .wp-preview-box { position: relative; flex: none; overflow: hidden; background: #000; }
 
 /* On a small screen the picture's buttons are drawn small, but are bigger to the finger,

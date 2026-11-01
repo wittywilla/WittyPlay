@@ -64,6 +64,20 @@ func TestSandboxHasNoWayRound(t *testing.T) {
 		if _, err := unix.Getxattr(file, "user.wittyplay", nil); err == nil {
 			t.Error("setxattr did something")
 		}
+		// Taking one away is the same change of who may read a file, for an access list.
+		if err := unix.Removexattr(file, "user.keep"); err != nil {
+			t.Errorf("removexattr is meant to seem to work: %v", err)
+		}
+		if os.Getenv("WITTYPLAY_HAS_KEEP") == "1" {
+			if _, err := unix.Getxattr(file, "user.keep", nil); err != nil {
+				t.Errorf("removexattr did something: %v", err)
+			}
+		}
+		// Asked for without the privileged mode, which any process could do.
+		const uffdUserModeOnly = 1
+		if _, _, e := unix.Syscall(unix.SYS_USERFAULTFD, uffdUserModeOnly, 0, 0); e != unix.EPERM {
+			t.Errorf("userfaultfd: got %v, want EPERM", e)
+		}
 		st, err := os.Stat(file)
 		if err != nil {
 			t.Fatal(err)
@@ -109,6 +123,11 @@ func TestSandboxHasNoWayRound(t *testing.T) {
 	if err := os.WriteFile(file, []byte("precious"), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	hasKeep := "0"
+	if unix.Setxattr(file, "user.keep", []byte("x"), 0) == nil { // not every filesystem takes these
+		hasKeep = "1"
+	}
+	t.Setenv("WITTYPLAY_HAS_KEEP", hasKeep)
 	cmd := exec.Command(os.Args[0], "-test.run=TestSandboxHasNoWayRound", "-test.v")
 	cmd.Env = append(os.Environ(), "WITTYPLAY_GAPS_CHILD=1", "WITTYPLAY_SAVE="+t.TempDir(), "WITTYPLAY_OUTSIDE="+outside)
 	out, err := cmd.CombinedOutput()

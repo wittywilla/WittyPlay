@@ -52,11 +52,10 @@ function Preview({ values, onMode, host }: { values: Record<string, unknown>; on
   const layout = computeLayout({ areaW: size.w, areaH: size.h, srcW: 256, srcH: 224, aspect: 4 / 3, mode: String(values['display.aspect'] || 'original'), custom: Number(values['display.aspectCustom'] || 0), integer: values['display.integer'] === true, cropX: Number(values['display.cropX'] || 0), cropY: Number(values['display.cropY'] || 0), turns: rotate, inset: bezel === 'none' ? 0 : Number(values['display.bezelInset'] || 0) })
   useEffect(() => { engine.current?.update(values, { width: 256, height: 224 }, { picW: layout.picW, picH: layout.picH }) }, [values, layout.picW, layout.picH])
   const picStyle = { width: layout.picW, height: layout.picH, transform: rotate ? `translate(-50%, -50%) rotate(${rotate * 90}deg)` : 'translate(-50%, -50%)' }
-  const mediaStyle = `.wp-preview-stage .wp-media:not(.wp-gl){width:${layout.scaleX * 100}%;height:${layout.scaleY * 100}%;left:${(100 - layout.scaleX * 100) / 2}%;top:${(100 - layout.scaleY * 100) / 2}%;position:absolute}`
+  const mediaVars = { '--wp-media-w': `${layout.scaleX * 100}%`, '--wp-media-h': `${layout.scaleY * 100}%`, '--wp-media-x': `${(100 - layout.scaleX * 100) / 2}%`, '--wp-media-y': `${(100 - layout.scaleY * 100) / 2}%` } as React.CSSProperties
   return (
     <div ref={stage} className="wp-preview-stage" aria-label="Preview, with a test picture" role="img"
-      style={{ background: bezel === 'color' ? String(values['display.bezelColor'] || '#000') : '#000', backgroundImage: bezel === 'image' && values['display.bezelImage'] ? `url(${JSON.stringify(host.mediaUrl(`/api/game-bezels/${values['display.bezelImage']}`))})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      <style>{mediaStyle}</style>
+      style={{ ...mediaVars, background: bezel === 'color' ? String(values['display.bezelColor'] || '#000') : '#000', backgroundImage: bezel === 'image' && values['display.bezelImage'] ? `url(${JSON.stringify(host.mediaUrl(`/api/game-bezels/${values['display.bezelImage']}`))})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="wp-preview-box" style={{ width: layout.boxW, height: layout.boxH }}>
         <div ref={pic} className="wp-pic" style={picStyle} />
       </div>
