@@ -281,6 +281,7 @@ export class PhaseLock {
   private lastDecision = 0
   private lastShift = 0
   private settled = false
+  private gaveUp = false
   private period = 16.7
   private lastDisplay = 0
   shifted = 0
@@ -307,6 +308,13 @@ export class PhaseLock {
 
   private decide(wait: number) {
     const T = this.period
+    if (this.gaveUp) return
+    // Some browsers report a wait that has nothing to do with when a frame arrives. After
+    // moving through a whole refresh with nothing to show for it, there's nothing to find.
+    if (!this.settled && this.shifted > T * 1.2) {
+      this.gaveUp = true
+      return
+    }
     // A wait that has jumped by more than half a refresh is frames missing their turn.
     if (wait - this.floor > T / 2) {
       // Back to before the edge, with room to spare.

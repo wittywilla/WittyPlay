@@ -236,6 +236,7 @@
     lastDecision = 0;
     lastShift = 0;
     settled = false;
+    gaveUp = false;
     period = 16.7;
     lastDisplay = 0;
     shifted = 0;
@@ -258,6 +259,11 @@
     }
     decide(wait) {
       const T = this.period;
+      if (this.gaveUp) return;
+      if (!this.settled && this.shifted > T * 1.2) {
+        this.gaveUp = true;
+        return;
+      }
       if (wait - this.floor > T / 2) {
         const back = T - (wait - this.floor) + this.margin + Math.max(this.lastShift, 0);
         this.move(-Math.min(back, T));
@@ -404,6 +410,7 @@
   }
   var FIRST_FRAME_MS = 12e3;
   var WebRTCTransport = class {
+    // what's moving the frames, for the test page to look at
     constructor(signal) {
       this.signal = signal;
       const v = document.createElement("video");
@@ -438,6 +445,7 @@
     unwatch = null;
     latency = "auto";
     unlock = null;
+    lock = null;
     async connect() {
       const pc = new RTCPeerConnection();
       this.pc = pc;
@@ -559,6 +567,7 @@
       this.link.setLatency(now);
       const margin = () => now === "fastest" ? 3 : 6;
       const lock = new PhaseLock((ms) => this.link.shift(ms), margin());
+      this.lock = lock;
       const auto = mode === "auto" ? new SteadinessWatch((uneven) => {
         const next = uneven ? "balanced" : "fastest";
         if (next === now) return;
@@ -894,6 +903,7 @@
     const meter = new LatencyMeter();
     meter.log = [];
     t.onLost = () => post({ error: "lost" });
+    if (q.get("latency")) t.setLatency(q.get("latency"));
     document.getElementById("stage").appendChild(t.element);
     say("connecting");
     try {
@@ -938,10 +948,18 @@
       }
     };
     let lastShown = 0;
+    const waitTrace = [];
+    let traceWaits = [];
     const stop = watchVideo(v, (p) => {
       const s = reader.read(v, v.videoWidth, v.videoHeight);
       if (lastShown) interval.add(p.presented - lastShown);
       lastShown = p.presented;
+      traceWaits.push(p.displayAt - p.presented);
+      if (traceWaits.length >= 30) {
+        traceWaits.sort((a, b) => a - b);
+        waitTrace.push(round(traceWaits[15]));
+        traceWaits = [];
+      }
       if (!s) {
         bad++;
         return;
@@ -1002,6 +1020,8 @@
       pixels: { read, bad, skipped, out, pressCount },
       misfiled,
       stats,
+      waitTrace,
+      shifted: t.lock?.shifted,
       pressLog: meter.log.slice(0, 8)
     });
     say("done");

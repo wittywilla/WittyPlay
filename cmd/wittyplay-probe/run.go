@@ -47,6 +47,7 @@ func run(args []string) error {
 	state := fs.String("state", "", "a save state to start from")
 	loopback := fs.Bool("loopback", false, "keep WebRTC to the loopback address, as on Windows with no firewall rule")
 	profile := fs.String("profile", "", "the browser's profile folder; a new temporary one if empty")
+	latency := fs.String("latency", "", "auto, fastest, balanced or steady; empty for the player's default")
 	tune := addTuneFlags(fs)
 	_ = fs.Parse(args)
 
@@ -136,6 +137,9 @@ func run(args []string) error {
 	}
 	_, port, _ := net.SplitHostPort(ln.Addr().String())
 	q := url.Values{"seconds": {strconv.Itoa(*seconds)}, "kind": {*kind}, "label": {*label}}
+	if *latency != "" {
+		q.Set("latency", *latency)
+	}
 	addr := "http://" + net.JoinHostPort(hostName, port) + "/?" + q.Encode()
 	fmt.Println("probe page:", addr)
 	if *warm > 0 {
@@ -211,6 +215,8 @@ type pageResults struct {
 	Pixels  map[string]int     `json:"pixels"`
 	Mis     map[string]int     `json:"misfiled"`
 	Stats   map[string]any     `json:"stats"`
+	Waits   []float64          `json:"waitTrace"`
+	Shifted float64            `json:"shifted"`
 }
 
 func report(b []byte, label, out string, sess *stream.Session) error {
@@ -249,6 +255,7 @@ func report(b []byte, label, out string, sess *stream.Session) error {
 	}
 	fmt.Println("  browser:", strings.Join(parts, " "))
 	fmt.Println("  pixels:", r.Pixels, "records against pixels:", r.Mis)
+	fmt.Printf("  moved frames by %.1f ms; waits for the display over time: %v\n", r.Shifted, r.Waits)
 	if out != "" {
 		f, err := os.OpenFile(out, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {

@@ -136,6 +136,7 @@ class WebRTCTransport implements Transport {
   private unwatch: (() => void) | null = null
   private latency: LatencyMode = 'auto'
   private unlock: (() => void) | null = null
+  lock: PhaseLock | null = null // what's moving the frames, for the test page to look at
 
   constructor(private signal: Signal) {
     const v = document.createElement('video')
@@ -249,6 +250,7 @@ class WebRTCTransport implements Transport {
     this.link.setLatency(now)
     const margin = () => (now === 'fastest' ? 3 : 6)
     const lock = new PhaseLock((ms) => this.link.shift(ms), margin())
+    this.lock = lock
     const auto = mode === 'auto' ? new SteadinessWatch((uneven) => {
       const next = uneven ? 'balanced' : 'fastest'
       if (next === now) return

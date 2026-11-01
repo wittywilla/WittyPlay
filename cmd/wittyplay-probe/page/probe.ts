@@ -3,7 +3,7 @@
 // each picture, and posts what it measured. scripts/build-probe.mjs bundles it.
 
 import { LatencyMeter, Series, StampReader, watchVideo, type InputTimes, type Presented } from '../../../web/latency'
-import { make, type TransportKind } from '../../../web/transport'
+import { make, type LatencyMode, type TransportKind } from '../../../web/transport'
 
 type Setup = { seconds: number; kind: TransportKind; pressMs: number; label: string }
 
@@ -24,6 +24,7 @@ async function main() {
   const meter = new LatencyMeter()
   meter.log = []
   t.onLost = () => post({ error: 'lost' })
+  if (q.get('latency')) t.setLatency(q.get('latency') as LatencyMode)
   document.getElementById('stage')!.appendChild(t.element)
   say('connecting')
   try { await t.connect() } catch (e: any) { await post({ error: String(e?.message || e) }); return }
@@ -62,10 +63,18 @@ async function main() {
     }
   }
   let lastShown = 0
+  const waitTrace: number[] = []
+  let traceWaits: number[] = []
   const stop = watchVideo(v, (p: Presented) => {
     const s = reader.read(v, v.videoWidth, v.videoHeight)
     if (lastShown) interval.add(p.presented - lastShown)
     lastShown = p.presented
+    traceWaits.push(p.displayAt - p.presented)
+    if (traceWaits.length >= 30) {
+      traceWaits.sort((a, b) => a - b)
+      waitTrace.push(round(traceWaits[15]))
+      traceWaits = []
+    }
     if (!s) { bad++; return }
     read++
     if (firstSeq < 0) firstSeq = s.seq
@@ -114,7 +123,7 @@ async function main() {
     frames: Object.fromEntries(Object.entries(meter.frames).map(([k, s]) => [k, summary(s)])),
     presses: Object.fromEntries(Object.entries(meter.presses).map(([k, s]) => [k, summary(s)])),
     glass: summary(glass), photon: summary(photon), madeToHanded: summary(stampLatency), interval: summary(interval),
-    pixels: { read, bad, skipped, out, pressCount }, misfiled, stats,
+    pixels: { read, bad, skipped, out, pressCount }, misfiled, stats, waitTrace, shifted: (t as any).lock?.shifted,
     pressLog: (meter.log as InputTimes[]).slice(0, 8),
   })
   say('done')
