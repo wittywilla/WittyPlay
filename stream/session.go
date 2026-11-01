@@ -272,36 +272,6 @@ func (m *Manager) Start(opt Options) (*Session, error) {
 	return nil, first
 }
 
-// Room says whether this person could start a game now. Their own game doesn't count,
-// since starting another ends it. The answer can be out of date by the time they start
-// one: it's only there so that nobody unpacks or patches a game with nowhere to run it.
-func (m *Manager) Room(userID int64, gpu bool) error {
-	cfg := m.config()
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	running, onCard := 0, 0
-	for _, s := range m.sessions {
-		if s.opt.UserID == userID {
-			continue
-		}
-		running++
-		if s.opt.GPU {
-			onCard++
-		}
-	}
-	if running >= cfg.MaxSessions {
-		return ErrBusy
-	}
-	maxGPU := cfg.MaxGPU
-	if maxGPU <= 0 {
-		maxGPU = 2
-	}
-	if gpu && onCard >= maxGPU {
-		return ErrGPUBusy
-	}
-	return nil
-}
-
 // startOn starts a game on one core. With more cores to try, a failure leaves the
 // unpacked game in place for the next.
 func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {

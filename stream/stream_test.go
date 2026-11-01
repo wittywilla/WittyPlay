@@ -402,18 +402,8 @@ func TestBadInputIgnored(t *testing.T) {
 func TestSessionLimit(t *testing.T) {
 	m := newManager(t)
 	m.Configure(func(c *Config) { c.MaxSessions = 1 })
-	if err := m.Room(2, false); err != nil {
-		t.Fatalf("empty, and no room: %v", err)
-	}
 	a := startGame(t, m, t.TempDir(), false)
 	defer a.Stop()
-	// Asking first, so nobody unpacks a game with nowhere to run it. Their own doesn't count.
-	if err := m.Room(2, false); err != ErrBusy {
-		t.Fatalf("got %v, want ErrBusy", err)
-	}
-	if err := m.Room(1, false); err != nil {
-		t.Fatalf("their own game doesn't stand in their way: %v", err)
-	}
 	rom := filepath.Join(t.TempDir(), "g.wittytest")
 	_ = os.WriteFile(rom, []byte("x"), 0o644)
 	if _, err := m.Start(Options{UserID: 2, ItemID: 8, Core: ipc.TestCore, ROM: rom, SaveDir: t.TempDir()}); err != ErrBusy {
