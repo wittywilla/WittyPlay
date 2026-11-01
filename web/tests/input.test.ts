@@ -484,6 +484,29 @@ describe('InputManager', () => {
     m.stop()
   })
 
+  test('a short press still counts when frames have stopped', async () => {
+    const m = make()
+    m.start()
+    const p = makePad()
+    pads = [p]
+    fire('gamepadconnected')
+    sent = []
+    // No frame ever runs here: the browser has stopped drawing, as it was seen doing.
+    for (let i = 0; i < 4; i++) {
+      await new Promise((r) => setTimeout(r, 40))
+      p.buttons[0] = button(true); p.timestamp = 100 + i * 2
+      await new Promise((r) => setTimeout(r, 50))
+      p.buttons[0] = button(false); p.timestamp = 101 + i * 2
+    }
+    await new Promise((r) => setTimeout(r, 50))
+    assert.equal(frames.length, 1, 'the one frame asked for is still waiting')
+    const buttons = sent.filter((s) => s[0] === 0).map((s) => new DataView(s.buffer, s.byteOffset).getUint16(1, true))
+    const presses = buttons.filter((b, i) => b === 1 && buttons[i - 1] !== 1).length
+    assert.equal(presses, 4)
+    assert.equal(buttons.at(-1), 0, 'and it was let go')
+    m.stop()
+  })
+
   test('a pad the browser never announces is still found', async () => {
     const m = make()
     m.start()

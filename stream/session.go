@@ -513,6 +513,12 @@ func (s *Session) start() error {
 	if err := os.MkdirAll(s.opt.SaveDir, 0o700); err != nil {
 		return noRunner(err)
 	}
+	system, releaseSystem, err := ownSystem(s.opt.CoreID, s.opt.SystemDir, s.opt.SaveDir, s.opt.CoreOptions)
+	if err != nil {
+		// It can still be played, and saved with save slots.
+		s.log.Warn("no folder of its own for memory cards", "err", err)
+		s.opt.Notices = append(s.opt.Notices[:len(s.opt.Notices):len(s.opt.Notices)], "Memory cards won't work in this game this time, because the server couldn't set up a folder for them. Save slots still work.")
+	}
 	args, memory := append(append([]string(nil), s.cfg.RunnerArgs...), s.opt.RunnerArgs...), s.cfg.MemoryMB
 	if s.opt.GPU {
 		// A graphics driver needs what a software-rendered game never should.
@@ -520,6 +526,7 @@ func (s *Session) start() error {
 	}
 	rn, err := StartRunner(s.cfg.Runner, args, s.opt.SaveDir, memory, s.log)
 	if err != nil {
+		releaseSystem()
 		return noRunner(err)
 	}
 	cmd, stdout, stderr := rn.Cmd, rn.Stdout, rn.Stderr
@@ -549,11 +556,12 @@ func (s *Session) start() error {
 			lv = slog.LevelWarn
 		}
 		s.log.Log(context.Background(), lv, "the runner ended", "topic", "runner", "err", err, "stderr", s.runnerSaid.String(), "ran", time.Since(started).Round(time.Millisecond).String())
+		releaseSystem()
 		s.finish()
 		close(s.done)
 	}()
 
-	load, _ := json.Marshal(ipc.Load{Core: s.opt.Core, ROM: s.opt.ROM, System: s.opt.SystemDir, Save: s.opt.SaveDir, Options: s.opt.CoreOptions, Assets: s.opt.CoreAssets, PreferDevices: s.opt.PreferDevices, Stamp: s.opt.Stamp})
+	load, _ := json.Marshal(ipc.Load{Core: s.opt.Core, ROM: s.opt.ROM, System: system, Save: s.opt.SaveDir, Options: s.opt.CoreOptions, Assets: s.opt.CoreAssets, PreferDevices: s.opt.PreferDevices, Stamp: s.opt.Stamp})
 	if err := s.command(ipc.CmdLoad, load); err != nil {
 		s.kill()
 		return err

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ControllerPicture } from './art'
 import type { Background, ControlsData, Target } from './consoles'
 import { MAX_PLAYERS, onTV, padSupport, type InputManager, type PadInfo } from './input'
+import { PromptBar } from './prompts'
 import {
   conflicts, describeKey, describeSource, effectiveKeys, effectiveMap, effectiveOptions, findPress, keyConflicts, noteReleases, rawFromDefaults, resolveProfile, snapshot, standingOf, toStandard,
   type Binding, type ControllerData, type KeyMap, type PadMap, type Profile, type ProfileOptions,
@@ -83,7 +84,7 @@ function Toggle({ label, on, onChange, hint }: { label: string; on: boolean; onC
   return (
     <button type="button" className={'wps-toggle' + (on ? ' on' : '')} role="switch" aria-checked={on} onClick={() => onChange(!on)}>
       <span className="wp-grow">{label}{hint && <small className="wp-muted"> {hint}</small>}</span>
-      <span className="wps-switch" aria-hidden="true">{on ? 'On' : 'Off'}</span>
+      <span className="wp-switch" aria-hidden="true" />
     </button>
   )
 }
@@ -92,7 +93,7 @@ export function ControllerStudio(props: Props) {
   const { host, data, input, onClose, refresh } = props
   // Something has to have the focus, or a remote has nothing to move from.
   const root = useRef<HTMLDivElement>(null)
-  useEffect(() => { root.current?.querySelector<HTMLElement>('.wps-tabs button[aria-selected=true]')?.focus({ preventScroll: true }) }, [])
+  useEffect(() => { root.current?.querySelector<HTMLElement>('.wps-tabs [aria-selected=true]')?.focus({ preventScroll: true }) }, [])
   const [tab, setTab] = useState<Tab>('buttons')
   const [note, setNote] = useState('')
   const [bg, setBg] = useState<Background>(data.background)
@@ -104,17 +105,17 @@ export function ControllerStudio(props: Props) {
     <div ref={root} className="wps" role="dialog" aria-label="Controllers">
       <header className="wps-head">
         <h1 className="wps-title">Controllers <span className="wp-muted">· {props.gameTitle || props.consoleName}</span></h1>
-        <div className="wps-tabs" role="tablist">
-          {tabs.map(([id, name]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className={'wp-btn' + (tab === id ? ' primary' : '')} onClick={() => setTab(id)}>{name}</button>)}
-        </div>
-        <span className="wp-grow" />
         <button type="button" className="wp-btn" onClick={onClose}>Done</button>
       </header>
+      <div className="wps-tabs" role="tablist" aria-label="Controllers">
+        {tabs.map(([id, name]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className="wp-tab" onClick={() => setTab(id)}>{name}</button>)}
+      </div>
       {props.consolePicker}
       <div className="wps-note" role="status" aria-live="polite">{note}</div>
       {tab === 'buttons' && <ButtonsTab {...props} bg={bg} say={say} />}
       {tab === 'players' && <PlayersTab {...props} say={say} />}
       {tab === 'picture' && <PictureTab host={host} bg={bg} setBg={setBg} refresh={refresh} say={say} data={data} input={input} />}
+      <PromptBar className="wps-prompts" items={[{ button: 'dpad', label: 'Move' }, { button: 'confirm', label: 'Choose' }, { button: 'back', label: 'Done' }]} />
     </div>
   )
 }
@@ -545,38 +546,40 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
           <button type="button" className={'wp-btn' + (trying ? ' primary' : '')} aria-pressed={trying} disabled={!pad && !isKeys} onClick={() => setTrying((t) => !t)}>{trying ? 'Stop trying' : 'Try your controller'}</button>
           {onTouch && <button type="button" className="wp-btn" onClick={onTouch}>Edit touch controls…</button>}
         </div>
-        {list}
       </section>
 
       <section className="wps-right" aria-label="Controller and profile">
+        <div className="wps-card">
         <h3>Controller</h3>
         <div className="wps-choices" role="group" aria-label="Which controller">
           {pads.map((p) => (
-            <button key={p.index} type="button" aria-pressed={device === p.index} className={'wp-btn' + (device === p.index ? ' primary' : '')} onClick={() => setDevice(p.index)}>{p.name}</button>
+            <button key={p.index} type="button" aria-pressed={device === p.index} className={'wp-chip' + (device === p.index ? ' on' : '')} onClick={() => setDevice(p.index)}>{p.name}</button>
           ))}
-          <button type="button" aria-pressed={isKeys} className={'wp-btn' + (isKeys ? ' primary' : '')} onClick={() => setDevice('keyboard')}>Keyboard</button>
+          <button type="button" aria-pressed={isKeys} className={'wp-chip' + (isKeys ? ' on' : '')} onClick={() => setDevice('keyboard')}>Keyboard</button>
         </div>
         {pads.length === 0 && <p className="wp-muted wps-para" role="status">{noPadWords()}</p>}
         {pad && pad.standing === 'known' && <p className="wp-muted wps-para">Recognised, and its buttons were put in order for you. If any are wrong, set them here.</p>}
         {pad && pad.standing === 'unknown' && <p className="wps-para wps-warn">This browser doesn’t say what this controller’s buttons are, so they may be in the wrong places. Choose “Set them all, one by one” to be sure.</p>}
+        </div>
 
+        <div className="wps-card">
         <h3>Profile</h3>
         <div className="wps-profiles" role="group" aria-label="Which profile">
-          <button type="button" aria-pressed={isDefault} className={'wp-btn' + (isDefault ? ' primary' : '')} onClick={() => setSelected(null)}>Default</button>
+          <button type="button" aria-pressed={isDefault} className={'wp-chip' + (isDefault ? ' on' : '')} onClick={() => setSelected(null)}>Default</button>
           {fitting.map((p) => (
-            <button key={p.id} type="button" aria-pressed={selected === p.id} className={'wp-btn' + (selected === p.id ? ' primary' : '')} onClick={() => setSelected(p.id)}>
+            <button key={p.id} type="button" aria-pressed={selected === p.id} className={'wp-chip' + (selected === p.id ? ' on' : '')} onClick={() => setSelected(p.id)}>
               {p.name}{p.active && <small className="wps-tag">in use</small>}
             </button>
           ))}
         </div>
         <div className="wps-row wps-wrap">
-          <button type="button" className="wp-btn" onClick={newProfile}>New</button>
-          <button type="button" className="wp-btn" disabled={!profile} onClick={copyProfile}>Copy</button>
-          <button type="button" className="wp-btn" disabled={!profile} onClick={() => setRenaming(profile?.name || '')}>Rename</button>
-          <button type="button" className="wp-btn" onClick={resetProfile}>Reset</button>
-          <button type="button" className="wp-btn" disabled={!profile} onClick={deleteProfile}>{armed === 'delete' ? 'Delete, really' : 'Delete'}</button>
-          {!tv && <button type="button" className="wp-btn" disabled={!profiles?.length} onClick={() => void exportProfiles(profile ? [profile.id] : undefined)}>Export</button>}
-          {!tv && <button type="button" className="wp-btn" onClick={() => file.current?.click()}>Import</button>}
+          <button type="button" className="wp-btn wps-small" onClick={newProfile}>New</button>
+          <button type="button" className="wp-btn wps-small" disabled={!profile} onClick={copyProfile}>Copy</button>
+          <button type="button" className="wp-btn wps-small" disabled={!profile} onClick={() => setRenaming(profile?.name || '')}>Rename</button>
+          <button type="button" className="wp-btn wps-small" onClick={resetProfile}>Reset</button>
+          <button type="button" className="wp-btn wps-small" disabled={!profile} onClick={deleteProfile}>{armed === 'delete' ? 'Delete, really' : 'Delete'}</button>
+          {!tv && <button type="button" className="wp-btn wps-small" disabled={!profiles?.length} onClick={() => void exportProfiles(profile ? [profile.id] : undefined)}>Export</button>}
+          {!tv && <button type="button" className="wp-btn wps-small" onClick={() => file.current?.click()}>Import</button>}
           <input ref={file} type="file" accept=".json,application/json" hidden aria-label="Import a profile file" onChange={(e) => { void importProfiles(e.target.files?.[0]); e.target.value = '' }} />
         </div>
         {renaming !== null && profile && (
@@ -596,17 +599,19 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
           </div>
         )}
         <p className="wp-muted wps-para">The most exact profile in use wins: one for this game, then this console, then this controller, then the default.</p>
+        </div>
 
         {!isKeys && swaps.length > 0 && (
-          <>
+          <div className="wps-card">
             <h3>Go by the letters</h3>
             <p className="wp-muted wps-para">Buttons are matched by where they are on the pad, which is how games were designed to be held. If you’d rather go by what’s printed on yours, swap them.</p>
             <div className="wps-row wps-wrap">
               {swaps.map(([a, b]) => <button key={a} type="button" className="wp-btn" onClick={() => swapTargets(a, b)}>Swap {labelOf(a)} and {labelOf(b)}</button>)}
             </div>
-          </>
+          </div>
         )}
 
+        <div className="wps-card">
         <h3>How it feels</h3>
         <div className="wps-group">
           {!isKeys && <Stepper label="Stick dead zone" value={Math.round((options.deadzone ?? 0.15) * 100)} text={pct(options.deadzone ?? 0.15)} min={0} max={60} step={5} onChange={(v) => void setOption({ deadzone: v / 100 })} />}
@@ -626,10 +631,16 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
           <legend>Turbo: these repeat while held</legend>
           {targets.filter((t) => t.id < 16 && (t.group === 'face' || t.group === 'shoulder')).map((t) => {
             const on = !!options.turbo?.includes(t.id)
-            return <button key={t.id} type="button" aria-pressed={on} className={'wp-btn wps-small' + (on ? ' primary' : '')} onClick={() => void setOption({ turbo: on ? (options.turbo || []).filter((x) => x !== t.id) : [...(options.turbo || []), t.id] })}>{t.label}</button>
+            return <button key={t.id} type="button" aria-pressed={on} className={'wp-chip' + (on ? ' on' : '')} onClick={() => void setOption({ turbo: on ? (options.turbo || []).filter((x) => x !== t.id) : [...(options.turbo || []), t.id] })}>{t.label}</button>
           })}
           {!!options.turbo?.length && <Stepper label="Presses a second" value={options.turboHz ?? 12} min={2} max={30} step={2} onChange={(v) => void setOption({ turboHz: v })} />}
         </fieldset>
+        </div>
+      </section>
+
+      <section className="wps-card wps-map-card" aria-label="Every button">
+        <h3>Every button</h3>
+        {list}
       </section>
     </div>
   )
@@ -651,13 +662,14 @@ function PlayersTab({ input, devices, setDevice, say }: Props & { say: (t: strin
   return (
     <div className="wps-players">
       <p className="wp-muted wps-para">Choosing a player that’s taken swaps the two controllers.</p>
+      <div className="wps-card">
       <ul className="wp-list">
         {pads.map((p) => (
           <li key={p.index + p.id}>
             <div className="wp-grow"><b>{p.name}</b>
               <small className="wp-muted">{p.profile ? `Profile: ${p.profile.name}` : p.standing === 'unknown' ? 'Buttons not known: set them up on the Buttons tab.' : p.standing === 'known' ? 'Recognised' : 'Standard buttons'}</small></div>
             <div className="wps-seats" role="group" aria-label={`${p.name}: which player`}>
-              {players.map((n) => <button key={n} type="button" aria-pressed={p.port === n} aria-label={`Player ${n + 1}`} className={'wp-btn wps-small' + (p.port === n ? ' primary' : '')} onClick={() => input.setPadPort(p.index, n)}>{n + 1}</button>)}
+              {players.map((n) => <button key={n} type="button" aria-pressed={p.port === n} aria-label={`Player ${n + 1}`} className={'wp-chip wps-seat' + (p.port === n ? ' on' : '')} onClick={() => input.setPadPort(p.index, n)}>{n + 1}</button>)}
             </div>
             {p.rumble && <button type="button" className="wp-btn wps-small" onClick={() => input.testRumble(p.index)}>Which one?</button>}
           </li>
@@ -666,18 +678,19 @@ function PlayersTab({ input, devices, setDevice, say }: Props & { say: (t: strin
         <li>
           <div className="wp-grow"><b>Keyboard</b></div>
           <div className="wps-seats" role="group" aria-label="Keyboard: which player">
-            {players.map((n) => <button key={n} type="button" aria-pressed={input.keyboardPlayer === n} aria-label={`Player ${n + 1}`} className={'wp-btn wps-small' + (input.keyboardPlayer === n ? ' primary' : '')} onClick={() => input.setKeyboardPort(n)}>{n + 1}</button>)}
+            {players.map((n) => <button key={n} type="button" aria-pressed={input.keyboardPlayer === n} aria-label={`Player ${n + 1}`} className={'wp-chip wps-seat' + (input.keyboardPlayer === n ? ' on' : '')} onClick={() => input.setKeyboardPort(n)}>{n + 1}</button>)}
           </div>
         </li>
         <li>
           <div className="wp-grow"><b>Touch controls</b></div>
           <div className="wps-seats" role="group" aria-label="Touch controls: which player">
-            {players.map((n) => <button key={n} type="button" aria-pressed={input.touchPlayer === n} aria-label={`Player ${n + 1}`} className={'wp-btn wps-small' + (input.touchPlayer === n ? ' primary' : '')} onClick={() => input.setTouchPort(n)}>{n + 1}</button>)}
+            {players.map((n) => <button key={n} type="button" aria-pressed={input.touchPlayer === n} aria-label={`Player ${n + 1}`} className={'wp-chip wps-seat' + (input.touchPlayer === n ? ' on' : '')} onClick={() => input.setTouchPort(n)}>{n + 1}</button>)}
           </div>
         </li>
       </ul>
+      </div>
       {devices && devices.some((d) => d.types.length > 1) && (
-        <>
+        <div className="wps-card">
           <h3>What each player has plugged in</h3>
           <p className="wp-muted wps-para">This game’s emulator offers a choice of controller for its ports.</p>
           <ul className="wp-list">
@@ -685,13 +698,13 @@ function PlayersTab({ input, devices, setDevice, say }: Props & { say: (t: strin
               <li key={d.port}>
                 <div className="wp-grow"><b>Player {d.port + 1}</b></div>
                 <div className="wps-seats" role="group" aria-label={`Player ${d.port + 1}: kind of controller`}>
-                  {d.types.map((t) => <button key={t.id} type="button" aria-pressed={d.current === t.id} className={'wp-btn wps-small' + (d.current === t.id ? ' primary' : '')}
+                  {d.types.map((t) => <button key={t.id} type="button" aria-pressed={d.current === t.id} className={'wp-chip' + (d.current === t.id ? ' on' : '')}
                     onClick={() => void setDevice?.(d.port, t.id).catch((e) => say(e?.message || 'That didn’t work'))}>{t.name}</button>)}
                 </div>
               </li>
             ))}
           </ul>
-        </>
+        </div>
       )}
     </div>
   )
@@ -735,7 +748,7 @@ function PictureTab({ host, bg, setBg, refresh, say, data }: { host: ProfileHost
           </Stage>
         </div>
       </section>
-      <section className="wps-right">
+      <section className="wps-right wps-card">
         <h3>Your own background</h3>
         <p className="wp-muted wps-para">A picture of your own behind the controller, on this screen only. It’s kept on the server for your account, and nobody else can see it. PNG, JPEG or WebP, up to 10 MB.</p>
         <div className="wps-row wps-wrap">
