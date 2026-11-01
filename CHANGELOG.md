@@ -6,6 +6,11 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 ## Unreleased
 
 - The patches panel links to the guide in Help. The message about an encrypted 3DS file no longer suggests where else a game might come from.
+- **PlayStation 2 runs under the sandbox on Linux.** Its core crashed on loading, as it needs `/dev/shm` to map its recompiled code. It's asked for by name, for that core only. It keeps its shader cache beside the save between games, where it used to be rebuilt every time.
+- **On a Mac, the sandbox let no game start.** It refused every program, including the runner it was about to start, and its rules named paths through links, which match nothing. Found by reading: this hasn't been run on a Mac.
+- **FreeBSD:** a game with no graphics card can't start programs or open a socket. That isn't a sandbox, and custom cores stay refused.
+- **Security:** a core fetched by address can't reach shared address space, or a private address wrapped in IPv6 for a gateway to unwrap.
+
 - **Latency:** from a finished frame to the screen went from 65 to 235 ms to 9 to 22 ms, and from a press to the screen from 75 to 270 ms to
   11 to 31 ms, or about 50 on PlayStation 2, which takes most of a frame to run. Those are medians with the server and browser on one machine;
   a wired network adds about 1 ms, Wi-Fi more. The browser no longer holds frames back, sound can't hold the picture back, FFmpeg's queues can't fill,

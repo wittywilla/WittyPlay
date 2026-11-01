@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/wittywilla/wittyplay"
@@ -38,7 +39,11 @@ func ownSystem(coreID, systemDir, saveDir string, options map[string]string) (di
 		return systemDir, func() {}, err
 	}
 	top := filepath.Dir(saves)
-	release = func() { removeExcept(filepath.Join(dir, top), filepath.Base(saves)) }
+	keep := []string{filepath.Base(saves)}
+	if t.CacheIn != "" && filepath.Dir(filepath.FromSlash(t.CacheIn)) == top {
+		keep = append(keep, filepath.Base(t.CacheIn))
+	}
+	release = func() { removeExcept(filepath.Join(dir, top), keep...) }
 	release() // left behind if the server stopped suddenly
 	bios, biosName := "", ""
 	if r := t.RequiredBIOS; r != nil {
@@ -51,14 +56,14 @@ func ownSystem(coreID, systemDir, saveDir string, options map[string]string) (di
 	return dir, release, nil
 }
 
-// removeExcept empties a folder, apart from one thing in it.
-func removeExcept(dir, keep string) {
+// removeExcept empties a folder, apart from what's named.
+func removeExcept(dir string, keep ...string) {
 	ents, err := os.ReadDir(dir)
 	if err != nil {
 		return
 	}
 	for _, e := range ents {
-		if e.Name() != keep {
+		if !slices.Contains(keep, e.Name()) {
 			_ = os.RemoveAll(filepath.Join(dir, e.Name()))
 		}
 	}

@@ -16,5 +16,6 @@ func Apply(l Limits) error {
 		as := rlimit(int64(addressSpace(l.MemoryMB)))
 		_ = syscall.Setrlimit(syscall.RLIMIT_AS, &syscall.Rlimit{Cur: as, Max: as})
 	}
+	moreLimits(l)
 	return syscall.Setpriority(syscall.PRIO_PROCESS, 0, 5)
 }
