@@ -5,6 +5,13 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
+- **melonDS starts on a current Linux.** glibc 2.41 and later refuse a library asking for an executable stack, as melonDS's does by an accident of how it's built. It now loads from a private copy without that request, and no core ever gets an executable stack. It also needed room for the address space it reserves, and shared memory, or it crashed while loading.
+- **Play! starts on Linux.** It stopped at once for want of a home folder. It has its save folder as one, and its memory cards are kept there.
+- **SwanStation starts on Linux under the sandbox.** It needs shared memory, as melonDS and LRPS2 do.
+- **Shared memory is private.** A core that needs `/dev/shm` now gets an empty one of its own: nothing else can reach it and nothing is left behind. Where the system doesn't allow that, it has the system's, as LRPS2 did before.
+- **PlayStation and Dreamcast discs on Linux:** a `.cue`, `.gdi` or `.m3u` naming `GAME.BIN` beside `Game.bin` didn't open on most cores, as Linux is particular about capitals. Such a game gets a folder of links under the names its sheet uses, and the library is left alone.
+- **Dreamcast memory cards now last.** Flycast kept them in the system folder, which a running game can't write to. They're in the game's save folder.
+- `wittyplay-probe` has `sweep`, which plays a game through the real stream and says whether time passed; `test-cia` and `test-rom`, which write small programs from nothing but hand-assembled instructions, for consoles with no game to hand; and `cia-info`, which prints what a 3DS package's own bytes say about whether it's encrypted.
 - The patches panel links to the guide in Help. The message about an encrypted 3DS file no longer suggests where else a game might come from.
 - **PlayStation 2 runs under the sandbox on Linux.** Its core crashed on loading, as it needs `/dev/shm` to map its recompiled code. It's asked for by name, for that core only. It keeps its shader cache beside the save between games, where it used to be rebuilt every time.
 - **On a Mac, the sandbox let no game start.** It refused every program, including the runner it was about to start, and its rules named paths through links, which match nothing. Found by reading: this hasn't been run on a Mac.

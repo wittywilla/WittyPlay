@@ -46,8 +46,8 @@ What hasn't been run, wherever you play:
 
 - **Real gear:** no real controller, TV remote, phone or game PC has been tried. Firefox, Safari, TVs and real networks haven't been run for streaming.
 - **Delay:** the measured figures are headless, on one machine, and not from a real screen. PlayStation 2 is the slowest at about 49 ms, and sound runs 35 to 80 ms behind the picture.
-- **3DS:** no real 3DS game has been seen running here, and streaming it hasn't been tested.
-- **Known faults:** the Mesen NES core aborts on Linux, and headerless NES files need it. PS2 saves have been seen working on Windows, not yet on Linux under the sandbox, where the PS2 shader cache also can't be written, so it's rebuilt each run.
+- **3DS and Dreamcast:** no retail game has been seen running here. A plain 3DS test program in a `.cia`, and a Dreamcast one, have run through the whole stream.
+- **Known faults:** PS2 saves have been seen working on Windows, not yet on Linux under the sandbox.
 - **On the device:** playing without streaming isn't built, and the game page says so.
 
 ## Building and testing
