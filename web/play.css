@@ -431,7 +431,9 @@ html.gm-couch .wp-screen .wps-prompts { display: none; }
 /* On a small screen the picture's buttons are drawn small, but are bigger to the finger,
    as they are on a real pad. The list under the picture has large ones as well. */
 @media (pointer: coarse), (max-width: 600px) {
-  .wps-hot::after { content: ""; position: absolute; inset: -10px; }
+  /* Behind every button's own face, so a bigger box beside it never takes a press meant for that button. */
+  .wps-art svg { pointer-events: none; }
+  .wps-hot::after { content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
   .wps-hot-pill { overflow: visible; }
   .wp-btn, .wp-chip, .wp-tab, .wps-small, .wps-toggle, .wps-stepper { min-height: 44px; }
   .wps-stepper .wp-btn { width: 44px; }
