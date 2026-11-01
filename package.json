@@ -9,6 +9,9 @@
   "exports": {
     ".": "./web/index.ts"
   },
+  "scripts": {
+    "build:bundle": "node build-bundle.mjs"
+  },
   "files": ["web", "LICENSE", "NOTICE"],
   "repository": "github:wittywilla/WittyPlay",
   "peerDependencies": {
