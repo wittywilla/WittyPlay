@@ -12,7 +12,7 @@ export function familyOf(id: string): PadFamily {
   return 'generic'
 }
 
-export type ProblemData = { needCore?: boolean; needBios?: boolean; encrypted?: boolean; file?: string; rig?: boolean; connect?: boolean; status?: number }
+export type ProblemData = { needCore?: boolean; needBios?: boolean; encrypted?: boolean; file?: string; rig?: boolean; connect?: boolean; gone?: boolean; status?: number }
 
 export type Explained = { title: string; body: string; fix?: 'settings'; retry?: boolean; defaults?: boolean }
 
@@ -27,6 +27,7 @@ export function explain(message: string, d: ProblemData | null | undefined, isAd
   if (d?.needBios) return { title: `${consoleName} games need a BIOS file`, body: message, fix: isAdmin ? 'settings' : undefined }
   if (d?.encrypted) return { title: 'This game file is encrypted', body: message + ' Only a copy that isn’t encrypted can be played. The file on the server is untouched.' }
   if (d?.connect) return { title: 'The game started, but its picture can’t reach this device', body: `${message} This is usually a firewall or a network that blocks the connection. Trying again may pick another way through.`, retry: true }
+  if (d?.gone) return { title: 'This game keeps stopping', body: `${message} Starting it again goes back to its last save.`, retry: true, defaults: true }
   const m = message.toLowerCase()
   if (m.includes('graphics card')) return { title: 'This game needs a graphics card', body: message, fix: isAdmin ? 'settings' : undefined }
   if (m.includes('file is missing')) return { title: 'This game’s file has gone', body: 'It was moved or deleted after the library was last scanned. Put it back, or scan the library again.' }

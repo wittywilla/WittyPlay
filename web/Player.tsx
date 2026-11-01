@@ -62,6 +62,21 @@ const TOUCH_KEY = 'wittyplay.touch'
 const LEVEL_KEY = 'wittyplay.level'
 const RECONNECT_TRIES = 8 // about a minute, with the waits between them
 
+// A game that's no longer there starts again by itself, but not twice in a couple of minutes:
+// something that keeps stopping it should be seen, not hidden behind a page that keeps reloading.
+const RESTART_GAP_MS = 120000
+const RESTART_KEY = 'wittyplay.restarted'
+function mayRestart(): boolean {
+  try {
+    const now = Date.now()
+    if (now - Number(sessionStorage.getItem(RESTART_KEY) || 0) < RESTART_GAP_MS) return false
+    sessionStorage.setItem(RESTART_KEY, String(now))
+    return true
+  } catch {
+    return false
+  }
+}
+
 // The screens that want the game in view, so that a change can be seen as it's made.
 const SIDE_PANELS: Panel[] = ['display', 'osd', 'audio', 'core']
 const GROUP_TITLES: Record<SettingsGroup, string> = { display: 'Picture', osd: 'On-screen numbers', emulation: 'Speed and rewind', audio: 'Sound', states: 'Saves', hotkeys: 'Shortcuts' }
@@ -243,6 +258,24 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       } catch (e: any) {
         t.close()
         if (stale()) return
+        // The game isn't there any more: the server or the module restarted, or this device was
+        // away too long. No way of connecting can help, so there's no use trying them for a minute.
+        if (e?.status === 404) {
+          closing.current = true
+          host.report?.('warn', 'The game was no longer running on the server')
+          if (mayRestart()) {
+            setStatus('The game stopped. Starting it again…')
+            host.relaunch({ resume: true, safeMode: host.safeMode })
+            return
+          }
+          old?.close()
+          transportRef.current = null
+          setTransport(null)
+          setStatus('')
+          setErrorData({ gone: true })
+          setError('It has stopped on the server, more than once in the last couple of minutes.')
+          return
+        }
         last = e?.message || String(e)
         host.report?.('error', `The game stream could not connect (${kind}): ${last}`)
         skip.add(kind)
@@ -632,8 +665,8 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       {status && !error && transport && <div className="wp-status" role="status"><span className="wp-spinner" aria-hidden="true" />{status}</div>}
       {problem && (
         <ProblemScreen title={host.title} cover={host.cover} problem={problem} onBack={leave}
-          onRetry={() => host.relaunch({ resume: host.resume, safeMode: host.safeMode })}
-          onDefaults={safe ? undefined : () => host.relaunch({ resume: host.resume, safeMode: true })}
+          onRetry={() => host.relaunch({ resume: host.resume || !!errorData?.gone, safeMode: host.safeMode })}
+          onDefaults={safe ? undefined : () => host.relaunch({ resume: host.resume || !!errorData?.gone, safeMode: true })}
           onSettings={host.openSettings ? () => leaveThen(() => host.openSettings!()) : undefined} />
       )}
 
