@@ -432,6 +432,7 @@ html.gm-couch .wp-screen .wps-prompts { display: none; }
    as they are on a real pad. The list under the picture has large ones as well. */
 @media (pointer: coarse), (max-width: 600px) {
   /* Behind every button's own face, so a bigger box beside it never takes a press meant for that button. */
+  .wps-art { isolation: isolate; }
   .wps-art svg { pointer-events: none; }
   .wps-hot::after { content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
   .wps-hot-pill { overflow: visible; }
