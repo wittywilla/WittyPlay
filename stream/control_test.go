@@ -2,7 +2,6 @@ package stream
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -57,15 +56,6 @@ func controlGame(t *testing.T, m *Manager, save string, o Options) *Session {
 	}
 	t.Cleanup(s.Stop)
 	return s
-}
-
-func stateTick(t *testing.T, path string) uint32 {
-	t.Helper()
-	b, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return binary.LittleEndian.Uint32(b[4:])
 }
 
 func TestSlotNames(t *testing.T) {

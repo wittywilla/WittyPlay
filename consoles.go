@@ -184,25 +184,6 @@ func normalise(s string) string {
 	return b.String()
 }
 
-// withoutBrackets drops anything in round brackets from a folder name.
-func withoutBrackets(s string) string {
-	var b strings.Builder
-	depth := 0
-	for _, r := range s {
-		switch {
-		case r == '(':
-			depth++
-		case r == ')':
-			if depth > 0 {
-				depth--
-			}
-		case depth == 0:
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
-
 // Detect sorts a file into a console, for a library holding many. The folders
 // between the library's root and the file come first, nearest first, since they
 // are what the owner chose; after that, an extension only one console uses.

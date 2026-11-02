@@ -133,7 +133,6 @@ type proc struct {
 	formats    map[int]bool
 	sizes      map[[2]int]bool
 	audioBytes int64
-	audioPeak  int
 	audioSum   float64
 	audioMin   int16
 	audioMax   int16

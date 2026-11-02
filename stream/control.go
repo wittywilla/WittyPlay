@@ -62,13 +62,10 @@ type controlState struct {
 }
 
 type statSample struct {
-	at                   time.Time
-	frames, bytes, enc   int64
-	encNs                int64
-	fed                  int64
-	dropped              int64
-	fps, kbps, encMs     float64
-	shownPerSec, gamePer float64
+	at                 time.Time
+	frames, bytes, enc int64
+	encNs              int64
+	fps, kbps, encMs   float64
 }
 
 func (s *Session) noteFrame(sizeChanged bool, hdr ipc.VideoHeader) {
