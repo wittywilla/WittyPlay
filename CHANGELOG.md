@@ -5,6 +5,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
+- **WittyPlay 0.3.3:** Homebrew built with libdragon plays on the Nintendo 64: it goes to ParaLLEl N64 with the settings it needs, and without that core the message says so.
+
 - **Cores install from the store again on Linux.** A module's sandbox refuses chmod, and installing a core used it, so every core stopped with "operation not permitted".
 - **melonDS starts on a current Linux.** glibc 2.41 and later refuse a library asking for an executable stack, as melonDS's does by an accident of how it's built. It now loads from a private copy without that request, and no core ever gets an executable stack. It also needed room for the address space it reserves, and shared memory, or it crashed while loading.
 - **Play! starts on Linux.** It stopped at once for want of a home folder. It has its save folder as one, and its memory cards are kept there.

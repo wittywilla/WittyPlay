@@ -83,7 +83,8 @@ type Options struct {
 	OnCoreOptions func(coreID string, list []ipc.Option) // a core has said what it offers
 	Stamp         bool                                   // draw numbers into each picture, for measuring: wittyplay-probe
 
-	keep *keptCleanup
+	fixedOptions map[string]string // what this game can't run without, whatever a setting says
+	keep         *keptCleanup
 }
 
 // CoreChoice is a core and the settings it starts with.
@@ -279,6 +280,7 @@ func (m *Manager) Start(opt Options) (*Session, error) {
 // startOn starts a game on one core. With more cores to try, a failure leaves the
 // unpacked game in place for the next.
 func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {
+	opt = forThisGame(opt)
 	cfg := m.config()
 	m.mu.Lock()
 	if len(m.sessions) >= cfg.MaxSessions {

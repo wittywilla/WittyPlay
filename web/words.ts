@@ -12,7 +12,7 @@ export function familyOf(id: string): PadFamily {
   return 'generic'
 }
 
-export type ProblemData = { needCore?: boolean; needBios?: boolean; encrypted?: boolean; file?: string; rig?: boolean; connect?: boolean; gone?: boolean; status?: number }
+export type ProblemData = { needCore?: boolean; otherCore?: boolean; needBios?: boolean; encrypted?: boolean; file?: string; rig?: boolean; connect?: boolean; gone?: boolean; status?: number }
 
 export type Explained = { title: string; body: string; fix?: 'settings'; retry?: boolean; defaults?: boolean }
 
@@ -24,6 +24,7 @@ export function explain(message: string, d: ProblemData | null | undefined, isAd
       ? { title: `Nothing to play ${consoleName} games with yet`, body: 'This server needs a core for this console: a free program that plays its games. It takes one click to install in Settings.', fix: 'settings' }
       : { title: `This server can’t play ${consoleName} games yet`, body: 'It needs a core for this console, which whoever runs this server can install in Settings.' }
   }
+  if (d?.otherCore) return { title: 'This game needs a different core', body: message, fix: isAdmin ? 'settings' : undefined }
   if (d?.needBios) return { title: `${consoleName} games need a BIOS file`, body: message, fix: isAdmin ? 'settings' : undefined }
   if (d?.encrypted) return { title: 'This game file is encrypted', body: message + ' Only a copy that isn’t encrypted can be played. The file on the server is untouched.' }
   if (d?.connect) return { title: 'The game started, but its picture can’t reach this device', body: `${message} This is usually a firewall or a network that blocks the connection. Trying again may pick another way through.`, retry: true }

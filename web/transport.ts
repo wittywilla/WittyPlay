@@ -47,6 +47,8 @@ export interface Transport {
   setLatency(mode: LatencyMode): void
   onEvent?: (e: PlayEvent) => void
   onLost?: () => void
+  // Connected, with no picture yet.
+  onWaiting?: () => void
 }
 
 // The timing messages' common half: pings to line the clocks up, quickly at first and
@@ -130,6 +132,7 @@ class WebRTCTransport implements Transport {
   readonly element: HTMLVideoElement
   onEvent?: (e: PlayEvent) => void
   onLost?: () => void
+  onWaiting?: () => void
   private pc: RTCPeerConnection | null = null
   private input: RTCDataChannel | null = null
   private muted = false
@@ -202,6 +205,7 @@ class WebRTCTransport implements Transport {
     const answer = await this.signal.answer(pc.localDescription!.sdp)
     await pc.setRemoteDescription({ type: 'answer', sdp: answer })
     await this.play()
+    this.onWaiting?.()
     await firstFrame(this.element, FIRST_FRAME_MS)
     this.watchdog = window.setInterval(() => this.checkFrames(), 1000)
   }
@@ -332,6 +336,7 @@ class DirectTransport implements Transport {
   readonly element: HTMLCanvasElement
   onEvent?: (e: PlayEvent) => void
   onLost?: () => void
+  onWaiting?: () => void
   private pc: RTCPeerConnection | null = null
   private input: RTCDataChannel | null = null
   private timingDc: RTCDataChannel | null = null
@@ -400,6 +405,7 @@ class DirectTransport implements Transport {
     await pc.setRemoteDescription({ type: 'answer', sdp: answer })
     // Not waited for: it finishes when sound arrives, and some games take a while to make any.
     void this.sound.play().catch(() => { this.muted = true })
+    this.onWaiting?.()
     const start = performance.now()
     while (this.video.framesDrawn === 0) {
       if (performance.now() - start > FIRST_FRAME_MS) throw new Error('no picture arrived')
@@ -502,6 +508,7 @@ class WSTransport implements Transport {
   readonly element: HTMLCanvasElement
   onEvent?: (e: PlayEvent) => void
   onLost?: () => void
+  onWaiting?: () => void
   private ws: WebSocket | null = null
   private ctx: CanvasRenderingContext2D
   private decoder: any = null
@@ -537,6 +544,7 @@ class WSTransport implements Transport {
       const ws = new WebSocket(this.signal.wsUrl(this.kind === 'ws-h264' ? 'h264' : 'jpeg'))
       ws.binaryType = 'arraybuffer'
       this.ws = ws
+      ws.onopen = () => this.onWaiting?.()
       ws.onmessage = (m) => this.message(m.data)
       ws.onerror = () => { clearTimeout(t); reject(new Error('the connection failed')) }
       ws.onclose = () => { if (!this.closed) this.onLost?.() }

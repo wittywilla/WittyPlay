@@ -213,6 +213,7 @@ func (s *Session) Apply(c ipc.Control, coreOptions map[string]string) error {
 		return nil
 	}
 	c = s.runAheadFor(c)
+	coreOptions = withFixed(coreOptions, s.opt.fixedOptions)
 	s.ctlMu.Lock()
 	send := diffControl(s.want, c)
 	s.want = c
