@@ -69,6 +69,11 @@ func TestPrivateSharedMemoryIsPrivate(t *testing.T) {
 		if strings.Contains(err.Error(), "operation not permitted") {
 			t.Skipf("namespaces aren't allowed here: %v", err)
 		}
+		// A namespace can be allowed and mounting in it not, as on GitHub's runners. The runner then
+		// falls back to the Landlock rule, which TestSharedMemoryIsOnlyForWhoAsks covers.
+		if strings.Contains(string(out), "no private shared memory") {
+			t.Skipf("this system doesn't allow a private mount: %s", out)
+		}
 		t.Fatalf("%v\n%s", err, out)
 	}
 	if _, err := os.Stat("/dev/shm/" + marker); err == nil {
