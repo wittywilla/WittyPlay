@@ -422,6 +422,14 @@ var Handlers = map[string]service.Handler{
 		r0 := wittyplay.IsCustomConsole(a0)
 		return []any{r0}, back, err
 	},
+	"wittyplay.IsLibdragon": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var a0 string
+		if err := service.Arg(args, 0, &a0); err != nil {
+			return nil, nil, err
+		}
+		r0 := wittyplay.IsLibdragon(a0)
+		return []any{r0}, back, err
+	},
 	"wittyplay.IsNonCommercial": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 string
 		if err := service.Arg(args, 0, &a0); err != nil {
@@ -483,6 +491,10 @@ var Handlers = map[string]service.Handler{
 		}
 		back = &recv
 		r0 := recv.Patch(a0, a1)
+		return []any{r0}, back, err
+	},
+	"wittyplay.LibdragonOptions": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		r0 := wittyplay.LibdragonOptions()
 		return []any{r0}, back, err
 	},
 	"wittyplay.MissingBIOS": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {

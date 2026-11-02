@@ -13,16 +13,19 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/wittywilla/wittyplay"
 	"github.com/wittywilla/wittyplay/ipc"
 )
 
@@ -83,7 +86,8 @@ type Options struct {
 	OnCoreOptions func(coreID string, list []ipc.Option) // a core has said what it offers
 	Stamp         bool                                   // draw numbers into each picture, for measuring: wittyplay-probe
 
-	keep *keptCleanup
+	fixedOptions map[string]string // what this game can't run without, whatever a setting says
+	keep         *keptCleanup
 }
 
 // CoreChoice is a core and the settings it starts with.
@@ -276,9 +280,35 @@ func (m *Manager) Start(opt Options) (*Session, error) {
 	return nil, first
 }
 
+// forThisGame makes what a particular file needs of how its core starts. These can't be changed
+// by a setting, as the game can't run without them.
+func forThisGame(opt Options) Options {
+	if opt.Console != "n64" || opt.CoreID != wittyplay.LibdragonCore || !wittyplay.IsLibdragon(opt.ROM) {
+		return opt
+	}
+	opt.fixedOptions = wittyplay.LibdragonOptions()
+	opt.CoreOptions = withFixed(opt.CoreOptions, opt.fixedOptions)
+	opt.GPU = false
+	opt.RunnerArgs = slices.DeleteFunc(slices.Clone(opt.RunnerArgs), func(a string) bool { return a == "-gpu" })
+	opt.Notices = append(opt.Notices[:len(opt.Notices):len(opt.Notices)], wittyplay.LibdragonNotice)
+	return opt
+}
+
+// withFixed lays what a game can't run without over any other options.
+func withFixed(options, fixed map[string]string) map[string]string {
+	if len(fixed) == 0 {
+		return options
+	}
+	out := make(map[string]string, len(options)+len(fixed))
+	maps.Copy(out, options)
+	maps.Copy(out, fixed)
+	return out
+}
+
 // startOn starts a game on one core. With more cores to try, a failure leaves the
 // unpacked game in place for the next.
 func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {
+	opt = forThisGame(opt)
 	cfg := m.config()
 	m.mu.Lock()
 	if len(m.sessions) >= cfg.MaxSessions {

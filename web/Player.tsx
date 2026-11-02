@@ -231,6 +231,11 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       }
       const t = make(kind, signal)
       t.onEvent = onEvent
+      t.onWaiting = () => {
+        if (recovering || stale()) return
+        setStage('picture')
+        setStatus('Waiting for the first picture…')
+      }
       try {
         await t.connect()
         if (stale()) { t.close(); return }
