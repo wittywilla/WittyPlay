@@ -5,6 +5,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
+- **WittyPlay 0.3.4:** 0.3.3 was tagged and never released: a sandbox test failed on GitHub's runners, which don't allow a private mount. Its fallback was always there.
+
 - **WittyPlay 0.3.3:** Homebrew built with libdragon plays on the Nintendo 64: it goes to ParaLLEl N64 with the settings it needs, and without that core the message says so.
 
 - **Cores install from the store again on Linux.** A module's sandbox refuses chmod, and installing a core used it, so every core stopped with "operation not permitted".
