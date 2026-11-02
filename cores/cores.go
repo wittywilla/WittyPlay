@@ -7,6 +7,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -471,10 +472,23 @@ func extractOne(data []byte, name string) ([]byte, error) {
 	return nil, errors.New("the archive does not hold the expected file")
 }
 
+// writeFile gives the file its mode as it makes it. This runs inside the module's sandbox, which
+// refuses chmod, so setting the mode afterwards would stop every core from installing.
 func writeFile(path string, b []byte, mode os.FileMode) error {
-	tmp, err := os.CreateTemp(filepath.Dir(path), ".core-*")
-	if err != nil {
-		return err
+	var tmp *os.File
+	for try := 0; ; try++ {
+		var r [8]byte
+		if _, err := rand.Read(r[:]); err != nil {
+			return err
+		}
+		f, err := os.OpenFile(filepath.Join(filepath.Dir(path), ".core-"+hex.EncodeToString(r[:])), os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
+		if err == nil {
+			tmp = f
+			break
+		}
+		if !errors.Is(err, os.ErrExist) || try > 8 {
+			return err
+		}
 	}
 	defer os.Remove(tmp.Name())
 	if _, err := tmp.Write(b); err != nil {
@@ -482,9 +496,6 @@ func writeFile(path string, b []byte, mode os.FileMode) error {
 		return err
 	}
 	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Chmod(tmp.Name(), mode); err != nil {
 		return err
 	}
 	return os.Rename(tmp.Name(), path)

@@ -832,7 +832,8 @@ func (st *CustomStore) Commit(s *Staged, id string) (added, kept []string, err e
 		}
 	}
 	_ = os.RemoveAll(s.Dir)
-	if err := os.Chmod(st.CorePath(id, sum), 0o755); err != nil {
+	// Under the module's sandbox chmod is refused, and a core is loaded, not run, so it does no harm.
+	if err := os.Chmod(st.CorePath(id, sum), 0o755); err != nil && !errors.Is(err, os.ErrPermission) {
 		return nil, nil, err
 	}
 	if s.Placed != "" {
