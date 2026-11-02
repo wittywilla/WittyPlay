@@ -2,6 +2,38 @@
 
 Plays console games from WittyMediaServer on any screen with a browser or a client app. You need it if you want a games library. Each game runs on the server, in its own sandboxed process, and its picture and sound stream to you.
 
+<!-- pictures -->
+
+![A library of open-licence homebrew games](docs/images/games.webp)
+
+<sub>A games library of open-licence homebrew. From a test server. The server's [credits list](https://github.com/wittywilla/WittyMediaServer/blob/master/docs/images/CREDITS.md) names everything shown.</sub>
+
+![A city-building game running in a browser](docs/images/gameplay-ucity.webp)
+
+<sub>[µCity](https://github.com/AntonioND/ucity), Antonio Niño Díaz, GPL-3.0-or-later and CC BY-SA 4.0, running on the server and streamed to a browser.</sub>
+
+![An arcade game running in a browser](docs/images/gameplay-thwaite.webp)
+
+<sub>[Thwaite](https://github.com/pinobatch/thwaite-nes), Damian Yerrick, GPL-3.0-or-later.</sub>
+
+![A fighting game running in a browser](docs/images/gameplay-super-tilt-bro.webp)
+
+<sub>[Super Tilt Bro](https://github.com/sgadrat/super-tilt-bro), Sylvain Gadrat, WTFPL.</sub>
+
+![The Consoles and cores page in Settings](docs/images/settings-consoles.webp)
+
+<sub>Settings, Consoles & cores, in WittyMediaServer.</sub>
+
+![The My game settings page](docs/images/settings-games.webp)
+
+<sub>Settings, My game settings, in WittyMediaServer.</sub>
+
+![The controllers page](docs/images/controllers.webp)
+
+<sub>Setting up controllers, in WittyMediaServer.</sub>
+
+<!-- /pictures -->
+
 ## What it does
 
 - **Runs games through libretro cores,** one separate runner process per game, boxed in before it loads a core.
