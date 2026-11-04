@@ -54,10 +54,33 @@ func TestFillingQueuesCountEvenWithNothingLost(t *testing.T) {
 	now := time.Now()
 	c.note(0, 10*time.Millisecond, now)
 	now = now.Add(rateChangeEvery)
-	c.note(0, 90*time.Millisecond, now)
-	now = now.Add(time.Second)
-	if !c.note(0, 90*time.Millisecond, now) {
-		t.Fatal("round trips growing like that mean the network is full")
+	changed := false
+	for i := 0; i < rateRTTReports+1 && !changed; i++ {
+		now = now.Add(time.Second)
+		changed = c.note(0, 90*time.Millisecond, now)
+	}
+	if !changed {
+		t.Fatal("round trips that stay grown like that mean the network is full")
+	}
+}
+
+// A busy machine answers late now and then. Measured on loopback: 45 ms, 133 ms, 3.6 s and
+// 4.3 s against a usual 1 to 3, a report or two at a time.
+func TestABusyMachineIsNotAFullNetwork(t *testing.T) {
+	var c rateControl
+	now := time.Now()
+	calm := 2 * time.Millisecond
+	for _, rtt := range []time.Duration{calm, calm, 45 * time.Millisecond, 133 * time.Millisecond, calm, 3600 * time.Millisecond, 4300 * time.Millisecond, calm, calm, 73 * time.Millisecond, 45 * time.Millisecond, 60 * time.Millisecond, calm} {
+		now = now.Add(time.Second)
+		if c.note(0, rtt, now) {
+			t.Fatalf("a %v round trip changed the rate to %v", rtt, c.rate())
+		}
+	}
+	for i := 0; i < 10; i++ {
+		now = now.Add(time.Second)
+		if c.note(0, 4*time.Second, now) {
+			t.Fatal("a round trip of seconds on a network that usually takes milliseconds is a stalled machine")
+		}
 	}
 }
 
