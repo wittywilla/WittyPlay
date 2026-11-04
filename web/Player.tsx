@@ -14,7 +14,7 @@ import { downloadBlob, fileName, loadSchema, useSettings, type Level, type Schem
 import { ControllerStudio, type PortChoice, type ProfileHost } from './Studio'
 import { ConsoleChips } from './Panels'
 import { TouchControls, TouchEditor, useOrientation } from './TouchControls'
-import { make, plan, TRANSPORT_LABELS, type AudioBuffer_, type LatencyMode, type Mode, type PlayEvent, type Transport, type TransportKind } from './transport'
+import { make, plan, TRANSPORT_LABELS, whenShown, type AudioBuffer_, type LatencyMode, type Mode, type PlayEvent, type Transport, type TransportKind } from './transport'
 import './play.css'
 
 // The player: one game, full window. The server does the running; this shows it
@@ -167,6 +167,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   const root = useRef<HTMLDivElement>(null)
   const sessionRef = useRef<SessionInfo | null>(null)
   const transportRef = useRef<Transport | null>(null)
+  const onStage = useRef<Transport[]>([]) // whose pictures are on the page, oldest first
   const closing = useRef(false)
   const attempts = useRef(0)
   const slotLoaded = useRef(false)
@@ -257,7 +258,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
         setStalled(false) // whatever the last one said
         window.clearTimeout(reconnectNote.current)
         transportRef.current = t
-        if (recovering) old?.close()
+        // The old picture stays up, and its connection open, until the new one is on the screen.
         input.setSender((msg) => t.send(msg))
         setTransport(t)
         setStatus('')
@@ -346,6 +347,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       window.clearTimeout(reconnectNote.current)
       input.stop()
       transportRef.current?.close()
+      for (const t of onStage.current) t.close()
       const s = sessionRef.current
       if (s) void host.stop(s.id).catch(() => {})
     }
@@ -418,16 +420,27 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     engine.current?.update(values, { width: info?.width || 256, height: info?.height || 224 }, { picW: layout.picW, picH: layout.picH })
   }, [values, info?.width, info?.height, layout.picW, layout.picH, transport])
 
-  // The video or canvas belongs to the transport; this puts it on the page.
+  // The video or canvas belongs to the transport; this puts it on the page. A new one goes in
+  // underneath what's showing, which goes once the new one has a picture on the screen: taking
+  // the old one away first would show black until then, on every reconnection.
   useEffect(() => {
     const el = pic.current
-    if (!el || !transport) return
+    const retire = (gone: Transport[]) => {
+      for (const t of gone) { t.element.remove(); t.close() }
+      onStage.current = onStage.current.filter((t) => !gone.includes(t))
+    }
+    if (!el || !transport) { retire(onStage.current); return }
     const media = transport.element
     media.className = 'wp-media'
     media.setAttribute('aria-label', `${host.title}, playing`)
-    el.prepend(media)
+    const older = onStage.current.filter((t) => t !== transport)
+    if (!onStage.current.includes(transport)) {
+      el.prepend(media)
+      onStage.current = [...onStage.current, transport]
+    }
     engine.current?.attach(media)
-    return () => { media.remove() }
+    if (!older.length) return
+    return whenShown(media, () => retire(older))
   }, [transport, host.title])
   useEffect(() => {
     const m = transport?.element

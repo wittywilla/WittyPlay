@@ -1037,6 +1037,38 @@
       return out;
     }
   };
+  function whenShown(el, shown, maxMs = 1e3) {
+    if (el.tagName !== "VIDEO") {
+      shown();
+      return () => {
+      };
+    }
+    const v = el;
+    let done = false, raf = 0, vfc = 0;
+    const stop = () => {
+      done = true;
+      clearTimeout(timer);
+      cancelAnimationFrame(raf);
+      if (vfc) v.cancelVideoFrameCallback?.(vfc);
+    };
+    const finish = () => {
+      if (done) return;
+      stop();
+      shown();
+    };
+    const timer = window.setTimeout(finish, maxMs);
+    if (v.requestVideoFrameCallback) vfc = v.requestVideoFrameCallback(finish);
+    const twice = () => {
+      raf = requestAnimationFrame(() => {
+        raf = requestAnimationFrame(() => {
+          if (v.readyState >= 2) finish();
+          else twice();
+        });
+      });
+    };
+    twice();
+    return stop;
+  }
   function gathered(pc, maxMs) {
     return new Promise((resolve) => {
       if (pc.iceGatheringState === "complete") return resolve();
@@ -1323,7 +1355,12 @@
     label: q.get("label") || "",
     every: Number(q.get("every") || 0),
     // post what's been seen this often, for a long run
-    latency: q.get("latency")
+    latency: q.get("latency"),
+    // How a new stream's picture replaces the old: as the player does now, or "0.3.4", as it did
+    // up to then, to compare the two.
+    swap: q.get("swap") || "player",
+    reconnectEvery: Number(q.get("reconnectEvery") || 0)
+    // seconds; connects again this often, for testing the swap
   };
   var say = (s) => {
     const e = document.getElementById("status");
@@ -1367,6 +1404,7 @@
   var totalFrames = 0;
   var lastFrameSeq = 0;
   var reconnecting = false;
+  var forced = 0;
   async function connect(first) {
     const t = make(setup.kind, signal);
     t.onLost = (why) => {
@@ -1381,8 +1419,18 @@
     t.unmute();
     t.setVolume(0, true);
     if (setup.latency) t.setLatency(setup.latency);
-    document.getElementById("stage").replaceChildren(t.element);
-    old?.close();
+    const stage = document.getElementById("stage");
+    if (setup.swap === "0.3.4" && old) {
+      old.close();
+      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+      stage.replaceChildren(t.element);
+    } else {
+      stage.prepend(t.element);
+      if (old) whenShown(t.element, () => {
+        old.element.remove();
+        old.close();
+      });
+    }
     t.measure(meterShared);
     watch(t);
     if (lostAt) {
@@ -1539,7 +1587,7 @@
   }
   function sendBeats() {
     setInterval(() => {
-      void post("/beat", { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, dropWhy, heap: performance.memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {
+      void post("/beat", { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, dropWhy, forced, heap: performance.memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {
       });
     }, 250);
   }
@@ -1563,6 +1611,7 @@
       shifted: current?.lock?.shifted,
       recoveries,
       dropWhy,
+      forced,
       heap: performance.memory?.usedJSHeapSize || 0
     };
   }
@@ -1583,6 +1632,14 @@
       return;
     }
     sendBeats();
+    if (setup.reconnectEvery > 0) {
+      setInterval(() => {
+        if (!reconnecting) {
+          forced++;
+          void reconnect();
+        }
+      }, setup.reconnectEvery * 1e3);
+    }
     await sleep(3e3);
     nextWindow();
     startPressing();
