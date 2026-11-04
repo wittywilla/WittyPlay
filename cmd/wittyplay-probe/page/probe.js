@@ -74,6 +74,7 @@
     constructor(cap = 600) {
       this.cap = cap;
     }
+    cap;
     a = [];
     add(v) {
       if (!Number.isFinite(v)) return;
@@ -234,6 +235,7 @@
       this.send = send;
       this.margin = margin;
     }
+    send;
     waits = [];
     floor = Infinity;
     lastDecision = 0;
@@ -291,6 +293,7 @@
     constructor(say2) {
       this.say = say2;
     }
+    say;
     gaps = new Series(120);
     last = 0;
     uneven = false;
@@ -398,6 +401,7 @@
       this.canvas.height = 224;
       this.ctx = this.canvas.getContext("2d", { alpha: false, desynchronized: true });
     }
+    signal;
     canvas = document.createElement("canvas");
     onFrame;
     framesDrawn = 0;
@@ -503,6 +507,7 @@
     constructor(out) {
       this.out = out;
     }
+    out;
     meter = null;
     timer = 0;
     count = 0;
@@ -560,6 +565,11 @@
       this.onStall = onStall;
       this.ownDecoded = ownDecoded;
     }
+    pc;
+    count;
+    lost;
+    onStall;
+    ownDecoded;
     timer = 0;
     leaving = 0;
     lastTick = 0;
@@ -660,6 +670,7 @@
       v.disablePictureInPicture = true;
       this.element = v;
     }
+    signal;
     kind = "webrtc";
     element;
     onEvent;
@@ -879,6 +890,7 @@
       this.element = this.video.canvas;
       this.video.onFrame = (f) => this.meter?.shown({ rtp: f.rtp, received: f.received, presented: f.drawn, displayAt: f.drawn });
     }
+    signal;
     kind = "webrtc-direct";
     element;
     onEvent;
@@ -1106,6 +1118,8 @@
       this.element.height = 224;
       this.ctx = this.element.getContext("2d", { alpha: false, desynchronized: true });
     }
+    signal;
+    kind;
     element;
     onEvent;
     onLost;

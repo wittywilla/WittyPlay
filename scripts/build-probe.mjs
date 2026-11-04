@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Bundles the test page for wittyplay-probe, which embeds what this writes. Run it after
-// changing web/transport.ts or web/latency.ts, with esbuild from any checkout of the server:
+// changing web/transport.ts or web/latency.ts, after npm ci, with esbuild from this checkout:
 //
-//   ESBUILD=D:/projects/WittyMediaServer/web/node_modules/esbuild/lib/main.js node scripts/build-probe.mjs
+//   node scripts/build-probe.mjs
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
