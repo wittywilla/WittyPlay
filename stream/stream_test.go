@@ -341,6 +341,57 @@ func TestViewerJoiningWhilePaused(t *testing.T) {
 	}
 }
 
+// A paused game's picture is sent again now and then, for a viewer arriving and a player
+// watching for a stuck stream, but not at the rate of a running game: a menu can be open for an
+// hour, and each repeat is a frame encoded again.
+func TestAPausedGameRepeatsItsPictureSlowly(t *testing.T) {
+	m := NewManager(Config{Runner: buildRunner(t), RunnerArgs: []string{"-normal-priority"}, FFmpeg: "no-ffmpeg-needed", HaveEncoder: func(string) bool { return false }})
+	s := startGame(t, m, t.TempDir(), false)
+	defer s.Stop()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeWS(w, r, "jpeg") }))
+	defer srv.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	c, _, err := websocket.Dial(ctx, srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close(websocket.StatusNormalClosure, "")
+	c.SetReadLimit(1 << 24)
+	pictures := make(chan struct{}, 1024)
+	go func() {
+		for {
+			typ, b, err := c.Read(ctx)
+			if err != nil {
+				return
+			}
+			if typ == websocket.MessageBinary && b[0] == wsJPEG {
+				pictures <- struct{}{}
+			}
+		}
+	}()
+	select {
+	case <-pictures:
+	case <-ctx.Done():
+		t.Fatal("no picture")
+	}
+	if err := s.Pause(true); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(500 * time.Millisecond) // the last of the running game's frames
+	before := s.framesFed.Load()
+	time.Sleep(2 * time.Second)
+	fed := s.framesFed.Load() - before
+	t.Logf("the picture was sent %d times in 2 s while paused", fed)
+	if fed == 0 {
+		t.Fatal("a paused game sent its picture no more")
+	}
+	// Four a second, and a little room for a slow machine. It was 40.
+	if fed > 12 {
+		t.Fatalf("a paused game sent its picture %d times in 2 s", fed)
+	}
+}
+
 // Repeats of the same state heal lost packets, but don't count as someone playing:
 // otherwise an abandoned tab would keep a game running forever.
 func TestRepeatedInputIsNotActivity(t *testing.T) {
