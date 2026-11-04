@@ -61,6 +61,8 @@ const MODE_KEY = 'wittyplay.mode'
 const TOUCH_KEY = 'wittyplay.touch'
 const LEVEL_KEY = 'wittyplay.level'
 const RECONNECT_TRIES = 8 // about a minute, with the waits between them
+// A connection that comes back this quickly does so without a word: the last picture stays up.
+const RECONNECT_QUIET_MS = 1500
 
 // A game that's no longer there starts again by itself, but not twice in a couple of minutes:
 // something that keeps stopping it should be seen, not hidden behind a page that keeps reloading.
@@ -128,6 +130,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   const [transport, setTransport] = useState<Transport | null>(null)
   const [panel, setPanel] = useState<Panel>(null)
   const [needsTap, setNeedsTap] = useState(false)
+  const [stalled, setStalled] = useState(false) // the picture has stopped on a connection that's up
   const [toast, setToast] = useState('')
   const [schema, setSchema] = useState<Schema | null>(null)
   const [level, setLevelState] = useState<Level>(() => load<Level>(LEVEL_KEY) || 'console')
@@ -167,6 +170,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   const closing = useRef(false)
   const attempts = useRef(0)
   const slotLoaded = useRef(false)
+  const reconnectNote = useRef(0)
 
   const say = useCallback((t: string) => setToast(t), [])
   useEffect(() => {
@@ -241,12 +245,17 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
         if (stale()) { t.close(); return }
         // A network that changed or a tab that was asleep is no reason to give up on the
         // best way of connecting, so a lost connection starts the whole list again.
-        t.onLost = () => {
+        t.onLost = (why) => {
           if (closing.current || transportRef.current !== t) return
-          host.report?.('warn', `The game stream was lost (${kind}); reconnecting`)
-          say('The connection dropped. Reconnecting…')
+          host.report?.('warn', `The game stream was lost (${kind}: ${why}); reconnecting`)
+          setStalled(false)
+          window.clearTimeout(reconnectNote.current)
+          reconnectNote.current = window.setTimeout(() => { if (!closing.current) setStatus('Reconnecting…') }, RECONNECT_QUIET_MS)
           void connect(s, m, new Set(), 1)
         }
+        t.onStall = (on) => { if (transportRef.current === t) setStalled(on) }
+        setStalled(false) // whatever the last one said
+        window.clearTimeout(reconnectNote.current)
         transportRef.current = t
         if (recovering) old?.close()
         input.setSender((msg) => t.send(msg))
@@ -292,6 +301,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       return
     }
     if (recovering) {
+      window.clearTimeout(reconnectNote.current)
       old?.close()
       transportRef.current = null
       setTransport(null)
@@ -333,6 +343,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     return () => {
       cancelled = true
       closing.current = true
+      window.clearTimeout(reconnectNote.current)
       input.stop()
       transportRef.current?.close()
       const s = sessionRef.current
@@ -667,7 +678,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
         </div>
       </div>
       {status && !error && !transport && <LoadingScreen title={host.title} consoleName={host.consoleName} cover={host.cover} stage={stage} status={status} percent={percent} onCancel={leave} />}
-      {status && !error && transport && <div className="wp-status" role="status"><span className="wp-spinner" aria-hidden="true" />{status}</div>}
+      {(status || stalled) && !error && transport && <div className="wp-status" role="status"><span className="wp-spinner" aria-hidden="true" />{status || 'Waiting for the picture…'}</div>}
       {problem && (
         <ProblemScreen title={host.title} cover={host.cover} problem={problem} onBack={leave}
           onRetry={() => host.relaunch({ resume: host.resume || !!errorData?.gone, safeMode: host.safeMode })}
