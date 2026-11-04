@@ -33,7 +33,7 @@ func soak(args []string) error {
 	}
 	defer file.Close()
 	w := csv.NewWriter(file)
-	head := []string{"minute", "gameFps", "encodedFps", "glassP50", "glassP95", "photonP50", "photonP95", "framesRead", "skipped", "dropped", "lost", "audioBufferMs", "audioConcealed", "audioFaster", "audioSlower", "serverHeapMB", "goroutines", "runnerMB", "runnerHandles", "encoderMB", "encoderHandles", "browserHeapMB", "kbps", "encoderRestarts"}
+	head := []string{"minute", "gameFps", "encodedFps", "glassP50", "glassP95", "photonP50", "photonP95", "framesRead", "skipped", "dropped", "lost", "audioBufferMs", "audioConcealed", "audioFaster", "audioSlower", "serverHeapMB", "goroutines", "runnerMB", "runnerHandles", "encoderMB", "encoderHandles", "browserHeapMB", "kbps", "encoderRestarts", "drops", "pageBlack", "pageBlackRuns", "screenFrames", "screenBlack", "screenFlashes", "dropWhy"}
 	_ = w.Write(head)
 	start := time.Now()
 	deadline := time.After(time.Duration(*minutes * float64(time.Minute)))
@@ -61,6 +61,7 @@ func soak(args []string) error {
 			_ = w.Write(line.cells)
 			w.Flush()
 			fmt.Printf("%3d min: game %.0f fps, glass %.1f/%.1f ms, press %.1f/%.1f ms, runner %.0f MB, server %.0f MB, encoder %.0f MB, page %.0f MB, %d goroutines\n", minute, line.gameFps, line.glass, p.Glass.P95, p.Photon.P50, p.Photon.P95, line.runnerMB, line.serverMB, line.encoderMB, line.browserMB, line.goroutines)
+			fmt.Printf("         drops %d %v, encoder starts %d, black decoded %d in %d runs, screen %s\n", len(p.Recoveries), p.DropWhy, r.session().Processes().VideoStarts, p.Pixels["dark"], p.Pixels["darkRuns"], r.screen.String())
 			if len(first) < 10 {
 				first = append(first, line)
 			}
@@ -97,7 +98,8 @@ func (r *rig) soakSample(minute int, p *pageResults, prevBytes *float64) soakLin
 	f := func(v float64) string { return strconv.FormatFloat(v, 'f', 2, 64) }
 	cells := []string{strconv.Itoa(minute), f(st.GameFPS), f(st.EncodedFPS), f(p.Glass.P50), f(p.Glass.P95), f(p.Photon.P50), f(p.Photon.P95), strconv.Itoa(p.Pixels["read"]), strconv.Itoa(p.Pixels["skipped"]),
 		f(num("dropped")), f(num("lost")), f(num("audioBufferMs")), f(num("audioConcealed")), f(num("audioFaster")), f(num("audioSlower")), f(float64(mem.HeapAlloc) / (1 << 20)), strconv.Itoa(runtime.NumGoroutine()),
-		f(runnerMB), strconv.Itoa(runnerH), f(encoderMB), strconv.Itoa(encoderH), f(float64(p.Heap) / (1 << 20)), f(kbps), strconv.Itoa(pids.VideoStarts)}
+		f(runnerMB), strconv.Itoa(runnerH), f(encoderMB), strconv.Itoa(encoderH), f(float64(p.Heap) / (1 << 20)), f(kbps), strconv.Itoa(pids.VideoStarts),
+		strconv.Itoa(len(p.Recoveries)), strconv.Itoa(p.Pixels["dark"]), strconv.Itoa(p.Pixels["darkRuns"]), strconv.FormatInt(r.screen.frames.Load(), 10), strconv.FormatInt(r.screen.black.Load(), 10), strconv.FormatInt(r.screen.runs.Load(), 10), fmt.Sprint(p.DropWhy)}
 	return soakLine{cells: cells, gameFps: st.GameFPS, glass: p.Glass.P50, runnerMB: runnerMB, serverMB: float64(mem.HeapAlloc) / (1 << 20), encoderMB: encoderMB, browserMB: float64(p.Heap) / (1 << 20), goroutines: runtime.NumGoroutine(), handles: runnerH}
 }
 

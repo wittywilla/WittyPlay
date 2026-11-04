@@ -1,5 +1,5 @@
 (() => {
-  // ../../../../WittyPlay/.claude/worktrees/games-streaming/web/latency.ts
+  // web/latency.ts
   var TIMING_PING = 241;
   var TIMING_PONG = 242;
   var TIMING_SUBSCRIBE = 243;
@@ -179,6 +179,7 @@
       const value = (s) => s.count ? s.median : void 0;
       return {
         press: this.presses.photon.count >= 3 ? this.presses.photon.median : void 0,
+        frames: f.total.count,
         total: f.total.median,
         core: value(f.core),
         encode: value(f.encode),
@@ -388,7 +389,7 @@
     }
   };
 
-  // ../../../../WittyPlay/.claude/worktrees/games-streaming/web/direct.ts
+  // web/direct.ts
   var hasDirect = () => typeof window.VideoDecoder !== "undefined" && typeof window.EncodedVideoChunk !== "undefined" && typeof RTCRtpReceiver !== "undefined" && "createEncodedStreams" in RTCRtpReceiver.prototype;
   var DirectVideo = class {
     constructor(signal2) {
@@ -496,7 +497,7 @@
     }
   };
 
-  // ../../../../WittyPlay/.claude/worktrees/games-streaming/web/transport.ts
+  // web/transport.ts
   var AUDIO_HOLD = { lowest: 0, balanced: 0.06, smooth: 0.15 };
   var TimingLink = class {
     constructor(out) {
@@ -562,6 +563,7 @@
     element;
     onEvent;
     onLost;
+    onWaiting;
     pc = null;
     input = null;
     muted = false;
@@ -637,6 +639,7 @@
       const answer = await this.signal.answer(pc.localDescription.sdp);
       await pc.setRemoteDescription({ type: "answer", sdp: answer });
       await this.play();
+      this.onWaiting?.();
       await firstFrame(this.element, FIRST_FRAME_MS);
       this.watchdog = window.setInterval(() => this.checkFrames(), 1e3);
     }
@@ -795,6 +798,7 @@
     element;
     onEvent;
     onLost;
+    onWaiting;
     pc = null;
     input = null;
     timingDc = null;
@@ -872,6 +876,7 @@
       void this.sound.play().catch(() => {
         this.muted = true;
       });
+      this.onWaiting?.();
       const start = performance.now();
       while (this.video.framesDrawn === 0) {
         if (performance.now() - start > FIRST_FRAME_MS) throw new Error("no picture arrived");
@@ -994,6 +999,7 @@
     element;
     onEvent;
     onLost;
+    onWaiting;
     ws = null;
     ctx;
     decoder = null;
@@ -1027,6 +1033,7 @@
         const ws = new WebSocket(this.signal.wsUrl(this.kind === "ws-h264" ? "h264" : "jpeg"));
         ws.binaryType = "arraybuffer";
         this.ws = ws;
+        ws.onopen = () => this.onWaiting?.();
         ws.onmessage = (m) => this.message(m.data);
         ws.onerror = () => {
           clearTimeout(t);
@@ -1229,7 +1236,7 @@
     }
   };
 
-  // ../../../../WittyPlay/.claude/worktrees/games-streaming/cmd/wittyplay-probe/page/probe.ts
+  // cmd/wittyplay-probe/page/probe.ts
   var q = new URLSearchParams(location.search);
   var setup = {
     seconds: Number(q.get("seconds") || 30),
@@ -1265,6 +1272,9 @@
     misfiled = {};
     waitTrace = [];
     bad = 0;
+    dark = 0;
+    // frames decoded black after a picture had been seen
+    darkRuns = 0;
     read = 0;
     skipped = 0;
     out = 0;
@@ -1275,13 +1285,15 @@
   var meterShared = win.meter;
   var lostAt = 0;
   var recoveries = [];
+  var dropWhy = {};
   var totalFrames = 0;
   var lastFrameSeq = 0;
   var reconnecting = false;
   async function connect(first) {
     const t = make(setup.kind, signal);
-    t.onLost = () => {
+    t.onLost = (why) => {
       if (current !== t || reconnecting) return;
+      dropWhy[why] = (dropWhy[why] || 0) + 1;
       lostAt = performance.now();
       void reconnect();
     };
@@ -1316,6 +1328,38 @@
     await post("/results", { error: "it never came back" });
   }
   var reader = new StampReader();
+  var Darkness = class {
+    c;
+    lit = false;
+    inRun = false;
+    constructor() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 16;
+      canvas.height = 16;
+      this.c = canvas.getContext("2d", { willReadFrequently: true });
+    }
+    check(source, w, h, win2) {
+      if (!w || !h) return;
+      try {
+        this.c.drawImage(source, w / 4, h / 4, w / 2, h / 2, 0, 0, 16, 16);
+        const d = this.c.getImageData(0, 0, 16, 16).data;
+        let sum = 0;
+        for (let i = 0; i < d.length; i += 4) sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const dark = sum / 256 < 12;
+        if (!dark) {
+          this.lit = true;
+          this.inRun = false;
+          return;
+        }
+        if (!this.lit) return;
+        win2.dark++;
+        if (!this.inRun) win2.darkRuns++;
+        this.inRun = true;
+      } catch {
+      }
+    }
+  };
+  var darkness = new Darkness();
   var pressedAt = /* @__PURE__ */ new Map();
   var later = /* @__PURE__ */ new Map();
   var unwatch = null;
@@ -1356,6 +1400,7 @@
         traceWaits = [];
       }
       const size = v.videoWidth ? [v.videoWidth, v.videoHeight] : [v.width, v.height];
+      darkness.check(v, size[0], size[1], win);
       const s = reader.read(v, size[0], size[1]);
       if (!s) {
         win.bad++;
@@ -1416,7 +1461,7 @@
   }
   function sendBeats() {
     setInterval(() => {
-      void post("/beat", { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, heap: performance.memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {
+      void post("/beat", { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, dropWhy, heap: performance.memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {
       });
     }, 250);
   }
@@ -1433,12 +1478,13 @@
       photon: summary(w.photon),
       madeToHanded: summary(w.handed),
       interval: summary(w.gaps),
-      pixels: { read: w.read, bad: w.bad, skipped: w.skipped, out: w.out, pressCount: w.presses },
+      pixels: { read: w.read, bad: w.bad, skipped: w.skipped, out: w.out, pressCount: w.presses, dark: w.dark, darkRuns: w.darkRuns },
       misfiled: w.misfiled,
       stats,
       waitTrace: w.waitTrace,
       shifted: current?.lock?.shifted,
       recoveries,
+      dropWhy,
       heap: performance.memory?.usedJSHeapSize || 0
     };
   }
