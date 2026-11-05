@@ -568,6 +568,39 @@ class DirectTransport implements Transport {
   }
 }
 
+// whenShown calls shown once el, just put on the page, has a picture on the screen, so that
+// whatever it replaces can go then and not before: taking the old picture away first shows
+// black until the new one is drawn. A canvas keeps what was drawn on it, so it has one at once.
+// A video has one when it presents a frame where it now is, or, if it's covered and isn't
+// told, after two screen refreshes in place with a frame to show. Given up on after maxMs.
+// Returns a function that cancels it.
+export function whenShown(el: HTMLVideoElement | HTMLCanvasElement, shown: () => void, maxMs = 1000): () => void {
+  if (el.tagName !== 'VIDEO') {
+    shown()
+    return () => {}
+  }
+  const v = el as HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number; cancelVideoFrameCallback?: (id: number) => void }
+  let done = false, raf = 0, vfc = 0
+  const stop = () => {
+    done = true
+    clearTimeout(timer)
+    cancelAnimationFrame(raf)
+    if (vfc) v.cancelVideoFrameCallback?.(vfc)
+  }
+  const finish = () => {
+    if (done) return
+    stop()
+    shown()
+  }
+  const timer = window.setTimeout(finish, maxMs)
+  if (v.requestVideoFrameCallback) vfc = v.requestVideoFrameCallback(finish)
+  const twice = () => {
+    raf = requestAnimationFrame(() => { raf = requestAnimationFrame(() => { if (v.readyState >= 2) finish(); else twice() }) })
+  }
+  twice()
+  return stop
+}
+
 function gathered(pc: RTCPeerConnection, maxMs: number) {
   return new Promise<void>((resolve) => {
     if (pc.iceGatheringState === 'complete') return resolve()

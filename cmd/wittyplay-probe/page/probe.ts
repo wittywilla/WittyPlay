@@ -3,7 +3,7 @@
 // each picture, and posts what it measured. scripts/build-probe.mjs bundles it.
 
 import { LatencyMeter, Series, StampReader, watchVideo, type Presented } from '../../../web/latency'
-import { make, type LatencyMode, type Transport, type TransportKind } from '../../../web/transport'
+import { make, whenShown, type LatencyMode, type Transport, type TransportKind } from '../../../web/transport'
 
 const q = new URLSearchParams(location.search)
 const setup = {
@@ -13,6 +13,10 @@ const setup = {
   label: q.get('label') || '',
   every: Number(q.get('every') || 0), // post what's been seen this often, for a long run
   latency: q.get('latency') as LatencyMode | null,
+  // How a new stream's picture replaces the old: as the player does now, or "0.3.4", as it did
+  // up to then, to compare the two.
+  swap: q.get('swap') || 'player',
+  reconnectEvery: Number(q.get('reconnectEvery') || 0), // seconds; connects again this often, for testing the swap
 }
 
 const say = (s: string) => { const e = document.getElementById('status'); if (e) e.textContent = s }
@@ -57,6 +61,7 @@ const dropWhy: Record<string, number> = {}
 let totalFrames = 0
 let lastFrameSeq = 0
 let reconnecting = false
+let forced = 0
 
 // The player's way of coming back: the old picture stays up until a new one is ready.
 async function connect(first: boolean) {
@@ -73,8 +78,18 @@ async function connect(first: boolean) {
   t.unmute()
   t.setVolume(0, true)
   if (setup.latency) t.setLatency(setup.latency)
-  document.getElementById('stage')!.replaceChildren(t.element)
-  old?.close()
+  const stage = document.getElementById('stage')!
+  if (setup.swap === '0.3.4' && old) {
+    // As the player was: the old connection closed at once, and the new picture put on the page
+    // by an effect that React runs after the browser has painted.
+    old.close()
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)))
+    stage.replaceChildren(t.element)
+  } else {
+    // As the player is: the new picture goes underneath, and the old goes once it's shown.
+    stage.prepend(t.element)
+    if (old) whenShown(t.element, () => { old.element.remove(); old.close() })
+  }
   t.measure(meterShared)
   watch(t)
   if (lostAt) {
@@ -223,7 +238,7 @@ function startPressing() {
 
 function sendBeats() {
   setInterval(() => {
-    void post('/beat', { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, dropWhy, heap: (performance as any).memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {})
+    void post('/beat', { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, dropWhy, forced, heap: (performance as any).memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {})
   }, 250)
 }
 
@@ -235,7 +250,7 @@ function report(w: Window, stats: unknown) {
     presses: Object.fromEntries(Object.entries(m.presses).map(([k, s]) => [k, summary(s)])),
     glass: summary(w.glass), photon: summary(w.photon), madeToHanded: summary(w.handed), interval: summary(w.gaps),
     pixels: { read: w.read, bad: w.bad, skipped: w.skipped, out: w.out, pressCount: w.presses, dark: w.dark, darkRuns: w.darkRuns }, misfiled: w.misfiled, stats, waitTrace: w.waitTrace, shifted: (current as any)?.lock?.shifted,
-    recoveries, dropWhy, heap: (performance as any).memory?.usedJSHeapSize || 0,
+    recoveries, dropWhy, forced, heap: (performance as any).memory?.usedJSHeapSize || 0,
   }
 }
 
@@ -253,6 +268,9 @@ async function main() {
   say('connecting')
   try { await connect(true) } catch (e: any) { await post('/results', { error: String(e?.message || e) }); return }
   sendBeats()
+  if (setup.reconnectEvery > 0) {
+    setInterval(() => { if (!reconnecting) { forced++; void reconnect() } }, setup.reconnectEvery * 1000)
+  }
   await sleep(3000)
   nextWindow()
   startPressing()

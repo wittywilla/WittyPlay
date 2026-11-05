@@ -34,10 +34,10 @@ var page embed.FS
 // starts with one of these.
 type rigFlags struct {
 	game                                           *gameFlags
-	seconds, every, udpPort                        int
+	seconds, every, udpPort, reconnectEvery        int
 	browser, browserArgs, listen, host, ffmpeg     string
 	encoders, kind, label, state, profile, latency string
-	impair, shots                                  string
+	impair, shots, swap                            string
 	loopback, noAutoAhead, watchScreen             bool
 }
 
@@ -61,6 +61,8 @@ func addRigFlags(fs *flag.FlagSet) *rigFlags {
 	fs.BoolVar(&f.noAutoAhead, "no-auto-run-ahead", false, "leave automatic run-ahead off")
 	fs.StringVar(&f.shots, "shots", "", "a folder for pictures of what the browser shows and what the core made, side by side")
 	fs.BoolVar(&f.watchScreen, "watch-screen", false, "count black pictures the browser puts on the screen, through its debugger")
+	fs.StringVar(&f.swap, "swap", "", "how a new connection's picture replaces the old: empty for the player's way, 0.3.4 for the way it was")
+	fs.IntVar(&f.reconnectEvery, "reconnect-every", 0, "connect again this many seconds apart, to test the change between connections")
 	return f
 }
 
@@ -246,6 +248,12 @@ func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
 	q := url.Values{"seconds": {strconv.Itoa(f.seconds)}, "kind": {f.kind}, "label": {f.label}}
 	if f.latency != "" {
 		q.Set("latency", f.latency)
+	}
+	if f.swap != "" {
+		q.Set("swap", f.swap)
+	}
+	if f.reconnectEvery > 0 {
+		q.Set("reconnectEvery", strconv.Itoa(f.reconnectEvery))
 	}
 	for k, v := range extraQuery {
 		q[k] = v
