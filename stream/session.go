@@ -23,6 +23,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/wittywilla/wittyplay"
 	"github.com/wittywilla/wittyplay/ipc"
 )
 
@@ -281,6 +282,16 @@ func (m *Manager) Start(opt Options) (*Session, error) {
 // unpacked game in place for the next.
 func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {
 	opt = forThisGame(opt)
+	coreID := opt.CoreID
+	if coreID == "" {
+		coreID = opt.Core
+	}
+	if why := wittyplay.RefusalForCore(opt.ROM, opt.Console, coreID); why != "" {
+		if !moreToTry && opt.Cleanup != nil {
+			opt.Cleanup()
+		}
+		return nil, errors.New(why)
+	}
 	cfg := m.config()
 	m.mu.Lock()
 	if len(m.sessions) >= cfg.MaxSessions {

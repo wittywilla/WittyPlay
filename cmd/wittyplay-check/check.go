@@ -774,7 +774,7 @@ func checkGame(c *config, j job) (r Result) {
 		return r
 	}
 	defer cleanup()
-	if why := wittyplay.Refusal(rom, j.console.ID); why != "" {
+	if why := wittyplay.RefusalForCore(rom, j.console.ID, j.core.id); why != "" {
 		r.Outcome, r.Reason = OutcomeRefused, why
 		return r
 	}

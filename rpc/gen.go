@@ -581,6 +581,22 @@ var Handlers = map[string]service.Handler{
 		r0 := wittyplay.Refusal(a0, a1)
 		return []any{r0}, back, err
 	},
+	"wittyplay.RefusalForCore": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var a0 string
+		if err := service.Arg(args, 0, &a0); err != nil {
+			return nil, nil, err
+		}
+		var a1 string
+		if err := service.Arg(args, 1, &a1); err != nil {
+			return nil, nil, err
+		}
+		var a2 string
+		if err := service.Arg(args, 2, &a2); err != nil {
+			return nil, nil, err
+		}
+		r0 := wittyplay.RefusalForCore(a0, a1, a2)
+		return []any{r0}, back, err
+	},
 	"wittyplay.Resolve": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 []wittyplay.NamedLayer
 		if err := service.Arg(args, 0, &a0); err != nil {
@@ -1565,6 +1581,10 @@ func ErrorCode(err error) string {
 	switch {
 	case errors.Is(err, wittyplay.ErrEncrypted3DS):
 		return "wittyplay.ErrEncrypted3DS"
+	case errors.Is(err, wittyplay.ErrPlayLoneBin):
+		return "wittyplay.ErrPlayLoneBin"
+	case errors.Is(err, wittyplay.ErrPlayBinWithCue):
+		return "wittyplay.ErrPlayBinWithCue"
 	case errors.Is(err, patch.ErrSource):
 		return "patch.ErrSource"
 	case errors.Is(err, stream.ErrBusy):
