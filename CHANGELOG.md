@@ -5,7 +5,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
-- **Every menu over a game is easy to leave, on a phone and a computer.** The game menu, its settings, core options, saves, discs and connection panels keep **Back** and **× Back to the game** pinned at the top as they scroll, and the controller screen keeps **Done** in view. A phone's Back gesture, the browser's Back and a mouse's back button now close a menu a level at a time instead of leaving the game, and Esc, a controller's B and a TV remote's Back do the same. The touch-controls editor leaves the same ways, as its Cancel, and keeps Cancel on screen with its options hidden. Once everything's closed the game carries on, with the keyboard and controllers its own again.
+- **Every menu over a game is easy to leave, on a phone and a computer.** The game menu, its settings, core options, saves, discs and connection panels keep **Back** and **× Back to the game** pinned at the top as they scroll, and the controller screen keeps **Done** in view. A phone's Back gesture, the browser's Back and a mouse's back button now close a menu a level at a time instead of leaving the game, and Esc, a controller's B and a TV remote's Back do the same. The touch-controls editor leaves the same ways, as its Cancel, and keeps Cancel on screen with its options hidden. Once everything's closed the game carries on, with the keyboard and controllers its own again. Settings opened for one console (from its page) start on that console's games.
 
 - **WittyPlay 0.3.6:** a Mac's graphics card draws PSP, PlayStation and PlayStation 2 games, at full speed on a fraction of a processor core, and their picture now reaches the stream.
 

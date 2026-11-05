@@ -84,7 +84,8 @@ export function GameSettingsScreen({ host, consoles, itemId, itemTitle, consoleI
   const [schema, setSchema] = useState<Schema | null>(null)
   const [tab, setTab] = useState('display')
   const [chosenConsole, setChosenConsole] = useState(consoleId || '')
-  const [level, setLevel] = useState<Level>(itemId ? 'game' : 'person')
+  // Opened for a console (its page's Look and settings), changes are for that console's games to begin with.
+  const [level, setLevel] = useState<Level>(itemId ? 'game' : consoleId ? 'console' : 'person')
   const [mode, setMode] = useState<DisplayMode>('plain')
   useEffect(() => { loadSchema(host).then(setSchema).catch((e) => onError(e?.message || 'Game settings couldn’t be read')) }, [host, onError])
   const scope = useMemo(() => (itemId ? { item: itemId } : chosenConsole ? { console: chosenConsole } : {}), [itemId, chosenConsole])
