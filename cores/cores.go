@@ -21,6 +21,8 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/wittywilla/wittyplay"
@@ -315,6 +317,27 @@ func (m *Manager) record(id string) (string, int64) {
 	return r.SHA256, r.InstalledAt
 }
 
+// downloads are the installs under way, by folder and core, for InstallProgress. The module is
+// one long-running process, so another call can read what an Install is doing.
+var downloads sync.Map // downloadKey -> *download
+
+type download struct{ got, total atomic.Int64 }
+
+func downloadKey(dir, id string) string { return dir + "\x00" + id }
+
+// InstallProgress says how far an Install under way has got with the file it's fetching now:
+// the bytes received, and the size the download server gave, 0 when it didn't give one. A core
+// with support files fetches those after itself, and the count starts again for them. ok is
+// false when the core isn't being installed.
+func (m *Manager) InstallProgress(id string) (got, total int64, ok bool) {
+	v, found := downloads.Load(downloadKey(m.Dir, id))
+	if !found {
+		return 0, 0, false
+	}
+	d := v.(*download)
+	return d.got.Load(), d.total.Load(), true
+}
+
 // Install downloads one core: from one host, over HTTPS, with its size capped,
 // taking exactly one file from the archive and writing it in one step.
 func (m *Manager) Install(ctx context.Context, id string) (*Core, error) {
@@ -328,7 +351,11 @@ func (m *Manager) Install(ctx context.Context, id string) (*Core, error) {
 	if err := os.MkdirAll(m.Dir, 0o755); err != nil {
 		return nil, err
 	}
-	body, err := m.fetch(ctx, url)
+	d := &download{}
+	key := downloadKey(m.Dir, id)
+	downloads.Store(key, d)
+	defer downloads.CompareAndDelete(key, d)
+	body, err := m.fetch(ctx, url, d)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +368,7 @@ func (m *Manager) Install(ctx context.Context, id string) (*Core, error) {
 		return nil, err
 	}
 	if assets := wittyplay.Traits(id).Assets; assets != "" {
-		if err := m.installAssets(ctx, assets); err != nil {
+		if err := m.installAssets(ctx, assets, d); err != nil {
 			_ = os.Remove(filepath.Join(m.Dir, fileName(id)))
 			return nil, fmt.Errorf("installing %s's support files: %w", id, err)
 		}
@@ -358,11 +385,11 @@ const maxAssets = 256 << 20
 
 // installAssets unpacks a core's support files from the same host into the system
 // folder. The name comes from our own table. Nothing may land outside that folder.
-func (m *Manager) installAssets(ctx context.Context, name string) error {
+func (m *Manager) installAssets(ctx context.Context, name string, d *download) error {
 	if m.System == "" {
 		return errors.New("there is no system folder to put them in")
 	}
-	body, err := m.fetch(ctx, "https://"+downloadHost+"/assets/system/"+name+".zip")
+	body, err := m.fetch(ctx, "https://"+downloadHost+"/assets/system/"+name+".zip", d)
 	if err != nil {
 		return err
 	}
@@ -408,7 +435,8 @@ func (m *Manager) installAssets(ctx context.Context, name string) error {
 	return nil
 }
 
-func (m *Manager) fetch(ctx context.Context, url string) ([]byte, error) {
+// fetch downloads one file, counting what arrives in d when it's given.
+func (m *Manager) fetch(ctx context.Context, url string, d *download) ([]byte, error) {
 	client := *http.DefaultClient
 	if m.Client != nil {
 		client = *m.Client
@@ -432,7 +460,13 @@ func (m *Manager) fetch(ctx context.Context, url string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("the download server answered %s", resp.Status)
 	}
-	b, err := io.ReadAll(io.LimitReader(resp.Body, maxDownload+1))
+	var body io.Reader = resp.Body
+	if d != nil {
+		d.got.Store(0)
+		d.total.Store(max(resp.ContentLength, 0))
+		body = &counting{r: body, n: &d.got}
+	}
+	b, err := io.ReadAll(io.LimitReader(body, maxDownload+1))
 	if err != nil {
 		return nil, err
 	}
@@ -440,6 +474,18 @@ func (m *Manager) fetch(ctx context.Context, url string) ([]byte, error) {
 		return nil, errors.New("the download is larger than any core should be")
 	}
 	return b, nil
+}
+
+// counting adds what it reads to n.
+type counting struct {
+	r io.Reader
+	n *atomic.Int64
+}
+
+func (c *counting) Read(p []byte) (int, error) {
+	n, err := c.r.Read(p)
+	c.n.Add(int64(n))
+	return n, err
 }
 
 // extractOne takes the named file from the top of a zip and ignores the rest.

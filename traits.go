@@ -88,7 +88,17 @@ var ps2BIOS = &BIOSRule{
 	MaxSize: (4 << 20) + (1 << 20),
 }
 
+// The Lynx's boot ROM, which Beetle Lynx won't start without. Handy starts most games without it.
+var lynxBIOS = &BIOSRule{
+	Example: "lynxboot.img",
+	For:     "an Atari Lynx you own",
+	Match:   regexp.MustCompile(`^lynxboot\.img$`),
+	MinSize: 512,
+	MaxSize: 512,
+}
+
 var traits = map[string]CoreTraits{
+	"mednafen_lynx": {RequiredBIOS: lynxBIOS},
 	"mupen64plus_next": {GPU: true, Options: map[string]string{"mupen64plus-rdp-plugin": "gliden64", "mupen64plus-rsp-plugin": "hle"},
 		Resolution: pick("mupen64plus-43screensize", "640x480", "1280x960", "1920x1440", "2560x1920")},
 	"parallel_n64": {GPU: true, Options: map[string]string{"parallel-n64-gfxplugin": "gliden64"},
