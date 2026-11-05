@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build:bundle": "node build-bundle.mjs",
-    "test": "node --experimental-strip-types --test web/logic.test.mjs && node scripts/test-web.mjs"
+    "test": "node --experimental-strip-types --test web/logic.test.mjs web/watchdog.test.mjs && node scripts/test-web.mjs"
   },
   "files": [
     "web",

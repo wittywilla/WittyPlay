@@ -454,6 +454,136 @@
 			return w;
 		}
 	};
+	const STUCK_MS = 5e3;
+	const SILENT_MS = 35e3;
+	const DISCONNECTED_MS = 8e3;
+	const LATE_TICK_MS = 3e3;
+	function countFrames(v) {
+		if (typeof v.requestVideoFrameCallback === "function") {
+			let n = 0, id = 0, stopped = false;
+			const tick = () => {
+				n++;
+				if (!stopped) id = v.requestVideoFrameCallback(tick);
+			};
+			id = v.requestVideoFrameCallback(tick);
+			return {
+				count: () => n,
+				stop: () => {
+					stopped = true;
+					v.cancelVideoFrameCallback?.(id);
+				}
+			};
+		}
+		return {
+			count: () => v.getVideoPlaybackQuality ? v.getVideoPlaybackQuality().totalVideoFrames : -1,
+			stop: () => {}
+		};
+	}
+	var Watchdog = class {
+		timer = 0;
+		leaving = 0;
+		lastTick = 0;
+		shown = -1;
+		shownAt = 0;
+		bytes = -1;
+		bytesAt = 0;
+		decoded = -1;
+		decodedAt = 0;
+		checking = false;
+		stalled = false;
+		done = false;
+		pc;
+		count;
+		lost;
+		onStall;
+		ownDecoded;
+		constructor(pc, count, lost, onStall, ownDecoded) {
+			this.pc = pc;
+			this.count = count;
+			this.lost = lost;
+			this.onStall = onStall;
+			this.ownDecoded = ownDecoded;
+		}
+		start() {
+			const now = performance.now();
+			this.lastTick = this.shownAt = this.bytesAt = this.decodedAt = now;
+			this.timer = window.setInterval(() => this.tick(), 1e3);
+		}
+		stop() {
+			this.done = true;
+			clearInterval(this.timer);
+			clearTimeout(this.leaving);
+		}
+		state(st) {
+			if (st === "failed" || st === "closed") return this.lost(st);
+			clearTimeout(this.leaving);
+			if (st === "disconnected") this.leaving = window.setTimeout(() => this.disconnected(), DISCONNECTED_MS);
+		}
+		disconnected() {
+			if (this.done || this.pc.connectionState !== "disconnected") return;
+			if (performance.now() - this.shownAt < 1500) {
+				this.leaving = window.setTimeout(() => this.disconnected(), DISCONNECTED_MS);
+				return;
+			}
+			this.lost("disconnected");
+		}
+		setStalled(on) {
+			if (on === this.stalled) return;
+			this.stalled = on;
+			this.onStall(on);
+		}
+		tick() {
+			const now = performance.now();
+			const late = now - this.lastTick > LATE_TICK_MS;
+			this.lastTick = now;
+			if (document.hidden || late) {
+				this.shownAt = this.bytesAt = this.decodedAt = now;
+				return;
+			}
+			const n = this.count();
+			if (n < 0) return;
+			if (n !== this.shown) {
+				this.shown = n;
+				this.shownAt = now;
+				this.setStalled(false);
+				return;
+			}
+			if (now - this.shownAt < 1500 || this.checking) return;
+			this.checking = true;
+			this.pc.getStats().then((report) => {
+				if (this.done) return;
+				let bytes = 0, decoded = 0;
+				report.forEach((s) => {
+					if (s.type === "inbound-rtp" && s.kind === "video") {
+						bytes = s.bytesReceived || 0;
+						decoded = s.framesDecoded || 0;
+					}
+				});
+				if (this.ownDecoded) decoded = this.ownDecoded();
+				const t = performance.now();
+				const first = this.decoded < 0;
+				if (bytes !== this.bytes) {
+					this.bytes = bytes;
+					this.bytesAt = t;
+				}
+				if (decoded !== this.decoded) {
+					this.decoded = decoded;
+					this.decodedAt = t;
+					if (!first) {
+						this.shownAt = t;
+						this.setStalled(false);
+						return;
+					}
+				}
+				if (first) return;
+				this.setStalled(true);
+				if (t - this.bytesAt < 2500 && t - this.decodedAt > STUCK_MS) this.lost("decoder stuck");
+				else if (t - this.bytesAt > SILENT_MS) this.lost("nothing arriving");
+			}).catch(() => {}).finally(() => {
+				this.checking = false;
+			});
+		}
+	};
 	// web/direct.ts
 	const hasDirect = () => typeof window.VideoDecoder !== "undefined" && typeof window.EncodedVideoChunk !== "undefined" && typeof RTCRtpReceiver !== "undefined" && "createEncodedStreams" in RTCRtpReceiver.prototype;
 	var DirectVideo = class {
@@ -657,110 +787,6 @@
 		return new WSTransport(signal, kind);
 	}
 	const FIRST_FRAME_MS = 12e3;
-	const STALL_MS = 1500;
-	const STUCK_MS = 5e3;
-	const SILENT_MS = 35e3;
-	const DISCONNECTED_MS = 8e3;
-	const LATE_TICK_MS = 3e3;
-	var Watchdog = class {
-		pc;
-		count;
-		lost;
-		onStall;
-		ownDecoded;
-		timer = 0;
-		leaving = 0;
-		lastTick = 0;
-		shown = -1;
-		shownAt = 0;
-		bytes = -1;
-		bytesAt = 0;
-		decoded = -1;
-		decodedAt = 0;
-		checking = false;
-		stalled = false;
-		done = false;
-		constructor(pc, count, lost, onStall, ownDecoded) {
-			this.pc = pc;
-			this.count = count;
-			this.lost = lost;
-			this.onStall = onStall;
-			this.ownDecoded = ownDecoded;
-		}
-		start() {
-			const now = performance.now();
-			this.lastTick = this.shownAt = this.bytesAt = this.decodedAt = now;
-			this.timer = window.setInterval(() => this.tick(), 1e3);
-		}
-		stop() {
-			this.done = true;
-			clearInterval(this.timer);
-			clearTimeout(this.leaving);
-		}
-		state(st) {
-			if (st === "failed" || st === "closed") return this.lost(st);
-			clearTimeout(this.leaving);
-			if (st === "disconnected") this.leaving = window.setTimeout(() => this.disconnected(), DISCONNECTED_MS);
-		}
-		disconnected() {
-			if (this.done || this.pc.connectionState !== "disconnected") return;
-			if (performance.now() - this.shownAt < STALL_MS) {
-				this.leaving = window.setTimeout(() => this.disconnected(), DISCONNECTED_MS);
-				return;
-			}
-			this.lost("disconnected");
-		}
-		setStalled(on) {
-			if (on === this.stalled) return;
-			this.stalled = on;
-			this.onStall(on);
-		}
-		tick() {
-			const now = performance.now();
-			const late = now - this.lastTick > LATE_TICK_MS;
-			this.lastTick = now;
-			if (document.hidden || late) {
-				this.shownAt = this.bytesAt = this.decodedAt = now;
-				return;
-			}
-			const n = this.count();
-			if (n < 0) return;
-			if (n !== this.shown) {
-				this.shown = n;
-				this.shownAt = now;
-				this.setStalled(false);
-				return;
-			}
-			if (now - this.shownAt < STALL_MS) return;
-			this.setStalled(true);
-			if (this.checking) return;
-			this.checking = true;
-			this.pc.getStats().then((report) => {
-				if (this.done) return;
-				let bytes = 0, decoded = 0;
-				report.forEach((s) => {
-					if (s.type === "inbound-rtp" && s.kind === "video") {
-						bytes = s.bytesReceived || 0;
-						decoded = s.framesDecoded || 0;
-					}
-				});
-				if (this.ownDecoded) decoded = this.ownDecoded();
-				const t = performance.now();
-				if (bytes !== this.bytes) {
-					this.bytes = bytes;
-					this.bytesAt = t;
-				}
-				if (decoded !== this.decoded) {
-					this.decoded = decoded;
-					this.decodedAt = t;
-				}
-				if (t - this.bytesAt < 2500 && t - this.decodedAt > STUCK_MS) this.lost("decoder stuck");
-				else if (t - this.bytesAt > SILENT_MS) this.lost("nothing arriving");
-			}).catch(() => {}).finally(() => {
-				this.checking = false;
-			});
-		}
-	};
 	var WebRTCTransport = class {
 		signal;
 		kind = "webrtc";
@@ -789,6 +815,7 @@
 		lock = null;
 		onStall;
 		watchdog = null;
+		frames = null;
 		gone = false;
 		constructor(signal) {
 			this.signal = signal;
@@ -842,8 +869,8 @@
 				this.setLatency(this.latency);
 			};
 			this.timingDc = timing;
-			const v = this.element;
-			const watchdog = new Watchdog(pc, () => v.getVideoPlaybackQuality ? v.getVideoPlaybackQuality().totalVideoFrames : -1, (why) => this.lost(why), (on) => this.onStall?.(on));
+			this.frames = countFrames(this.element);
+			const watchdog = new Watchdog(pc, this.frames.count, (why) => this.lost(why), (on) => this.onStall?.(on));
 			this.watchdog = watchdog;
 			pc.onconnectionstatechange = () => watchdog.state(pc.connectionState);
 			const offer = await pc.createOffer();
@@ -917,6 +944,7 @@
 			this.unwatch?.();
 			this.unlock?.();
 			this.watchdog?.stop();
+			this.frames?.stop();
 			this.pc?.close();
 			this.element.srcObject = null;
 		}
@@ -1665,6 +1693,11 @@
 	let forced = 0;
 	async function connect(first) {
 		const t = make(setup.kind, signal);
+		t.onStall = (on) => {
+			const w = window;
+			w.__stalls = (w.__stalls || 0) + (on ? 1 : 0);
+			w.__stalledNow = on;
+		};
 		t.onLost = (why) => {
 			if (current !== t || reconnecting) return;
 			dropWhy[why] = (dropWhy[why] || 0) + 1;
