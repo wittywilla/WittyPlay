@@ -599,3 +599,87 @@ func TestStoppingAnEncoderEarlyIsNoFailure(t *testing.T) {
 		t.Fatal("the encoder was blamed for being stopped")
 	}
 }
+
+// A keyframe asked for, or a new bitrate, means another encoder. The one in use carries on
+// until the new one's first frame, so the picture doesn't stop while FFmpeg starts.
+func TestAnotherEncoderTakesOverWithoutAGap(t *testing.T) {
+	m := newManager(t)
+	s := startGame(t, m, t.TempDir(), false)
+	defer s.Stop()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeWS(w, r, "h264") }))
+	defer srv.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	c, _, err := websocket.Dial(ctx, srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close(websocket.StatusNormalClosure, "")
+	c.SetReadLimit(1 << 24)
+	frames := make(chan time.Time, 4096)
+	go func() {
+		for {
+			typ, b, err := c.Read(ctx)
+			if err != nil {
+				return
+			}
+			if typ == websocket.MessageBinary && len(b) > 1 && b[0] == wsH264 {
+				frames <- time.Now()
+			}
+		}
+	}()
+	select {
+	case <-frames:
+	case <-ctx.Done():
+		t.Fatal("no picture")
+	}
+	time.Sleep(keyMinGap + 100*time.Millisecond) // past its own first keyframe
+	s.viewMu.Lock()
+	old, starts := s.h264, s.videoStarts
+	asked := time.Now()
+	s.replaceEncoderLocked("h264", asked, false)
+	next := s.h264Next
+	s.viewMu.Unlock()
+	if old == nil || next == nil {
+		t.Fatal("no second encoder was started")
+	}
+	for drained := false; !drained; {
+		select {
+		case <-frames:
+		default:
+			drained = true
+		}
+	}
+	// Until it takes over, the old one's frames still arrive.
+	var during int
+	var took time.Time
+	for took.IsZero() {
+		select {
+		case at := <-frames:
+			s.viewMu.Lock()
+			now := s.h264
+			s.viewMu.Unlock()
+			if now == old {
+				during++
+			} else {
+				took = at
+			}
+		case <-ctx.Done():
+			t.Fatalf("the second encoder never took over; %d frames from the first meanwhile", during)
+		}
+	}
+	t.Logf("took over %v after being asked, with %d frames from the first meanwhile", took.Sub(asked).Round(time.Millisecond), during)
+	// At 60 frames a second, a hand-over this long should let several through. One that
+	// held up the loop while the second started let one through in 181 ms.
+	if took.Sub(asked) > 150*time.Millisecond && during < 2 {
+		t.Fatal("the picture stopped while the second encoder started")
+	}
+	if !old.asked.Load() {
+		t.Fatal("the first encoder wasn't stopped once the second took over")
+	}
+	s.viewMu.Lock()
+	defer s.viewMu.Unlock()
+	if s.videoStarts != starts+1 || s.h264Next != nil {
+		t.Fatalf("encoders started: %d more; one still starting: %v", s.videoStarts-starts, s.h264Next != nil)
+	}
+}

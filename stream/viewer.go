@@ -93,15 +93,12 @@ func (s *Session) attach(v *viewer) {
 		}
 	}
 	s.lastInput = time.Now()
-	// A running encoder's next keyframe may be a second away, and this viewer can
-	// show nothing until then. Starting it again sends one straight away.
-	switch {
-	case v.codec == "h264" && s.h264 != nil:
-		s.h264.stop()
-		s.h264 = nil
-	case v.codec == "vp8" && s.vp8 != nil:
-		s.vp8.stop()
-		s.vp8 = nil
+	// A running encoder's next keyframe may be a second away, and this viewer can show
+	// nothing until then. Another one starts with one, and everyone else's picture carries on
+	// meanwhile; this viewer is sent nothing before it.
+	v.waitKey.Store(true)
+	if v.codec == "h264" || v.codec == "vp8" {
+		s.replaceEncoderLocked(v.codec, time.Now(), true)
 	}
 	if v.pc != nil {
 		s.startOpusLocked()
@@ -221,6 +218,10 @@ func (s *Session) deliverVideo(codec string, au AU, tr *frameTrace) {
 			continue
 		}
 		if v.video != nil {
+			if v.waitKey.Load() && !au.Key {
+				continue // it has just arrived, and can't use this
+			}
+			v.waitKey.Store(false)
 			tr.RTP = v.video.write(au.Data, dur)
 			tr.Sent = time.Now().UnixNano()
 			v.sendTiming(tr)

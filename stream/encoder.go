@@ -171,6 +171,9 @@ type videoEncoder struct {
 	killed  atomic.Bool  // it stopped answering and has been told to go
 	lastOut atomic.Int64 // when a frame last came out, in Unix nanoseconds
 	fedGen  uint64       // the newest picture given to it; only videoLoop touches this
+	// replacing is set on one started to take over from another (replaceEncoderLocked).
+	replacing atomic.Bool
+	writing   atomic.Bool // a frame is on its way to it from a goroutine of its own
 }
 
 // roomForFrame says whether it can take a frame now. FFmpeg has queues of its own between
@@ -272,15 +275,17 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 			e.gotOnce.Do(func() { close(e.got) })
 			now := time.Now().UnixNano()
 			tr, ok := e.inside.take(frameIndex(au.PTS, fps))
-			if ok {
-				tr.EncOut = now
-				s.stats.encoded(time.Duration(now - tr.EncIn))
-			}
 			e.lastOut.Store(now)
-			if au.Key {
-				s.lastKey.Store(now)
+			if s.sends(e, au.Key) {
+				if ok {
+					tr.EncOut = now
+					s.stats.encoded(time.Duration(now - tr.EncIn))
+				}
+				if au.Key {
+					s.lastKey.Store(now)
+				}
+				s.deliverVideo(codec, au, &tr)
 			}
-			s.deliverVideo(codec, au, &tr)
 			s.signalFrame() // there's room for whatever has been waiting
 		}
 		var err error
@@ -297,7 +302,12 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 				s.encoderLost(e)
 			}
 		default:
-			if ctx.Err() == nil && !e.asked.Load() { // it never produced a frame, and nobody stopped it
+			if ctx.Err() == nil && !e.asked.Load() && e.replacing.Load() {
+				// Two at once may be more than a graphics card allows. That's no fault in the
+				// encoder, and the one in use carries on.
+				s.log.Warn("a second video encoder couldn't start beside the first; keeping the first", "encoder", name, "err", err, "stderr", stderr.String())
+				s.replacementFailed(e)
+			} else if ctx.Err() == nil && !e.asked.Load() { // it never produced a frame, and nobody stopped it
 				s.log.Warn("video encoder failed to start; trying the next", "encoder", name, "err", err, "stderr", stderr.String())
 				s.markBadEncoder(name)
 				s.encoderDied(e)
@@ -353,7 +363,10 @@ func (s *Session) videoLoop() {
 			quiet := time.Since(time.Unix(0, s.lastFrame.Load())) > quietRepeat
 			s.viewMu.Lock()
 			repeat = (s.paused || quiet) && len(s.viewers) > 0
-			starting := s.h264 != nil && !s.h264.begun() || s.vp8 != nil && !s.vp8.begun()
+			starting := false
+			for _, e := range []*videoEncoder{s.h264, s.vp8, s.h264Next, s.vp8Next} {
+				starting = starting || e != nil && !e.begun()
+			}
 			for v := range s.viewers {
 				// One to start: a viewer arriving stops the encoder for a keyframe.
 				starting = starting || v.codec == "h264" && s.h264 == nil || v.codec == "vp8" && s.vp8 == nil
@@ -390,17 +403,33 @@ func (s *Session) videoLoop() {
 
 		s.viewMu.Lock()
 		h264, vp8, jp := s.syncEncodersLocked(hdr)
+		h264Next, vp8Next := s.h264Next, s.vp8Next
 		s.viewMu.Unlock()
-		for _, e := range []*videoEncoder{h264, vp8} {
-			if e != nil && e.fedGen != gen && e.roomForFrame() {
-				e.fedGen = gen
-				s.framePend.Store(false)
-				s.framesFed.Add(1)
-				trace.EncIn = time.Now().UnixNano()
-				e.inside.push(trace)
-				if _, err := e.stdin.Write(feed); err != nil && !errors.Is(err, os.ErrClosed) {
-					s.log.Debug("writing to the encoder", "err", err)
-				}
+		for _, e := range []*videoEncoder{h264, vp8, h264Next, vp8Next} {
+			if e == nil || e.fedGen == gen || !e.roomForFrame() {
+				continue
+			}
+			// One still starting reads nothing until it's ready, and the pipe holds less than
+			// a frame, so writing to it here would hold up the one in use: it gets its frames
+			// from a goroutine of its own, one at a time, as copies.
+			later := e.replacing.Load() && !e.begun()
+			if later && !e.writing.CompareAndSwap(false, true) {
+				continue
+			}
+			e.fedGen = gen
+			s.framePend.Store(false)
+			s.framesFed.Add(1)
+			trace.EncIn = time.Now().UnixNano()
+			e.inside.push(trace)
+			if later {
+				go func(b []byte) {
+					defer e.writing.Store(false)
+					_, _ = e.stdin.Write(b)
+				}(append([]byte(nil), feed...))
+				continue
+			}
+			if _, err := e.stdin.Write(feed); err != nil && !errors.Is(err, os.ErrClosed) {
+				s.log.Debug("writing to the encoder", "err", err)
 			}
 		}
 		if jp != nil && repeat {
@@ -440,7 +469,7 @@ func (s *Session) watchEncoders() {
 			return
 		case now := <-tick.C:
 			s.viewMu.Lock()
-			encoders := []*videoEncoder{s.h264, s.vp8}
+			encoders := []*videoEncoder{s.h264, s.vp8, s.h264Next, s.vp8Next}
 			s.viewMu.Unlock()
 			for _, e := range encoders {
 				if e != nil && e.stalled(now) && e.killed.CompareAndSwap(false, true) {
@@ -470,6 +499,11 @@ func (s *Session) syncEncodersLocked(hdr ipc.VideoHeader) (h264, vp8 *videoEncod
 		}
 	}
 	ensure := func(cur *videoEncoder, want bool, codec string) *videoEncoder {
+		_, next := s.slots(codec)
+		if *next != nil && (!want || (*next).hdr != hdr) {
+			(*next).stop()
+			*next = nil
+		}
 		if cur != nil && (!want || cur.hdr != hdr) {
 			cur.stop()
 			cur = nil
@@ -536,22 +570,86 @@ const (
 func (s *Session) encoderDied(e *videoEncoder) {
 	s.viewMu.Lock()
 	defer s.viewMu.Unlock()
-	if s.h264 == e {
-		s.h264 = nil
+	cur, next := s.slots(e.codec)
+	if *next == e {
+		*next = nil
 	}
-	if s.vp8 == e {
-		s.vp8 = nil
+	if *cur == e {
+		*cur, *next = *next, nil // one already starting carries on in its place
+	}
+}
+
+// slots are where a codec's encoder in use, and the one starting to take over, are kept.
+func (s *Session) slots(codec string) (cur, next **videoEncoder) {
+	if codec == "vp8" {
+		return &s.vp8, &s.vp8Next
+	}
+	return &s.h264, &s.h264Next
+}
+
+// replaceEncoderLocked gets a keyframe out soon, at a bitrate that may have changed, without
+// the picture stopping. FFmpeg's command line can be told neither, so another encoder is
+// started, which begins with a keyframe, and the one in use carries on until then. Stopping
+// it first left the picture still for as long as FFmpeg takes to start: a quarter of a second
+// on a quiet machine, seconds on a busy one. force is for a viewer that has just arrived and
+// can show nothing before a keyframe; otherwise an encoder that has only just begun, with one,
+// is left alone.
+func (s *Session) replaceEncoderLocked(codec string, now time.Time, force bool) {
+	cur, next := s.slots(codec)
+	// One that hasn't made a frame yet will begin with a keyframe anyway.
+	if *cur == nil || *next != nil || !(*cur).begun() || !force && now.Sub((*cur).started) < keyMinGap {
+		return
+	}
+	e, err := s.startVideoEncoder(codec, (*cur).name, (*cur).hdr, s.info.FPS)
+	if err != nil { // the one in use carries on, as in replacementFailed
+		s.log.Warn("starting a second video encoder", "encoder", (*cur).name, "err", err)
+		return
+	}
+	e.replacing.Store(true)
+	s.videoStarts++
+	*next = e
+	s.signalFrame()
+}
+
+// sends says whether what e makes now goes to viewers. A replacement takes over at its first
+// keyframe, which is its first frame, and the encoder it replaces stops then.
+func (s *Session) sends(e *videoEncoder, key bool) bool {
+	s.viewMu.Lock()
+	defer s.viewMu.Unlock()
+	cur, next := s.slots(e.codec)
+	if *cur == e {
+		return true
+	}
+	if *next != e || !key {
+		return false
+	}
+	if *cur != nil {
+		(*cur).stop()
+	}
+	*cur, *next = e, nil
+	return true
+}
+
+// replacementFailed is for a replacement that never made a frame. The one in use carries on:
+// its own keyframe, every second, serves anyone waiting for one. Stopping it to start another
+// could find the graphics card still busy with the old one, and mark its encoder broken.
+func (s *Session) replacementFailed(e *videoEncoder) {
+	s.viewMu.Lock()
+	defer s.viewMu.Unlock()
+	if _, next := s.slots(e.codec); *next == e {
+		*next = nil
 	}
 }
 
 func (s *Session) stopEncodersLocked() {
-	if s.h264 != nil {
-		s.h264.stop()
-		s.h264 = nil
-	}
-	if s.vp8 != nil {
-		s.vp8.stop()
-		s.vp8 = nil
+	for _, codec := range []string{"h264", "vp8"} {
+		cur, next := s.slots(codec)
+		for _, e := range []**videoEncoder{cur, next} {
+			if *e != nil {
+				(*e).stop()
+				*e = nil
+			}
+		}
 	}
 	if s.jpeg != nil {
 		s.jpeg.stop()
