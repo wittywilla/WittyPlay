@@ -296,7 +296,7 @@ func installAll(c *config, mgr *cores.Manager, consoles []*wittyplay.Console) {
 
 func coresToTry(c *config, mgr *cores.Manager, cn *wittyplay.Console) ([]coreRef, error) {
 	if c.core != "all" && c.core != "" {
-		if strings.ContainsAny(c.core, `/\`) {
+		if strings.ContainsAny(c.core, `/\`) || fileExists(c.core) {
 			abs, err := filepath.Abs(c.core)
 			if err != nil {
 				return nil, err
@@ -424,4 +424,9 @@ func findRunner() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("%s was not found beside this program; build it there or use -runner", name)
+}
+
+func fileExists(path string) bool {
+	st, err := os.Stat(path)
+	return err == nil && !st.IsDir()
 }

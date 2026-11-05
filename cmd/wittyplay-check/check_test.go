@@ -89,3 +89,16 @@ func TestReportFolderMustBeOutsideACheckout(t *testing.T) {
 		t.Fatal("a report folder inside a checkout should be refused")
 	}
 }
+
+func TestPlayLoneBinIsRefusedNotFailed(t *testing.T) {
+	dir := t.TempDir()
+	rom := filepath.Join(dir, "game.bin")
+	if err := os.WriteFile(rom, []byte("fake ps2 game"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := &config{out: dir, runner: "a program that must never be started"}
+	r := checkGame(c, job{console: wittyplay.ByID("ps2"), core: coreRef{"play", "unused"}, game: rom, index: 1})
+	if r.Outcome != OutcomeRefused || !strings.Contains(r.Reason, "Play!") {
+		t.Fatalf("%s: %s", r.Outcome, r.Reason)
+	}
+}

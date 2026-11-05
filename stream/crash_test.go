@@ -161,3 +161,51 @@ func TestDescribeExit(t *testing.T) {
 		}
 	}
 }
+
+func TestRefusedCoreStepsAsideForFallbackAndSaysWhyAlone(t *testing.T) {
+	dir := t.TempDir()
+	rom := filepath.Join(dir, "game.bin")
+	if err := os.WriteFile(rom, []byte("ps2 disc data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// With LRPS2 available as a fallback, Play! is skipped without crashing and LRPS2 runs.
+	m := fakeRunnerManager(t, "crash-on-bad")
+	cleaned := false
+	s, err := m.Start(Options{
+		UserID: 1, ItemID: 8, Title: "PS2 Bin", Console: "ps2",
+		Core: "bad", CoreID: "play", ROM: rom,
+		SystemDir: t.TempDir(), SaveDir: t.TempDir(),
+		Fallbacks: []CoreChoice{{Core: "good", CoreID: "pcsx2"}},
+		Cleanup:   func() { cleaned = true },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := s.Info().Core; got != "good" {
+		t.Fatalf("playing on %q", got)
+	}
+	if cleaned {
+		t.Fatal("unpacked game cleaned up before session ended")
+	}
+	s.Stop()
+	if !cleaned {
+		t.Fatal("unpacked game not cleaned up on Stop")
+	}
+
+	// With Play! alone, Start refuses cleanly without starting the runner process.
+	alone := NewManager(Config{Runner: "a-runner-that-must-never-start", FFmpeg: "unused"})
+	cleanedAlone := false
+	_, err = alone.Start(Options{
+		UserID: 1, ItemID: 9, Title: "PS2 Bin Alone", Console: "ps2",
+		Core: "play_libretro.so", CoreID: "play", ROM: rom,
+		SystemDir: t.TempDir(), SaveDir: t.TempDir(),
+		Cleanup: func() { cleanedAlone = true },
+	})
+	if err == nil || !strings.Contains(err.Error(), "Play!") || !strings.Contains(err.Error(), "LRPS2") {
+		t.Fatalf("expected Play!/LRPS2 refusal, got %v", err)
+	}
+	if !cleanedAlone {
+		t.Fatal("expected Cleanup when no fallback core remains")
+	}
+}

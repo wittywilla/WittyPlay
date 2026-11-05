@@ -155,7 +155,11 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	if err := os.MkdirAll(g.save, 0o755); err != nil {
 		return err
 	}
-	if why := wittyplay.Refusal(g.rom, g.console); why != "" {
+	coreID := g.coreID
+	if coreID == "" && g.core != "" {
+		coreID = strings.TrimSuffix(strings.TrimSuffix(filepath.Base(g.core), filepath.Ext(g.core)), "_libretro")
+	}
+	if why := wittyplay.RefusalForCore(g.rom, g.console, coreID); why != "" {
 		return errors.New(why)
 	}
 	if g.console == "3ds" { // as the server prepares a 3DS game
