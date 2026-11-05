@@ -102,6 +102,7 @@
 .wps h2 { margin: 0; font-size: var(--text-lg, 17px); overflow-wrap: anywhere; }
 .wps h3 { margin: 0; font-size: var(--text-lg, 17px); font-weight: 650; }
 .wps-head { display: flex; align-items: center; gap: var(--sp-3, 12px); }
+.wps-head { position: sticky; top: 0; z-index: 3; margin-top: calc(-1 * var(--sp-4, 16px)); padding-block: var(--sp-4, 16px) var(--sp-2, 8px); background: var(--bg, #0d0f14); }
 .wps-title { flex: 1; min-width: 0; margin: 0; font-size: var(--page-title, 1.75rem); letter-spacing: var(--tracking-display, normal); overflow-wrap: anywhere; }
 .wps-title .wp-muted { font-size: var(--text-md, 1rem); font-weight: 400; letter-spacing: normal; }
 @media (max-width: 600px) { .wps-title { font-size: var(--text-xl, 1.25rem); } }
@@ -194,6 +195,13 @@
 /* Menus */
 .wp-menu-back { position: absolute; inset: 0; z-index: 10; background: rgba(0, 0, 0, .6); display: flex; align-items: center; justify-content: center; padding: 12px; touch-action: auto; }
 .wp-menu { width: min(460px, 100%); max-height: 100%; overflow: auto; background: var(--wp-panel); color: var(--wp-fg); border: 1px solid var(--wp-line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; user-select: text; -webkit-user-select: text; }
+/* Every sheet over the game keeps its ways out in view however far it scrolls: Back a level, and ×
+   straight back to the game. Esc, a controller's B, Back and a tap outside do the same. */
+.wp-sheet-bar { position: sticky; top: 0; z-index: 3; flex: none; display: flex; align-items: center; gap: 8px; margin: -18px -18px 0; padding: 10px 12px 8px 18px; background: var(--wp-panel); border-bottom: 1px solid var(--wp-line); }
+.wp-sheet-up { padding-inline: 8px 14px; }
+.wp-sheet-close { min-width: 44px; padding-inline: 12px; border-radius: 999px; }
+@media (max-width: 480px) { .wp-sheet-close-text { display: none; } .wp-sheet-close { padding-inline: 0; } }
+@media (pointer: coarse) { .wp-sheet-bar .wp-btn { min-height: 44px; } }
 .wp-menu h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
 .wp-menu h3 { margin: 0; font-size: 15px; }
 .wp-menu-list { display: flex; flex-direction: column; gap: 6px; }
@@ -204,6 +212,7 @@
 .wp-btn:focus-visible, .wp-slot:focus-visible, .wp-select:focus-visible { outline: var(--focus-width, 2px) solid var(--focus, var(--wp-accent)); outline-offset: var(--focus-offset, 2px); }
 .wp-btn.primary, .wp-btn.primary:hover:not(:disabled) { background: var(--wp-accent); color: var(--wp-accent-fg); }
 @media (forced-colors: active) { .wp-btn { border-color: ButtonText; } }
+.wp-root:focus { outline: none; }
 .wp-btn.danger { color: inherit; border-color: currentColor; }
 .wp-select { min-height: var(--control-h, 40px); padding: 0 var(--sp-3, 12px); border-radius: var(--r-md, 8px); border: 1px solid var(--wp-line); background: var(--bg-3, var(--wp-panel)); color: inherit; font: inherit; }
 .wp-muted { color: var(--wp-muted); }
@@ -239,6 +248,7 @@
 .wp-side .wp-menu { width: min(420px, 100%); max-height: 100%; border-radius: 0; border-width: 0 0 0 1px; background: var(--wp-panel); background: color-mix(in srgb, var(--wp-panel) 94%, transparent); }
 .wp-portrait .wp-side { align-items: flex-end; }
 .wp-portrait .wp-side .wp-menu { width: 100%; max-height: 62%; border-width: 1px 0 0; }
+.wp-side .wp-sheet-bar { background: var(--wp-panel); }
 .wp-section { display: flex; flex-direction: column; gap: 8px; margin: 0; }
 .wp-setting { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 6px 0; border-bottom: 1px solid var(--border, var(--wp-line)); min-width: 0; }
 .wp-section > .wp-setting:last-child { border-bottom: 0; }
@@ -347,6 +357,7 @@
 /* The game menu: large tiles, with the game paused behind. */
 .wp-big { padding: 0; background: rgb(4 5 8 / .72); align-items: center; justify-content: center; }
 .wp-big .wp-menu { width: min(1080px, 100%); max-height: 100%; background: transparent; border: 0; border-radius: 0; color: #f2f4f8; padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); gap: 16px; --wp-muted: #aab1c0; --fg: #f2f4f8; --fg-2: #c8ccd4; --bg-4: #2a2e38; --border-strong: #5a5f6b; }
+.wp-big .wp-sheet-bar { margin: calc(-1 * max(20px, env(safe-area-inset-top))) calc(-1 * max(20px, env(safe-area-inset-right))) 0 calc(-1 * max(20px, env(safe-area-inset-left))); padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 10px max(20px, env(safe-area-inset-left)); background: rgb(4 5 8 / .94); border-bottom: 0; }
 .wp-qm-head { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .wp-qm-cover { flex: none; height: 72px; width: auto; max-width: 72px; object-fit: contain; border-radius: 6px; box-shadow: 0 6px 16px rgb(0 0 0 / .5); }
 .wp-qm-title { min-width: 0; }
@@ -388,7 +399,9 @@
 .wp-menu-btn.faint:hover, .wp-menu-btn.faint:focus-visible { opacity: 1; }
 
 .wp-editor.tucked .wp-editor-panel { display: none; }
-.wp-editor-tuck { position: absolute; z-index: 2; top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); background: rgb(16 18 26 / .85); color: #f2f4f8; }
+.wp-editor-corner { position: absolute; z-index: 2; top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); display: flex; gap: 6px; }
+.wp-editor-corner .wp-btn { background: rgb(16 18 26 / .85); color: #f2f4f8; }
+.wp-editor-actions { position: sticky; bottom: 0; z-index: 1; margin: auto -14px -14px; padding: 10px 14px max(10px, env(safe-area-inset-bottom)); background: var(--wp-panel); border-top: 1px solid var(--wp-line); }
 
 /* What's on top of the game */
 .wp-osd { position: absolute; z-index: 6; display: flex; flex-direction: column; gap: 1px; max-width: min(60vw, 320px); background: rgba(0, 0, 0, .66); color: #fff; padding: 4px 8px; border-radius: 6px; font: 12px/1.45 ui-monospace, monospace; pointer-events: none; }

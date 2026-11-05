@@ -226,7 +226,11 @@ export function TouchEditor({ data, orientation, onSave, onClose }: { data: Cont
 
   return (
     <div className={'wp-editor' + (tucked ? ' tucked' : '') + ' wp-pad-' + (data.pad?.art || 'dual')} role="dialog" aria-label={`Touch controls for ${orientation} screens`}>
-      <button type="button" className="wp-btn wp-editor-tuck" onClick={() => setTucked((t) => !t)} aria-expanded={!tucked}>{tucked ? 'Show options' : 'Hide options'}</button>
+      {/* With the options out of the way, the way out stays: Cancel, as Esc and Back do. */}
+      <div className="wp-editor-corner">
+        <button type="button" className="wp-btn wp-editor-tuck" onClick={() => setTucked((t) => !t)} aria-expanded={!tucked}>{tucked ? 'Show options' : 'Hide options'}</button>
+        {tucked && <button type="button" className="wp-btn" onClick={onClose}>Cancel</button>}
+      </div>
       <div ref={area} className="wp-editor-area" onPointerMove={moveDrag} onPointerUp={() => { drag.current = null }} onPointerCancel={() => { drag.current = null }}>
         {size.w > 0 && controls.map((c) => {
           const p = layout[c.key]
@@ -274,7 +278,7 @@ export function TouchEditor({ data, orientation, onSave, onClose }: { data: Cont
           }} />
         </label>
         <div className="wp-row" aria-live="polite">{note}</div>
-        <div className="wp-row">
+        <div className="wp-row wp-editor-actions">
           <button type="button" className="wp-btn" onClick={reset}>Reset</button>
           <span className="wp-grow" />
           <button type="button" className="wp-btn" onClick={onClose}>Cancel</button>
