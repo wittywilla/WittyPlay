@@ -8,8 +8,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/wittywilla/wittyplay"
 )
@@ -82,7 +84,7 @@ func TestRedirectAwayIsRefused(t *testing.T) {
 	}))
 	defer srv.Close()
 	m := &Manager{Dir: t.TempDir(), Client: srv.Client()}
-	if _, err := m.fetch(context.Background(), srv.URL); err == nil {
+	if _, err := m.fetch(context.Background(), srv.URL, nil); err == nil {
 		t.Fatal("following a redirect to another host should fail")
 	}
 }
@@ -125,7 +127,7 @@ func TestAssetsRefuseToEscape(t *testing.T) {
 	defer srv.Close()
 	dir := t.TempDir()
 	m := &Manager{Dir: filepath.Join(dir, "cores"), System: filepath.Join(dir, "system"), Client: redirectClient(srv)}
-	if err := m.installAssets(context.Background(), "PPSSPP"); err == nil {
+	if err := m.installAssets(context.Background(), "PPSSPP", nil); err == nil {
 		t.Fatal("an archive naming a path outside its folder should be refused")
 	}
 	if _, err := os.Stat(filepath.Join(dir, "outside.txt")); err == nil {
@@ -144,11 +146,65 @@ func TestAssetsInstall(t *testing.T) {
 	defer srv.Close()
 	dir := t.TempDir()
 	m := &Manager{Dir: filepath.Join(dir, "cores"), System: filepath.Join(dir, "system"), Client: redirectClient(srv)}
-	if err := m.installAssets(context.Background(), "PPSSPP"); err != nil {
+	if err := m.installAssets(context.Background(), "PPSSPP", nil); err != nil {
 		t.Fatal(err)
 	}
 	if b, err := os.ReadFile(filepath.Join(dir, "system", "PPSSPP", "font.ttf")); err != nil || string(b) != "glyphs" {
 		t.Fatalf("%q %v", b, err)
+	}
+}
+
+// While a core downloads, another call can see how far it has got, and nothing once it's done.
+func TestInstallProgress(t *testing.T) {
+	if !CanDownload() {
+		t.Skip("no prebuilt cores for this platform")
+	}
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	w, _ := zw.CreateHeader(&zip.FileHeader{Name: fileName("fceumm"), Method: zip.Store})
+	_, _ = w.Write(bytes.Repeat([]byte{1}, 64<<10))
+	_ = zw.Close()
+	body := buf.Bytes()
+	half, rest := make(chan struct{}), make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", strconv.Itoa(len(body)))
+		_, _ = w.Write(body[:len(body)/2])
+		w.(http.Flusher).Flush()
+		close(half)
+		<-rest
+		_, _ = w.Write(body[len(body)/2:])
+	}))
+	defer srv.Close()
+	m := &Manager{Dir: t.TempDir(), Extra: []string{}, Client: redirectClient(srv)}
+	if _, _, ok := m.InstallProgress("fceumm"); ok {
+		t.Fatal("nothing is being installed yet")
+	}
+	done := make(chan error, 1)
+	go func() { _, err := m.Install(context.Background(), "fceumm"); done <- err }()
+	<-half
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		got, total, ok := m.InstallProgress("fceumm")
+		if ok && total == int64(len(body)) && got >= int64(len(body)/2) && got < total {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("halfway: %d of %d (%v)", got, total, ok)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if _, _, ok := (&Manager{Dir: t.TempDir()}).InstallProgress("fceumm"); ok {
+		t.Fatal("another folder's install is its own")
+	}
+	close(rest)
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if _, _, ok := m.InstallProgress("fceumm"); ok {
+		t.Fatal("a finished install should no longer be in progress")
+	}
+	if m.Find("fceumm") == nil {
+		t.Fatal("not installed")
 	}
 }
 
