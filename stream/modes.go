@@ -11,6 +11,9 @@ type Mode struct {
 	// BrowserOnly marks a mode only a web browser can use. None exists yet; in-browser
 	// emulation will be one, and is left out of the answer for native clients.
 	BrowserOnly bool `json:"browserOnly,omitempty"`
+	// Stream is the version of /play/{sid}/stream this mode can be reached through: 2. Left
+	// out, only version 1's own route.
+	Stream int `json:"stream,omitempty"`
 }
 
 // Client kinds a server can be asked about.
@@ -40,13 +43,13 @@ func (m *Manager) Modes(client string) []Mode {
 	}
 	var out []Mode
 	if len(codecs) > 0 {
-		out = append(out, Mode{ID: "webrtc", Video: codecs, Audio: "opus", Input: "datachannel", Needs: "A WebRTC stack with a data channel"})
+		out = append(out, Mode{ID: "webrtc", Video: codecs, Audio: "opus", Input: "datachannel", Needs: "A WebRTC stack with a data channel", Stream: StreamVersion})
 	}
 	if h264 {
-		out = append(out, Mode{ID: "ws-h264", Video: []string{"h264"}, Audio: "pcm", Input: "websocket", Needs: "A WebSocket and an H.264 decoder that accepts Annex B"})
+		out = append(out, Mode{ID: "ws-h264", Video: []string{"h264"}, Audio: "pcm", Input: "websocket", Needs: "A WebSocket and an H.264 decoder that accepts Annex B", Stream: StreamVersion})
 	}
 	// JPEG is encoded here, so it works even with no usable FFmpeg encoder.
-	out = append(out, Mode{ID: "ws-jpeg", Video: []string{"jpeg"}, Audio: "pcm", Input: "websocket", Needs: "A WebSocket and a JPEG decoder"})
+	out = append(out, Mode{ID: "ws-jpeg", Video: []string{"jpeg"}, Audio: "pcm", Input: "websocket", Needs: "A WebSocket and a JPEG decoder", Stream: StreamVersion})
 	if client == ClientNative {
 		kept := out[:0]
 		for _, mode := range out {

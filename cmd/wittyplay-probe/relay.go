@@ -116,7 +116,20 @@ func (r *relay) backFor(from *net.UDPAddr) (*net.UDPConn, error) {
 	}
 	r.backs[from.String()] = b
 	to := *from
+	// Jitter delays packets unevenly, but one path keeps them in order: a packet never
+	// overtakes the one before it. Each is sent from a queue of its own, in order.
+	out := make(chan timedPacket, 4096)
 	go func() {
+		for tp := range out {
+			if d := time.Until(tp.at); d > 0 {
+				time.Sleep(d)
+			}
+			_, _ = r.front.WriteToUDP(tp.b, &to)
+		}
+	}()
+	go func() {
+		defer close(out)
+		var last time.Time
 		buf := make([]byte, 2048)
 		for {
 			n, _, err := b.ReadFromUDP(buf)
@@ -147,8 +160,16 @@ func (r *relay) backFor(from *net.UDPAddr) (*net.UDPConn, error) {
 				wait += time.Duration(free + took - now)
 			}
 			r.carried.Add(1)
-			p := append([]byte(nil), buf[:n]...)
-			r.after(wait, func() { _, _ = r.front.WriteToUDP(p, &to) })
+			at := time.Now().Add(wait)
+			if at.Before(last) {
+				at = last
+			}
+			last = at
+			select {
+			case out <- timedPacket{at, append([]byte(nil), buf[:n]...)}:
+			default:
+				r.dropped.Add(1)
+			}
 		}
 	}()
 	return b, nil
@@ -160,4 +181,9 @@ func (r *relay) after(d time.Duration, f func()) {
 		return
 	}
 	time.AfterFunc(d, f)
+}
+
+type timedPacket struct {
+	at time.Time
+	b  []byte
 }

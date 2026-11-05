@@ -128,6 +128,7 @@ type wireConfig struct {
 
 func init() {
 	service.RegisterErrorType[stream.ProbeError]("stream.ProbeError")
+	service.RegisterErrorType[stream.StreamError]("stream.StreamError")
 	Handlers["stream.Manager.Configure"] = func(_ context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
 		var c wireConfig
 		if err := service.Arg(args, 0, &c); err != nil {
@@ -265,6 +266,15 @@ func Routes(mux *http.ServeMux) {
 			return
 		}
 		s.ServeWS(w, r, r.URL.Query().Get("video"))
+	})
+	// Version 2's WebSocket. Only the server reaches this, and it says where the device is.
+	mux.HandleFunc("GET /stream/{sid}", func(w http.ResponseWriter, r *http.Request) {
+		s := Mgr.Get(r.PathValue("sid"))
+		if s == nil {
+			http.NotFound(w, r)
+			return
+		}
+		s.ServeStream(w, r, r.URL.Query().Get("away") == "1")
 	})
 }
 

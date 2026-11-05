@@ -95,6 +95,16 @@ type rateControl struct {
 	bestRTTAt    time.Time
 }
 
+// startAt starts lower than the full rate, for a device away from home, if nothing has been
+// learnt about the network yet.
+func (c *rateControl) startAt(share float64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.scale == 0 || (c.scale == 1 && c.lastChange.IsZero()) {
+		c.scale = min(max(share, rateFloor), 1)
+	}
+}
+
 // rate is the share of the full bitrate to encode at.
 func (c *rateControl) rate() float64 {
 	c.mu.Lock()
@@ -169,6 +179,11 @@ func (s *Session) noteReport(v *viewer, rep rtcp.ReceptionReport) {
 		if rtt > 10*time.Second {
 			rtt = 0 // a clock problem, not a network
 		}
+	}
+	// This connection's own numbers, for its stats.
+	v.lost.Store(uint32(rep.FractionLost))
+	if rtt > 0 {
+		v.rtt.Store(int64(rtt))
 	}
 	if s.rates.note(float64(rep.FractionLost)/256, rtt, now) {
 		s.log.Info("matching the video to the network", "share", s.rates.rate(), "lost", float64(rep.FractionLost)/256, "rtt", rtt.String())

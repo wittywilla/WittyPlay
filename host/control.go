@@ -41,6 +41,7 @@ type control struct {
 	noEarly    bool          // a new press waits for its frame's turn like anything else
 	quietAhead bool          // run-ahead turning itself off needs no message
 	shift      time.Duration // to move the frame schedule by, once
+	displayHz  float64       // the screen the game keeps to, when it's close to the game's own rate
 
 	// What the next frame sends. A runner's write looks at these, so nothing gets out
 	// past them whichever way a core delivers its frames.
@@ -73,6 +74,13 @@ func (c *control) wrap(h engine.Handlers) engine.Handlers {
 	h.Rumble = func(port, effect, strength int) {
 		if !c.quiet {
 			rumble(port, effect, strength)
+		}
+	}
+	if led := h.LED; led != nil {
+		h.LED = func(index, state int) {
+			if !c.quiet { // a frame run again to look ahead isn't news
+				led(index, state)
+			}
 		}
 	}
 	return h
@@ -130,6 +138,13 @@ func (c *control) apply(m ipc.Control) {
 	}
 	if m.NoEarlyInput != nil {
 		c.noEarly = *m.NoEarlyInput
+	}
+	if m.DisplayHz != nil {
+		if hz := *m.DisplayHz; hz >= 10 && hz <= 500 {
+			c.displayHz = hz
+		} else {
+			c.displayHz = 0
+		}
 	}
 	if m.QuietAhead != nil {
 		c.quietAhead = *m.QuietAhead
