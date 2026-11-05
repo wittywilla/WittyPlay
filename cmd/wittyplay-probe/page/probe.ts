@@ -76,6 +76,13 @@ let forced = 0
 // The player's way of coming back: the old picture stays up until a new one is ready.
 async function connect(first: boolean) {
   const t = make(setup.kind, signal)
+  // What the player shows as "Waiting for the picture": kept where a test driving the browser can
+  // read it, since a picture said to have stopped while it plays is a bug a person sees.
+  t.onStall = (on) => {
+    const w = window as any
+    w.__stalls = (w.__stalls || 0) + (on ? 1 : 0)
+    w.__stalledNow = on
+  }
   t.onLost = (why) => {
     if (current !== t || reconnecting) return
     dropWhy[why] = (dropWhy[why] || 0) + 1
