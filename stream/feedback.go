@@ -39,8 +39,7 @@ const (
 	keyDueSoon = 300 * time.Millisecond
 )
 
-// keyframeAsked gets a keyframe out soon. FFmpeg's command line has no way to be told, so
-// the encoder is started again, which begins with one.
+// keyframeAsked gets a keyframe out soon, from another encoder (replaceEncoderLocked).
 func (s *Session) keyframeAsked(codec string) {
 	s.viewMu.Lock()
 	defer s.viewMu.Unlock()
@@ -49,33 +48,15 @@ func (s *Session) keyframeAsked(codec string) {
 		return
 	}
 	s.lastKeyAsk = now
-	// The picture stops for a moment while another encoder starts, so if a keyframe is due
-	// about now anyway, it's better to wait for that.
+	// Another encoder is work, so if a keyframe is due about now anyway, that will do.
 	if due := time.Unix(0, s.lastKey.Load()).Add(time.Second); s.lastKey.Load() != 0 && due.Sub(now) < keyDueSoon {
 		return
 	}
-	s.restartEncoderLocked(codec, now)
-}
-
-func (s *Session) restartEncoderLocked(codec string, now time.Time) {
-	switch {
-	case codec == "h264" && s.h264 != nil:
-		if now.Sub(s.h264.started) < keyMinGap {
-			return // it has only just begun, with a keyframe
-		}
-		s.h264.stop()
-		s.h264 = nil
-	case codec == "vp8" && s.vp8 != nil:
-		if now.Sub(s.vp8.started) < keyMinGap {
-			return
-		}
-		s.vp8.stop()
-		s.vp8 = nil
-	}
+	s.replaceEncoderLocked(codec, now, false)
 }
 
 // How what's sent follows the network. A steady picture matters more than a sharp one, so
-// it comes down quickly and goes back up slowly. A change means a new encoder and so a
+// it comes down quickly and goes back up slowly. A change means another encoder and so a
 // keyframe, which is itself a burst on the network, so changes are kept far apart.
 //
 // Round trips that grow say a queue is filling, but only when they stay grown: a queue takes
@@ -192,7 +173,7 @@ func (s *Session) noteReport(v *viewer, rep rtcp.ReceptionReport) {
 	if s.rates.note(float64(rep.FractionLost)/256, rtt, now) {
 		s.log.Info("matching the video to the network", "share", s.rates.rate(), "lost", float64(rep.FractionLost)/256, "rtt", rtt.String())
 		s.viewMu.Lock()
-		s.restartEncoderLocked(v.codec, now)
+		s.replaceEncoderLocked(v.codec, now, false)
 		s.viewMu.Unlock()
 	}
 }

@@ -449,6 +449,8 @@ type Session struct {
 	lastInput     time.Time
 	lastPad       [MaxPlayers][ipc.InputSizeFull]byte
 	h264, vp8     *videoEncoder
+	h264Next      *videoEncoder // starting, to take over from h264 at its first keyframe
+	vp8Next       *videoEncoder
 	opus          *audioEncoder
 	jpeg          *jpegEncoder
 	encName       string
