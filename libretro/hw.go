@@ -66,6 +66,14 @@ func (c *Core) setHWRender(data unsafe.Pointer) bool {
 		c.logf(2, "this runner can't offer hardware context type %d", req.contextType)
 		return false
 	}
+	// Where no context can be made at all, saying so now lets a core that has a software
+	// renderer of its own fall back to it (PPSSPP, LRPS2), and one that hasn't stop loading
+	// cleanly, rather than load expecting a context that never comes.
+	if why := glUnavailable(); why != nil {
+		c.hwRefused = true
+		c.logf(2, "%v", why)
+		return false
+	}
 	c.hw = &hwState{req: req, reset: req.contextReset, destroy: req.contextDestroy}
 	req.getCurrentFramebuffer = cbGetFramebuffer
 	req.getProcAddress = cbGetProc

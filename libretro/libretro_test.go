@@ -1,6 +1,7 @@
 package libretro
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -353,6 +354,47 @@ func TestAFailedLoadSaysWhatTheCoreSaid(t *testing.T) {
 	}
 }
 
+// A core's on-screen message while it loads says why better than its log can, where the log's
+// arguments can't be read: there a line is only its format, such as "%s", and says nothing.
+// Flycast's "Invalid CDI file …" came as "the core could not load this game: %s" on a Mac.
+func TestAFailedLoadSaysTheCoresMessage(t *testing.T) {
+	saved := canReadVarargs
+	t.Cleanup(func() { canReadVarargs = saved })
+	canReadVarargs = false // as on an Apple arm64 Mac
+	c := newTestCore(t, engine.Handlers{Log: func(int, string) {}, Message: func(string) {}})
+	log := func(level uintptr, text string) {
+		purego.SyscallN(cbLog, level, uintptr(unsafe.Pointer(cstr(text))), 0, 0, 0, 0, 0, 0)
+	}
+	say := func(text string) {
+		m := struct {
+			msg    *byte
+			frames uint32
+		}{cstr(text), 180}
+		env(envSetMessage, unsafe.Pointer(&m))
+	}
+	log(3, "%s")
+	if c.lastProblem != "" {
+		t.Fatalf("a bare format became the reason: %q", c.lastProblem)
+	}
+	say("Invalid CDI file /games/Test Disc.cdi")
+	log(3, "Could not load %s")
+	log(2, "a warning")
+	if c.lastProblem != "Invalid CDI file /games/Test Disc.cdi" {
+		t.Fatalf("got %q", c.lastProblem)
+	}
+	// An error logged after it, in full, is news and wins.
+	log(3, "BIOS file is missing")
+	if c.lastProblem != "BIOS file is missing" {
+		t.Fatalf("got %q", c.lastProblem)
+	}
+	// Once the game is running, a message is only a message.
+	c.loaded = true
+	say("Saved state 1")
+	if c.lastProblem != "BIOS file is missing" {
+		t.Fatalf("got %q", c.lastProblem)
+	}
+}
+
 func TestLoadRefusesWhatIsNotACore(t *testing.T) {
 	if _, err := Load(filepath.Join(t.TempDir(), "missing"+libraryExtForTest()), Paths{}, nil, engine.Handlers{}); err == nil {
 		t.Fatal("a missing file should fail")
@@ -384,3 +426,21 @@ func libraryExtForTest() string {
 
 // A value only a 64-bit platform can hold; the test skips the others.
 var wideLogArg = uint64(1) << 40
+
+// Where this runner can't make a context at all, a request for one is refused at once, so a
+// core with a software renderer of its own uses it and one without stops loading cleanly.
+// Anywhere else it's taken, and the context is made once the game has loaded.
+func TestAGLRequestWhereNoContextCanBeMade(t *testing.T) {
+	c := newTestCore(t, engine.Handlers{})
+	req := hwRenderC{contextType: hwOpenGLCore, versionMajor: 3, versionMinor: 3}
+	got := env(envSetHWRender, unsafe.Pointer(&req))
+	if want := glUnavailable() == nil; got != want {
+		t.Fatalf("SET_HW_RENDER answered %v; a context can be made here: %v", got, want)
+	}
+	if !got && !c.hwRefused {
+		t.Error("a refused request should be remembered, for the message if loading fails")
+	}
+	if !got && !errors.Is(glUnavailable(), ErrNoGPU) {
+		t.Errorf("the reason should be ErrNoGPU: %v", glUnavailable())
+	}
+}

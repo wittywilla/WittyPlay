@@ -7,7 +7,16 @@ import (
 
 func hideWindow(cmd *exec.Cmd) {}
 
-func runnerEnv() []string { return []string{"PATH=/usr/bin:/bin", "HOME=/nonexistent"} }
+// runnerEnv is all a runner gets. On a Mac it also switches off the Go runtime's signals for
+// preempting goroutines (SIGURG, several times a second). PCSX ReARMed asks to be traced by its
+// parent on every Apple system but tvOS, so that iOS lets its recompiler run
+// (ptrace(PT_TRACE_ME) in retro_init), and a traced process stops at every signal until its
+// parent lets it go on. Nothing does, so the first preemption froze the game within a second
+// of loading: "the game took too long to load". Goroutines are still preempted at function
+// calls, which is all a runner needs.
+func runnerEnv() []string {
+	return []string{"PATH=/usr/bin:/bin", "HOME=/nonexistent", "GODEBUG=asyncpreemptoff=1"}
+}
 
 // privateSharedMemory is for Linux's namespaces.
 func privateSharedMemory(*exec.Cmd, *slog.Logger) bool { return false }
