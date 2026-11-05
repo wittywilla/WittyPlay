@@ -70,7 +70,7 @@ type glFuncs struct {
 	genFramebuffers, bindFramebuffer, framebufferTexture2D, framebufferRenderbuffer, checkFramebufferStatus uintptr
 	deleteFramebuffers, genTextures, bindTexture, texImage2D, texParameteri, deleteTextures                 uintptr
 	genRenderbuffers, bindRenderbuffer, renderbufferStorage, deleteRenderbuffers                            uintptr
-	genBuffers, bindBuffer, bufferData, mapBufferRange, unmapBuffer, deleteBuffers                          uintptr
+	genBuffers, bindBuffer, bufferData, mapBufferRange, unmapBuffer, deleteBuffers, getBufferSubData        uintptr
 	readPixels, pixelStorei, fenceSync, clientWaitSync, deleteSync, flush, getError, getString, getIntegerv uintptr
 	viewport, clear                                                                                         uintptr
 }
@@ -84,7 +84,7 @@ func (f *glFuncs) load(p glPlatform) error {
 		"glTexImage2D": &f.texImage2D, "glTexParameteri": &f.texParameteri, "glDeleteTextures": &f.deleteTextures,
 		"glGenRenderbuffers": &f.genRenderbuffers, "glBindRenderbuffer": &f.bindRenderbuffer, "glRenderbufferStorage": &f.renderbufferStorage,
 		"glDeleteRenderbuffers": &f.deleteRenderbuffers, "glGenBuffers": &f.genBuffers, "glBindBuffer": &f.bindBuffer, "glBufferData": &f.bufferData,
-		"glMapBufferRange": &f.mapBufferRange, "glUnmapBuffer": &f.unmapBuffer, "glDeleteBuffers": &f.deleteBuffers, "glReadPixels": &f.readPixels,
+		"glMapBufferRange": &f.mapBufferRange, "glUnmapBuffer": &f.unmapBuffer, "glDeleteBuffers": &f.deleteBuffers, "glGetBufferSubData": &f.getBufferSubData, "glReadPixels": &f.readPixels,
 		"glPixelStorei": &f.pixelStorei, "glFenceSync": &f.fenceSync, "glClientWaitSync": &f.clientWaitSync, "glDeleteSync": &f.deleteSync,
 		"glFlush": &f.flush, "glGetError": &f.getError, "glGetString": &f.getString, "glGetIntegerv": &f.getIntegerv, "glViewport": &f.viewport, "glClear": &f.clear,
 	} {
@@ -116,6 +116,10 @@ type glOut struct {
 	pbo    uint32
 	w, h   int // allocated size of the framebuffer
 	pboLen int
+	// copyOnly: the driver wouldn't map the pixel buffer, so frames are copied out of it instead,
+	// into copied (see deliver).
+	copyOnly bool
+	copied   []byte
 
 	fence        uintptr
 	readW, readH int
@@ -292,13 +296,32 @@ func (o *glOut) deliver(h engine.Handlers) {
 	call(f.bindBuffer, glPixelPackBuffer, uintptr(o.pbo))
 	w, ht := o.readW, o.readH
 	n := w * ht * 4
-	if p := call(f.mapBufferRange, glPixelPackBuffer, 0, uintptr(n), glMapRead); p != 0 {
-		data := unsafe.Slice((*byte)(ptr(p)), n)
-		if o.flip && h.VideoFlipped != nil {
-			h.VideoFlipped(data, w, ht, w*4, engine.FormatXRGB8888)
-		} else if h.Video != nil {
-			h.Video(data, w, ht, w*4, engine.FormatXRGB8888)
+	var data []byte
+	mapped := false
+	if !o.copyOnly {
+		if p := call(f.mapBufferRange, glPixelPackBuffer, 0, uintptr(n), glMapRead); p != 0 {
+			data, mapped = unsafe.Slice((*byte)(ptr(p)), n), true
+		} else {
+			// A Mac's OpenGL refuses to map the pixel buffer once PPSSPP's OpenGL renderer has run
+			// (GL_INVALID_OPERATION, though the buffer is this one's own, bound, unmapped and the
+			// right size), and every frame was lost. Copying it out works, so from then on it's copied.
+			call(f.getError)
+			o.copyOnly = true
 		}
+	}
+	if !mapped {
+		if cap(o.copied) < n {
+			o.copied = make([]byte, n)
+		}
+		data = o.copied[:n]
+		call(f.getBufferSubData, glPixelPackBuffer, 0, uintptr(n), uintptr(unsafe.Pointer(&data[0])))
+	}
+	if o.flip && h.VideoFlipped != nil {
+		h.VideoFlipped(data, w, ht, w*4, engine.FormatXRGB8888)
+	} else if h.Video != nil {
+		h.Video(data, w, ht, w*4, engine.FormatXRGB8888)
+	}
+	if mapped {
 		call(f.unmapBuffer, glPixelPackBuffer)
 	}
 	call(f.bindBuffer, glPixelPackBuffer, uintptr(uint32(oldPack)))
