@@ -51,6 +51,9 @@ type eglPlatform struct {
 	surf    uintptr
 }
 
+// glUnavailable is nil: whether a context can be made is found out when one is.
+func glUnavailable() error { return nil }
+
 func newGLPlatform(req glRequest) (glPlatform, error) {
 	lib, err := purego.Dlopen("libEGL.so.1", purego.RTLD_NOW|purego.RTLD_GLOBAL)
 	if err != nil {

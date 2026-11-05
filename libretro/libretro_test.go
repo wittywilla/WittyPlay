@@ -1,6 +1,7 @@
 package libretro
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -384,3 +385,21 @@ func libraryExtForTest() string {
 
 // A value only a 64-bit platform can hold; the test skips the others.
 var wideLogArg = uint64(1) << 40
+
+// Where this runner can't make a context at all, a request for one is refused at once, so a
+// core with a software renderer of its own uses it and one without stops loading cleanly.
+// Anywhere else it's taken, and the context is made once the game has loaded.
+func TestAGLRequestWhereNoContextCanBeMade(t *testing.T) {
+	c := newTestCore(t, engine.Handlers{})
+	req := hwRenderC{contextType: hwOpenGLCore, versionMajor: 3, versionMinor: 3}
+	got := env(envSetHWRender, unsafe.Pointer(&req))
+	if want := glUnavailable() == nil; got != want {
+		t.Fatalf("SET_HW_RENDER answered %v; a context can be made here: %v", got, want)
+	}
+	if !got && !c.hwRefused {
+		t.Error("a refused request should be remembered, for the message if loading fails")
+	}
+	if !got && !errors.Is(glUnavailable(), ErrNoGPU) {
+		t.Errorf("the reason should be ErrNoGPU: %v", glUnavailable())
+	}
+}
