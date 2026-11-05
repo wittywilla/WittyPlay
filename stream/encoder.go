@@ -340,22 +340,31 @@ func (s *Session) videoLoop() {
 	// the last frame is repeated, slowly; it compresses to almost nothing.
 	idle := time.NewTicker(50 * time.Millisecond)
 	defer idle.Stop()
+	var repeated time.Time
 	for {
 		repeat := false
 		select {
 		case <-s.done:
 			return
 		case <-s.frameReady:
-		case <-idle.C:
+		case now := <-idle.C:
 			// Loading, a game can go a long time without a frame too, and a viewer's
 			// player takes a picture that has stopped for one that has stuck.
 			quiet := time.Since(time.Unix(0, s.lastFrame.Load())) > quietRepeat
 			s.viewMu.Lock()
 			repeat = (s.paused || quiet) && len(s.viewers) > 0
+			starting := s.h264 != nil && !s.h264.begun() || s.vp8 != nil && !s.vp8.begun()
+			for v := range s.viewers {
+				// One to start: a viewer arriving stops the encoder for a keyframe.
+				starting = starting || v.codec == "h264" && s.h264 == nil || v.codec == "vp8" && s.vp8 == nil
+			}
 			s.viewMu.Unlock()
-			if !repeat {
+			// Every repeat is a whole frame converted and encoded again, and a game can sit
+			// in its menu for an hour. Quickly only while an encoder is starting.
+			if !repeat || !starting && now.Sub(repeated) < slowRepeat {
 				continue
 			}
+			repeated = now
 		}
 		// A new frame swaps with the old one rather than being copied. A repeat sends
 		// what was shown last. Nothing changes a shown frame until the next swap, which
@@ -403,8 +412,21 @@ func (s *Session) videoLoop() {
 }
 
 // quietRepeat is how long a running game can go without a frame before the last one is sent
-// again, as a paused game's is.
-const quietRepeat = 500 * time.Millisecond
+// again, as a paused game's is. slowRepeat is how often it's sent then.
+const (
+	quietRepeat = 500 * time.Millisecond
+	slowRepeat  = 250 * time.Millisecond
+)
+
+// begun says whether a frame has come out of it yet.
+func (e *videoEncoder) begun() bool {
+	select {
+	case <-e.got:
+		return true
+	default:
+		return false
+	}
+}
 
 // watchEncoders ends an encoder that has stopped answering. Everything that happens when
 // one ends by itself then starts another, and the picture carries on from a keyframe. It's
