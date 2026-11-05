@@ -75,6 +75,26 @@ func TestHardwareFrameComesBack(t *testing.T) {
 	if e := call(o.f.getError); e != 0 {
 		t.Errorf("OpenGL reported error %#x", e)
 	}
+	// Where the driver won't map the pixel buffer, as a Mac's won't once PPSSPP's OpenGL renderer
+	// has run, the frame is copied out of it instead, the same.
+	o.copyOnly = true
+	o.startRead(16, 8)
+	got = nil
+	o.deliver(engine.Handlers{VideoFlipped: func(d []byte, fw, fh, s, f int) {
+		got, w, h, stride = append([]byte(nil), d...), fw, fh, s
+	}})
+	if got == nil || w != 16 || h != 8 || stride != 64 {
+		t.Fatalf("copied: frame %dx%d stride %d, %d bytes", w, h, stride, len(got))
+	}
+	if got[0] != 0 || got[1] != 0 || got[2] != 0xff {
+		t.Errorf("copied: first row = %v, want red", got[:4])
+	}
+	if p := got[stride*7:]; p[0] != 0xff || p[2] != 0 {
+		t.Errorf("copied: last row = %v, want blue", p[:4])
+	}
+	if e := call(o.f.getError); e != 0 {
+		t.Errorf("copying: OpenGL reported error %#x", e)
+	}
 	// A size the framebuffer doesn't have is ignored, not read out of bounds.
 	o.startRead(4096, 4096)
 	if o.fence != 0 {
