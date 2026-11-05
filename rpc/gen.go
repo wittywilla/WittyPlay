@@ -57,6 +57,14 @@ var Handlers = map[string]service.Handler{
 		r0, r1, r2, r3, r4, r5, r6 := ipc.ParseInput(a0)
 		return []any{r0, r1, r2, r3, r4, r5, r6}, back, err
 	},
+	"ipc.ParseMotion": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var a0 []byte
+		if err := service.Arg(args, 0, &a0); err != nil {
+			return nil, nil, err
+		}
+		r0, r1, r2, r3 := ipc.ParseMotion(a0)
+		return []any{r0, r1, r2, r3}, back, err
+	},
 	"ipc.ParsePointer": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 []byte
 		if err := service.Arg(args, 0, &a0); err != nil {
@@ -64,6 +72,14 @@ var Handlers = map[string]service.Handler{
 		}
 		r0, r1, r2, r3 := ipc.ParsePointer(a0)
 		return []any{r0, r1, r2, r3}, back, err
+	},
+	"ipc.ParseTouches": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var a0 []byte
+		if err := service.Arg(args, 0, &a0); err != nil {
+			return nil, nil, err
+		}
+		r0, r1 := ipc.ParseTouches(a0)
+		return []any{r0, r1}, back, err
 	},
 	"ipc.ParseTriggers": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 []byte

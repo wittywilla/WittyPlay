@@ -44,6 +44,8 @@ const (
 	CmdQuit      byte = 71 // one byte: 1 sends a save state first; battery save is always sent
 	CmdDisc      byte = 72 // one byte: the disc to change to, from 0
 	CmdPointer   byte = 73 // PointerSize bytes: a touch screen or mouse
+	CmdTouches   byte = 74 // TouchesMark, a count, then TouchSize bytes a finger: every finger on a touch screen
+	CmdMotion    byte = 75 // MotionSize bytes: one player's accelerometer and gyroscope
 	CmdDevice    byte = 80 // DeviceSize bytes: plug a kind of controller into a port
 	CmdControl   byte = 96 // JSON: Control; how the game runs
 	CmdOption    byte = 97 // JSON: OptionSet; a core option, only ever one the core offered
@@ -75,6 +77,10 @@ func limit(t byte) int {
 		return 16
 	case CmdInput:
 		return InputSizeStamped
+	case CmdTouches:
+		return 2 + MaxTouches*TouchSize
+	case CmdMotion:
+		return MotionSize
 	case MsgTiming:
 		return FrameTimingSize
 	}
@@ -223,6 +229,13 @@ type Event struct {
 	Rate     float64 `json:"rate,omitempty"`
 	Index    int     `json:"index,omitempty"`
 	Count    int     `json:"count,omitempty"`
+	// For "motion": whether the game wants this player's accelerometer and gyroscope now, and
+	// how often; Offered says the core can read motion at all. For "led": the light's State.
+	Accel   bool `json:"accel,omitempty"`
+	Gyro    bool `json:"gyro,omitempty"`
+	Hz      int  `json:"hz,omitempty"`
+	Offered bool `json:"offered,omitempty"`
+	State   int  `json:"state,omitempty"`
 	// Options is every option the core offers, for "options".
 	Options []Option `json:"options,omitempty"`
 	// Stats comes once a second while a game runs, for "stats".
@@ -432,6 +445,55 @@ const (
 	PointerSize = 6
 	PointerMark = 0xFF
 )
+
+// Touches: several fingers at once. TouchesMark, a count up to MaxTouches, then for each
+// finger an id of the client's choosing, flags (bit 0: pressed), X and Y as a pointer has them.
+const (
+	TouchesMark = 0xFE
+	TouchSize   = 6
+	MaxTouches  = 10
+)
+
+// Touch is one finger.
+type Touch struct {
+	ID      byte
+	Pressed bool
+	X, Y    int16
+}
+
+// ParseTouches reads every finger on a touch screen. The list may be empty: nothing touching.
+func ParseTouches(p []byte) ([]Touch, bool) {
+	if len(p) < 2 || p[0] != TouchesMark || int(p[1]) > MaxTouches || len(p) != 2+int(p[1])*TouchSize {
+		return nil, false
+	}
+	out := make([]Touch, 0, p[1])
+	for i := 0; i < int(p[1]); i++ {
+		b := p[2+i*TouchSize:]
+		out = append(out, Touch{ID: b[0], Pressed: b[1]&1 != 0, X: int16(binary.LittleEndian.Uint16(b[2:])), Y: int16(binary.LittleEndian.Uint16(b[4:]))})
+	}
+	return out, true
+}
+
+// Motion: MotionMark, the player, then the accelerometer's X, Y and Z in 1/4096 g and the
+// gyroscope's X, Y and Z in 1/16 of a degree a second, each an i16. Axes are a device's own,
+// held as the console's controller: X to the right, Y up, Z towards the player.
+const (
+	MotionMark = 0xE1
+	MotionSize = 14
+)
+
+// ParseMotion reads one player's motion, in the units libretro's cores take: metres a second
+// squared and radians a second, as RetroArch passes on a phone's sensors.
+func ParseMotion(p []byte) (port int, accel, gyro [3]float32, ok bool) {
+	if len(p) != MotionSize || p[0] != MotionMark {
+		return 0, accel, gyro, false
+	}
+	for i := 0; i < 3; i++ {
+		accel[i] = float32(int16(binary.LittleEndian.Uint16(p[2+2*i:]))) / 4096 * 9.80665
+		gyro[i] = float32(int16(binary.LittleEndian.Uint16(p[8+2*i:]))) / 16 * (3.14159265 / 180)
+	}
+	return int(p[1]), accel, gyro, true
+}
 
 // ParsePointer reads a touch screen or mouse state.
 func ParsePointer(p []byte) (x, y int16, pressed, ok bool) {

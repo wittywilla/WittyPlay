@@ -197,7 +197,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   const setLevel = (l: Level) => { setLevelState(l); save(LEVEL_KEY, l) }
 
   const onEvent = useCallback((e: PlayEvent) => {
-    if (e.type === 'rumble') input.rumble(e.port || 0, e.strength || 0, e.effect || 0)
+    if (e.type === 'rumble') input.rumble(e.port || 0, e.strength || 0, e.effect || 0, e.ms || 0)
     else if (e.type === 'error' && e.code === 'seat-taken' && e.text) say(e.text)
     else if (e.type === 'message' && e.text) say(e.text)
     else if (e.type === 'shutdown') { say('The game has ended'); leave() }

@@ -76,6 +76,13 @@ func (c *control) wrap(h engine.Handlers) engine.Handlers {
 			rumble(port, effect, strength)
 		}
 	}
+	if led := h.LED; led != nil {
+		h.LED = func(index, state int) {
+			if !c.quiet { // a frame run again to look ahead isn't news
+				led(index, state)
+			}
+		}
+	}
 	return h
 }
 

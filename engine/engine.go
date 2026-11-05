@@ -55,6 +55,12 @@ type PointerState struct {
 	Pressed bool
 }
 
+// MotionState is one player's motion: accelerometer in metres a second squared, gyroscope in
+// radians a second, X, Y and Z, as libretro's cores take them.
+type MotionState struct {
+	Accel, Gyro [3]float32
+}
+
 // Handlers receive what an engine produces. All are called on the thread
 // running Run, and slices are only valid during the call. Any may be nil.
 type Handlers struct {
@@ -66,14 +72,21 @@ type Handlers struct {
 	Audio        func(stereo []int16)
 	Input        func() *[MaxPorts]PadState // once a frame
 	Pointer      func() PointerState        // once a frame
-	Rumble       func(port, effect, strength int)
-	Message      func(text string)
-	Log          func(level int, text string)
-	Geometry     func(width, height int, aspect float64)
-	Rotation     func(quarterTurns int)
-	AVInfo       func(info AVInfo)
-	Shutdown     func()
-	Trace        func(text string) // everything a core says and is refused; only set when testing
+	Touches      func() []PointerState      // every finger on a touch screen, once a frame; the first is Pointer's
+	// Motion, for a game that reads a device's movement. MotionOffered says the engine can read it
+	// at all; MotionWanted that the game wants it from this player now, or no longer, and how often.
+	MotionOffered func()
+	MotionWanted  func(port int, accel, gyro bool, hz int)
+	Motion        func(port int) MotionState
+	LED           func(index, state int) // a light the game turns on or off, or to a brightness
+	Rumble        func(port, effect, strength int)
+	Message       func(text string)
+	Log           func(level int, text string)
+	Geometry      func(width, height int, aspect float64)
+	Rotation      func(quarterTurns int)
+	AVInfo        func(info AVInfo)
+	Shutdown      func()
+	Trace         func(text string) // everything a core says and is refused; only set when testing
 }
 
 // Discs is what an engine has if it can change discs: the game may ask for the

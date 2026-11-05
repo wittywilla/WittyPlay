@@ -11,6 +11,11 @@ What changed in WittyPlay, newest first. What changed before it had a repository
   - **Games keep to the screen.** A device says its refresh rate, and a game within 1% of it (a 60.0988 Hz NES game on a 60 Hz screen) runs at the screen's rate, with its sound resampled to match, so no frame is dropped every ten seconds.
   - **Away from home starts lower**, at half the bitrate, and goes up within seconds when the network carries it.
   - Stats once a second for a device that asks, and refusals and endings with a code to act on.
+  - **Everything a full controller carries.** Motion reaches cores through libretro's sensor interface (on macOS and Linux,
+    x86-64 and ARM64), and the stream says which players' motion a game wants. Several fingers on a touch screen at once.
+    The game's lights come back as `led` events, through libretro's LED interface. Rumble names its motor, strong or weak,
+    and says how long it lasts; it's renewed while it does, so a dropped connection can't leave a pad shaking, and a
+    paused game's motors stop. Up to 8 players, for cores with a multitap.
 - **`wittyplay-probe` measures the WebSocket modes through a network too:** `-impair` now applies to TCP, with loss as TCP recovers from it, and jitter on UDP keeps packets in order, as one path does. `-v2` connects as the player does with version 2.
 - **PlayStation 2 `.bin` files on Play!:** Play! crashes when handed a PS2 disc kept as a `.bin` without opening a `.cue` sheet. WittyPlay now steps aside to LRPS2 when available, or refuses cleanly naming LRPS2 and `.cue` sheets in `wittyplay-check`, `wittyplay-probe`, and streaming sessions ([#31](https://github.com/wittywilla/WittyPlay/issues/31)).
 - **WittyPlay 0.3.5:** steadier streaming on a busy machine, and `wittyplay-probe` builds on macOS and FreeBSD, so CI is green again. There it reads a process's memory from `ps`, and has no count of open files.

@@ -26,7 +26,7 @@ export type Stats = { rttMs?: number; fps?: number; kbps?: number; jitterMs?: nu
 export type AudioBuffer_ = 'lowest' | 'balanced' | 'smooth'
 const AUDIO_HOLD: Record<AudioBuffer_, number> = { lowest: 0, balanced: 0.06, smooth: 0.15 }
 
-export type PlayEvent = { type: string; port?: number; strength?: number; text?: string; effect?: number; aspect?: number; width?: number; height?: number; turns?: number; index?: number; count?: number; code?: string; seats?: Seat[] }
+export type PlayEvent = { type: string; port?: number; strength?: number; text?: string; effect?: number; aspect?: number; width?: number; height?: number; turns?: number; index?: number; count?: number; code?: string; seats?: Seat[]; ms?: number; motor?: string; state?: number }
 
 // Version 2 of the stream (the server's docs/GAMING-STREAM.md): one way in, the same messages
 // over WebRTC and the WebSocket.

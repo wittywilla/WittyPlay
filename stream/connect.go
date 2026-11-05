@@ -52,24 +52,26 @@ type Display struct {
 
 // StreamInfo is what a connection gets: in the answer, and as the first event.
 type StreamInfo struct {
-	Type      string  `json:"type"` // "stream"
-	V         int     `json:"v"`
-	Conn      string  `json:"conn"`
-	Transport string  `json:"transport"` // webrtc | websocket
-	Video     string  `json:"video"`     // h264 | vp8 | jpeg | ""
-	Audio     string  `json:"audio"`     // opus | pcm | ""
-	Width     int     `json:"width"`
-	Height    int     `json:"height"`
-	Aspect    float64 `json:"aspect"`
-	FPS       float64 `json:"fps"`
-	Rate      int     `json:"rate"`
-	Turns     int     `json:"turns"`
-	Ports     int     `json:"ports"`
-	Motion    bool    `json:"motion"`
-	Pace      float64 `json:"pace"`
-	Seats     []Seat  `json:"seats"`
-	Kbps      int     `json:"kbps"`
-	Away      bool    `json:"away"`
+	Type      string       `json:"type"` // "stream"
+	V         int          `json:"v"`
+	Conn      string       `json:"conn"`
+	Transport string       `json:"transport"` // webrtc | websocket
+	Video     string       `json:"video"`     // h264 | vp8 | jpeg | ""
+	Audio     string       `json:"audio"`     // opus | pcm | ""
+	Width     int          `json:"width"`
+	Height    int          `json:"height"`
+	Aspect    float64      `json:"aspect"`
+	FPS       float64      `json:"fps"`
+	Rate      int          `json:"rate"`
+	Turns     int          `json:"turns"`
+	Ports     int          `json:"ports"`
+	Motion    bool         `json:"motion"`
+	MotionOn  []MotionWant `json:"motionOn"`
+	LEDs      []LEDState   `json:"leds"`
+	Pace      float64      `json:"pace"`
+	Seats     []Seat       `json:"seats"`
+	Kbps      int          `json:"kbps"`
+	Away      bool         `json:"away"`
 }
 
 // Seat is one player and the device that has it.
@@ -121,12 +123,6 @@ const (
 	EndEvicted = "evicted"
 )
 
-// motionMark starts a motion message: an accelerometer and a gyroscope, for one player.
-const (
-	motionMark = 0xE1
-	motionSize = 14
-)
-
 // v2State is what a session keeps for version 2.
 type v2State struct {
 	seatOf    [MaxPlayers]*viewer // who holds each player; under viewMu
@@ -134,8 +130,9 @@ type v2State struct {
 	pace      float64 // the refresh rate the game runs at, or 0 for its own; under viewMu
 	endCode   atomic.Value
 	statsOnce sync.Once
-	began     time.Time // the WebSocket's clocks count from here
-	opusTS    uint32    // the WebSocket's sound clock, in 48 kHz samples; only opusSender touches it
+	hapticState
+	began  time.Time // the WebSocket's clocks count from here
+	opusTS uint32    // the WebSocket's sound clock, in 48 kHz samples; only opusSender touches it
 }
 
 var deviceID = regexp.MustCompile(`^[A-Za-z0-9._-]{1,64}$`)
@@ -293,7 +290,7 @@ const awayStart = 0.5
 func (s *Session) streamInfo(v *viewer) StreamInfo {
 	info := s.Info()
 	out := StreamInfo{Type: "stream", V: StreamVersion, Conn: v.conn, Transport: "webrtc", Video: v.codec,
-		Width: info.Width, Height: info.Height, Aspect: info.Aspect, FPS: info.FPS, Turns: info.Turns, Ports: MaxPlayers, Away: v.away}
+		Width: info.Width, Height: info.Height, Aspect: info.Aspect, FPS: info.FPS, Turns: info.Turns, Away: v.away}
 	if v.ws != nil {
 		out.Transport = "websocket"
 	}
@@ -317,6 +314,8 @@ func (s *Session) streamInfo(v *viewer) StreamInfo {
 	}
 	s.viewMu.Lock()
 	out.Pace = s.pace
+	out.Ports = s.portsLocked()
+	out.Motion, out.MotionOn, out.LEDs = s.motionOffered, s.motionWantLocked(), s.ledsLocked()
 	if out.Audio == "pcm" {
 		out.Rate = int(s.pcmRateLocked() + 0.5)
 	}
@@ -445,11 +444,19 @@ func (s *Session) inputFrom(v *viewer, p []byte) {
 		if s.mayDrive(v, 0) {
 			s.Input(p)
 		}
-	case p[0] == motionMark:
-		// Accepted and checked, for when a core reads motion. None does yet, and the stream
-		// says so (motion: false), so clients don't send it.
-		if len(p) != motionSize || !s.mayDrive(v, int(p[1])) {
-			return
+	case p[0] == ipc.TouchesMark:
+		// Several fingers on the first player's touch screen.
+		if _, ok := ipc.ParseTouches(p); ok && s.mayDrive(v, 0) {
+			s.viewMu.Lock()
+			s.lastInput = time.Now()
+			s.viewMu.Unlock()
+			_ = s.command(ipc.CmdTouches, p)
+		}
+	case p[0] == ipc.MotionMark:
+		// A player's motion, for a core that reads it. It isn't someone playing: a device
+		// lying on a table sends it too.
+		if port, _, _, ok := ipc.ParseMotion(p); ok && s.mayDrive(v, port) {
+			_ = s.command(ipc.CmdMotion, p)
 		}
 	default:
 		if s.mayDrive(v, int(p[0])) {

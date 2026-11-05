@@ -66,6 +66,8 @@ const (
 	envGetTargetRefresh  = 50 | envExperimental
 	envGetAudioVideoEn   = 47 | envExperimental
 	envGetInputBitmasks  = 51 | envExperimental
+	envGetSensorIface    = 25 | envExperimental
+	envGetLEDIface       = 46 | envExperimental
 	envSetHWShared       = 44 | envExperimental
 	envPrivate           = 0x20000
 )
@@ -110,7 +112,8 @@ type Core struct {
 	pinned   [][]byte
 	input    *[engine.MaxPorts]engine.PadState
 	pointer  engine.PointerState
-	devices  []engine.PortDevices // from SET_CONTROLLER_INFO
+	touches  []engine.PointerState // every finger this frame; the first is pointer
+	devices  []engine.PortDevices  // from SET_CONTROLLER_INFO
 	gameData []byte
 	loaded   bool
 
@@ -129,6 +132,7 @@ type Core struct {
 	dirs        map[string]*byte
 	noGame      bool
 	hwAsked     bool
+	sensorsOn   map[uintptr][2]bool // per player: accelerometer, gyroscope
 }
 
 var _ engine.Engine = (*Core)(nil)
@@ -138,10 +142,13 @@ var (
 	cur                                                                 *Core
 	callbacks                                                           sync.Once
 	cbEnv, cbVideo, cbSample, cbBatch, cbPoll, cbState, cbLog, cbRumble uintptr
+	cbLED                                                               uintptr
 	perfCallbacks                                                       [7]uintptr
 )
 
 func makeCallbacks() {
+	makeSensorCallbacks()
+	cbLED = purego.NewCallback(onLED)
 	cbEnv = purego.NewCallback(onEnvironment)
 	cbVideo = purego.NewCallback(onVideo)
 	cbSample = purego.NewCallback(onAudioSample)
@@ -460,6 +467,12 @@ func onInputPoll() uintptr {
 	}
 	if c := cur; c != nil && c.h.Pointer != nil {
 		c.pointer = c.h.Pointer()
+		c.touches = c.touches[:0]
+		if c.h.Touches != nil {
+			c.touches = append(c.touches, c.h.Touches()...)
+		} else if c.pointer.Pressed {
+			c.touches = append(c.touches, c.pointer)
+		}
 	}
 	return 0
 }
@@ -474,22 +487,29 @@ func onInputState(port, device, index, id uintptr) uintptr {
 	var v int16
 	switch device & 0xff {
 	case devicePointer:
-		if index != 0 || port != 0 {
-			return 0 // one finger, for one player
+		if port != 0 {
+			return 0 // a touch screen is the first player's
+		}
+		// Index 0 is where the pointer is even when nothing is touching, as a mouse would be;
+		// the other fingers are only there while they're down.
+		p := c.pointer
+		if index > 0 || len(c.touches) > 0 {
+			if int(index) >= len(c.touches) {
+				return 0
+			}
+			p = c.touches[index]
 		}
 		switch id {
 		case 0:
-			v = c.pointer.X
+			v = p.X
 		case 1:
-			v = c.pointer.Y
+			v = p.Y
 		case 2:
-			if c.pointer.Pressed {
+			if p.Pressed {
 				v = 1
 			}
-		case 3:
-			if c.pointer.Pressed {
-				v = 1
-			}
+		case 3: // how many fingers are down
+			v = int16(len(c.touches))
 		}
 	case deviceJoypad:
 		if id == idBitmask {
@@ -538,6 +558,59 @@ func onLog(level, format, a0, a1, a2, a3, a4, a5 uintptr) uintptr {
 		c.h.Log(lvl, text)
 	}
 	return 0
+}
+
+// onLED is a light the game sets: on, off, or a brightness, by its index.
+func onLED(led, state uintptr) uintptr {
+	if c := cur; c != nil && c.h.LED != nil {
+		c.h.LED(int(int32(led)), int(int32(state)))
+	}
+	return 0
+}
+
+// Sensor actions and ids, as libretro numbers them.
+const (
+	sensorAccelOn  = 0
+	sensorAccelOff = 1
+	sensorGyroOn   = 2
+	sensorGyroOff  = 3
+	sensorAccelX   = 0
+	sensorGyroX    = 3
+	sensorIllum    = 6
+)
+
+// onSensorSet is a core turning a player's accelerometer or gyroscope on or off. Light sensors
+// aren't offered.
+func onSensorSet(port, action, rate uintptr) uintptr {
+	c := cur
+	port, action = uintptr(uint32(port)), uintptr(uint32(action))
+	if c == nil || port >= engine.MaxPorts || action > sensorGyroOff {
+		return 0
+	}
+	if c.sensorsOn == nil {
+		c.sensorsOn = map[uintptr][2]bool{}
+	}
+	st := c.sensorsOn[port]
+	st[action/2] = action%2 == 0
+	c.sensorsOn[port] = st
+	if c.h.MotionWanted != nil {
+		c.h.MotionWanted(int(port), st[0], st[1], int(uint32(rate)))
+	}
+	return 1
+}
+
+// sensorValue is one reading of a player's sensor, in metres a second squared or radians a second.
+func sensorValue(port, id uintptr) float32 {
+	c := cur
+	port, id = uintptr(uint32(port)), uintptr(uint32(id))
+	if c == nil || port >= engine.MaxPorts || id >= sensorIllum || c.h.Motion == nil {
+		return 0
+	}
+	m := c.h.Motion(int(port))
+	if id < sensorGyroX {
+		return m.Accel[id-sensorAccelX]
+	}
+	return m.Gyro[id-sensorGyroX]
 }
 
 func onRumble(port, effect, strength uintptr) uintptr {
@@ -612,6 +685,17 @@ func (c *Core) environment(cmd uint32, data unsafe.Pointer) bool {
 		*(*uintptr)(data) = cbLog
 	case envGetRumble:
 		*(*uintptr)(data) = cbRumble
+	case envGetSensorIface:
+		// Motion: where a float can come back through a callback (sensor_*.go).
+		if cbSensorSet == 0 {
+			return false
+		}
+		*(*[2]uintptr)(data) = [2]uintptr{cbSensorSet, cbSensorGet}
+		if c.h.MotionOffered != nil {
+			c.h.MotionOffered()
+		}
+	case envGetLEDIface:
+		*(*uintptr)(data) = cbLED
 	case envGetPerf:
 		// Some cores call these without checking the answer, so they all work.
 		*(*[7]uintptr)(data) = perfCallbacks

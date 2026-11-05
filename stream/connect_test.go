@@ -19,6 +19,7 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/pion/webrtc/v4"
+	"github.com/wittywilla/wittyplay/engine"
 )
 
 func TestTheHelloIsChecked(t *testing.T) {
@@ -27,7 +28,7 @@ func TestTheHelloIsChecked(t *testing.T) {
 		{V: 3},
 		{V: 2, Device: "has spaces"},
 		{V: 2, Device: strings.Repeat("a", 65)},
-		{V: 2, Seats: []int{4}},
+		{V: 2, Seats: []int{8}},
 		{V: 2, Seats: []int{-1}},
 		{V: 2, Latency: "soon"},
 	}
@@ -130,7 +131,7 @@ func TestTwoDevicesShareAGameBySeats(t *testing.T) {
 	// The TV.
 	tv := dialV2WebRTC(t, ctx, s, Hello{V: 2, Device: "tv-1", Name: "Living room", Seats: []int{0}, Display: Display{Hz: 60}})
 	defer tv.pc.Close()
-	if tv.got.Stream.Transport != "webrtc" || tv.got.Stream.Audio != "opus" || tv.got.Stream.Ports != MaxPlayers || tv.got.Stream.V != 2 {
+	if tv.got.Stream.Transport != "webrtc" || tv.got.Stream.Audio != "opus" || tv.got.Stream.Ports != 4 || tv.got.Stream.V != 2 {
 		t.Fatalf("stream: %+v", tv.got.Stream)
 	}
 	if len(tv.got.Stream.Seats) != 1 || !tv.got.Stream.Seats[0].You || tv.got.Stream.Seats[0].Port != 0 {
@@ -519,5 +520,106 @@ func TestAWebSocketFallingBehindBringsTheRateDown(t *testing.T) {
 	look()
 	if v.clientDelay.Load() == 0 {
 		t.Fatal("the last report is kept, only not used")
+	}
+}
+
+// Everything a full controller and a touch screen carry, through the real runner to the test
+// core and back: two fingers at once, a player's motion, a light, a sixth player, and rumble that
+// names its motor, says how long it lasts and is said again while it does.
+func TestTouchMotionLightsRumbleAndASixthPlayer(t *testing.T) {
+	m := newManager(t)
+	save := t.TempDir()
+	s := startGame(t, m, save, false)
+	defer s.Stop()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeStream(w, r, false) }))
+	defer srv.Close()
+	c, _, err := websocket.Dial(ctx, srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.CloseNow()
+	c.SetReadLimit(1 << 24)
+	hello, _ := json.Marshal(Hello{Type: "hello", V: 2, Device: "pad-1", Seats: []int{0, 5}, Audio: []string{"pcm"}})
+	_ = c.Write(ctx, websocket.MessageText, hello)
+	r := newWSReader(c)
+	if d := r.text(t, ctx, "stream"); len(d["seats"].([]any)) != 2 {
+		t.Fatalf("the first and sixth players: %v", d["seats"])
+	}
+
+	// The test core asks for the first player's motion as soon as it runs.
+	mo := r.text(t, ctx, "motion")
+	for mo["port"] == nil {
+		mo = r.text(t, ctx, "motion")
+	}
+	if mo["port"] != float64(0) || mo["accel"] != true || mo["gyro"] != true || mo["hz"] != float64(60) {
+		t.Fatalf("motion wanted: %v", mo)
+	}
+	motion := make([]byte, ipcMotionSize)
+	motion[0], motion[1] = 0xE1, 0
+	binary.LittleEndian.PutUint16(motion[2:], 4096) // 1 g to the right
+	_ = c.Write(ctx, websocket.MessageBinary, motion)
+
+	touches := []byte{0xFE, 2, 1, 1, 0, 0, 0, 0, 2, 1, 0x10, 0x27, 0xF0, 0xD8}
+	_ = c.Write(ctx, websocket.MessageBinary, touches)
+
+	press := func(port byte, buttons uint16) {
+		_ = c.Write(ctx, websocket.MessageBinary, input(port, buttons))
+		time.Sleep(150 * time.Millisecond)
+	}
+	press(5, 1<<3) // Start, sixth player
+	press(5, 0)
+	press(0, 1<<2) // Select lights LED 0
+	if e := r.text(t, ctx, "led"); e["index"] != float64(0) || e["state"] != float64(1) {
+		t.Fatalf("led: %v", e)
+	}
+	press(0, 0)
+	if e := r.text(t, ctx, "led"); e["state"] != float64(0) {
+		t.Fatalf("led off: %v", e)
+	}
+
+	_ = c.Write(ctx, websocket.MessageBinary, input(0, 1<<8)) // A: the strong motor while held
+	first := r.text(t, ctx, "rumble")
+	if first["motor"] != "strong" || first["effect"] != float64(0) || first["strength"] != float64(0xffff) || first["ms"] != float64(rumbleHold/time.Millisecond) {
+		t.Fatalf("rumble: %v", first)
+	}
+	again := r.text(t, ctx, "rumble") // said again while it lasts
+	if again["strength"] != float64(0xffff) {
+		t.Fatalf("renewed: %v", again)
+	}
+	_ = c.Write(ctx, websocket.MessageBinary, input(0, 0))
+	for {
+		e := r.text(t, ctx, "rumble")
+		if e["strength"] == float64(0) {
+			if e["ms"] != float64(0) {
+				t.Fatalf("stopping: %v", e)
+			}
+			break
+		}
+	}
+
+	time.Sleep(200 * time.Millisecond)
+	s.Stop()
+	ram, err := os.ReadFile(filepath.Join(save, "save.srm"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := binary.LittleEndian.Uint32(ram[4:]); n != 1 {
+		t.Errorf("the sixth player's Start: %d presses", n)
+	}
+	if ram[8] != 2 {
+		t.Errorf("fingers at once: %d", ram[8])
+	}
+	if ax := int16(binary.LittleEndian.Uint16(ram[10:])); ax < 975 || ax > 985 {
+		t.Errorf("accelerometer X: %d hundredths of m/s², want 981", ax)
+	}
+}
+
+const ipcMotionSize = 14
+
+func TestPlayersAreAsManyAsTheRunnerTakes(t *testing.T) {
+	if MaxPlayers != engine.MaxPorts {
+		t.Fatalf("the stream takes %d players and the runner %d", MaxPlayers, engine.MaxPorts)
 	}
 }

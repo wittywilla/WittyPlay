@@ -867,18 +867,19 @@ func (s *Session) handleEvent(p []byte) {
 			s.viewMu.Unlock()
 		}
 	}
+	switch e.Type {
+	case "rumble":
+		s.noteRumble(e.Port, e.Effect, e.Strength)
+		return
+	case "motion":
+		s.noteMotion(e)
+		return
+	case "led":
+		s.noteLED(e.Index, e.State)
+		return
+	}
 	e.Text = truncate(e.Text, 300)
 	b, _ := json.Marshal(e)
-	if e.Type == "rumble" && e.Port >= 0 && e.Port < MaxPlayers {
-		// Only the device holding that player shakes; with nobody holding it, every device.
-		s.viewMu.Lock()
-		holder := s.seatOf[e.Port]
-		s.viewMu.Unlock()
-		if holder != nil {
-			holder.sendEvent(b)
-			return
-		}
-	}
 	s.broadcastEvent(b)
 }
 
@@ -933,8 +934,10 @@ func (s *Session) Input(p []byte) {
 	}
 }
 
-// MaxPlayers is how many players a browser may drive.
-const MaxPlayers = 4
+// MaxPlayers is how many players a game takes input for: as many as a core with a multitap
+// can have, through libretro's ports: the runner's MaxPorts, which a test holds this to. The stream
+// says how many this game has.
+const MaxPlayers = 8
 
 // cleanDevices keeps what a runner says about controllers within reason: it's text that
 // reaches a page, from a process that may have been taken over.
