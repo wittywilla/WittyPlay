@@ -266,8 +266,9 @@ function CustomControlRow({ c, value, known, onChange }: { c: CustomControl; val
   )
 }
 
-export function CorePanel({ host, itemId, api, view, level, levels, onLevel, consoleName, say, onJson }: {
+export function CorePanel({ host, itemId, api, view, level, levels, onLevel, consoleName, say, onJson, onRestart }: {
   host: SettingsHost; itemId: number; api: SettingsApi; view: SettingsView; level: Level; levels: LevelChoice[]; onLevel: (l: Level) => void; consoleName: string; say: (t: string) => void; onJson: () => void
+  onRestart?: () => void // during a game: start it again, on the core just chosen
 }) {
   const [core, setCore] = useState<CoreOptionsView | null>(null)
   const [filter, setFilter] = useState('')
@@ -295,9 +296,27 @@ export function CorePanel({ host, itemId, api, view, level, levels, onLevel, con
     if (found) found.options.push(o)
     else groups.push({ title, options: [o] })
   }
+  // Which core plays this game, and the app's picker to change it. During a game, the picker
+  // offers to restart on the new one; its options are listed here from then on.
+  const [choosing, setChoosing] = useState(false)
+  const changeCore = async () => {
+    if (!host.chooseCore || choosing) return
+    setChoosing(true)
+    try {
+      const answer = await host.chooseCore()
+      if (answer === 'restart' && onRestart) { onRestart(); return }
+      if (answer !== 'none') void load()
+    } finally { setChoosing(false) }
+  }
   if (!core) return <p className="wp-muted" role="status">Asking the core…</p>
   return (
     <>
+      {host.chooseCore && (
+        <div className="wp-row wp-core-pick">
+          <span className="wp-grow"><span className="wp-muted">Core</span> <b>{core.coreName || core.core || 'None yet'}</b></span>
+          <button type="button" className="wp-btn" disabled={choosing} onClick={() => void changeCore()}>Change core</button>
+        </div>
+      )}
       <LevelPicker levels={levels} level={level} onChange={onLevel} />
       {!core.known && <p className="wp-muted">This core hasn’t said what options it has. Start the game once and they’ll be listed here.</p>}
       {res.presets.length > 0 && (

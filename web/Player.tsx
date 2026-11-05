@@ -857,7 +857,8 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
             {panel === 'core' && settings.view && schema && (
               <>
                 <h2>Core options</h2>
-                <CorePanel host={host} itemId={host.itemId} api={settings} view={settings.view} level={level} levels={levels} onLevel={setLevel} consoleName={host.consoleName} say={say} onJson={() => setPanel('json')} />
+                <CorePanel host={host} itemId={host.itemId} api={settings} view={settings.view} level={level} levels={levels} onLevel={setLevel} consoleName={host.consoleName} say={say} onJson={() => setPanel('json')}
+                  onRestart={() => leaveThen(() => host.relaunch({ resume: false, safeMode: safe }))} />
                 <Back onClick={up} />
               </>
             )}
