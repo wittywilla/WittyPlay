@@ -1314,6 +1314,26 @@ var Handlers = map[string]service.Handler{
 		err = recv.ChangeDisc(a0)
 		return nil, back, err
 	},
+	"stream.Session.Connect": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var a0 stream.Hello
+		if err := service.Arg(args, 0, &a0); err != nil {
+			return nil, nil, err
+		}
+		var a1 string
+		if err := service.Arg(args, 1, &a1); err != nil {
+			return nil, nil, err
+		}
+		var a2 bool
+		if err := service.Arg(args, 2, &a2); err != nil {
+			return nil, nil, err
+		}
+		recv, err := resolveSession(rawRecv)
+		if err != nil {
+			return nil, nil, err
+		}
+		r0, err := recv.Connect(ctx, a0, a1, a2)
+		return []any{r0}, back, err
+	},
 	"stream.Session.CoreID": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		recv, err := resolveSession(rawRecv)
 		if err != nil {
@@ -1581,10 +1601,10 @@ func ErrorCode(err error) string {
 	switch {
 	case errors.Is(err, wittyplay.ErrEncrypted3DS):
 		return "wittyplay.ErrEncrypted3DS"
-	case errors.Is(err, wittyplay.ErrPlayLoneBin):
-		return "wittyplay.ErrPlayLoneBin"
 	case errors.Is(err, wittyplay.ErrPlayBinWithCue):
 		return "wittyplay.ErrPlayBinWithCue"
+	case errors.Is(err, wittyplay.ErrPlayLoneBin):
+		return "wittyplay.ErrPlayLoneBin"
 	case errors.Is(err, patch.ErrSource):
 		return "patch.ErrSource"
 	case errors.Is(err, stream.ErrBusy):

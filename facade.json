@@ -71,14 +71,16 @@
         "Session.Done",
         "Session.ServeWS",
         "Session.Input",
-        "Manager.StopAll"
+        "Manager.StopAll",
+        "Session.ServeStream"
       ],
       "resolve": {
         "Manager": "resolveManager",
         "Session": "resolveSession"
       },
       "local": [
-        "ProbeError.Error"
+        "ProbeError.Error",
+        "StreamError.Error"
       ]
     }
   ]

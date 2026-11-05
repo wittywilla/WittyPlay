@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"runtime"
 	"strings"
 	"sync"
@@ -417,7 +418,8 @@ func (r *runner) run(in io.Reader, open Open) error {
 	r.ctl.sendOptions()
 	r.write(ipc.MsgReady, ready)
 
-	frame := time.Duration(float64(time.Second) / av.FPS)
+	gameFPS := av.FPS
+	frame := framePeriod(gameFPS, r.ctl.displayHz)
 	r.ctl.frameTime = frame
 	next := time.Now()
 	// A state can't always be restored before a core has run. Some cores say so, some
@@ -541,9 +543,13 @@ func (r *runner) run(in io.Reader, open Open) error {
 			}
 		}
 		if r.fps > 0 && r.fps <= 240 {
-			frame = time.Duration(float64(time.Second) / r.fps)
-			r.ctl.frameTime = frame
+			gameFPS = r.fps
 			r.fps = 0
+		}
+		// The game's own rate, or the screen's when it's close: see ipc.FramePeriod.
+		if f := framePeriod(gameFPS, r.ctl.displayHz); f != frame {
+			frame = f
+			r.ctl.frameTime = frame
 		}
 		if len(r.audio) > 0 {
 			r.write(ipc.MsgAudio, r.audio)
@@ -576,6 +582,19 @@ func (r *runner) run(in io.Reader, open Open) error {
 		r.write(ipc.MsgSaveRAM, ram)
 	}
 	return r.writeErr()
+}
+
+// framePeriod is how long a frame lasts, for a game of this rate shown on a screen of that one:
+// the screen's, when it's within ipc.DisplayPaceLimit of the game's own.
+func framePeriod(gameFPS, displayHz float64) time.Duration {
+	if gameFPS <= 0 {
+		gameFPS = 60
+	}
+	rate := gameFPS
+	if displayHz > 0 && math.Abs(displayHz/gameFPS-1) <= ipc.DisplayPaceLimit {
+		rate = displayHz
+	}
+	return time.Duration(float64(time.Second) / rate)
 }
 
 // waitForFrame sleeps until the next frame is due. A button pressed in the meantime ends

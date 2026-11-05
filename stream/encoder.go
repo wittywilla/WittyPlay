@@ -215,6 +215,9 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 	hardware := isHardware(name)
 	scale := scaleFor(hdr.Width, hardware)
 	bps := int(float64(bitrate(s.opt.Quality, hdr.Width*scale, hdr.Height*scale)) * s.rates.rate())
+	if c := s.capBpsLocked(); c > 0 && bps > c {
+		bps = c // a limit someone watching chose
+	}
 	gop := int(fps + 0.5)
 	if gop < 10 {
 		gop = 10
@@ -800,7 +803,7 @@ func (s *Session) startOpusLocked() {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx, s.cfg.FFmpeg, "-hide_banner", "-loglevel", "error", "-nostdin", "-fflags", "+nobuffer",
-		"-f", "s16le", "-ar", strconv.Itoa(int(s.rate)), "-ac", "2", "-i", "pipe:0", "-vn",
+		"-f", "s16le", "-ar", strconv.Itoa(int(s.pcmRateLocked()+0.5)), "-ac", "2", "-i", "pipe:0", "-vn",
 		"-c:a", "libopus", "-ar", "48000", "-b:a", "96k", "-application", "lowdelay", "-frame_duration", "10",
 		"-flush_packets", "1", "-page_duration", "10000", "-f", "ogg", "pipe:1")
 	hideWindow(cmd)
