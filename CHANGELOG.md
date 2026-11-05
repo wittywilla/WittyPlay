@@ -7,6 +7,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 - **WittyPlay 0.3.5:** steadier streaming on a busy machine, and `wittyplay-probe` builds on macOS and FreeBSD, so CI is green again. There it reads a process's memory from `ps`, and has no count of open files.
 - **"The connection dropped" no longer comes up for a picture that's only late.** The player started a new connection whenever the picture stopped for 4 s, which on a busy machine was every few minutes, though the connection was fine. It now waits while the server's own watchdogs bring the picture back, says it's waiting, and starts again only when the connection has really gone. A reconnection that takes under 1.5 s says nothing. Over 19 minutes on a busy machine: 7 drops before, none after ([#16](https://github.com/wittywilla/WittyPlay/issues/16)).
+- **A busy machine no longer makes the picture worse, and stop.** The server took a round trip that was slow for a moment for a full network, cut the bitrate, and started the encoder again, which stops the picture briefly. Round trips now have to stay slow for four reports in a row, and one over a second doesn't count; loss counts as before. Over 19 minutes on a busy machine: 22 bitrate changes and 45 encoder starts before, 6 and 8 after ([#21](https://github.com/wittywilla/WittyPlay/issues/21)).
 
 - **WittyPlay 0.3.4:** 0.3.3 was tagged and never released: a sandbox test failed on GitHub's runners, which don't allow a private mount. Its fallback was always there.
 

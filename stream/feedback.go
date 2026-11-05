@@ -77,6 +77,13 @@ func (s *Session) restartEncoderLocked(codec string, now time.Time) {
 // How what's sent follows the network. A steady picture matters more than a sharp one, so
 // it comes down quickly and goes back up slowly. A change means a new encoder and so a
 // keyframe, which is itself a burst on the network, so changes are kept far apart.
+//
+// Round trips that grow say a queue is filling, but only when they stay grown: a queue takes
+// seconds to fill and to drain. A machine that's busy for a moment, the server's or the
+// browser's, answers late once or twice and then catches up, and that's no reason to make the
+// picture worse and stop it while a new encoder starts. Measured on one busy machine, the
+// browser on loopback reported round trips of 45 ms, 133 ms, 3.6 s and 4.3 s against a usual
+// 1 to 3, each followed by a step down and back.
 const (
 	rateLossLimit   = 0.03                    // more than this lost means the network is full
 	rateRTTGrowth   = 40 * time.Millisecond   // round trips this far over the best seen mean its queues are filling
@@ -90,6 +97,8 @@ const (
 	rateChangeHeavy = 1500 * time.Millisecond // the least time between changes for that
 	rateRTTMemory   = 30 * time.Second        // how long the best round trip counts for
 	rateSettle      = 3 * time.Second         // how long after connecting before reports count
+	rateRTTReports  = 4                       // reports in a row with grown round trips before they count
+	rateRTTSane     = time.Second             // a longer one is a stalled machine, not a queue
 )
 
 // rateControl is how much of its full bitrate the game's video gets, for all its viewers.
@@ -98,6 +107,7 @@ type rateControl struct {
 	scale        float64
 	badReports   int
 	heavyReports int
+	slowReports  int // in a row, with round trips grown
 	lastChange   time.Time
 	lastBad      time.Time
 	bestRTT      time.Duration
@@ -133,10 +143,18 @@ func (c *rateControl) note(lost float64, rtt time.Duration, now time.Time) bool 
 	} else {
 		c.heavyReports = 0
 	}
+	if rtt > rateRTTSane {
+		rtt, c.slowReports = 0, 0 // a stalled machine, which also explains the slow ones before it
+	}
 	if rtt > 0 && (c.bestRTT == 0 || rtt < c.bestRTT || now.Sub(c.bestRTTAt) > rateRTTMemory) {
 		c.bestRTT, c.bestRTTAt = rtt, now
 	}
-	bad := lost > rateLossLimit || (rtt > 0 && c.bestRTT > 0 && rtt > c.bestRTT+rateRTTGrowth+c.bestRTT/2)
+	if rtt > 0 && c.bestRTT > 0 && rtt > c.bestRTT+rateRTTGrowth+c.bestRTT/2 {
+		c.slowReports++
+	} else if rtt > 0 {
+		c.slowReports = 0
+	}
+	bad := lost > rateLossLimit || c.slowReports >= rateRTTReports
 	if bad {
 		c.badReports++
 		c.lastBad = now
