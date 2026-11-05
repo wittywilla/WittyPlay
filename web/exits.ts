@@ -53,6 +53,9 @@ export class BackEntry {
     if (this.then) { this.finish(); return }
     if (this.skips > 0) { this.skips--; return }
     if (!this.pushed) return
+    // Something the page put over the menu (a sheet with an entry of its own) went: the menu is
+    // still where it was.
+    if (isOurs(this.history.state)) return
     this.pushed = false
     if (this.onBack()) this.opened()
   }

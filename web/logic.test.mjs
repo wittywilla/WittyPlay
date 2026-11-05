@@ -291,3 +291,13 @@ test('leaving still happens when a browser never says it went back', async () =>
   entry.popped()
   assert.equal(left, 1, 'once')
 })
+
+test('a sheet the page opens over the menu, with its own entry, closes first; the menu stays', () => {
+  const { h, entry, open } = menu(2)
+  h.pushState({ ...h.state, sheet: true }, '') // the website's own sheet, over the game menu
+  h.userBack(entry)
+  assert.equal(open.level, 2, 'Back closed the sheet, not a level of the menu')
+  assert.equal(entry.open, true)
+  h.userBack(entry)
+  assert.equal(open.level, 1, 'the next Back is the menu’s')
+})
