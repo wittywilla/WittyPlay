@@ -38,7 +38,7 @@ type rigFlags struct {
 	browser, browserArgs, listen, host, ffmpeg     string
 	encoders, kind, label, state, profile, latency string
 	impair, shots, swap                            string
-	loopback, noAutoAhead, watchScreen             bool
+	loopback, noAutoAhead, watchScreen, v2         bool
 }
 
 func addRigFlags(fs *flag.FlagSet) *rigFlags {
@@ -63,6 +63,7 @@ func addRigFlags(fs *flag.FlagSet) *rigFlags {
 	fs.BoolVar(&f.watchScreen, "watch-screen", false, "count black pictures the browser puts on the screen, through its debugger")
 	fs.StringVar(&f.swap, "swap", "", "how a new connection's picture replaces the old: empty for the player's way, 0.3.4 for the way it was")
 	fs.IntVar(&f.reconnectEvery, "reconnect-every", 0, "connect again this many seconds apart, to test the change between connections")
+	fs.BoolVar(&f.v2, "v2", false, "connect with version 2 of the stream, as the player does on a server that has it")
 	return f
 }
 
@@ -186,6 +187,27 @@ func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
 		_, _ = io.WriteString(w, sdp)
 	})
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, q *http.Request) { r.session().ServeWS(w, q, q.URL.Query().Get("video")) })
+	mux.HandleFunc("GET /stream", func(w http.ResponseWriter, q *http.Request) { r.session().ServeStream(w, q, false) })
+	mux.HandleFunc("POST /stream", func(w http.ResponseWriter, q *http.Request) {
+		var b struct {
+			Hello stream.Hello `json:"hello"`
+			SDP   string       `json:"sdp"`
+		}
+		if err := json.NewDecoder(io.LimitReader(q.Body, stream.MaxOfferSize+8192)).Decode(&b); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		got, err := r.session().Connect(q.Context(), b.Hello, b.SDP, false)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		if r.relay != nil {
+			got.SDP = r.relay.answer(got.SDP, f.udpPort)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(got)
+	})
 	mux.HandleFunc("/results", func(_ http.ResponseWriter, q *http.Request) {
 		b, _ := io.ReadAll(io.LimitReader(q.Body, 1<<20))
 		select {
@@ -245,6 +267,14 @@ func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
 		hostName = "127.0.0.1"
 	}
 	_, port, _ := net.SplitHostPort(ln.Addr().String())
+	if f.impair != "" {
+		// The page and the WebSocket modes go over TCP, through the same network.
+		tr, err := startTCPRelay(bindHost, ln.Addr().String(), im)
+		if err != nil {
+			return nil, err
+		}
+		_, port, _ = net.SplitHostPort(tr.addr())
+	}
 	q := url.Values{"seconds": {strconv.Itoa(f.seconds)}, "kind": {f.kind}, "label": {f.label}}
 	if f.latency != "" {
 		q.Set("latency", f.latency)
@@ -254,6 +284,9 @@ func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
 	}
 	if f.reconnectEvery > 0 {
 		q.Set("reconnectEvery", strconv.Itoa(f.reconnectEvery))
+	}
+	if f.v2 {
+		q.Set("v2", "1")
 	}
 	for k, v := range extraQuery {
 		q[k] = v

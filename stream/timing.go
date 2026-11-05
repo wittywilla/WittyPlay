@@ -181,7 +181,7 @@ func (v *viewer) setLatency(mode LatencyMode) {
 // counts, and it's limited to a few times a second however often it's asked.
 func (s *Session) shiftFrames(ms float64) {
 	s.viewMu.Lock()
-	one := len(s.viewers) == 1
+	one := s.watchersLocked() == 1
 	now := time.Now()
 	allowed := now.Sub(s.lastShift) > 200*time.Millisecond
 	if one && allowed {
@@ -205,7 +205,9 @@ func (v *viewer) sendTiming(t *frameTrace) {
 		}
 		return
 	}
-	if v.ws != nil {
+	if v.q != nil {
+		v.q.pushCtrl(websocketBinary, b) // before the frame it describes, which waits behind it
+	} else if v.ws != nil {
 		v.send(websocketBinary, b)
 	}
 }

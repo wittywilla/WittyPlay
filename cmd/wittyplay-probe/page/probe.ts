@@ -3,7 +3,7 @@
 // each picture, and posts what it measured. scripts/build-probe.mjs bundles it.
 
 import { LatencyMeter, Series, StampReader, watchVideo, type Presented } from '../../../web/latency'
-import { make, whenShown, type LatencyMode, type Transport, type TransportKind } from '../../../web/transport'
+import { make, whenShown, type Hello, type LatencyMode, type Signal, type StreamInfo, type Transport, type TransportKind } from '../../../web/transport'
 
 const q = new URLSearchParams(location.search)
 const setup = {
@@ -32,7 +32,17 @@ const signal = {
     return r.text()
   },
   wsUrl: (video: string) => `ws://${location.host}/ws?video=${video}`,
-}
+  // Version 2 of the stream, when asked for: the player's own way on a server that has it.
+  ...(q.get('v2') ? {
+    stream: async (hello: Hello, sdp: string) => {
+      const r = await fetch('/stream', { method: 'POST', body: JSON.stringify({ hello, sdp }) })
+      if (!r.ok) throw new Error(await r.text())
+      return r.json() as Promise<{ stream: StreamInfo; sdp: string }>
+    },
+    streamUrl: () => `ws://${location.host}/stream`,
+    hello: (): Hello => ({ v: 2, app: 'wittyplay-probe', device: 'probe', seats: [0] }),
+  } : {}),
+} as Signal
 
 // One stretch of measuring. A long run has many.
 class Window {

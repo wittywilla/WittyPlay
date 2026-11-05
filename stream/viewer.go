@@ -50,6 +50,27 @@ type viewer struct {
 	closed    atomic.Bool
 	evicted   atomic.Bool
 	closeOnce sync.Once
+
+	// Version 2 (connect.go). A version 1 viewer watches, and may drive any player nobody holds.
+	v2             bool
+	conn           string // its id in seats
+	hello          Hello
+	watch          bool   // it's shown the game; a controller only isn't
+	anySeat        bool   // it may drive any player nobody holds; under s.viewMu
+	audioWS        string // over a WebSocket: "opus", "pcm" or ""
+	away           bool
+	maxKbps        int
+	pendingLatency string // asked for in the hello, applied once it's connected
+	statsOn        atomic.Bool
+	sent           atomic.Int64  // bytes of picture and sound sent to it
+	hz             atomic.Uint64 // its screen's refresh rate, as float64 bits
+	rtt            atomic.Int64  // from WebRTC's reports, in nanoseconds
+	reportedRTT    atomic.Int64  // from its own reports, in nanoseconds
+	clientDelay    atomic.Int64  // the arrival delay it last reported, in nanoseconds
+	clientDelayAt  atomic.Int64  // when, in Unix nanoseconds
+	lost           atomic.Uint32 // the last share lost, in 256ths
+	q              *wsQueue      // a version 2 WebSocket's outgoing messages
+	early          earlyEvents   // events for it before its channel for them has opened
 }
 
 // How many browsers one game takes. Each offer costs a peer connection, with its sockets and
@@ -84,6 +105,9 @@ func (s *Session) attach(v *viewer) {
 	s.viewSeq++
 	v.seq = s.viewSeq
 	s.viewers[v] = true
+	if v.v2 {
+		s.updatePaceLocked()
+	}
 	var oldest *viewer
 	if len(s.viewers) > maxViewers {
 		for o := range s.viewers {
@@ -100,13 +124,17 @@ func (s *Session) attach(v *viewer) {
 	if v.codec == "h264" || v.codec == "vp8" {
 		s.replaceEncoderLocked(v.codec, time.Now(), true)
 	}
-	if v.pc != nil {
+	if v.wantsOpus() {
 		s.startOpusLocked()
 	}
 	s.applyPauseLocked()
 	s.viewMu.Unlock()
+	if v.pendingLatency != "" {
+		v.setLatency(latencyNamed(v.pendingLatency))
+	}
 	if oldest != nil {
 		oldest.evicted.Store(true)
+		oldest.endedFor(EndEvicted, "Too many devices are connected to this game, so the one connected longest was let go.")
 		oldest.close()
 	}
 	// A paused game makes no new frames, but a new viewer still needs a picture.
@@ -140,7 +168,7 @@ func (s *Session) dropPendingLocked(v *viewer) {
 // applyPauseLocked tells the runner whether to run: only with someone watching,
 // and not while a menu has paused it. It says so only when that has changed.
 func (s *Session) applyPauseLocked() {
-	paused := s.menuPaused || len(s.viewers) == 0
+	paused := s.menuPaused || s.watchersLocked() == 0
 	if paused == s.paused {
 		return
 	}
@@ -163,31 +191,46 @@ func (s *Session) detach(v *viewer) {
 		return
 	}
 	delete(s.viewers, v)
-	if len(s.viewers) == 0 {
+	if s.watchersLocked() == 0 {
 		s.noViewerSince = time.Now()
 		s.stopEncodersLocked()
 	} else if !s.anyWebRTCLocked() {
 		s.stopOpusLocked()
 	}
 	s.applyPauseLocked()
+	s.updatePaceLocked()
 	s.viewMu.Unlock()
 }
 
+// anyWebRTCLocked says whether anyone is listening to Opus: over WebRTC, or a version 2
+// WebSocket that asked for it.
 func (s *Session) anyWebRTCLocked() bool {
 	for v := range s.viewers {
-		if v.pc != nil {
+		if v.wantsOpus() {
 			return true
 		}
 	}
 	return false
 }
 
+// wantsOpus says whether this viewer is sent Opus.
+func (v *viewer) wantsOpus() bool {
+	return v.watch && ((v.pc != nil && v.audio != nil) || v.audioWS == "opus")
+}
+
 func (v *viewer) close() {
 	v.closeOnce.Do(func() {
 		v.closed.Store(true)
 		v.s.detach(v)
+		v.s.viewMu.Lock()
+		released := v.s.releaseSeatsLocked(v)
+		v.s.viewMu.Unlock()
+		v.s.releasePads(released)
 		if v.pc != nil {
 			_ = v.pc.Close()
+		}
+		if v.q != nil {
+			v.q.close()
 		}
 		if v.ws != nil {
 			reason := "the game has ended"
@@ -224,7 +267,15 @@ func (s *Session) deliverVideo(codec string, au AU, tr *frameTrace) {
 			v.waitKey.Store(false)
 			tr.RTP = v.video.write(au.Data, dur)
 			tr.Sent = time.Now().UnixNano()
+			v.sent.Add(int64(len(au.Data)))
 			v.sendTiming(tr)
+			continue
+		}
+		if v.q != nil {
+			s.deliverVideoV2(v, au, tr)
+			continue
+		}
+		if v.ws == nil {
 			continue
 		}
 		// A viewer that fell behind waits for the next keyframe, because its
@@ -250,8 +301,15 @@ func (s *Session) deliverVideo(codec string, au AU, tr *frameTrace) {
 func (s *Session) deliverJPEG(b []byte) {
 	s.bytesOut.Add(int64(len(b)))
 	for _, v := range s.snapshotViewers() {
-		if v.codec == "jpeg" {
-			v.send(websocket.MessageBinary, append([]byte{wsJPEG}, b...))
+		if v.codec != "jpeg" || !v.watch {
+			continue
+		}
+		msg := append([]byte{wsJPEG}, b...)
+		v.sent.Add(int64(len(msg)))
+		if v.q != nil {
+			v.q.pushVideo(msg, true, time.Now())
+		} else {
+			v.send(websocket.MessageBinary, msg)
 		}
 	}
 }
@@ -305,9 +363,24 @@ func (s *Session) opusSender() {
 			}
 		}
 		next = next.Add(packet)
+		// One clock for the WebSocket's sound, in 48 kHz samples, which also jumps over gaps.
+		s.opusTS += uint32(gap) * 480
+		ts := s.opusTS
+		s.opusTS += 480
+		var ws []byte
 		for _, v := range s.snapshotViewers() {
 			if v.audio != nil {
 				_ = v.audio.WriteSample(media.Sample{Data: p, Duration: packet, PrevDroppedPackets: gap})
+				v.sent.Add(int64(len(p)))
+			} else if v.q != nil && v.audioWS == "opus" && v.watch {
+				if ws == nil {
+					ws = make([]byte, 5, 5+len(p))
+					ws[0] = wsOpus
+					binary.LittleEndian.PutUint32(ws[1:], ts)
+					ws = append(ws, p...)
+				}
+				v.sent.Add(int64(len(ws)))
+				v.q.pushCtrl(websocket.MessageBinary, ws)
 			}
 		}
 	}
@@ -325,29 +398,50 @@ func (s *Session) deliverPCM(b []byte) {
 	vs := s.snapshotViewers()
 	var msg []byte
 	for _, v := range vs {
-		if v.ws == nil {
+		if v.ws == nil || !v.watch || (v.v2 && v.audioWS != "pcm") {
 			continue
 		}
 		if msg == nil {
 			msg = make([]byte, 5, 5+len(b))
 			msg[0] = wsPCM
 			s.viewMu.Lock()
-			binary.LittleEndian.PutUint32(msg[1:], uint32(s.rate))
+			binary.LittleEndian.PutUint32(msg[1:], uint32(s.pcmRateLocked()+0.5))
 			s.viewMu.Unlock()
 			msg = append(msg, b...)
 		}
-		v.send(websocket.MessageBinary, msg)
+		v.sent.Add(int64(len(msg)))
+		if v.q != nil {
+			v.q.pushCtrl(websocket.MessageBinary, msg)
+		} else {
+			v.send(websocket.MessageBinary, msg)
+		}
 	}
 }
 
 func (s *Session) broadcastEvent(b []byte) {
 	for _, v := range s.snapshotViewers() {
-		if dc := v.events.Load(); dc != nil {
-			_ = dc.SendText(string(b))
-		} else if v.ws != nil {
-			v.send(websocket.MessageText, b)
-		}
+		v.sendEvent(b)
 	}
+}
+
+// sendEvent sends one event to one viewer, however it's connected.
+func (v *viewer) sendEvent(b []byte) {
+	if dc := v.events.Load(); dc != nil {
+		_ = dc.SendText(string(b))
+	} else if v.q != nil {
+		v.q.pushCtrl(websocket.MessageText, b)
+	} else if v.ws != nil {
+		v.send(websocket.MessageText, b)
+	} else if v.v2 {
+		// Its events channel isn't open yet: kept until it is.
+		v.early.add(b)
+	}
+}
+
+// endedFor tells one viewer its connection is ending, and why.
+func (v *viewer) endedFor(code, text string) {
+	b, _ := json.Marshal(map[string]string{"type": "ended", "code": code, "text": text})
+	v.sendEvent(b)
 }
 
 // send queues a message without waiting, and reports whether it fit.
@@ -422,6 +516,16 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if codec == "" {
 		return "", errors.New("this browser and this server have no video format in common")
 	}
+	return s.peer(ctx, &viewer{s: s, codec: codec, watch: true, anySeat: true}, offer)
+}
+
+// peer makes the server's side of a WebRTC connection for a viewer, and answers its offer. A
+// viewer that isn't watching gets no picture or sound, only the data channels.
+func (s *Session) peer(ctx context.Context, v *viewer, offer string) (string, error) {
+	codec := v.codec
+	if codec == "" {
+		codec = "h264" // what the engine registers; nothing is sent
+	}
 	me := &webrtc.MediaEngine{}
 	videoCap := webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264, ClockRate: 90000, SDPFmtpLine: "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f"}
 	if codec == "vp8" {
@@ -470,33 +574,37 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if err != nil {
 		return "", err
 	}
-	v := &viewer{s: s, codec: codec, pc: pc}
+	v.pc = pc
 	v.connected.Store(time.Now())
 	s.holdPending(v)
 	fail := func(err error) (string, error) { v.close(); return "", err }
 
-	video, err := newVideoSender(codec, videoCap)
-	if err != nil {
-		return fail(err)
+	var video *videoSender
+	var audio *webrtc.TrackLocalStaticSample
+	var tracks []webrtc.TrackLocal
+	if v.watch {
+		if video, err = newVideoSender(codec, videoCap); err != nil {
+			return fail(err)
+		}
+		// Its own stream, not the video's: tracks of one stream are held back to match each
+		// other, and sound's small buffer would become the picture's delay. Both follow the
+		// same clock in real time, so they can't drift apart.
+		if audio, err = webrtc.NewTrackLocalStaticSample(audioCap, "audio", "wittyplay-audio"); err != nil {
+			return fail(err)
+		}
+		v.video, v.audio = video, audio
+		tracks = []webrtc.TrackLocal{video.track, audio}
 	}
-	// Its own stream, not the video's: tracks of one stream are held back to match each
-	// other, and sound's small buffer would become the picture's delay. Both follow the
-	// same clock in real time, so they can't drift apart.
-	audio, err := webrtc.NewTrackLocalStaticSample(audioCap, "audio", "wittyplay-audio")
-	if err != nil {
-		return fail(err)
-	}
-	v.video, v.audio = video, audio
 	if err := pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: offer}); err != nil {
 		return fail(err)
 	}
 	var videoSender *webrtc.RTPSender
-	for _, track := range []webrtc.TrackLocal{video.track, audio} {
+	for _, track := range tracks {
 		sender, err := pc.AddTrack(track)
 		if err != nil {
 			return fail(err)
 		}
-		if track == webrtc.TrackLocal(video.track) {
+		if video != nil && track == webrtc.TrackLocal(video.track) {
 			videoSender = sender
 		}
 		go func() { // the interceptors act on what arrives here
@@ -505,7 +613,7 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 				if err != nil {
 					return
 				}
-				if track == webrtc.TrackLocal(video.track) {
+				if video != nil && track == webrtc.TrackLocal(video.track) {
 					s.noteFeedback(v, pkts)
 				}
 			}
@@ -515,12 +623,37 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 		switch dc.Label() {
 		case "input":
 			dc.OnMessage(func(m webrtc.DataChannelMessage) {
-				if !m.IsString {
-					s.Input(m.Data)
+				if m.IsString {
+					return
 				}
+				// Timing may come this way too, and its answers go back the same way.
+				if v.timingMessage(m.Data, func(b []byte) { _ = dc.Send(b) }) {
+					return
+				}
+				s.inputFrom(v, m.Data)
 			})
 		case "events":
-			dc.OnOpen(func() { v.events.Store(dc) })
+			dc.OnOpen(func() {
+				if v.v2 {
+					// The first event says what it's getting, and who has which player.
+					b, _ := json.Marshal(s.streamInfo(v))
+					_ = dc.SendText(string(b))
+					for _, e := range v.early.take() {
+						_ = dc.SendText(string(e))
+					}
+				}
+				v.events.Store(dc)
+				for _, e := range v.early.take() {
+					_ = dc.SendText(string(e))
+				}
+			})
+			if v.v2 {
+				dc.OnMessage(func(m webrtc.DataChannelMessage) {
+					if m.IsString {
+						s.clientText(v, m.Data)
+					}
+				})
+			}
 		case "timing":
 			dc.OnOpen(func() { v.timing.Store(dc) })
 			dc.OnMessage(func(m webrtc.DataChannelMessage) {
@@ -547,9 +680,11 @@ func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, err
 	if err := pc.SetLocalDescription(answer); err != nil {
 		return fail(err)
 	}
-	video.useExtensions(videoSender)
-	if enc := videoSender.GetParameters().Encodings; len(enc) > 0 {
-		v.videoSSRC.Store(uint32(enc[0].SSRC))
+	if videoSender != nil {
+		video.useExtensions(videoSender)
+		if enc := videoSender.GetParameters().Encodings; len(enc) > 0 {
+			v.videoSSRC.Store(uint32(enc[0].SSRC))
+		}
 	}
 	select {
 	case <-gathered:
@@ -600,7 +735,7 @@ func (s *Session) ServeWS(w http.ResponseWriter, r *http.Request, mode string) {
 		return
 	}
 	c.SetReadLimit(4096)
-	v := &viewer{s: s, codec: mode, ws: c, out: make(chan wsMessage, 16)}
+	v := &viewer{s: s, codec: mode, ws: c, out: make(chan wsMessage, 16), watch: true, anySeat: true}
 	v.waitKey.Store(true)
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
@@ -634,7 +769,7 @@ func (s *Session) ServeWS(w http.ResponseWriter, r *http.Request, mode string) {
 		}
 		if t == websocket.MessageBinary {
 			if !v.timingMessage(b, func(out []byte) { v.send(websocket.MessageBinary, out) }) {
-				s.Input(b)
+				s.inputFrom(v, b)
 			}
 		}
 	}

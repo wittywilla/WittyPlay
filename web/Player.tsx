@@ -14,14 +14,15 @@ import { downloadBlob, fileName, loadSchema, useSettings, type Level, type Schem
 import { ControllerStudio, type PortChoice, type ProfileHost } from './Studio'
 import { ConsoleChips } from './Panels'
 import { TouchControls, TouchEditor, useOrientation } from './TouchControls'
-import { make, plan, TRANSPORT_LABELS, whenShown, type AudioBuffer_, type LatencyMode, type Mode, type PlayEvent, type Transport, type TransportKind } from './transport'
+import { make, plan, TRANSPORT_LABELS, whenShown, type AudioBuffer_, type Hello, type LatencyMode, type Mode, type PlayEvent, type Signal, type StreamInfo, type Transport, type TransportKind } from './transport'
+import { measureRefresh, screenNow } from './refresh'
 import './play.css'
 
 // The player: one game, full window. The server does the running; this shows it
 // and passes controllers along. Everything it needs from the app comes through
 // PlayHost, so the module works in any app that can provide one.
 
-export type SessionInfo = { id: string; itemId: number; title: string; console: string; core: string; width: number; height: number; aspect: number; fps: number; sampleRate: number; resumed: boolean; encoder?: string; renderer?: string; turns?: number; disc?: number; discs?: number; modes: { id: string }[]; devices?: PortChoice[]; safeMode?: boolean; maxSpeed?: number; notices?: string[] }
+export type SessionInfo = { id: string; itemId: number; title: string; console: string; core: string; width: number; height: number; aspect: number; fps: number; sampleRate: number; resumed: boolean; encoder?: string; renderer?: string; turns?: number; disc?: number; discs?: number; modes: { id: string; stream?: number }[]; devices?: PortChoice[]; safeMode?: boolean; maxSpeed?: number; notices?: string[] }
 export type SaveSlot = { slot: number; updatedAt: number; size: number; hasThumb: boolean; core?: string }
 export type PrepareStatus = { state: 'ready' | 'waiting' | 'reading' | 'unpacking'; done: number; total: number }
 
@@ -42,6 +43,9 @@ export interface PlayHost extends SettingsHost {
   stop(sessionId: string): Promise<void>
   answer(sessionId: string, sdp: string, prefer?: string): Promise<string>
   wsUrl(sessionId: string, video: string): string
+  // Version 2 of the stream (the server's docs/GAMING-STREAM.md), on servers that have it.
+  stream?(sessionId: string, hello: Hello, sdp: string): Promise<{ stream: StreamInfo; sdp: string }>
+  streamUrl?(sessionId: string): string
   action(sessionId: string, type: string, slot?: number, on?: boolean, extra?: { port?: number; device?: number; value?: number; key?: string; text?: string }): Promise<any>
   controls(device: string): Promise<ControlsData>
   saveControl(s: SaveControl): Promise<void>
@@ -193,7 +197,8 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   const setLevel = (l: Level) => { setLevelState(l); save(LEVEL_KEY, l) }
 
   const onEvent = useCallback((e: PlayEvent) => {
-    if (e.type === 'rumble') input.rumble(e.port || 0, e.strength || 0, e.effect || 0)
+    if (e.type === 'rumble') input.rumble(e.port || 0, e.strength || 0, e.effect || 0, e.ms || 0)
+    else if (e.type === 'error' && e.code === 'seat-taken' && e.text) say(e.text)
     else if (e.type === 'message' && e.text) say(e.text)
     else if (e.type === 'shutdown') { say('The game has ended'); leave() }
     else if (e.type === 'ended') {
@@ -222,9 +227,16 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       transportRef.current = null
       setTransport(null)
     }
-    const signal = {
+    // Version 2 where the server offers it for every mode this player may use.
+    const v2 = !!(host.stream && host.streamUrl) && (s.modes || []).some((x) => x.stream === 2)
+    const signal: Signal = {
       answer: (sdp: string, prefer?: string) => host.answer(s.id, sdp, prefer),
       wsUrl: (video: string) => host.wsUrl(s.id, video),
+      ...(v2 ? {
+        stream: (hello: Hello, sdp: string) => host.stream!(s.id, hello, sdp),
+        streamUrl: () => host.streamUrl!(s.id),
+        hello: (): Hello => ({ v: 2, app: 'WittyPlay web', device: deviceId(), seats: input.ports(), display: screenNow(), latency: (valuesRef.current['emulation.latency'] as string) || 'auto' }),
+      } : {}),
     }
     let last = ''
     for (const kind of plan(m, (s.modes || []).map((x) => x.id))) {
@@ -336,9 +348,18 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       setError(e?.message || 'The game could not start.')
     })
     input.start()
+    // The screen's rate, for the server to keep the game to it: said as soon as it's known.
+    measureRefresh((hz) => transportRef.current?.control?.({ type: 'report', hz }))
+    let held = ''
     input.onChange = () => {
       const pads = input.listPads()
       setPadName(pads.length ? pads.map((p) => `${p.name}: Player ${p.port + 1}`).join(', ') : '')
+      // The server is told which players this device holds now: version 2's seats.
+      const ports = input.ports()
+      if (ports.join() !== held) {
+        held = ports.join()
+        transportRef.current?.control?.({ type: 'seats', ports })
+      }
     }
     input.onChange()
     return () => {

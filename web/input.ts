@@ -70,7 +70,7 @@ type PadSlot = {
   map: PadMap; profile: Profile | null; compiled: Compiled; reading: Reading; lastStamp: number
 }
 
-type Motors = { strong: number; weak: number; timer: number }
+type Motors = { strong: number; weak: number; timer: number; until: [number, number] }
 
 export class InputManager {
   onChange?: () => void // the list of controllers changed
@@ -348,6 +348,13 @@ export class InputManager {
     this.onChange?.()
   }
   get keyboardPlayer() { return this.keyboardPort }
+  // The players this device drives: its pads', its keyboard's and its touch screen's.
+  ports(): number[] {
+    const out = new Set<number>([this.keyboardPort, this.touchPort])
+    for (const s of this.slots.values()) out.add(s.port)
+    return [...out].filter((p) => p >= 0 && p < MAX_PLAYERS).sort((a, b) => a - b)
+  }
+
   setKeyboardPort(port: number) { this.keyboardPort = port; this.flush(true); this.onChange?.() }
   get touchPlayer() { return this.touchPort }
   setTouchPort(port: number) { this.touchPort = port; this.flush(true); this.onChange?.() }
@@ -525,19 +532,25 @@ export class InputManager {
 
   // ---- rumble ----
 
-  // effect 0 is the strong motor and 1 the weak one, each 0 to 65535.
-  rumble(port: number, strength: number, effect = 0) {
+  // effect 0 is the strong motor and 1 the weak one, each 0 to 65535. ms, from a server with
+  // version 2 of the stream, is how long it lasts unless it's said again: the server renews a
+  // motor that's still on, so one that isn't renewed (a lost connection) stops by itself.
+  rumble(port: number, strength: number, effect = 0, ms = 0) {
     let m = this.motors.get(port)
-    if (!m) { m = { strong: 0, weak: 0, timer: 0 }; this.motors.set(port, m) }
+    if (!m) { m = { strong: 0, weak: 0, timer: 0, until: [0, 0] }; this.motors.set(port, m) }
     const level = Math.max(0, Math.min(1, strength / 0xffff))
     if (effect === 1) m.weak = level
     else m.strong = level
+    m.until[effect === 1 ? 1 : 0] = ms > 0 && level > 0 ? performance.now() + ms : 0
     this.applyRumble(port, m)
   }
 
   private applyRumble(port: number, m: Motors) {
     clearTimeout(m.timer)
     m.timer = 0
+    const now = performance.now()
+    if (m.until[0] && now > m.until[0]) { m.strong = 0; m.until[0] = 0 }
+    if (m.until[1] && now > m.until[1]) { m.weak = 0; m.until[1] = 0 }
     if (this.hidden || !this.enabled) return
     let done = false
     const on = m.strong > 0 || m.weak > 0
