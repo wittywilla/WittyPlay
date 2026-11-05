@@ -786,6 +786,10 @@ func checkGame(c *config, j job) (r Result) {
 		return r
 	}
 	p.dual = wittyplay.Pad(j.console.ID).Pointer
+	// As a server gives it: a sheet in other capitals lined up, a lone raw disc given one.
+	if d, err := stream.DiscFile(rom, saveDir); err == nil {
+		rom = d
+	}
 	if c.trace {
 		p.trace, _ = os.Create(filepath.Join(c.out, fmt.Sprintf("trace-%s-%d.log", j.core.id, j.index)))
 		defer p.trace.Close()

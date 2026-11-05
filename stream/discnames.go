@@ -2,7 +2,9 @@ package stream
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -20,11 +22,21 @@ const maxSheet = 1 << 20
 
 const discFolderName = ".disc-names"
 
+// DiscFile is the file a game session gives a core for rom, preparing it in saveDir as one
+// does: for a tool that loads games itself and should see them as a server would.
+func DiscFile(rom, saveDir string) (string, error) { return discFolder(rom, saveDir) }
+
 // discFolder returns the file to give a core: rom itself when every name in its sheet is
 // right, or a copy of the sheet in a folder under saveDir beside links to the real files.
 func discFolder(rom, saveDir string) (string, error) {
 	folder := filepath.Join(saveDir, discFolderName)
 	_ = os.RemoveAll(folder) // whatever the last game left, if it was killed
+	if sheet, err := rawDiscSheet(rom, folder); err != nil || sheet != "" {
+		if err != nil {
+			return rom, err
+		}
+		return sheet, nil
+	}
 	links := map[string]string{}
 	var sheets []string
 	if err := collectNames(rom, 0, links, &sheets); err != nil {
@@ -47,6 +59,65 @@ func discFolder(rom, saveDir string) (string, error) {
 		}
 	}
 	return filepath.Join(folder, filepath.Base(rom)), nil
+}
+
+// rawDiscSheet gives a disc kept as a lone .bin of raw CD sectors, with no sheet, a sheet of
+// its own. Some cores read such a file as if it held only data, and Play! crashes on one (#31);
+// a sheet naming it as one track of raw sectors is what they need. The sheet goes in the same
+// folder as the ones above, beside a link to the file, or naming it in full where no link can
+// be made (Windows, without the right to make one). Anything else gives "".
+func rawDiscSheet(rom, folder string) (string, error) {
+	if !strings.EqualFold(filepath.Ext(rom), ".bin") {
+		return "", nil
+	}
+	mode := rawSectorMode(rom)
+	if mode == 0 {
+		return "", nil
+	}
+	base := strings.TrimSuffix(filepath.Base(rom), filepath.Ext(rom))
+	// One that came with a sheet is that sheet's to describe.
+	if entries, err := os.ReadDir(filepath.Dir(rom)); err == nil {
+		for _, e := range entries {
+			if strings.EqualFold(e.Name(), base+".cue") {
+				return "", nil
+			}
+		}
+	}
+	if err := os.MkdirAll(folder, 0o700); err != nil {
+		return "", err
+	}
+	name := filepath.Base(rom)
+	if err := os.Symlink(rom, filepath.Join(folder, name)); err != nil && !errors.Is(err, os.ErrExist) {
+		if strings.ContainsRune(rom, '"') {
+			return "", nil // no way to name it in a sheet; the core gets it as it is
+		}
+		name = rom
+	}
+	sheet := filepath.Join(folder, base+".cue")
+	body := fmt.Sprintf("FILE \"%s\" BINARY\r\n  TRACK 01 MODE%d/2352\r\n    INDEX 01 00:00:00\r\n", name, mode)
+	if err := os.WriteFile(sheet, []byte(body), 0o600); err != nil {
+		return "", err
+	}
+	return sheet, nil
+}
+
+// rawSectorMode says whether a file starts with a raw CD sector, by its sync pattern, and
+// which mode it is in: 1 or 2, or 0 for anything else, such as a cartridge kept as a .bin.
+func rawSectorMode(path string) int {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0
+	}
+	defer f.Close()
+	var b [16]byte
+	if _, err := io.ReadFull(f, b[:]); err != nil {
+		return 0
+	}
+	sync := []byte{0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0}
+	if !bytes.Equal(b[:12], sync) || b[15] != 1 && b[15] != 2 {
+		return 0
+	}
+	return int(b[15])
 }
 
 // collectNames finds the names a sheet uses that don't exist as written but do in other
