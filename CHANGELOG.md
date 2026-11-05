@@ -5,6 +5,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
+- **WittyPlay 0.3.5:** `wittyplay-probe` builds on macOS and FreeBSD, so CI is green again. There it reads a process's memory from `ps`, and has no count of open files.
+
 - **WittyPlay 0.3.4:** 0.3.3 was tagged and never released: a sandbox test failed on GitHub's runners, which don't allow a private mount. Its fallback was always there.
 
 - **WittyPlay 0.3.3:** Homebrew built with libdragon plays on the Nintendo 64: it goes to ParaLLEl N64 with the settings it needs, and without that core the message says so.
