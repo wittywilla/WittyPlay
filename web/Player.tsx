@@ -9,6 +9,7 @@ import { Osd } from './Osd'
 import { MenuFrame, Tile, TileGrid } from './QuickMenu'
 import { LoadingScreen, ProblemScreen, type LoadStage } from './Screens'
 import { explain, type ProblemData } from './words'
+import { BackEntry } from './exits'
 import { CheatsPanel, CorePanel, JsonEditor, PatchesPanel, SettingsPanel, SlotsPanel, type LevelChoice } from './Panels'
 import { downloadBlob, fileName, loadSchema, useSettings, type Level, type Schema, type SettingsHost } from './settings'
 import { ControllerStudio, type PortChoice, type ProfileHost } from './Studio'
@@ -60,6 +61,8 @@ type Panel = null | 'menu' | 'more' | 'settings' | 'save' | 'load' | 'controller
 // What Back goes to from each screen. Anything not listed goes to the game menu.
 const PARENT: Partial<Record<NonNullable<Panel>, NonNullable<Panel>>> = { display: 'settings', osd: 'settings', emulation: 'settings', audio: 'settings', states: 'settings', hotkeys: 'settings', core: 'settings', cheats: 'settings', patches: 'settings', json: 'settings', connection: 'more', discs: 'more' }
 const parentOf = (p: NonNullable<Panel>): Panel => (p === 'menu' ? null : PARENT[p] || 'menu')
+// Where Esc, a controller's B and Back go from each: up a level, the touch editor as its Cancel.
+const upFrom = (p: NonNullable<Panel>): Panel => (p === 'touch' ? 'menu' : parentOf(p))
 
 const MODE_KEY = 'wittyplay.mode'
 const TOUCH_KEY = 'wittyplay.touch'
@@ -133,6 +136,12 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   const [touchOverPad, setTouchOverPad] = useState(false) // asked for touch controls even with a controller
   const [transport, setTransport] = useState<Transport | null>(null)
   const [panel, setPanel] = useState<Panel>(null)
+  const panelRef = useRef<Panel>(null)
+  panelRef.current = panel
+  // Back on a phone, in a browser or on a mouse closes what's open over the game, a level at a
+  // time, rather than leaving the game (exits.ts).
+  const backOut = useRef<() => boolean>(() => false)
+  const backEntry = useMemo(() => new BackEntry(window.history, () => backOut.current()), [])
   const [needsTap, setNeedsTap] = useState(false)
   const [stalled, setStalled] = useState(false) // the picture has stopped on a connection that's up
   const [toast, setToast] = useState('')
@@ -390,9 +399,11 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     const s = sessionRef.current
     sessionRef.current = null
     setStatus('Saving…')
-    if (s) host.stop(s.id).then(done, done)
-    else done()
-  }, [host, input])
+    // A menu's entry in the history goes first, so the page left doesn't stay behind it.
+    const go = () => backEntry.release(done)
+    if (s) host.stop(s.id).then(go, go)
+    else go()
+  }, [host, input, backEntry])
   const leave = useCallback(() => leaveThen(() => host.close()), [host, leaveThen])
   const leaveRef = useRef(leave)
   leaveRef.current = leave
@@ -612,6 +623,27 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   }
   const mayLeave = useRef(mayLeavePanel)
   mayLeave.current = mayLeavePanel
+  backOut.current = () => {
+    const p = panelRef.current
+    if (!p) return false
+    if (!mayLeave.current()) return true
+    const next = upFrom(p)
+    setPanel(next)
+    return next !== null
+  }
+  useEffect(() => {
+    const pop = () => backEntry.popped()
+    window.addEventListener('popstate', pop)
+    return () => window.removeEventListener('popstate', pop)
+  }, [backEntry])
+  const anyOpen = panel !== null
+  useEffect(() => { if (anyOpen) backEntry.opened(); else backEntry.closed() }, [anyOpen, backEntry])
+  // Closed: the keyboard, a remote and a controller are the game's again, and it carries on as it was.
+  const wasOpen = useRef(false)
+  useEffect(() => {
+    if (anyOpen) { wasOpen.current = true; return }
+    if (wasOpen.current) { wasOpen.current = false; root.current?.focus({ preventScroll: true }) }
+  }, [anyOpen])
 
   // Escape, or Start and Select together on a pad, opens the menu.
   useEffect(() => {
@@ -622,7 +654,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       e.preventDefault()
       if (noGameRef.current) { leaveRef.current(); return }
       if (!mayLeave.current()) return
-      setPanel((p) => (p === 'touch' ? p : p ? parentOf(p) : 'menu'))
+      setPanel((p) => (p ? upFrom(p) : 'menu'))
     }
     window.addEventListener('keydown', key)
     input.onMenu = () => { if (mayLeave.current()) setPanel((x) => (x ? null : 'menu')) }
@@ -638,7 +670,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     if (menuRef.current) menuRef.current.scrollTop = 0
     const remembered = panel && lastTile.current[panel]
     const back = remembered ? menuRef.current?.querySelector<HTMLElement>(`[data-tile="${remembered}"]:not([disabled])`) : null
-    const first = back || menuRef.current?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled]), a[href]')
+    const first = back || menuRef.current?.querySelector<HTMLElement>('button:not([disabled]):not([data-bar]), input:not([disabled]), a[href]')
     first?.focus({ preventScroll: true })
   }, [panel])
   const noteTile = (e: React.MouseEvent) => {
@@ -703,7 +735,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   const tile = { onClickCapture: noteTile }
   const rewindOn = values['emulation.rewind'] === true
   return (
-    <div ref={root} className={`wp-root wp-${orientation}${touchShown ? ' wp-with-touch' : ''}${paused || noGame ? '' : ' wp-playing'}`}>
+    <div ref={root} tabIndex={-1} className={`wp-root wp-${orientation}${touchShown ? ' wp-with-touch' : ''}${paused || noGame ? '' : ' wp-playing'}`}>
       <div ref={areaRef} className="wp-video-area" style={bezel === 'color' ? { background: String(values['display.bezelColor'] || '#000') } : undefined}>
         {bezel === 'image' && !!values['display.bezelImage'] && <img className="wp-bezel-img" src={host.mediaUrl(`/api/game-bezels/${values['display.bezelImage']}`)} alt="" />}
         <div className={'wp-stage' + (hasPointer ? ' wp-has-pointer' : '')} style={{ width: layout.boxW, height: layout.boxH }}
@@ -776,6 +808,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       {panel && panel !== 'touch' && panel !== 'controllers' && (
         <div className={'wp-menu-back' + (SIDE_PANELS.includes(panel) ? ' wp-side' : '') + (panel === 'menu' || panel === 'settings' || panel === 'more' ? ' wp-big' : '')} onClick={() => { if (mayLeavePanel()) setPanel(null) }}>
           <div ref={menuRef} className="wp-menu" role="dialog" aria-modal="true" aria-label={panelTitle(panel, host.title)} onClick={(e) => e.stopPropagation()} {...tile}>
+            <SheetBar onUp={panel === 'menu' ? undefined : () => { if (mayLeavePanel()) up() }} onClose={() => { if (mayLeavePanel()) setPanel(null) }} />
             {panel === 'menu' && (
               <MenuFrame title={host.title} sub={[host.consoleName, info?.core].filter(Boolean).join(' · ')} cover={host.cover}
                 foot={!padName && padSupport() === 'insecure' ? <p className="wp-muted wp-small">Using a gamepad? Most browsers only show them to secure pages. Open this server over https, or at localhost on this computer.</p> : undefined}>
@@ -950,9 +983,11 @@ export function ControllersPage({ profiles, controls, controllers, consoles, con
   // Escape, and the many names of Back on a TV remote.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (touch || !['Escape', 'GoBack', 'BrowserBack', 'Back', 'XF86Back'].includes(e.key)) return
+      if (!['Escape', 'GoBack', 'BrowserBack', 'Back', 'XF86Back'].includes(e.key)) return
       e.preventDefault()
-      onClose()
+      // In the touch editor, the same as its Cancel.
+      if (touch) setTouch(false)
+      else onClose()
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
@@ -973,5 +1008,20 @@ export function ControllersPage({ profiles, controls, controllers, consoles, con
 }
 
 const panelTitle = (p: Panel, title: string) => ({ menu: title, settings: 'Settings', more: 'More', save: 'Save state', load: 'Load state', controllers: 'Controllers', connection: 'Connection', touch: 'Touch controls', discs: 'Change disc', core: 'Core options', cheats: 'Cheats', patches: 'Patches', json: 'Custom settings file', ...GROUP_TITLES } as Record<string, string>)[p as string]
+
+// Every sheet over the game keeps its ways out in view, however far it scrolls: Back a level, and
+// × straight back to the game. Esc, a controller's B, Back and a tap outside do the same.
+function SheetBar({ onUp, onClose }: { onUp?: () => void; onClose: () => void }) {
+  return (
+    <div className="wp-sheet-bar">
+      {onUp && <button type="button" data-bar className="wp-btn wp-sheet-up" onClick={onUp}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>Back</button>}
+      <span className="wp-grow" />
+      <button type="button" data-bar className="wp-btn wp-sheet-close" onClick={onClose} aria-label="Back to the game" title="Back to the game (Esc)">
+        <span className="wp-sheet-close-text" aria-hidden="true">Back to the game</span>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+      </button>
+    </div>
+  )
+}
 
 const Back = ({ onClick }: { onClick: () => void }) => <div className="wp-row"><span className="wp-grow" /><button type="button" className="wp-btn" onClick={onClick}>Back</button></div>
