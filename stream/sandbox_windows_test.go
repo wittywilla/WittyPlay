@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -45,8 +46,19 @@ func TestStartingARunnerLeavesNoHandleBehind(t *testing.T) {
 
 // The token and job the server gives a runner, tried on a copy of this test
 // program: it may write to its save folder and nowhere else, and it can't start
-// another program.
+// another program. Without a memory limit too, as a server that sent none got: Windows
+// refused all of the job's limits then, with "The parameter is incorrect" (#3).
 func TestWindowsSandbox(t *testing.T) {
+	if os.Getenv("WITTYPLAY_SANDBOX_CHILD") == "1" {
+		sandboxChild(t)
+		return
+	}
+	for _, mb := range []int64{2048, 0} {
+		t.Run(fmt.Sprintf("%d MB", mb), func(t *testing.T) { sandboxParent(t, mb) })
+	}
+}
+
+func sandboxChild(t *testing.T) {
 	if os.Getenv("WITTYPLAY_SANDBOX_CHILD") == "1" {
 		save := os.Getenv("WITTYPLAY_SAVE")
 		if err := os.WriteFile(filepath.Join(save, "ok"), []byte("x"), 0o644); err != nil {
@@ -59,8 +71,10 @@ func TestWindowsSandbox(t *testing.T) {
 		if err := exec.Command(os.Args[0], "-test.list=x").Run(); err == nil {
 			t.Fatal("starting a program should fail inside the job")
 		}
-		return
 	}
+}
+
+func sandboxParent(t *testing.T, memoryMB int64) {
 	save, outside := t.TempDir(), t.TempDir()
 	var logs bytes.Buffer
 	log := slog.New(slog.NewTextHandler(&logs, nil))
@@ -73,12 +87,12 @@ func TestWindowsSandbox(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The child is racing the job here, but the run takes far longer than this.
-	release := lockDown(cmd, 2048, log)
+	release := lockDown(cmd, memoryMB, log)
 	defer release()
 	if err := cmd.Wait(); err != nil {
 		t.Fatalf("%v\n%s\nlogs: %s", err, out.String(), logs.String())
 	}
-	if logs.Len() > 0 {
+	if memoryMB > 0 && logs.Len() > 0 || strings.Contains(logs.String(), "job limits") {
 		t.Fatalf("the sandbox did not fully apply: %s", logs.String())
 	}
 	if _, err := os.Stat(filepath.Join(outside, "escape")); err == nil {

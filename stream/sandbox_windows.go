@@ -104,12 +104,29 @@ func lockDown(cmd *exec.Cmd, memoryMB int64, log *slog.Logger) func() {
 		log.Warn("sandbox: no job object", "err", err)
 		return func() {}
 	}
+	// Windows takes these together or not at all, and refuses a memory limit of nothing. So
+	// one that can't be set is said, and the rest are set without it.
 	info := windows.JOBOBJECT_EXTENDED_LIMIT_INFORMATION{}
-	info.BasicLimitInformation.LimitFlags = windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | windows.JOB_OBJECT_LIMIT_PROCESS_MEMORY |
-		windows.JOB_OBJECT_LIMIT_ACTIVE_PROCESS | windows.JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION
+	info.BasicLimitInformation.LimitFlags = windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | windows.JOB_OBJECT_LIMIT_ACTIVE_PROCESS | windows.JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION
 	info.BasicLimitInformation.ActiveProcessLimit = 1
-	info.ProcessMemoryLimit = uintptr(memoryMB) << 20
-	if _, err := windows.SetInformationJobObject(job, windows.JobObjectExtendedLimitInformation, uintptr(unsafe.Pointer(&info)), uint32(unsafe.Sizeof(info))); err != nil {
+	if memoryMB > 0 {
+		info.BasicLimitInformation.LimitFlags |= windows.JOB_OBJECT_LIMIT_PROCESS_MEMORY
+		info.ProcessMemoryLimit = uintptr(memoryMB) << 20
+	} else {
+		log.Warn("sandbox: no memory limit was given, so the runner has none")
+	}
+	set := func() error {
+		_, err := windows.SetInformationJobObject(job, windows.JobObjectExtendedLimitInformation, uintptr(unsafe.Pointer(&info)), uint32(unsafe.Sizeof(info)))
+		return err
+	}
+	if err := set(); err != nil && info.ProcessMemoryLimit != 0 {
+		log.Warn("sandbox: the memory limit was refused, so the runner has none", "memoryMB", memoryMB, "err", err)
+		info.BasicLimitInformation.LimitFlags &^= windows.JOB_OBJECT_LIMIT_PROCESS_MEMORY
+		info.ProcessMemoryLimit = 0
+		if err := set(); err != nil {
+			log.Warn("sandbox: job limits", "err", err)
+		}
+	} else if err != nil {
 		log.Warn("sandbox: job limits", "err", err)
 	}
 	h, err := windows.OpenProcess(windows.PROCESS_SET_QUOTA|windows.PROCESS_TERMINATE, false, uint32(cmd.Process.Pid))

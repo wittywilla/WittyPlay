@@ -11,6 +11,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - **No black flash on a reconnection.** The new picture goes in underneath, and the old one stays up until the new one is on the screen. Reconnecting every 10 s for 4 minutes: 12 black flashes before, none after ([#17](https://github.com/wittywilla/WittyPlay/issues/17)).
 - **A paused game costs less.** With a menu open, its still picture is sent again four times a second rather than twenty, each one encoded again ([#22](https://github.com/wittywilla/WittyPlay/issues/22)).
 - The web bundle is built with vite 8, as the server's app is, and esbuild is a development dependency of its own for the tests and the probe page ([#29](https://github.com/wittywilla/WittyPlay/issues/29)).
+- **Windows: the sandbox's job limits apply again** ("The parameter is incorrect"). The module keeps its usual settings for whatever the server leaves out ([#3](https://github.com/wittywilla/WittyPlay/issues/3)).
 
 - **WittyPlay 0.3.4:** 0.3.3 was tagged and never released: a sandbox test failed on GitHub's runners, which don't allow a private mount. Its fallback was always there.
 

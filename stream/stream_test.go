@@ -599,3 +599,14 @@ func TestStoppingAnEncoderEarlyIsNoFailure(t *testing.T) {
 		t.Fatal("the encoder was blamed for being stopped")
 	}
 }
+
+// A server sends its settings as a whole, and had no memory limits among them: the runner
+// then got none, and on Windows none of its job's limits applied (#3).
+func TestSettingsFromAServerKeepTheUsualLimits(t *testing.T) {
+	m := NewManager(Config{})
+	m.Configure(func(c *Config) { *c = Config{Runner: "runner", MaxSessions: 3} })
+	got := m.config()
+	if got.MemoryMB != 2048 || got.GPUMemoryMB != 8192 || got.MaxGPU != 2 || got.MaxSessions != 3 || got.HaveEncoder == nil || got.Log == nil {
+		t.Fatalf("after Configure: memory %d, GPU memory %d, GPU games %d, sessions %d, encoders known %v, log %v", got.MemoryMB, got.GPUMemoryMB, got.MaxGPU, got.MaxSessions, got.HaveEncoder != nil, got.Log != nil)
+	}
+}

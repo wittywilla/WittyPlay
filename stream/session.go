@@ -154,6 +154,12 @@ type Manager struct {
 
 // NewManager makes a manager; sessions start with Start.
 func NewManager(cfg Config) *Manager {
+	cfg.defaults()
+	return &Manager{cfg: cfg, log: cfg.Log, sessions: map[string]*Session{}, badEnc: map[string]bool{}}
+}
+
+// defaults fills in what was left at zero, which the fields above say the meaning of.
+func (cfg *Config) defaults() {
 	if cfg.MaxSessions <= 0 {
 		cfg.MaxSessions = 2
 	}
@@ -172,14 +178,16 @@ func NewManager(cfg Config) *Manager {
 	if cfg.HaveEncoder == nil {
 		cfg.HaveEncoder = func(string) bool { return true }
 	}
-	return &Manager{cfg: cfg, log: cfg.Log, sessions: map[string]*Session{}, badEnc: map[string]bool{}}
 }
 
-// Configure replaces the settings new sessions use.
+// Configure replaces the settings new sessions use. What it leaves at zero means the same as
+// it does to NewManager: a server that sends its settings as a whole, with no memory limit
+// among them, gets the usual limits rather than none.
 func (m *Manager) Configure(update func(*Config)) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	update(&m.cfg)
+	m.cfg.defaults()
 }
 
 func (m *Manager) config() Config {
