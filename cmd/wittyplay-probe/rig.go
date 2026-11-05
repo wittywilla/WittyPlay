@@ -38,7 +38,7 @@ type rigFlags struct {
 	browser, browserArgs, listen, host, ffmpeg     string
 	encoders, kind, label, state, profile, latency string
 	impair, shots                                  string
-	loopback, noAutoAhead                          bool
+	loopback, noAutoAhead, watchScreen             bool
 }
 
 func addRigFlags(fs *flag.FlagSet) *rigFlags {
@@ -60,6 +60,7 @@ func addRigFlags(fs *flag.FlagSet) *rigFlags {
 	fs.StringVar(&f.impair, "impair", "", "a network to go through: delay=30,jitter=5,loss=2,kbps=3000,queue=100, in ms, percent and kilobits")
 	fs.BoolVar(&f.noAutoAhead, "no-auto-run-ahead", false, "leave automatic run-ahead off")
 	fs.StringVar(&f.shots, "shots", "", "a folder for pictures of what the browser shows and what the core made, side by side")
+	fs.BoolVar(&f.watchScreen, "watch-screen", false, "count black pictures the browser puts on the screen, through its debugger")
 	return f
 }
 
@@ -80,15 +81,17 @@ type rig struct {
 	cancel   context.CancelFunc
 	cmd      *exec.Cmd
 	cleanups []func()
+	screen   screenWatch
 }
 
 type beatInfo struct {
-	Frames     int       `json:"frames"`
-	Seq        int       `json:"seq"`
-	Reconnects int       `json:"reconnects"`
-	Recoveries []float64 `json:"recoveries"`
-	Heap       int64     `json:"heap"`
-	Hidden     bool      `json:"hidden"`
+	Frames     int            `json:"frames"`
+	Seq        int            `json:"seq"`
+	Reconnects int            `json:"reconnects"`
+	Recoveries []float64      `json:"recoveries"`
+	DropWhy    map[string]int `json:"dropWhy"`
+	Heap       int64          `json:"heap"`
+	Hidden     bool           `json:"hidden"`
 }
 
 func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
@@ -311,6 +314,10 @@ func (r *rig) startBrowser() error {
 	if f.loopback {
 		a = append(a, "--allow-loopback-in-peer-connection")
 	}
+	if f.watchScreen {
+		a = append(a, "--remote-debugging-port=0")
+		_ = os.Remove(filepath.Join(dir, "DevToolsActivePort"))
+	}
 	if f.browserArgs != "" {
 		a = append(a, strings.Fields(f.browserArgs)...)
 	}
@@ -322,6 +329,9 @@ func (r *rig) startBrowser() error {
 		return err
 	}
 	r.cancel, r.cmd = cancel, cmd
+	if f.watchScreen {
+		go r.screen.watch(ctx, dir, r.addr)
+	}
 	return nil
 }
 

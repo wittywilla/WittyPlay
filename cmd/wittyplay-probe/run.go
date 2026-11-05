@@ -65,6 +65,7 @@ type pageResults struct {
 	Waits      []float64          `json:"waitTrace"`
 	Shifted    float64            `json:"shifted"`
 	Recoveries []float64          `json:"recoveries"`
+	DropWhy    map[string]int     `json:"dropWhy"`
 	Heap       int64              `json:"heap"`
 	Colours    struct {
 		Error int     `json:"error"`
@@ -111,7 +112,7 @@ func report(b []byte, label, out string, sess *stream.Session) error {
 	fmt.Println("  colours, worst error out of 255:", r.Colours.Error, "seen:", r.Colours.Seen)
 	fmt.Printf("  moved frames by %.1f ms; waits for the display over time: %v\n", r.Shifted, r.Waits)
 	if len(r.Recoveries) > 0 {
-		fmt.Println("  came back after a lost connection, ms:", r.Recoveries)
+		fmt.Println("  came back after a lost connection, ms:", r.Recoveries, "why:", r.DropWhy)
 	}
 	if out != "" {
 		f, err := os.OpenFile(out, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)

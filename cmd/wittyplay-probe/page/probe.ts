@@ -40,6 +40,8 @@ class Window {
   misfiled: Record<string, number> = {}
   waitTrace: number[] = []
   bad = 0
+  dark = 0 // frames decoded black after a picture had been seen
+  darkRuns = 0
   read = 0
   skipped = 0
   out = 0
@@ -51,6 +53,7 @@ let win = new Window()
 let meterShared = win.meter
 let lostAt = 0
 const recoveries: number[] = []
+const dropWhy: Record<string, number> = {}
 let totalFrames = 0
 let lastFrameSeq = 0
 let reconnecting = false
@@ -58,8 +61,9 @@ let reconnecting = false
 // The player's way of coming back: the old picture stays up until a new one is ready.
 async function connect(first: boolean) {
   const t = make(setup.kind, signal)
-  t.onLost = () => {
+  t.onLost = (why) => {
     if (current !== t || reconnecting) return
+    dropWhy[why] = (dropWhy[why] || 0) + 1
     lostAt = performance.now()
     void reconnect()
   }
@@ -95,6 +99,36 @@ async function reconnect() {
 
 // From the pixels alone: which frame is on the screen, and which press it has seen.
 const reader = new StampReader()
+
+// Whether a frame the browser decoded is black, from the middle of the picture: the stamps
+// are along the top. A black frame only counts once the game has shown something else.
+class Darkness {
+  private c: CanvasRenderingContext2D
+  private lit = false
+  private inRun = false
+  constructor() {
+    const canvas = document.createElement('canvas')
+    canvas.width = 16
+    canvas.height = 16
+    this.c = canvas.getContext('2d', { willReadFrequently: true })!
+  }
+  check(source: HTMLVideoElement | HTMLCanvasElement, w: number, h: number, win: Window) {
+    if (!w || !h) return
+    try {
+      this.c.drawImage(source, w / 4, h / 4, w / 2, h / 2, 0, 0, 16, 16)
+      const d = this.c.getImageData(0, 0, 16, 16).data
+      let sum = 0
+      for (let i = 0; i < d.length; i += 4) sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+      const dark = sum / 256 < 12
+      if (!dark) { this.lit = true; this.inRun = false; return }
+      if (!this.lit) return
+      win.dark++
+      if (!this.inRun) win.darkRuns++
+      this.inRun = true
+    } catch { /* a frame that can't be read is counted elsewhere */ }
+  }
+}
+const darkness = new Darkness()
 const pressedAt = new Map<number, number>()
 const later = new Map<number, Presented>()
 let unwatch: (() => void) | null = null
@@ -134,6 +168,7 @@ function watch(t: Transport) {
       traceWaits = []
     }
     const size = (v as any).videoWidth ? [v.videoWidth, v.videoHeight] : [(v as any).width, (v as any).height]
+    darkness.check(v, size[0], size[1], win)
     const s = reader.read(v, size[0], size[1])
     if (!s) { win.bad++; return }
     win.read++
@@ -188,7 +223,7 @@ function startPressing() {
 
 function sendBeats() {
   setInterval(() => {
-    void post('/beat', { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, heap: (performance as any).memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {})
+    void post('/beat', { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, dropWhy, heap: (performance as any).memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {})
   }, 250)
 }
 
@@ -199,8 +234,8 @@ function report(w: Window, stats: unknown) {
     frames: Object.fromEntries(Object.entries(m.frames).map(([k, s]) => [k, summary(s)])),
     presses: Object.fromEntries(Object.entries(m.presses).map(([k, s]) => [k, summary(s)])),
     glass: summary(w.glass), photon: summary(w.photon), madeToHanded: summary(w.handed), interval: summary(w.gaps),
-    pixels: { read: w.read, bad: w.bad, skipped: w.skipped, out: w.out, pressCount: w.presses }, misfiled: w.misfiled, stats, waitTrace: w.waitTrace, shifted: (current as any)?.lock?.shifted,
-    recoveries, heap: (performance as any).memory?.usedJSHeapSize || 0,
+    pixels: { read: w.read, bad: w.bad, skipped: w.skipped, out: w.out, pressCount: w.presses, dark: w.dark, darkRuns: w.darkRuns }, misfiled: w.misfiled, stats, waitTrace: w.waitTrace, shifted: (current as any)?.lock?.shifted,
+    recoveries, dropWhy, heap: (performance as any).memory?.usedJSHeapSize || 0,
   }
 }
 

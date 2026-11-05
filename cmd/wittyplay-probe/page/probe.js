@@ -1,5 +1,5 @@
 (() => {
-  // ../../../../WittyPlay/.claude/worktrees/games-streaming/web/latency.ts
+  // web/latency.ts
   var TIMING_PING = 241;
   var TIMING_PONG = 242;
   var TIMING_SUBSCRIBE = 243;
@@ -179,6 +179,7 @@
       const value = (s) => s.count ? s.median : void 0;
       return {
         press: this.presses.photon.count >= 3 ? this.presses.photon.median : void 0,
+        frames: f.total.count,
         total: f.total.median,
         core: value(f.core),
         encode: value(f.encode),
@@ -388,7 +389,7 @@
     }
   };
 
-  // ../../../../WittyPlay/.claude/worktrees/games-streaming/web/direct.ts
+  // web/direct.ts
   var hasDirect = () => typeof window.VideoDecoder !== "undefined" && typeof window.EncodedVideoChunk !== "undefined" && typeof RTCRtpReceiver !== "undefined" && "createEncodedStreams" in RTCRtpReceiver.prototype;
   var DirectVideo = class {
     constructor(signal2) {
@@ -496,7 +497,7 @@
     }
   };
 
-  // ../../../../WittyPlay/.claude/worktrees/games-streaming/web/transport.ts
+  // web/transport.ts
   var AUDIO_HOLD = { lowest: 0, balanced: 0.06, smooth: 0.15 };
   var TimingLink = class {
     constructor(out) {
@@ -546,8 +547,109 @@
     return new WSTransport(signal2, kind);
   }
   var FIRST_FRAME_MS = 12e3;
-  var DISCONNECTED_MS = 2500;
-  var STALLED_MS = 4e3;
+  var STALL_MS = 1500;
+  var STUCK_MS = 5e3;
+  var SILENT_MS = 35e3;
+  var DISCONNECTED_MS = 8e3;
+  var LATE_TICK_MS = 3e3;
+  var Watchdog = class {
+    constructor(pc, count, lost, onStall, ownDecoded) {
+      this.pc = pc;
+      this.count = count;
+      this.lost = lost;
+      this.onStall = onStall;
+      this.ownDecoded = ownDecoded;
+    }
+    timer = 0;
+    leaving = 0;
+    lastTick = 0;
+    shown = -1;
+    shownAt = 0;
+    bytes = -1;
+    bytesAt = 0;
+    decoded = -1;
+    decodedAt = 0;
+    checking = false;
+    stalled = false;
+    done = false;
+    start() {
+      const now = performance.now();
+      this.lastTick = this.shownAt = this.bytesAt = this.decodedAt = now;
+      this.timer = window.setInterval(() => this.tick(), 1e3);
+    }
+    stop() {
+      this.done = true;
+      clearInterval(this.timer);
+      clearTimeout(this.leaving);
+    }
+    // From the connection's state changes.
+    state(st) {
+      if (st === "failed" || st === "closed") return this.lost(st);
+      clearTimeout(this.leaving);
+      if (st === "disconnected") this.leaving = window.setTimeout(() => this.disconnected(), DISCONNECTED_MS);
+    }
+    // Still disconnected. Pictures still arriving mean it isn't gone at all.
+    disconnected() {
+      if (this.done || this.pc.connectionState !== "disconnected") return;
+      if (performance.now() - this.shownAt < STALL_MS) {
+        this.leaving = window.setTimeout(() => this.disconnected(), DISCONNECTED_MS);
+        return;
+      }
+      this.lost("disconnected");
+    }
+    setStalled(on) {
+      if (on === this.stalled) return;
+      this.stalled = on;
+      this.onStall(on);
+    }
+    tick() {
+      const now = performance.now();
+      const late = now - this.lastTick > LATE_TICK_MS;
+      this.lastTick = now;
+      if (document.hidden || late) {
+        this.shownAt = this.bytesAt = this.decodedAt = now;
+        return;
+      }
+      const n = this.count();
+      if (n < 0) return;
+      if (n !== this.shown) {
+        this.shown = n;
+        this.shownAt = now;
+        this.setStalled(false);
+        return;
+      }
+      if (now - this.shownAt < STALL_MS) return;
+      this.setStalled(true);
+      if (this.checking) return;
+      this.checking = true;
+      void this.pc.getStats().then((report2) => {
+        if (this.done) return;
+        let bytes = 0, decoded = 0;
+        report2.forEach((s) => {
+          if (s.type === "inbound-rtp" && s.kind === "video") {
+            bytes = s.bytesReceived || 0;
+            decoded = s.framesDecoded || 0;
+          }
+        });
+        if (this.ownDecoded) decoded = this.ownDecoded();
+        const t = performance.now();
+        if (bytes !== this.bytes) {
+          this.bytes = bytes;
+          this.bytesAt = t;
+        }
+        if (decoded !== this.decoded) {
+          this.decoded = decoded;
+          this.decodedAt = t;
+        }
+        const arriving = t - this.bytesAt < STALL_MS + 1e3;
+        if (arriving && t - this.decodedAt > STUCK_MS) this.lost("decoder stuck");
+        else if (t - this.bytesAt > SILENT_MS) this.lost("nothing arriving");
+      }).catch(() => {
+      }).finally(() => {
+        this.checking = false;
+      });
+    }
+  };
   var WebRTCTransport = class {
     constructor(signal2) {
       this.signal = signal2;
@@ -562,6 +664,7 @@
     element;
     onEvent;
     onLost;
+    onWaiting;
     pc = null;
     input = null;
     muted = false;
@@ -585,10 +688,8 @@
     unlock = null;
     lock = null;
     // what's moving the frames, for the test page to look at
-    leaving = 0;
-    watchdog = 0;
-    framesSeen = -1;
-    framesAt = 0;
+    onStall;
+    watchdog = null;
     gone = false;
     async connect() {
       const pc = new RTCPeerConnection();
@@ -626,39 +727,27 @@
         this.setLatency(this.latency);
       };
       this.timingDc = timing;
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "failed" || pc.connectionState === "closed") this.lost();
-        clearTimeout(this.leaving);
-        if (pc.connectionState === "disconnected") this.leaving = window.setTimeout(() => this.lost(), DISCONNECTED_MS);
-      };
+      const v = this.element;
+      const watchdog = new Watchdog(pc, () => v.getVideoPlaybackQuality ? v.getVideoPlaybackQuality().totalVideoFrames : -1, (why) => this.lost(why), (on) => this.onStall?.(on));
+      this.watchdog = watchdog;
+      pc.onconnectionstatechange = () => watchdog.state(pc.connectionState);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await gathered(pc, 1500);
       const answer = await this.signal.answer(pc.localDescription.sdp);
       await pc.setRemoteDescription({ type: "answer", sdp: answer });
       await this.play();
+      this.onWaiting?.();
       await firstFrame(this.element, FIRST_FRAME_MS);
-      this.watchdog = window.setInterval(() => this.checkFrames(), 1e3);
+      if (this.gone) throw new Error(`the connection went while starting (${this.goneWhy})`);
+      if (!this.closed) watchdog.start();
     }
-    lost() {
+    goneWhy = "";
+    lost(why) {
       if (this.closed || this.gone) return;
       this.gone = true;
-      this.onLost?.();
-    }
-    // The server keeps sending frames even while a game is paused or loading, so a picture
-    // that has stopped on a page someone can see means something in between has stuck: the
-    // decoder, the network or the browser. Starting the connection again clears any of them.
-    checkFrames() {
-      const now = performance.now();
-      if (document.hidden) {
-        this.framesAt = now;
-        return;
-      }
-      const count = this.element.getVideoPlaybackQuality?.().totalVideoFrames ?? -1;
-      if (count !== this.framesSeen) {
-        this.framesSeen = count;
-        this.framesAt = now;
-      } else if (count >= 0 && now - this.framesAt > STALLED_MS) this.lost();
+      this.goneWhy = why;
+      this.onLost?.(why);
     }
     async play() {
       try {
@@ -710,8 +799,7 @@
       this.link.stop();
       this.unwatch?.();
       this.unlock?.();
-      clearTimeout(this.leaving);
-      clearInterval(this.watchdog);
+      this.watchdog?.stop();
       this.pc?.close();
       this.element.srcObject = null;
     }
@@ -795,6 +883,7 @@
     element;
     onEvent;
     onLost;
+    onWaiting;
     pc = null;
     input = null;
     timingDc = null;
@@ -813,10 +902,8 @@
     closed = false;
     gone = false;
     meter = null;
-    watchdog = 0;
-    seen = 0;
-    seenAt = 0;
-    leaving = 0;
+    watchdog = null;
+    onStall;
     prev = null;
     async connect() {
       if (!hasDirect()) throw new Error("this browser cannot take frames as they arrive");
@@ -830,7 +917,7 @@
         const r = e.receiver;
         const { readable, writable } = r.createEncodedStreams();
         if (e.track.kind === "video") {
-          void this.video.pump(readable).catch(() => this.lost());
+          void this.video.pump(readable).catch(() => this.lost("decoder"));
           return;
         }
         if ("jitterBufferTarget" in r) r.jitterBufferTarget = 0;
@@ -859,11 +946,10 @@
         if (this.meter) this.link.start(this.meter);
       };
       this.timingDc = timing;
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "failed" || pc.connectionState === "closed") this.lost();
-        clearTimeout(this.leaving);
-        if (pc.connectionState === "disconnected") this.leaving = window.setTimeout(() => this.lost(), DISCONNECTED_MS);
-      };
+      const drawn = () => this.video.framesDrawn;
+      const watchdog = new Watchdog(pc, drawn, (why) => this.lost(why), (on) => this.onStall?.(on), drawn);
+      this.watchdog = watchdog;
+      pc.onconnectionstatechange = () => watchdog.state(pc.connectionState);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await gathered(pc, 1500);
@@ -872,23 +958,21 @@
       void this.sound.play().catch(() => {
         this.muted = true;
       });
+      this.onWaiting?.();
       const start = performance.now();
       while (this.video.framesDrawn === 0) {
         if (performance.now() - start > FIRST_FRAME_MS) throw new Error("no picture arrived");
         await new Promise((r) => setTimeout(r, 20));
       }
-      this.seenAt = performance.now();
-      this.watchdog = window.setInterval(() => {
-        if (document.hidden || this.video.framesDrawn !== this.seen) {
-          this.seen = this.video.framesDrawn;
-          this.seenAt = performance.now();
-        } else if (performance.now() - this.seenAt > STALLED_MS) this.lost();
-      }, 1e3);
+      if (this.gone) throw new Error(`the connection went while starting (${this.goneWhy})`);
+      if (!this.closed) watchdog.start();
     }
-    lost() {
+    goneWhy = "";
+    lost(why) {
       if (this.closed || this.gone) return;
       this.gone = true;
-      this.onLost?.();
+      this.goneWhy = why;
+      this.onLost?.(why);
     }
     send(msg) {
       if (this.input?.readyState === "open") {
@@ -901,8 +985,7 @@
     close() {
       this.closed = true;
       this.link.stop();
-      clearTimeout(this.leaving);
-      clearInterval(this.watchdog);
+      this.watchdog?.stop();
       this.video.close();
       this.pc?.close();
       this.sound.srcObject = null;
@@ -994,6 +1077,7 @@
     element;
     onEvent;
     onLost;
+    onWaiting;
     ws = null;
     ctx;
     decoder = null;
@@ -1027,13 +1111,14 @@
         const ws = new WebSocket(this.signal.wsUrl(this.kind === "ws-h264" ? "h264" : "jpeg"));
         ws.binaryType = "arraybuffer";
         this.ws = ws;
+        ws.onopen = () => this.onWaiting?.();
         ws.onmessage = (m) => this.message(m.data);
         ws.onerror = () => {
           clearTimeout(t);
           reject(new Error("the connection failed"));
         };
-        ws.onclose = () => {
-          if (!this.closed) this.onLost?.();
+        ws.onclose = (e) => {
+          if (!this.closed) this.onLost?.(`closed (${e.code})`);
         };
       });
     }
@@ -1070,7 +1155,7 @@
         this.decoder?.close();
       } catch {
       }
-      await this.makeDecoder().catch(() => this.onLost?.());
+      await this.makeDecoder().catch(() => this.onLost?.("decoder"));
     }
     message(data) {
       if (typeof data === "string") {
@@ -1229,7 +1314,7 @@
     }
   };
 
-  // ../../../../WittyPlay/.claude/worktrees/games-streaming/cmd/wittyplay-probe/page/probe.ts
+  // cmd/wittyplay-probe/page/probe.ts
   var q = new URLSearchParams(location.search);
   var setup = {
     seconds: Number(q.get("seconds") || 30),
@@ -1265,6 +1350,9 @@
     misfiled = {};
     waitTrace = [];
     bad = 0;
+    dark = 0;
+    // frames decoded black after a picture had been seen
+    darkRuns = 0;
     read = 0;
     skipped = 0;
     out = 0;
@@ -1275,13 +1363,15 @@
   var meterShared = win.meter;
   var lostAt = 0;
   var recoveries = [];
+  var dropWhy = {};
   var totalFrames = 0;
   var lastFrameSeq = 0;
   var reconnecting = false;
   async function connect(first) {
     const t = make(setup.kind, signal);
-    t.onLost = () => {
+    t.onLost = (why) => {
       if (current !== t || reconnecting) return;
+      dropWhy[why] = (dropWhy[why] || 0) + 1;
       lostAt = performance.now();
       void reconnect();
     };
@@ -1316,6 +1406,38 @@
     await post("/results", { error: "it never came back" });
   }
   var reader = new StampReader();
+  var Darkness = class {
+    c;
+    lit = false;
+    inRun = false;
+    constructor() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 16;
+      canvas.height = 16;
+      this.c = canvas.getContext("2d", { willReadFrequently: true });
+    }
+    check(source, w, h, win2) {
+      if (!w || !h) return;
+      try {
+        this.c.drawImage(source, w / 4, h / 4, w / 2, h / 2, 0, 0, 16, 16);
+        const d = this.c.getImageData(0, 0, 16, 16).data;
+        let sum = 0;
+        for (let i = 0; i < d.length; i += 4) sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const dark = sum / 256 < 12;
+        if (!dark) {
+          this.lit = true;
+          this.inRun = false;
+          return;
+        }
+        if (!this.lit) return;
+        win2.dark++;
+        if (!this.inRun) win2.darkRuns++;
+        this.inRun = true;
+      } catch {
+      }
+    }
+  };
+  var darkness = new Darkness();
   var pressedAt = /* @__PURE__ */ new Map();
   var later = /* @__PURE__ */ new Map();
   var unwatch = null;
@@ -1356,6 +1478,7 @@
         traceWaits = [];
       }
       const size = v.videoWidth ? [v.videoWidth, v.videoHeight] : [v.width, v.height];
+      darkness.check(v, size[0], size[1], win);
       const s = reader.read(v, size[0], size[1]);
       if (!s) {
         win.bad++;
@@ -1416,7 +1539,7 @@
   }
   function sendBeats() {
     setInterval(() => {
-      void post("/beat", { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, heap: performance.memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {
+      void post("/beat", { frames: totalFrames, seq: lastFrameSeq, reconnects: recoveries.length, recoveries, dropWhy, heap: performance.memory?.usedJSHeapSize || 0, hidden: document.hidden }).catch(() => {
       });
     }, 250);
   }
@@ -1433,12 +1556,13 @@
       photon: summary(w.photon),
       madeToHanded: summary(w.handed),
       interval: summary(w.gaps),
-      pixels: { read: w.read, bad: w.bad, skipped: w.skipped, out: w.out, pressCount: w.presses },
+      pixels: { read: w.read, bad: w.bad, skipped: w.skipped, out: w.out, pressCount: w.presses, dark: w.dark, darkRuns: w.darkRuns },
       misfiled: w.misfiled,
       stats,
       waitTrace: w.waitTrace,
       shifted: current?.lock?.shifted,
       recoveries,
+      dropWhy,
       heap: performance.memory?.usedJSHeapSize || 0
     };
   }
