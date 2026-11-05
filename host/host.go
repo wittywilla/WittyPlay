@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"runtime"
 	"strings"
 	"sync"
@@ -51,6 +52,9 @@ type runner struct {
 
 	pointMu sync.Mutex
 	point   engine.PointerState
+	touches []engine.PointerState // every finger, under pointMu
+	motion  [engine.MaxPorts]engine.MotionState
+	leds    map[int]int
 
 	audio []byte
 	video []byte
@@ -267,6 +271,34 @@ func (r *runner) handlers() engine.Handlers {
 			defer r.pointMu.Unlock()
 			return r.point
 		},
+		Touches: func() []engine.PointerState {
+			r.pointMu.Lock()
+			defer r.pointMu.Unlock()
+			return append([]engine.PointerState(nil), r.touches...)
+		},
+		MotionOffered: func() { r.event(ipc.Event{Type: "motion", Port: -1, Offered: true}) },
+		MotionWanted: func(port int, accel, gyro bool, hz int) {
+			r.event(ipc.Event{Type: "motion", Port: port, Accel: accel, Gyro: gyro, Hz: min(max(hz, 0), 1000), Offered: true})
+		},
+		Motion: func(port int) engine.MotionState {
+			r.pointMu.Lock()
+			defer r.pointMu.Unlock()
+			if port < 0 || port >= engine.MaxPorts {
+				return engine.MotionState{}
+			}
+			return r.motion[port]
+		},
+		LED: func(index, state int) {
+			// As rumble: cores may say it every frame, and only a change is news.
+			if r.leds == nil {
+				r.leds = map[int]int{}
+			}
+			if old, ok := r.leds[index]; (ok && old == state) || index < 0 || index > 255 {
+				return
+			}
+			r.leds[index] = state
+			r.event(ipc.Event{Type: "led", Index: index, State: state})
+		},
 		Rumble: func(port, effect, strength int) {
 			// Cores repeat this every frame, and most of it says nothing new.
 			k := [2]int{port, effect}
@@ -355,6 +387,37 @@ func (r *runner) run(in io.Reader, open Open) error {
 				if x, y, pressed, ok := ipc.ParsePointer(p); ok {
 					r.pointMu.Lock()
 					r.point = engine.PointerState{X: x, Y: y, Pressed: pressed}
+					r.touches = r.touches[:0]
+					if pressed {
+						r.touches = append(r.touches, r.point)
+					}
+					r.pointMu.Unlock()
+				}
+				continue
+			}
+			if t == ipc.CmdTouches {
+				if list, ok := ipc.ParseTouches(p); ok {
+					r.pointMu.Lock()
+					r.touches = r.touches[:0]
+					for _, f := range list {
+						if f.Pressed {
+							r.touches = append(r.touches, engine.PointerState{X: f.X, Y: f.Y, Pressed: true})
+						}
+					}
+					// The pointer stays where the first finger is, or was.
+					if len(r.touches) > 0 {
+						r.point = r.touches[0]
+					} else {
+						r.point.Pressed = false
+					}
+					r.pointMu.Unlock()
+				}
+				continue
+			}
+			if t == ipc.CmdMotion {
+				if port, accel, gyro, ok := ipc.ParseMotion(p); ok && port < engine.MaxPorts {
+					r.pointMu.Lock()
+					r.motion[port] = engine.MotionState{Accel: accel, Gyro: gyro}
 					r.pointMu.Unlock()
 				}
 				continue
@@ -417,7 +480,8 @@ func (r *runner) run(in io.Reader, open Open) error {
 	r.ctl.sendOptions()
 	r.write(ipc.MsgReady, ready)
 
-	frame := time.Duration(float64(time.Second) / av.FPS)
+	gameFPS := av.FPS
+	frame := framePeriod(gameFPS, r.ctl.displayHz)
 	r.ctl.frameTime = frame
 	next := time.Now()
 	// A state can't always be restored before a core has run. Some cores say so, some
@@ -541,9 +605,13 @@ func (r *runner) run(in io.Reader, open Open) error {
 			}
 		}
 		if r.fps > 0 && r.fps <= 240 {
-			frame = time.Duration(float64(time.Second) / r.fps)
-			r.ctl.frameTime = frame
+			gameFPS = r.fps
 			r.fps = 0
+		}
+		// The game's own rate, or the screen's when it's close: see ipc.FramePeriod.
+		if f := framePeriod(gameFPS, r.ctl.displayHz); f != frame {
+			frame = f
+			r.ctl.frameTime = frame
 		}
 		if len(r.audio) > 0 {
 			r.write(ipc.MsgAudio, r.audio)
@@ -576,6 +644,19 @@ func (r *runner) run(in io.Reader, open Open) error {
 		r.write(ipc.MsgSaveRAM, ram)
 	}
 	return r.writeErr()
+}
+
+// framePeriod is how long a frame lasts, for a game of this rate shown on a screen of that one:
+// the screen's, when it's within ipc.DisplayPaceLimit of the game's own.
+func framePeriod(gameFPS, displayHz float64) time.Duration {
+	if gameFPS <= 0 {
+		gameFPS = 60
+	}
+	rate := gameFPS
+	if displayHz > 0 && math.Abs(displayHz/gameFPS-1) <= ipc.DisplayPaceLimit {
+		rate = displayHz
+	}
+	return time.Duration(float64(time.Second) / rate)
 }
 
 // waitForFrame sleeps until the next frame is due. A button pressed in the meantime ends

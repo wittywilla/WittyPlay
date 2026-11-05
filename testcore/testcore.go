@@ -28,13 +28,17 @@ type Core struct {
 	seed  uint32
 	frame []byte
 	audio []int16
-	saved [16]byte // the save memory: bytes 0-3 count presses of Start
+	saved [16]byte // the save memory: see Run for what each byte counts
 
 	// The machine state, everything a save state holds.
 	x, y     int16
 	tick     uint32
 	phase    uint32
 	lastPads uint16
+
+	// What the tests of input beyond one pad look at, outside the machine state.
+	lastPad6    uint16
+	motionAsked bool
 
 	device uint32 // which kind of controller is plugged in
 	// The settings and cheats it takes, so that a test can see them arrive.
@@ -137,12 +141,38 @@ func (c *Core) LoadGame(path string) (engine.AVInfo, error) {
 	return engine.AVInfo{BaseWidth: Width, BaseHeight: Height, MaxWidth: Width, MaxHeight: Height, Aspect: 4.0 / 3, FPS: FPS, SampleRate: Rate}, nil
 }
 
+// Run plays a frame. The save memory records what tests need to see arrive: bytes 0-3 count
+// presses of Start by the first player and 4-7 by the sixth; byte 8 is the most fingers seen on
+// the screen at once; bytes 10-11 the first player's accelerometer X, in hundredths of a metre a
+// second squared. Select lights LED 0, and A rumbles the first player's strong motor while held.
 func (c *Core) Run() {
-	var pad engine.PadState
+	var pad, pad6 engine.PadState
 	if c.h.Input != nil {
 		if in := c.h.Input(); in != nil {
-			pad = in[0]
+			pad, pad6 = in[0], in[5]
 		}
+	}
+	if pressed := pad6.Buttons &^ c.lastPad6; pressed&(1<<engine.ButtonStart) != 0 {
+		binary.LittleEndian.PutUint32(c.saved[4:], binary.LittleEndian.Uint32(c.saved[4:])+1)
+	}
+	c.lastPad6 = pad6.Buttons
+	if c.h.Touches != nil {
+		c.saved[8] = max(c.saved[8], byte(min(len(c.h.Touches()), 255)))
+	}
+	if !c.motionAsked && c.h.MotionWanted != nil {
+		c.motionAsked = true
+		if c.h.MotionOffered != nil {
+			c.h.MotionOffered()
+		}
+		c.h.MotionWanted(0, true, true, 60)
+	}
+	if c.h.Motion != nil {
+		if ax := c.h.Motion(0).Accel[0]; ax != 0 {
+			binary.LittleEndian.PutUint16(c.saved[10:], uint16(int16(ax*100)))
+		}
+	}
+	if changed := pad.Buttons ^ c.lastPads; changed&(1<<engine.ButtonSelect) != 0 && c.h.LED != nil {
+		c.h.LED(0, int(pad.Buttons>>engine.ButtonSelect&1))
 	}
 	const speed = 2
 	if pad.Buttons&(1<<engine.ButtonLeft) != 0 && c.x >= speed {
@@ -162,6 +192,9 @@ func (c *Core) Run() {
 	}
 	if pad.Buttons&(1<<engine.ButtonA) != 0 && c.h.Rumble != nil && c.lastPads&(1<<engine.ButtonA) == 0 {
 		c.h.Rumble(0, 0, 0xffff)
+	}
+	if pad.Buttons&(1<<engine.ButtonA) == 0 && c.h.Rumble != nil && c.lastPads&(1<<engine.ButtonA) != 0 {
+		c.h.Rumble(0, 0, 0)
 	}
 	c.lastPads = pad.Buttons
 	c.tick++

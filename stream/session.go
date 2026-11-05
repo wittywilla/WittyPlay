@@ -322,7 +322,7 @@ func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {
 	}
 	id := newID()
 	s := &Session{id: id, runnerSaid: tailWriter{max: 16 << 10}, m: m, opt: opt, cfg: cfg, log: m.log.With("game", opt.Title, "session", id), done: make(chan struct{}), paused: true, controlState: controlState{speed: 1, optionsSet: make(chan struct{})},
-		spawned: make(chan struct{}), viewers: map[*viewer]bool{}, stateWait: map[uint32]chan []byte{}, frameReady: make(chan struct{}, 1), lastInput: time.Now(), noViewerSince: time.Now(),
+		v2State: v2State{began: time.Now()}, spawned: make(chan struct{}), viewers: map[*viewer]bool{}, stateWait: map[uint32]chan []byte{}, frameReady: make(chan struct{}, 1), lastInput: time.Now(), noViewerSince: time.Now(),
 		audioCh: make(chan []byte, 32), opusOut: make(chan []byte, 32), stderr: &tailWriter{max: 1 << 16}}
 	m.sessions[id] = s
 	m.mu.Unlock()
@@ -394,10 +394,12 @@ func (m *Manager) sweep() {
 		for _, s := range all {
 			if s.idleTooLong() {
 				s.log.Info("stopping an unattended game")
+				s.endWith(EndIdle)
 				go s.Stop()
 			} else if s.stuck() {
 				s.log.Warn("the game has stopped making frames; ending it")
 				s.exitErr.CompareAndSwap(nil, "The emulator stopped responding while running this game. Another core may work; you can choose one in Settings, Consoles & cores.")
+				s.endWith(EndCrashed)
 				s.kill()
 			}
 		}
@@ -490,6 +492,7 @@ type Session struct {
 	wrote     sync.WaitGroup
 
 	controlState
+	v2State
 }
 
 // ID is the session's unguessable name.
@@ -829,6 +832,7 @@ func (s *Session) handleEvent(p []byte) {
 		return
 	case "shutdown":
 		s.log.Info("the game shut itself down")
+		s.endWith(EndQuit)
 	case "geometry":
 		s.noteGeometry(e)
 	case "rotation":
@@ -842,6 +846,15 @@ func (s *Session) handleEvent(p []byte) {
 		s.viewMu.Unlock()
 	case "avinfo":
 		s.noteGeometry(e)
+		if e.FPS > 0 && e.FPS <= 240 {
+			// A game that changes its own rate may now be close to a screen's, or no longer.
+			s.viewMu.Lock()
+			if s.info.FPS != e.FPS {
+				s.info.FPS = e.FPS
+				s.updatePaceLocked()
+			}
+			s.viewMu.Unlock()
+		}
 		if e.Rate > 0 && e.Rate <= 384000 {
 			s.viewMu.Lock()
 			if s.rate != e.Rate {
@@ -853,6 +866,17 @@ func (s *Session) handleEvent(p []byte) {
 			}
 			s.viewMu.Unlock()
 		}
+	}
+	switch e.Type {
+	case "rumble":
+		s.noteRumble(e.Port, e.Effect, e.Strength)
+		return
+	case "motion":
+		s.noteMotion(e)
+		return
+	case "led":
+		s.noteLED(e.Index, e.State)
+		return
 	}
 	e.Text = truncate(e.Text, 300)
 	b, _ := json.Marshal(e)
@@ -910,8 +934,10 @@ func (s *Session) Input(p []byte) {
 	}
 }
 
-// MaxPlayers is how many players a browser may drive.
-const MaxPlayers = 4
+// MaxPlayers is how many players a game takes input for: as many as a core with a multitap
+// can have, through libretro's ports: the runner's MaxPorts, which a test holds this to. The stream
+// says how many this game has.
+const MaxPlayers = 8
 
 // cleanDevices keeps what a runner says about controllers within reason: it's text that
 // reaches a page, from a process that may have been taken over.
@@ -1160,7 +1186,7 @@ func (s *Session) finish() {
 	if v := s.exitErr.Load(); v != nil && !s.stopping.Load() {
 		why = v.(string)
 	}
-	if b, err := json.Marshal(ipc.Event{Type: "ended", Text: truncate(why, 300)}); err == nil && len(s.snapshotViewers()) > 0 {
+	if b, err := json.Marshal(map[string]string{"type": "ended", "code": s.endCodeNow(), "text": truncate(why, 300)}); err == nil && len(s.snapshotViewers()) > 0 {
 		s.broadcastEvent(b)
 		time.Sleep(300 * time.Millisecond)
 	}
@@ -1208,7 +1234,7 @@ func (s *Session) idleTooLong() bool {
 	}
 	s.viewMu.Lock()
 	defer s.viewMu.Unlock()
-	if len(s.viewers) == 0 {
+	if s.watchersLocked() == 0 {
 		return time.Since(s.noViewerSince) > noViewerLimit
 	}
 	return time.Since(s.lastInput) > idleLimit

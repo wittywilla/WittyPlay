@@ -5,6 +5,8 @@ import { test } from 'node:test'
 import { computeLayout } from './layout.ts'
 import { Hotkeys } from './hotkeys.ts'
 import { explain, familyOf } from './words.ts'
+import { rateOf } from './refresh.ts'
+import { ArrivalDelay } from './arrival.ts'
 
 const base = { areaW: 1920, areaH: 1080, srcW: 256, srcH: 240, aspect: 4 / 3, mode: 'original', custom: 0, integer: false, cropX: 0, cropY: 0, turns: 0, inset: 0 }
 
@@ -163,4 +165,29 @@ test('a problem says what can be done, and only an administrator is sent to fix 
   const other = explain('The core stopped', null, true, 'NES')
   assert.ok(other.retry && other.defaults)
   assert.equal(other.body, 'The core stopped')
+})
+
+test('a screen\'s rate is read from its frames, and snapped to a usual one', () => {
+  const at = (hz, n = 90) => Array.from({ length: n }, () => 1000 / hz)
+  assert.equal(rateOf(at(60.002)), 60)
+  assert.equal(rateOf(at(59.94)), 59.94)
+  assert.equal(rateOf(at(50)), 50)
+  assert.equal(rateOf(at(144)), 144)
+  // A busy page misses frames now and then; the rest still say the rate.
+  const busy = at(60)
+  busy[10] = 33.3; busy[40] = 50
+  assert.equal(rateOf(busy), 60)
+  // Gaps all over the place say nothing.
+  assert.equal(rateOf([5, 40, 12, 90, 3, 60, 22]), 0)
+})
+
+test('how late frames arrive is measured against the quickest lately', () => {
+  const d = new ArrivalDelay()
+  // The clocks differ by 1000 ms; frames take 20 ms, then a queue adds 80.
+  d.note(0, 1020)
+  d.note(16, 1036)
+  assert.equal(d.take(), 0)
+  d.note(33, 1133)
+  assert.equal(Math.round(d.take()), 80)
+  assert.equal(d.take(), 0, 'each report says what happened since the last')
 })
