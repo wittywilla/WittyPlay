@@ -66,7 +66,8 @@ type viewer struct {
 	hz             atomic.Uint64 // its screen's refresh rate, as float64 bits
 	rtt            atomic.Int64  // from WebRTC's reports, in nanoseconds
 	reportedRTT    atomic.Int64  // from its own reports, in nanoseconds
-	clientDelay    atomic.Int64  // the worst arrival delay it has reported since the last look, in nanoseconds
+	clientDelay    atomic.Int64  // the arrival delay it last reported, in nanoseconds
+	clientDelayAt  atomic.Int64  // when, in Unix nanoseconds
 	lost           atomic.Uint32 // the last share lost, in 256ths
 	q              *wsQueue      // a version 2 WebSocket's outgoing messages
 	early          earlyEvents   // events for it before its channel for them has opened

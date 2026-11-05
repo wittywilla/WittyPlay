@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -488,4 +489,35 @@ func (r *wsReader) sawText(typ string) bool {
 		}
 	}
 	return false
+}
+
+// Over TCP the system's buffers hide a full network from the server, so a WebSocket's rate
+// follows what the client says about how late frames arrive. A report counts at every look for
+// a second (the client reports twice a second, the server looks four times), and a delay that
+// stays up brings the rate down.
+func TestAWebSocketFallingBehindBringsTheRateDown(t *testing.T) {
+	s := &Session{viewers: map[*viewer]bool{}, log: slog.New(slog.DiscardHandler)}
+	v := &viewer{s: s, v2: true, watch: true, codec: "h264", q: newWSQueue()}
+	v.connected.Store(time.Now().Add(-time.Minute))
+	var worst time.Duration
+	var dropped0, sent0 int64
+	look := func() { s.reportQueue(v, &worst, &dropped0, &sent0) }
+	look() // nothing said yet: the network's own time is the best seen
+	if s.rates.rate() != 1 {
+		t.Fatal("nothing to act on yet")
+	}
+	s.clientText(v, []byte(`{"type":"report","delayMs":300}`))
+	for range 6 {
+		look()
+	}
+	if r := s.rates.rate(); r >= 1 {
+		t.Fatalf("a delay that stays at 300 ms should bring the rate down: %v", r)
+	}
+	// A report goes stale after a second, so a client that stops saying it's late isn't held to it.
+	v.clientDelayAt.Store(time.Now().Add(-2 * time.Second).UnixNano())
+	worst = 0
+	look()
+	if v.clientDelay.Load() == 0 {
+		t.Fatal("the last report is kept, only not used")
+	}
 }

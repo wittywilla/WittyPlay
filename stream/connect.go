@@ -520,16 +520,11 @@ func (s *Session) clientText(v *viewer, b []byte) {
 			s.updatePaceLocked()
 			s.viewMu.Unlock()
 		}
-		if m.DelayMs > 0 && v.q != nil {
-			// Taken with the queue's own state at the next look, as one report: two sources
-			// taking turns would each undo what the other said.
-			d := int64(min(m.DelayMs, 10_000) * float64(time.Millisecond))
-			for {
-				old := v.clientDelay.Load()
-				if d <= old || v.clientDelay.CompareAndSwap(old, d) {
-					break
-				}
-			}
+		if m.DelayMs >= 0 && v.q != nil {
+			// Taken with the queue's own state at each look, as one report: two sources taking
+			// turns would each undo what the other said.
+			v.clientDelay.Store(int64(min(m.DelayMs, 10_000) * float64(time.Millisecond)))
+			v.clientDelayAt.Store(time.Now().UnixNano())
 		}
 		if m.RTTMs > 0 && m.RTTMs < 60_000 {
 			v.reportedRTT.Store(int64(m.RTTMs * float64(time.Millisecond)))
@@ -719,8 +714,9 @@ func (s *Session) noteWSDelay(v *viewer, delay time.Duration, lost float64) {
 		return
 	}
 	// A frame that waits behind others is late by that much: as a round trip, the base is the
-	// network's and the rest is the queue.
-	if s.rates.note(lost, delay+time.Millisecond, now) {
+	// network's and the rest is the queue. Unlike a round trip a busy machine answers late, a
+	// long one here is a real queue, so it's kept under what the rate takes for a stall.
+	if s.rates.note(lost, min(delay, rateRTTSane-time.Millisecond)+time.Millisecond, now) {
 		s.log.Info("matching the video to a WebSocket", "share", s.rates.rate(), "lost", lost, "waiting", delay.String())
 		s.viewMu.Lock()
 		s.replaceEncoderLocked(v.codec, now, false)

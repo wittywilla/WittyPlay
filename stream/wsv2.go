@@ -313,9 +313,15 @@ func (s *Session) reportQueue(v *viewer, worst *time.Duration, dropped0, sent0 *
 	}
 	*dropped0, *sent0 = d, n
 	// How late frames are: the worst of what waited here and what the client saw arrive late,
-	// which includes every queue on the way that this side can't see.
-	late := max(*worst, time.Duration(v.clientDelay.Swap(0)))
-	s.noteWSDelay(v, late, lost)
+	// which includes every queue on the way that this side can't see. Over TCP that's nearly
+	// all of it: the system's buffers take a second of video before a write here ever waits.
+	// The client's word stands until it says something else, or for a second: it reports twice
+	// a second, and this looks four times.
+	var said time.Duration
+	if at := v.clientDelayAt.Load(); at != 0 && time.Since(time.Unix(0, at)) < time.Second {
+		said = time.Duration(v.clientDelay.Load())
+	}
+	s.noteWSDelay(v, max(*worst, said), lost)
 	*worst = 0
 }
 
