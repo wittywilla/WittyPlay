@@ -69,10 +69,31 @@ A program is built for each system below, and the server uses the right one.
 |---|---|
 | Linux (x64, arm64, 32-bit ARM, x86) | Its tests pass on x64, and a game has played in a browser from a test server with it installed. The other CPUs are only built |
 | Windows (x64, arm64) | Built. This version hasn't been run on Windows since it became its own program |
-| macOS (Intel, Apple silicon) | Built by the release tool. It has not been run on a real Mac |
+| macOS (Intel, Apple silicon) | Run on an Apple M3 Pro (macOS 27): games from the owner's own library stream from a test server, and consoles drawn on a graphics card use the Mac's own (below). Intel Macs are only built |
 | FreeBSD (amd64, arm64) | Cross-compiled only. It has not been run |
 
 On macOS and FreeBSD the server has no sandbox for a module's helper: it gets a small environment and a soft memory limit, and nothing more.
+
+### A Mac's graphics card
+
+The runner makes an OpenGL 4.1 context with CGL on a Mac's graphics processor. On an Apple M3 Pro, played end to end through a test server with the owner's own games (60 frames a second is full speed):
+
+| Console, game | Core | Frames a second | Runner's processor use |
+|---|---|---|---|
+| PSP, God of War: Ghost of Sparta, 960x540 | PPSSPP, OpenGL | 60 after it loads | 15 to 27% of a core, against 3 to 5 cores with PPSSPP's own software renderer |
+| PlayStation, Final Fantasy VII | SwanStation, OpenGL | 59.9 | 5 to 75% |
+| PlayStation, Final Fantasy VII | Beetle PSX HW, OpenGL | 59.9 | 23 to 80% |
+| PlayStation 2, Final Fantasy X International | Play!, OpenGL | 57.7, dipping while it loads | 46 to 137% |
+| PlayStation 2, Gran Turismo 4 | Play!, OpenGL | 58.5, dipping while it loads | 43 to 98% |
+
+These don't draw correctly with a Mac's OpenGL, and the server has the processor draw them there instead:
+- **Mupen64Plus-Next (GLideN64):** black pictures, or Banjo-Kazooie at 38 frames a second going black without framebuffer emulation.
+- **ParaLLEl N64's OpenGL plugins:** no picture.
+- **LRPS2's OpenGL renderer:** it needs `GL_ARB_shading_language_420pack`, which macOS lacks.
+
+Panda3DS (3DS) draws on the card at 60 frames a second. Azahar asks for Vulkan, which this runner doesn't offer, so on a Mac only its software renderer is left. Neither was measured on a 3DS game, for want of one that isn't encrypted, nor Flycast (Dreamcast), for want of a disc.
+
+A Mac's OpenGL refuses to map the pixel buffer a frame is read back into once PPSSPP's OpenGL renderer has run, so the frame is copied out of it instead (`deliver` in `libretro/gl.go`).
 
 What hasn't been run, wherever you play:
 
