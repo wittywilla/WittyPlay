@@ -1072,6 +1072,18 @@ var Handlers = map[string]service.Handler{
 		r0, err := recv.Install(ctx, a0)
 		return []any{r0}, back, err
 	},
+	"cores.Manager.InstallProgress": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var a0 string
+		if err := service.Arg(args, 0, &a0); err != nil {
+			return nil, nil, err
+		}
+		recv, err := resolveCores(rawRecv)
+		if err != nil {
+			return nil, nil, err
+		}
+		r0, r1, r2 := recv.InstallProgress(a0)
+		return []any{r0, r1, r2}, back, err
+	},
 	"cores.Manager.List": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		recv, err := resolveCores(rawRecv)
 		if err != nil {

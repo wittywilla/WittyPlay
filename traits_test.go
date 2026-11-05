@@ -175,3 +175,26 @@ func TestRunnerArgsAskForSharedMemoryOnlyWhenNeeded(t *testing.T) {
 		}
 	}
 }
+
+// Beetle Lynx won't start without the Lynx's boot ROM; Handy doesn't insist.
+func TestBeetleLynxNeedsItsBootROM(t *testing.T) {
+	system := t.TempDir()
+	if got := MissingBIOS("mednafen_lynx", system); got != "lynxboot.img" {
+		t.Fatalf("with none: %q", got)
+	}
+	if got := MissingBIOS("handy", system); got != "" {
+		t.Fatalf("Handy: %q", got)
+	}
+	if err := os.WriteFile(filepath.Join(system, "lynxboot.img"), make([]byte, 100), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := MissingBIOS("mednafen_lynx", system); got == "" {
+		t.Fatal("a file of the wrong size isn't the boot ROM")
+	}
+	if err := os.WriteFile(filepath.Join(system, "lynxboot.img"), make([]byte, 512), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := MissingBIOS("mednafen_lynx", system); got != "" {
+		t.Fatalf("with one: %q", got)
+	}
+}

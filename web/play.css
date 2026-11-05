@@ -220,6 +220,9 @@
 .wp-row { display: flex; align-items: center; gap: 8px; min-height: 0; }
 .wp-row:empty { display: none; }
 .wp-grow { flex: 1 1 auto; min-width: 0; }
+/* Core options: which core plays the game, and the app's picker to change it. */
+.wp-core-pick { flex-wrap: wrap; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--border, var(--wp-line)); }
+.wp-core-pick .wp-grow { overflow-wrap: anywhere; }
 .wp-check { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 2px; cursor: pointer; }
 .wp-check input, .wp-radios input { accent-color: var(--wp-accent); }
 .wp-radios { border: 1px solid var(--wp-line); border-radius: 8px; padding: 8px 12px; display: grid; gap: 6px; margin: 0; }

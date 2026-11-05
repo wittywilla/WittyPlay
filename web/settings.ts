@@ -20,7 +20,7 @@ export type Report = { errors: Issue[]; ignored: Issue[] }
 export type SettingsView = { resolved: Resolved; layers: Record<string, Layer>; limits: Limits; console: string; item: number; ignored?: Issue[] }
 export type Level = 'person' | 'console' | 'game' | 'server' | 'serverConsole'
 export type OptionInfo = { key: string; label: string; info?: string; category?: string; choices: string[]; labels?: string[]; default: string; hidden?: boolean }
-export type CoreOptionsView = { core: string; known: boolean; options: OptionInfo[]; values: Record<string, string>; sources: Record<string, string>; running: Record<string, string>; ignored: Issue[]; controls: CustomControl[] }
+export type CoreOptionsView = { core: string; coreName?: string; known: boolean; options: OptionInfo[]; values: Record<string, string>; sources: Record<string, string>; running: Record<string, string>; ignored: Issue[]; controls: CustomControl[] }
 
 // How the panels reach the server. The app provides it.
 export interface SettingsHost {
@@ -28,6 +28,10 @@ export interface SettingsHost {
   upload<T>(path: string, body: Blob): Promise<T>
   mediaUrl(path: string): string
   isAdmin: boolean
+  // The app's core picker, for an administrator: which core plays this game. It answers restart
+  // (start the game again on the new core), later (the next start uses it) or none (nothing
+  // changed). Core options then shows "Core: … Change core". An app without one leaves it out.
+  chooseCore?(): Promise<'restart' | 'later' | 'none'>
 }
 
 // Which level a change goes to, by the highest one that applies here.
