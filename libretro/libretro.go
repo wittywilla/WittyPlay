@@ -514,6 +514,10 @@ func onInputState(port, device, index, id uintptr) uintptr {
 	return uintptr(uint16(v))
 }
 
+// messageProblemLvl ranks a core's on-screen message among its log levels as a reason for a
+// failed load: above a warning, and an error logged after it still says more.
+const messageProblemLvl = 3
+
 // onLog receives a variadic C call. Its arguments are read as machine words,
 // which is what they are on the platforms canReadVarargs allows.
 func onLog(level, format, a0, a1, a2, a3, a4, a5 uintptr) uintptr {
@@ -525,11 +529,15 @@ func onLog(level, format, a0, a1, a2, a3, a4, a5 uintptr) uintptr {
 	if c.h.Trace == nil && (c.h.Log == nil || lvl < 2) {
 		return 0
 	}
-	text := strings.TrimRight(formatLog(cString((*byte)(ptr(format))), [6]uintptr{a0, a1, a2, a3, a4, a5}), "\r\n")
+	raw := cString((*byte)(ptr(format)))
+	text := strings.TrimRight(formatLog(raw, [6]uintptr{a0, a1, a2, a3, a4, a5}), "\r\n")
 	if c.h.Trace != nil {
 		c.h.Trace(fmt.Sprintf("log %d: %s", lvl, text))
 	}
-	if lvl >= 2 && lvl >= c.problemLvl && text != "" {
+	// Where the arguments can't be read (an Apple arm64 Mac), a line with any is only its format,
+	// such as "%s": no reason to give anyone for a failed load.
+	unread := !canReadVarargs && strings.ContainsRune(raw, '%')
+	if lvl >= 2 && lvl >= c.problemLvl && text != "" && !unread {
 		// One line: some cores log whole documents.
 		first, _, _ := strings.Cut(text, "\n")
 		c.lastProblem, c.problemLvl = strings.TrimSpace(first), lvl
@@ -668,8 +676,15 @@ func (c *Core) environment(cmd uint32, data unsafe.Pointer) bool {
 			c.h.Rotation(int(*(*uint32)(data)))
 		}
 	case envSetMessage:
+		msg := cString(*(**byte)(data))
+		// What a core puts on the screen while a game loads is meant for people, and is whole
+		// where its log may not be: the reason for a failed load, unless an error follows it.
+		if !c.loaded && msg != "" && c.problemLvl <= messageProblemLvl {
+			first, _, _ := strings.Cut(msg, "\n")
+			c.lastProblem, c.problemLvl = strings.TrimSpace(first), messageProblemLvl
+		}
 		if c.h.Message != nil {
-			c.h.Message(cString(*(**byte)(data)))
+			c.h.Message(msg)
 		}
 	case envShutdown:
 		if c.h.Shutdown != nil {
