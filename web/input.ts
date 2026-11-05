@@ -348,6 +348,13 @@ export class InputManager {
     this.onChange?.()
   }
   get keyboardPlayer() { return this.keyboardPort }
+  // The players this device drives: its pads', its keyboard's and its touch screen's.
+  ports(): number[] {
+    const out = new Set<number>([this.keyboardPort, this.touchPort])
+    for (const s of this.slots.values()) out.add(s.port)
+    return [...out].filter((p) => p >= 0 && p < MAX_PLAYERS).sort((a, b) => a - b)
+  }
+
   setKeyboardPort(port: number) { this.keyboardPort = port; this.flush(true); this.onChange?.() }
   get touchPlayer() { return this.touchPort }
   setTouchPort(port: number) { this.touchPort = port; this.flush(true); this.onChange?.() }

@@ -5,6 +5,7 @@
 //   3. WebSocket with JPEG: when nothing else works
 // docs/GAMING.md has the reasoning.
 
+import { ArrivalDelay } from './arrival'
 import { DirectVideo, hasDirect } from './direct'
 import { PhaseLock, SteadinessWatch, TIMING_LATENCY, TIMING_SHIFT, TIMING_SUBSCRIBE, watchVideo, type LatencyMeter } from './latency'
 
@@ -25,7 +26,19 @@ export type Stats = { rttMs?: number; fps?: number; kbps?: number; jitterMs?: nu
 export type AudioBuffer_ = 'lowest' | 'balanced' | 'smooth'
 const AUDIO_HOLD: Record<AudioBuffer_, number> = { lowest: 0, balanced: 0.06, smooth: 0.15 }
 
-export type PlayEvent = { type: string; port?: number; strength?: number; text?: string; effect?: number; aspect?: number; width?: number; height?: number; turns?: number; index?: number; count?: number }
+export type PlayEvent = { type: string; port?: number; strength?: number; text?: string; effect?: number; aspect?: number; width?: number; height?: number; turns?: number; index?: number; count?: number; code?: string; seats?: Seat[] }
+
+// Version 2 of the stream (the server's docs/GAMING-STREAM.md): one way in, the same messages
+// over WebRTC and the WebSocket.
+export type Hello = {
+  v: 2; app?: string; device?: string; name?: string; watch?: boolean; video?: string[]; audio?: string[]; seats?: number[]
+  display?: { hz?: number; width?: number; height?: number }; latency?: string; maxKbps?: number
+}
+export type Seat = { port: number; conn: string; name?: string; you?: boolean }
+export type StreamInfo = {
+  type: 'stream'; v: number; conn: string; transport: string; video: string; audio: string; width: number; height: number; aspect: number
+  fps: number; rate: number; turns: number; ports: number; motion: boolean; pace: number; seats: Seat[]; kbps: number; away: boolean
+}
 
 export interface Transport {
   readonly kind: TransportKind
@@ -52,6 +65,8 @@ export interface Transport {
   onWaiting?: () => void
   // The picture has stopped on a connection that's still up (true), or come back (false).
   onStall?: (stalled: boolean) => void
+  // Version 2: says something to the server as JSON, such as which players this device holds.
+  control?(msg: object): void
 }
 
 // The timing messages' common half: pings to line the clocks up, quickly at first and
@@ -101,6 +116,35 @@ class TimingLink {
 export type Signal = {
   answer(sdp: string, prefer?: string): Promise<string>
   wsUrl(video: string): string
+  // Version 2, when the server has it: the hello and the offer in, the stream and the answer out.
+  stream?(hello: Hello, sdp: string): Promise<{ stream: StreamInfo; sdp: string }>
+  streamUrl?(): string
+  hello?(): Hello
+}
+
+// answerFor connects through version 2 when it can, and version 1 when it can't.
+async function answerFor(signal: Signal, sdp: string): Promise<string> {
+  if (signal.stream && signal.hello) {
+    return (await signal.stream({ ...signal.hello(), watch: true }, sdp)).sdp
+  }
+  return signal.answer(sdp)
+}
+
+// A JSON channel to the server that holds what's said before it opens.
+class Said {
+  private early: string[] = []
+  constructor(private out: () => ((s: string) => void) | null) {}
+  say(msg: object) {
+    const s = JSON.stringify(msg)
+    const send = this.out()
+    if (send) send(s)
+    else if (this.early.length < 16) this.early.push(s)
+  }
+  opened() {
+    const send = this.out()
+    if (!send) return
+    for (const s of this.early.splice(0)) send(s)
+  }
 }
 
 const hasWebRTC = () => typeof RTCPeerConnection !== 'undefined'
@@ -289,6 +333,8 @@ class WebRTCTransport implements Transport {
     this.input.binaryType = 'arraybuffer'
     const events = pc.createDataChannel('events')
     events.onmessage = (m) => { try { this.onEvent?.(JSON.parse(m.data)) } catch { /* not ours */ } }
+    this.said = new Said(() => (events.readyState === 'open' ? (s) => events.send(s) : null))
+    events.onopen = () => this.said?.opened()
     const timing = pc.createDataChannel('timing', { ordered: false, maxRetransmits: 0 })
     timing.binaryType = 'arraybuffer'
     timing.onmessage = (m) => { if (m.data instanceof ArrayBuffer) this.link.incoming(m.data) }
@@ -305,7 +351,7 @@ class WebRTCTransport implements Transport {
     const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
     await gathered(pc, 1500)
-    const answer = await this.signal.answer(pc.localDescription!.sdp)
+    const answer = await answerFor(this.signal, pc.localDescription!.sdp)
     await pc.setRemoteDescription({ type: 'answer', sdp: answer })
     await this.play()
     this.onWaiting?.()
@@ -314,6 +360,9 @@ class WebRTCTransport implements Transport {
     if (this.gone) throw new Error(`the connection went while starting (${this.goneWhy})`)
     if (!this.closed) watchdog.start()
   }
+
+  private said: Said | null = null
+  control(msg: object) { this.said?.say(msg) }
 
   private goneWhy = ''
   private lost(why: string) {
@@ -434,6 +483,8 @@ class DirectTransport implements Transport {
   private input: RTCDataChannel | null = null
   private timingDc: RTCDataChannel | null = null
   private link = new TimingLink((b) => { if (this.timingDc?.readyState === 'open') { try { this.timingDc.send(b) } catch { /* the next one will do */ } } })
+  private said: Said | null = null
+  control(msg: object) { this.said?.say(msg) }
   private video: DirectVideo
   private sound = document.createElement('audio')
   private muted = false
@@ -476,6 +527,8 @@ class DirectTransport implements Transport {
     this.input.binaryType = 'arraybuffer'
     const events = pc.createDataChannel('events')
     events.onmessage = (m) => { try { this.onEvent?.(JSON.parse(m.data)) } catch { /* not ours */ } }
+    this.said = new Said(() => (events.readyState === 'open' ? (s) => events.send(s) : null))
+    events.onopen = () => this.said?.opened()
     const timing = pc.createDataChannel('timing', { ordered: false, maxRetransmits: 0 })
     timing.binaryType = 'arraybuffer'
     timing.onmessage = (m) => { if (m.data instanceof ArrayBuffer) this.link.incoming(m.data) }
@@ -491,7 +544,7 @@ class DirectTransport implements Transport {
     const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
     await gathered(pc, 1500)
-    const answer = await this.signal.answer(pc.localDescription!.sdp)
+    const answer = await answerFor(this.signal, pc.localDescription!.sdp)
     await pc.setRemoteDescription({ type: 'answer', sdp: answer })
     // Not waited for: it finishes when sound arrives, and some games take a while to make any.
     void this.sound.play().catch(() => { this.muted = true })
@@ -622,6 +675,17 @@ function firstFrame(v: HTMLVideoElement, ms: number) {
 // ---- WebSocket ----
 
 const MSG_H264 = 1, MSG_JPEG = 2, MSG_PCM = 3
+const MSG_VIDEO = 0x11, MSG_OPUS = 0x12 // version 2
+const REPORT_MS = 500 // how often a version 2 connection says how late frames are arriving
+
+// Whether this browser can decode Opus by itself, for version 2's WebSocket sound.
+async function canOpus(): Promise<boolean> {
+  const AD = (window as any).AudioDecoder
+  if (!AD) return false
+  const r = await AD.isConfigSupported({ codec: 'opus', sampleRate: 48000, numberOfChannels: 2 }).catch(() => null)
+  return !!r?.supported
+}
+
 
 class WSTransport implements Transport {
   readonly element: HTMLCanvasElement
@@ -647,6 +711,12 @@ class WSTransport implements Transport {
   private hold = 0
   private meter: LatencyMeter | null = null
   private link = new TimingLink((b) => { if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(b) })
+  // Version 2
+  private v2 = false
+  private opus: any = null
+  private delay = new ArrivalDelay()
+  private reportTimer = 0
+  info: StreamInfo | null = null
 
   constructor(private signal: Signal, readonly kind: 'ws-h264' | 'ws-jpeg') {
     this.element = document.createElement('canvas')
@@ -657,13 +727,23 @@ class WSTransport implements Transport {
 
   async connect() {
     if (this.kind === 'ws-h264') await this.makeDecoder()
+    this.v2 = !!(this.signal.streamUrl && this.signal.hello)
+    const opus = this.v2 && await canOpus()
+    if (opus) this.makeOpus()
     await new Promise<void>((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('no picture arrived')), FIRST_FRAME_MS)
       this.first = () => { clearTimeout(t); resolve() }
-      const ws = new WebSocket(this.signal.wsUrl(this.kind === 'ws-h264' ? 'h264' : 'jpeg'))
+      const ws = new WebSocket(this.v2 ? this.signal.streamUrl!() : this.signal.wsUrl(this.kind === 'ws-h264' ? 'h264' : 'jpeg'))
       ws.binaryType = 'arraybuffer'
       this.ws = ws
-      ws.onopen = () => this.onWaiting?.()
+      ws.onopen = () => {
+        if (this.v2) {
+          const hello = { ...this.signal.hello!(), type: 'hello', watch: true, video: [this.kind === 'ws-h264' ? 'h264' : 'jpeg'], audio: opus ? ['opus', 'pcm'] : ['pcm'] }
+          ws.send(JSON.stringify(hello))
+          this.reportTimer = window.setInterval(() => this.report(), REPORT_MS)
+        }
+        this.onWaiting?.()
+      }
       ws.onmessage = (m) => this.message(m.data)
       ws.onerror = () => { clearTimeout(t); reject(new Error('the connection failed')) }
       ws.onclose = (e) => { if (!this.closed) this.onLost?.(`closed (${e.code})`) }
@@ -703,7 +783,11 @@ class WSTransport implements Transport {
 
   private message(data: ArrayBuffer | string) {
     if (typeof data === 'string') {
-      try { const e = JSON.parse(data); if (e.type !== 'hello') this.onEvent?.(e) } catch { /* not ours */ }
+      try {
+        const e = JSON.parse(data)
+        if (e.type === 'stream') this.info = e
+        if (e.type !== 'hello') this.onEvent?.(e)
+      } catch { /* not ours */ }
       return
     }
     const b = new Uint8Array(data)
@@ -715,14 +799,54 @@ class WSTransport implements Transport {
       return
     }
     switch (b[0]) {
-      case MSG_H264: this.h264(b); break
+      case MSG_H264: this.h264(b, 2); break
+      case MSG_VIDEO: {
+        const v = new DataView(data)
+        this.delay.note(v.getUint32(6, true) / 90, performance.now())
+        this.h264(b, 10)
+        break
+      }
+      case MSG_OPUS: this.opusPacket(data); break
       case MSG_JPEG: this.jpeg(b); break
       case MSG_PCM: this.pcm(data); break
     }
   }
 
-  private h264(b: Uint8Array) {
-    const key = b[1] === 1
+  // Says how late frames are arriving, which the server takes as WebRTC's reports.
+  private report() {
+    if (this.ws?.readyState !== WebSocket.OPEN) return
+    const d = this.delay.take()
+    if (d > 0) this.ws.send(JSON.stringify({ type: 'report', delayMs: Math.round(d) }))
+  }
+
+  control(msg: object) { if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(msg)) }
+
+  private makeOpus() {
+    const AD = (window as any).AudioDecoder
+    this.opus = new AD({
+      output: (a: any) => {
+        const n = a.numberOfFrames
+        const l = new Float32Array(n), r = new Float32Array(n)
+        a.copyTo(l, { planeIndex: 0, format: 'f32-planar' })
+        a.copyTo(r, { planeIndex: a.numberOfChannels > 1 ? 1 : 0, format: 'f32-planar' })
+        const rate = a.sampleRate
+        a.close()
+        this.play(l, r, rate)
+      },
+      error: () => { this.opus = null },
+    })
+    this.opus.configure({ codec: 'opus', sampleRate: 48000, numberOfChannels: 2 })
+  }
+
+  private opusPacket(data: ArrayBuffer) {
+    if (!this.opus || this.opus.state !== 'configured' || data.byteLength < 6) return
+    const ts = new DataView(data).getUint32(1, true)
+    const Chunk = (window as any).EncodedAudioChunk
+    this.opus.decode(new Chunk({ type: 'key', timestamp: Math.round(ts * 1e6 / 48000), data: new Uint8Array(data, 5) }))
+  }
+
+  private h264(b: Uint8Array, at: number) {
+    const key = (b[1] & 1) === 1
     if (this.needKey && !key) return
     if (!this.decoder || this.decoder.state !== 'configured') return
     // A decoder that has fallen behind is skipped ahead, because a late frame is
@@ -732,7 +856,7 @@ class WSTransport implements Transport {
     const Chunk = (window as any).EncodedVideoChunk
     // A frame's number goes through the decoder as its timestamp when it's being measured.
     this.ts += 16667
-    this.decoder.decode(new Chunk({ type: key ? 'key' : 'delta', timestamp: this.meter ? this.nextSeq : this.ts, data: b.subarray(2) }))
+    this.decoder.decode(new Chunk({ type: key ? 'key' : 'delta', timestamp: this.meter ? this.nextSeq : this.ts, data: b.subarray(at) }))
   }
 
   private nextSeq = 0
@@ -759,20 +883,28 @@ class WSTransport implements Transport {
   // Sound is scheduled in small pieces. Falling too far behind means skipping
   // ahead instead of letting delay grow.
   private pcm(data: ArrayBuffer) {
-    if (!this.audio) {
-      try { this.audio = new AudioContext({ latencyHint: 'interactive' }) } catch { return }
-    }
-    if (this.audio.state === 'suspended') return // waiting for a tap
     const rate = new DataView(data).getUint32(1, true)
     const n = Math.floor((data.byteLength - 5) / 4)
     if (n === 0 || rate < 3000 || rate > 384000) return
-    const buf = this.audio.createBuffer(2, n, rate)
-    const l = buf.getChannelData(0), r = buf.getChannelData(1)
+    const l = new Float32Array(n), r = new Float32Array(n)
     const v = new DataView(data, 5)
     for (let i = 0; i < n; i++) {
       l[i] = v.getInt16(i * 4, true) / 32768
       r[i] = v.getInt16(i * 4 + 2, true) / 32768
     }
+    this.play(l, r, rate)
+  }
+
+  private play(l: Float32Array, r: Float32Array, rate: number) {
+    if (!this.audio) {
+      try { this.audio = new AudioContext({ latencyHint: 'interactive' }) } catch { return }
+    }
+    if (this.audio.state === 'suspended') return // waiting for a tap
+    const n = l.length
+    if (n === 0 || rate < 3000 || rate > 384000) return
+    const buf = this.audio.createBuffer(2, n, rate)
+    buf.copyToChannel(l as Float32Array<ArrayBuffer>, 0)
+    buf.copyToChannel(r as Float32Array<ArrayBuffer>, 1)
     const now = this.audio.currentTime
     const lead = 0.03 + this.hold
     if (this.audioAt < now) this.audioAt = now + lead
@@ -810,8 +942,10 @@ class WSTransport implements Transport {
   close() {
     this.closed = true
     this.link.stop()
+    window.clearInterval(this.reportTimer)
     this.ws?.close()
     try { this.decoder?.close() } catch { /* already closed */ }
+    try { this.opus?.close() } catch { /* already closed */ }
     void this.audio?.close().catch(() => {})
   }
 
