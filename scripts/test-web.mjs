@@ -1,6 +1,6 @@
 // Runs WittyPlay's browser tests, which feed simulated gamepads to the real code in
-// plain Node: esbuild (which the bundle builder brings) puts each together, and Node's own
-// test runner runs it. Nothing extra to install.
+// plain Node: esbuild (a development dependency, as vite 8 no longer brings it) puts each
+// together, and Node's own test runner runs it.
 import { spawnSync } from 'node:child_process'
 import { readdirSync, realpathSync, rmSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
