@@ -473,13 +473,13 @@ type clientMessage struct {
 	Take  bool   `json:"take"`
 	On    bool   `json:"on"`
 	// A report of what the client sees.
-	Hz        float64 `json:"hz"`
-	RTTMs     float64 `json:"rttMs"`
-	JitterMs  float64 `json:"jitterMs"`
-	DecodeMs  float64 `json:"decodeMs"`
-	DisplayMs float64 `json:"displayMs"`
-	DelayMs   float64 `json:"delayMs"`
-	Dropped   int64   `json:"dropped"`
+	Hz        float64  `json:"hz"`
+	RTTMs     float64  `json:"rttMs"`
+	JitterMs  float64  `json:"jitterMs"`
+	DecodeMs  float64  `json:"decodeMs"`
+	DisplayMs float64  `json:"displayMs"`
+	DelayMs   *float64 `json:"delayMs"` // left out is no word on it, which isn't the same as none
+	Dropped   int64    `json:"dropped"`
 }
 
 // maxClientMessage bounds what a client may say in one message.
@@ -527,10 +527,10 @@ func (s *Session) clientText(v *viewer, b []byte) {
 			s.updatePaceLocked()
 			s.viewMu.Unlock()
 		}
-		if m.DelayMs >= 0 && v.q != nil {
+		if m.DelayMs != nil && *m.DelayMs >= 0 && v.q != nil {
 			// Taken with the queue's own state at each look, as one report: two sources taking
 			// turns would each undo what the other said.
-			v.clientDelay.Store(int64(min(m.DelayMs, 10_000) * float64(time.Millisecond)))
+			v.clientDelay.Store(int64(min(*m.DelayMs, 10_000) * float64(time.Millisecond)))
 			v.clientDelayAt.Store(time.Now().UnixNano())
 		}
 		if m.RTTMs > 0 && m.RTTMs < 60_000 {

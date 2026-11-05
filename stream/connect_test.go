@@ -514,6 +514,11 @@ func TestAWebSocketFallingBehindBringsTheRateDown(t *testing.T) {
 	if r := s.rates.rate(); r >= 1 {
 		t.Fatalf("a delay that stays at 300 ms should bring the rate down: %v", r)
 	}
+	// A report that only says the screen's rate leaves the delay as it was.
+	s.clientText(v, []byte(`{"type":"report","hz":59.94}`))
+	if v.clientDelay.Load() != int64(300*time.Millisecond) {
+		t.Fatal("a report without delayMs mustn't reset it")
+	}
 	// A report goes stale after a second, so a client that stops saying it's late isn't held to it.
 	v.clientDelayAt.Store(time.Now().Add(-2 * time.Second).UnixNano())
 	worst = 0
