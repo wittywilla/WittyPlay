@@ -3,7 +3,7 @@
 //
 // A runner is wittyplay-game-runner, or any other program that speaks this protocol,
 // such as WittyRetroArch. Talking over pipes is what keeps a GPL runner a
-// separate program from the Apache-licensed server, so this package is the
+// separate program from the AGPL-licensed server, so this package is the
 // whole of what they share. docs/GAMING.md has the licensing reasons.
 //
 // The server treats everything a runner says as hostile. A core may have been

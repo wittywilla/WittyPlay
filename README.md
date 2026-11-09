@@ -162,7 +162,7 @@ GOOS=freebsd CGO_ENABLED=0 go build -gcflags="github.com/ebitengine/purego/inter
 
 ## Licence
 
-Apache-2.0: see [LICENSE](LICENSE) and [NOTICE](NOTICE). If you redistribute it or build on it, keep the NOTICE attribution.
+GNU Affero General Public License v3.0 (or later): see [LICENSE](LICENSE) and [NOTICE](NOTICE). If you redistribute it or build on it, please keep the NOTICE attribution.
 
 Linked in: ebitengine/purego (Apache-2.0), pion/webrtc and its dependencies (MIT), coder/websocket (ISC). The libretro API's constants and layouts (MIT) are written from its public definition, and no libretro code is included.
 
@@ -197,5 +197,5 @@ To release:
 
 To take a version back, run the *withdraw* workflow from the *Actions* tab. It adds the version to a signed list on the release tagged `withdrawals`, which servers read.
 
-Licensed under Apache-2.0: see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Licensed under AGPL-3.0-or-later: see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 <!-- /module-kit -->
