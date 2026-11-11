@@ -55,10 +55,13 @@ const (
 
 // Artifact is one download of an emulator, for one platform.
 type Artifact struct {
-	OS      string `json:"os"`
-	Arch    string `json:"arch"`
-	URL     string `json:"url"`
-	SHA256  string `json:"sha256"`
+	OS     string `json:"os"`
+	Arch   string `json:"arch"`
+	URL    string `json:"url"`
+	SHA256 string `json:"sha256"`
+	// Size is the file's size in bytes, when the list knows it. A download of any other size
+	// is refused before it is hashed.
+	Size    int64  `json:"size,omitempty"`
 	Archive string `json:"archive"`
 	// Entry is the program to run, inside what the archive unpacks to.
 	Entry string `json:"entry"`
@@ -88,12 +91,23 @@ func (i Image) Pinned() string {
 
 // Emulator is one standalone emulator.
 type Emulator struct {
-	ID       string   `json:"id"`
-	Name     string   `json:"name"`
-	Systems  []string `json:"systems"`
-	License  string   `json:"license"`
-	Upstream string   `json:"upstream"`
-	Version  string   `json:"version"`
+	ID      string   `json:"id"`
+	Name    string   `json:"name"`
+	Systems []string `json:"systems"`
+	License string   `json:"license"`
+	// LicenseURL is where the licence's text is, for the page that shows it before an install.
+	LicenseURL string `json:"licenseUrl,omitempty"`
+	Upstream   string `json:"upstream"`
+	Version    string `json:"version"`
+	// Requires is the least a machine needs to run it at all. A machine with less is told so
+	// instead of being left to crawl.
+	Requires Requires `json:"requires,omitzero"`
+	// Players is how many controllers it takes; 0 means one.
+	Players int `json:"players,omitempty"`
+	// Bios names the firmware it looks for in the person's BIOS folder. Names may hold * and ?.
+	Bios []BiosFile `json:"bios,omitempty"`
+	// Settings are what a page offers for this emulator, and how each is given to it: settings.go.
+	Settings []Setting `json:"settings,omitempty"`
 	// NonCommercial: its licence forbids commercial use. WittyPlay never offers those for
 	// download, as with cores; an administrator can still build an image of their own.
 	NonCommercial bool `json:"nonCommercial,omitempty"`
@@ -107,6 +121,19 @@ type Emulator struct {
 	// NeedsBios: it won't start a game without firmware of the person's own.
 	NeedsBios bool  `json:"needsBios,omitempty"`
 	Image     Image `json:"image"`
+}
+
+// Requires is the least an emulator needs.
+type Requires struct {
+	MemoryMB int64   `json:"memoryMB,omitempty"`
+	CPUs     float64 `json:"cpus,omitempty"`
+	GPU      bool    `json:"gpu,omitempty"` // unplayably slow without a graphics card passed through
+}
+
+// BiosFile is firmware an emulator looks for. WittyPlay never downloads one.
+type BiosFile struct {
+	Name string `json:"name"`
+	Note string `json:"note,omitempty"`
 }
 
 // For returns the artifact for a platform, or nil.
@@ -239,6 +266,22 @@ func (m *Manifest) Validate() error {
 		if e.Image.Digest != Placeholder && !validDigest.MatchString(e.Image.Digest) {
 			return bad("the image digest must be sha256:<64 hex> or %s", Placeholder)
 		}
+		if e.LicenseURL != "" {
+			if u, err := url.Parse(e.LicenseURL); err != nil || u.Scheme != "https" || u.Host == "" {
+				return bad("the licence address must be https")
+			}
+		}
+		if e.Players < 0 || e.Players > 4 || e.Requires.MemoryMB < 0 || e.Requires.CPUs < 0 {
+			return bad("players is 0 to 4, and requirements can't be negative")
+		}
+		for _, b := range e.Bios {
+			if b.Name == "" || strings.ContainsAny(b.Name, "/\\") {
+				return bad("a BIOS file is named by its name alone: %q", b.Name)
+			}
+		}
+		if err := checkSettings(e.Settings); err != nil {
+			return bad("%v", err)
+		}
 		plat := map[string]bool{}
 		for _, a := range e.Artifacts {
 			if a.OS == "" || a.Arch == "" {
@@ -253,6 +296,9 @@ func (m *Manifest) Validate() error {
 			}
 			if a.SHA256 != Placeholder && !validHash.MatchString(a.SHA256) {
 				return bad("the sha256 for %s/%s must be 64 lowercase hex or %s", a.OS, a.Arch, Placeholder)
+			}
+			if a.Size < 0 {
+				return bad("a negative size for %s/%s", a.OS, a.Arch)
 			}
 			if !slices.Contains([]string{ArchiveZip, ArchiveTarGz, ArchiveTarXz, ArchiveAppImage}, a.Archive) {
 				return bad("archive %q isn't one this reads", a.Archive)

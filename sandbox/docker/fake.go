@@ -23,6 +23,8 @@ type Fake struct {
 	seq        int
 	// CreateErr, StartErr: the next call fails with it.
 	CreateErr, StartErr error
+	// Machine, when set, is what Available says of the machine: a small one, for a test.
+	Machine *Status
 }
 
 // FakeContainer is one container in a Fake.
@@ -45,7 +47,11 @@ func (f *Fake) Available(context.Context) Status {
 	if f.Down {
 		return Status{Host: "fake", Error: "down"}
 	}
-	return Status{Available: true, Host: "fake", APIVersion: "1.52", OS: "linux"}
+	st := Status{Available: true, Host: "fake", APIVersion: "1.52", OS: "linux", Arch: "amd64", CPUs: 8, MemoryMB: 16384}
+	if f.Machine != nil {
+		st.Arch, st.CPUs, st.MemoryMB, st.Rootless = f.Machine.Arch, f.Machine.CPUs, f.Machine.MemoryMB, f.Machine.Rootless
+	}
+	return st
 }
 
 func (f *Fake) Pull(_ context.Context, ref string) error {
@@ -139,6 +145,31 @@ func (f *Fake) Stop(_ context.Context, id string, _ time.Duration) error {
 }
 
 // Exit makes a container stop by itself.
+func (f *Fake) Pause(_ context.Context, id string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	c, err := f.get(id)
+	if err != nil {
+		return err
+	}
+	if !c.Info.Running {
+		return errors.New("not running")
+	}
+	c.Info.Paused, c.Info.State = true, "paused"
+	return nil
+}
+
+func (f *Fake) Unpause(_ context.Context, id string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	c, err := f.get(id)
+	if err != nil {
+		return err
+	}
+	c.Info.Paused, c.Info.State = false, "running"
+	return nil
+}
+
 func (f *Fake) Exit(id string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

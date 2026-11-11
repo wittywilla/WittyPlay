@@ -23,9 +23,9 @@ func TestManifestListsDockerSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	var keys []string
-	for _, f := range docker.Schema() {
+	for _, f := range docker.Schema(nil) {
 		keys = append(keys, f.Key)
-		if !f.Admin {
+		if f.Scope != "admin" {
 			t.Errorf("%s isn't admin-only", f.Key)
 		}
 		if f.Key == "docker.enabled" && f.Default != false {

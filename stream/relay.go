@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/pion/interceptor"
+	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v4"
 	"github.com/wittywilla/wittyplay/ipc"
@@ -52,6 +53,11 @@ type Relay struct {
 	packets   atomic.Int64
 	seq       atomic.Uint64
 	from      atomic.Pointer[netip.Addr] // the only sender; nil: see RelayOptions.From
+	unwatched atomic.Int64               // Unix nanoseconds since nobody has been connected; 0 while someone is
+	rateMu    sync.Mutex
+	rate      *rateLadder
+	pkt       sync.Mutex // Push's packet, one at a time
+	pushed    rtp.Packet
 }
 
 // RelayOptions start a relay.
@@ -70,16 +76,23 @@ type RelayOptions struct {
 	From netip.Addr
 	// Input receives each pad, pointer or touch message a viewer is allowed to send.
 	Input func([]byte)
+	// SetBitrate asks whatever encodes the picture for another bitrate, when what browsers
+	// report back says the connection can't carry this one, or can carry more again. Optional.
+	SetBitrate func(kbps int)
+	// Kbps is the bitrate the picture starts at, and the most it's ever asked to be.
+	Kbps int
 }
 
 type relayViewer struct {
 	pc     *webrtc.PeerConnection
 	conn   string
 	closed atomic.Bool
+	events atomic.Pointer[webrtc.DataChannel]
 }
 
-// maxRelays caps relays the same way MaxSessions caps games.
-const maxRelays = 4
+// maxRelays is far more than a server runs at once: the limit that matters is the
+// administrator's (docker.maxContainers). This one only stops the map growing without end.
+const maxRelays = 32
 
 // StartRelay opens the two RTP ports for a container to send to. VideoPort and AudioPort say
 // where they are; the container is started with them after this.
@@ -125,6 +138,8 @@ func (m *Manager) StartRelay(opt RelayOptions) (*Relay, error) {
 	r := &Relay{id: id, m: m, log: m.log.With("relay", id, "emulator", opt.Emulator), opt: opt, video: vc, audio: ac, vtrack: vtrack, atrack: atrack,
 		viewers: map[*relayViewer]bool{}, done: make(chan struct{})}
 	r.lastInput.Store(time.Now().UnixNano())
+	r.unwatched.Store(time.Now().UnixNano())
+	r.rate = newRateLadder(opt.Kbps)
 	if opt.From.IsValid() {
 		r.AllowFrom(opt.From)
 	}
@@ -226,6 +241,86 @@ func (r *Relay) pump(c *net.UDPConn, track *webrtc.TrackLocalStaticRTP) {
 	}
 }
 
+// Push hands the relay one RTP packet that didn't come over UDP: the sandbox without Docker has
+// no network, and its packets arrive through a socket instead (inputagent.Bridge). video says
+// which track it's for.
+func (r *Relay) Push(video bool, p []byte) {
+	select {
+	case <-r.done:
+		return
+	default:
+	}
+	r.pkt.Lock()
+	defer r.pkt.Unlock()
+	if err := r.pushed.Unmarshal(p); err != nil {
+		return
+	}
+	r.packets.Add(1)
+	track := r.atrack
+	if video {
+		track = r.vtrack
+	}
+	_ = track.WriteRTP(&r.pushed)
+}
+
+// End tells everyone connected the game has ended and why, then stops the relay. reason is one
+// of the End constants; text is a sentence for the player, or "".
+func (r *Relay) End(reason, text string) {
+	b, _ := json.Marshal(struct {
+		Type   string `json:"type"`
+		Reason string `json:"reason"`
+		Text   string `json:"text,omitempty"`
+	}{"ended", reason, text})
+	r.mu.Lock()
+	vs := make([]*relayViewer, 0, len(r.viewers))
+	for v := range r.viewers {
+		vs = append(vs, v)
+	}
+	r.mu.Unlock()
+	for _, v := range vs {
+		if dc := v.events.Load(); dc != nil {
+			_ = dc.SendText(string(b))
+		}
+	}
+	if len(vs) > 0 {
+		time.Sleep(150 * time.Millisecond) // let the words leave before the connection does
+	}
+	r.Stop()
+}
+
+// Unwatched is how long nobody has been connected; 0 while someone is.
+func (r *Relay) Unwatched() time.Duration {
+	since := r.unwatched.Load()
+	if since == 0 {
+		return 0
+	}
+	return time.Since(time.Unix(0, since))
+}
+
+// watchedLocked keeps Unwatched right as people come and go. Called with r.mu held.
+func (r *Relay) watchedLocked() {
+	if len(r.viewers) > 0 {
+		r.unwatched.Store(0)
+	} else if r.unwatched.Load() == 0 {
+		r.unwatched.Store(time.Now().UnixNano())
+	}
+}
+
+// reportLoss hears how much of the picture one browser says it lost, and asks for another
+// bitrate when the ladder says to.
+func (r *Relay) reportLoss(loss float64) {
+	if r.opt.SetBitrate == nil {
+		return
+	}
+	r.rateMu.Lock()
+	kbps, changed := r.rate.report(loss, time.Now())
+	r.rateMu.Unlock()
+	if changed {
+		r.log.Info("the stream's bitrate changed", "kbps", kbps, "loss", loss)
+		r.opt.SetBitrate(kbps)
+	}
+}
+
 func (r *Relay) guard() {
 	if p := recover(); p != nil {
 		r.log.Error("a relay crashed", "panic", p)
@@ -280,10 +375,22 @@ func (r *Relay) Connect(ctx context.Context, hello Hello, offer string) (Connect
 			if err != nil {
 				return fail(err)
 			}
+			video := t == webrtc.TrackLocal(r.vtrack)
 			go func() {
 				for {
-					if _, _, err := sender.ReadRTCP(); err != nil {
+					pkts, _, err := sender.ReadRTCP()
+					if err != nil {
 						return
+					}
+					if !video {
+						continue
+					}
+					for _, p := range pkts {
+						if rr, ok := p.(*rtcp.ReceiverReport); ok {
+							for _, rep := range rr.Reports {
+								r.reportLoss(float64(rep.FractionLost) / 256)
+							}
+						}
 					}
 				}
 			}()
@@ -299,6 +406,7 @@ func (r *Relay) Connect(ctx context.Context, hello Hello, offer string) (Connect
 				}
 			})
 		case "events":
+			v.events.Store(dc)
 			dc.OnOpen(func() {
 				b, _ := json.Marshal(info)
 				_ = dc.SendText(string(b))
@@ -337,6 +445,7 @@ func (r *Relay) Connect(ctx context.Context, hello Hello, offer string) (Connect
 		}
 		delete(r.viewers, oldest)
 	}
+	r.watchedLocked()
 	r.mu.Unlock()
 	if oldest != nil {
 		oldest.close()
@@ -379,6 +488,7 @@ func (r *Relay) input(p []byte) {
 func (r *Relay) drop(v *relayViewer) {
 	r.mu.Lock()
 	delete(r.viewers, v)
+	r.watchedLocked()
 	r.mu.Unlock()
 	v.close()
 }

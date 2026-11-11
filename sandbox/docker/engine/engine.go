@@ -59,7 +59,29 @@ func (e *Engine) Available(ctx context.Context) docker.Status {
 		return st
 	}
 	st.Available, st.APIVersion, st.OS = true, p.APIVersion, p.OSType
+	// What machine it is and whether the daemon is rootless. Not knowing isn't a failure.
+	if res, err := e.c.Info(ctx, client.InfoOptions{}); err == nil {
+		st.Arch, st.CPUs, st.MemoryMB = goArch(res.Info.Architecture), res.Info.NCPU, res.Info.MemTotal>>20
+		for _, o := range res.Info.SecurityOptions {
+			if strings.Contains(o, "rootless") {
+				st.Rootless = true
+			}
+		}
+	}
 	return st
+}
+
+// goArch turns the kernel's name for a processor into Go's.
+func goArch(a string) string {
+	switch a {
+	case "x86_64", "amd64":
+		return "amd64"
+	case "aarch64", "arm64":
+		return "arm64"
+	case "armv7l", "armv6l", "arm":
+		return "arm"
+	}
+	return a
 }
 
 // Pull fetches an image, which must be pinned to a digest.
@@ -79,6 +101,9 @@ func (e *Engine) Pull(ctx context.Context, ref string) error {
 func (e *Engine) Create(ctx context.Context, s docker.Spec) (string, error) {
 	if err := docker.Check(s); err != nil {
 		return "", fmt.Errorf("refusing to create a container: %w", err)
+	}
+	if s.Local || !docker.Pinned(s.Image) {
+		return "", fmt.Errorf("refusing to create a container: %w", docker.ErrNotPinned)
 	}
 	stop := int(s.StopTimeout / time.Second)
 	cfg := &container.Config{
@@ -149,6 +174,16 @@ func (e *Engine) Stop(ctx context.Context, id string, timeout time.Duration) err
 	return err
 }
 
+func (e *Engine) Pause(ctx context.Context, id string) error {
+	_, err := e.c.ContainerPause(ctx, id, client.ContainerPauseOptions{})
+	return err
+}
+
+func (e *Engine) Unpause(ctx context.Context, id string) error {
+	_, err := e.c.ContainerUnpause(ctx, id, client.ContainerUnpauseOptions{})
+	return err
+}
+
 func (e *Engine) Remove(ctx context.Context, id string) error {
 	_, err := e.c.ContainerRemove(ctx, id, client.ContainerRemoveOptions{Force: true, RemoveVolumes: true})
 	return err
@@ -199,7 +234,7 @@ func (e *Engine) Inspect(ctx context.Context, id string) (docker.Info, error) {
 		info.Labels = c.Config.Labels
 	}
 	if c.State != nil {
-		info.Running, info.State = c.State.Running, string(c.State.Status)
+		info.Running, info.Paused, info.State = c.State.Running, c.State.Paused, string(c.State.Status)
 	}
 	if t, err := time.Parse(time.RFC3339Nano, c.Created); err == nil {
 		info.Created = t

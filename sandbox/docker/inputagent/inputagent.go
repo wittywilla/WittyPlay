@@ -9,9 +9,10 @@
 // Why keys and xdotool, not uinput: a virtual pad through /dev/uinput needs that device in the
 // container, which the hardening refuses, and a program that reads raw pads would see the
 // host's too. Every desktop emulator takes the keyboard, and its own settings map keys to the
-// console's buttons. The agent's key map is in Keys; an image sets the emulator's settings to
-// match. Analogue sticks become their directions' keys past a threshold, which is enough for
-// menus and most games and is the known limit of this agent.
+// console's buttons. Each of four players has keys of their own (KeyMap), which an
+// administrator can change; an image sets the emulator's settings to match. Analogue sticks
+// become their directions' keys past a threshold, which is enough for menus and most games and
+// is the known limit of this agent. There's no way back for rumble: a keyboard has none.
 //
 // The protocol: the client sends the session's secret and a newline, then frames of one length
 // byte and that many bytes. The agent closes a connection whose first line is wrong, and takes
@@ -22,11 +23,14 @@ import (
 	"bufio"
 	"context"
 	"crypto/subtle"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"os/exec"
+	"regexp"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -116,45 +120,110 @@ type Sink interface {
 	Pointer(x, y float64, pressed bool) error // 0..1 across the display
 }
 
-// Keys maps the libretro joypad buttons (bit numbers in a pad message) to X key names, for the
-// first player. An image configures its emulator to these.
-var Keys = map[int]string{
-	0:  "z",         // B
-	1:  "a",         // Y
-	2:  "BackSpace", // Select
-	3:  "Return",    // Start
-	4:  "Up",
-	5:  "Down",
-	6:  "Left",
-	7:  "Right",
-	8:  "x", // A
-	9:  "s", // X
-	10: "q", // L
-	11: "w", // R
-	12: "e", // L2
-	13: "r", // R2
-	14: "d", // L3
-	15: "f", // R3
+// MaxPlayers is how many pads the agent gives keys to.
+const MaxPlayers = 4
+
+// Buttons names a pad's buttons by their bit in a pad message (libretro's joypad order), and
+// then the two sticks' directions, which become keys past stickThreshold. These names are the
+// keys of a KeyMap.
+var Buttons = []string{"b", "y", "select", "start", "up", "down", "left", "right", "a", "x", "l", "r", "l2", "r2", "l3", "r3",
+	"lup", "ldown", "lleft", "lright", "rup", "rdown", "rleft", "rright"}
+
+// KeyMap says which X key each button of each player presses. An administrator can change it
+// (the "keys.p1" to "keys.p4" settings) to match the keys an emulator already knows.
+type KeyMap [MaxPlayers]map[string]string
+
+// DefaultKeys is the map used when nothing else is set. An emulator's own settings have to map
+// these keys to its pads; an image ships settings that do. Player 4's use the function keys,
+// which some emulators keep for themselves, so those are the first to change.
+func DefaultKeys() KeyMap {
+	row := func(keys ...string) map[string]string {
+		m := map[string]string{}
+		for i, k := range keys {
+			if k != "" {
+				m[Buttons[i]] = k
+			}
+		}
+		return m
+	}
+	return KeyMap{
+		row("z", "a", "BackSpace", "Return", "Up", "Down", "Left", "Right", "x", "s", "q", "w", "e", "r", "d", "f", "i", "k", "j", "l", "t", "g", "v", "b"),
+		row("KP_2", "KP_1", "KP_Subtract", "KP_Add", "Home", "End", "Delete", "Next", "KP_3", "KP_5", "KP_4", "KP_6", "KP_7", "KP_9", "KP_0", "KP_Decimal",
+			"KP_8", "KP_Divide", "KP_Multiply", "Prior", "c", "h", "Insert", "KP_Enter"),
+		row("1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "m", "n", "o", "p", "u", "y", "minus", "equal", "bracketleft", "bracketright"),
+		row("F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "semicolon", "apostrophe", "comma", "period", "slash", "backslash", "grave", "Tab"),
+	}
 }
 
-// Stick keys: the left stick's directions, past stickThreshold.
-var stickKeys = [4]string{"i", "k", "j", "l"} // up, down, left, right
+var keyName = regexp.MustCompile(`^[A-Za-z0-9_]{1,32}$`)
+
+// ParseKeys reads a KeyMap from JSON (a list of up to four objects, button name to X key name)
+// laid over the defaults. A name that isn't a button, or a key that couldn't be an X key name,
+// is refused: the key reaches xdotool's command line.
+func ParseKeys(js string) (KeyMap, error) {
+	km := DefaultKeys()
+	if js == "" {
+		return km, nil
+	}
+	var in []map[string]string
+	if err := json.Unmarshal([]byte(js), &in); err != nil || len(in) > MaxPlayers {
+		return km, errors.New("the key map is unreadable")
+	}
+	for p, m := range in {
+		for button, key := range m {
+			if !slices.Contains(Buttons, button) {
+				return km, fmt.Errorf("there's no button named %q", button)
+			}
+			if key == "" {
+				delete(km[p], button)
+				continue
+			}
+			if !keyName.MatchString(key) {
+				return km, fmt.Errorf("%q can't be a key's name", key)
+			}
+			km[p][button] = key
+		}
+	}
+	return km, nil
+}
 
 const stickThreshold = 16384
+
+// ControlMark begins a message that isn't input: ControlMark, then a bitrate in kbit/s as two
+// bytes, low first. Its length is no pad, pointer or touch message's.
+const (
+	ControlMark = 0xB7
+	ControlSize = 3
+)
+
+// BitrateMessage asks the agent to have the picture encoded at kbps from now on.
+func BitrateMessage(kbps int) []byte {
+	kbps = min(max(kbps, 1), 65535)
+	return []byte{ControlMark, byte(kbps), byte(kbps >> 8)}
+}
 
 // Agent turns messages into Sink calls, remembering what's held so it only sends changes.
 type Agent struct {
 	Sink Sink
-	held map[string]bool
+	// Keys is the key map; DefaultKeys if it was never set.
+	Keys *KeyMap
+	// Bitrate, if set, hears a request to change the encoder's bitrate.
+	Bitrate func(kbps int)
+	held    [MaxPlayers]map[string]bool
 }
 
-// Handle applies one message. Messages for players other than the first are ignored: this agent
-// gives one player a keyboard.
+// Handle applies one message. Each of four players has keys of their own.
 func (a *Agent) Handle(p []byte) error {
-	if a.held == nil {
-		a.held = map[string]bool{}
+	if a.Keys == nil {
+		km := DefaultKeys()
+		a.Keys = &km
 	}
 	switch {
+	case len(p) == ControlSize && p[0] == ControlMark:
+		if a.Bitrate != nil {
+			a.Bitrate(int(p[1]) | int(p[2])<<8)
+		}
+		return nil
 	case len(p) == ipc.PointerSize && p[0] == ipc.PointerMark:
 		x, y, pressed, ok := ipc.ParsePointer(p)
 		if !ok {
@@ -171,42 +240,49 @@ func (a *Agent) Handle(p []byte) error {
 		}
 		return a.Sink.Pointer((float64(t[0].X)+32767)/65534, (float64(t[0].Y)+32767)/65534, t[0].Pressed)
 	}
-	port, buttons, lx, ly, _, _, ok := ipc.ParseInput(p)
+	port, buttons, lx, ly, rx, ry, ok := ipc.ParseInput(p)
 	if !ok {
 		return errors.New("not a message this agent knows")
 	}
-	if port != 0 {
+	if port < 0 || port >= MaxPlayers {
 		return nil
 	}
+	keys := a.Keys[port]
 	want := map[string]bool{}
-	for bit, key := range Keys {
-		if buttons&(1<<bit) != 0 {
-			want[key] = true
+	press := func(button string) {
+		if k := keys[button]; k != "" {
+			want[k] = true
 		}
 	}
-	if ly < -stickThreshold {
-		want[stickKeys[0]] = true
+	for bit := 0; bit < 16; bit++ {
+		if buttons&(1<<bit) != 0 {
+			press(Buttons[bit])
+		}
 	}
-	if ly > stickThreshold {
-		want[stickKeys[1]] = true
+	for i, v := range []int16{ly, lx, ry, rx} {
+		names := [4][2]string{{"lup", "ldown"}, {"lleft", "lright"}, {"rup", "rdown"}, {"rleft", "rright"}}[i]
+		if v < -stickThreshold {
+			press(names[0])
+		}
+		if v > stickThreshold {
+			press(names[1])
+		}
 	}
-	if lx < -stickThreshold {
-		want[stickKeys[2]] = true
+	if a.held[port] == nil {
+		a.held[port] = map[string]bool{}
 	}
-	if lx > stickThreshold {
-		want[stickKeys[3]] = true
-	}
+	held := a.held[port]
 	var errs []error
-	for key := range a.held {
+	for key := range held {
 		if !want[key] {
 			errs = append(errs, a.Sink.Key(key, false))
-			delete(a.held, key)
+			delete(held, key)
 		}
 	}
 	for key := range want {
-		if !a.held[key] {
+		if !held[key] {
 			errs = append(errs, a.Sink.Key(key, true))
-			a.held[key] = true
+			held[key] = true
 		}
 	}
 	return errors.Join(errs...)
@@ -214,14 +290,22 @@ func (a *Agent) Handle(p []byte) error {
 
 // Release lets go of everything, when a connection ends.
 func (a *Agent) Release() {
-	for key := range a.held {
-		_ = a.Sink.Key(key, false)
+	for p := range a.held {
+		for key := range a.held[p] {
+			_ = a.Sink.Key(key, false)
+		}
+		a.held[p] = nil
 	}
-	a.held = map[string]bool{}
 }
 
 // Serve accepts one connection at a time on l, checks its secret, and applies what it sends.
 func Serve(ctx context.Context, l net.Listener, secret string, sink Sink) error {
+	return ServeWith(ctx, l, secret, func() *Agent { return &Agent{Sink: sink} })
+}
+
+// ServeWith is Serve with an agent of the caller's making for each connection: one with a key
+// map, or one that hears bitrate requests.
+func ServeWith(ctx context.Context, l net.Listener, secret string, agent func() *Agent) error {
 	if len(secret) < 32 {
 		return errors.New("the input agent needs a secret of 32 characters or more")
 	}
@@ -234,7 +318,7 @@ func Serve(ctx context.Context, l net.Listener, secret string, sink Sink) error 
 			}
 			return err
 		}
-		serveConn(c, secret, &Agent{Sink: sink})
+		serveConn(c, secret, agent())
 	}
 }
 

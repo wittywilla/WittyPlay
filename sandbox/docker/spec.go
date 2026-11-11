@@ -73,9 +73,35 @@ type Request struct {
 	// InputToken is the per-session secret the input agent requires: inputagent.
 	InputToken string
 
+	// Local asks for the sandbox without Docker (sandbox/local): no image, and no network at
+	// all. The picture, sound and input cross through a socket in IODir instead.
+	Local bool
+	// IODir is that socket's folder on the host, for Local only.
+	IODir string
+
+	// The stream's size, rate and starting bitrate; zero means 1280x720, 60 and 6000 kbit/s.
+	Width, Height, FPS, Kbps int
+	// Encoder is "x264" (the processor) or "vaapi" (the graphics card, which needs GPU.DRI).
+	Encoder string
+	// Keys is the input agent's key map as JSON (inputagent.KeyMap), or "" for its own.
+	Keys string
+
 	Limits Limits
 	GPU    GPU
 }
+
+// ContainerIO is where a Local sandbox finds the socket to WittyPlay.
+const ContainerIO = "/run/wittyplay/io"
+
+// LocalNetwork is the network a Local spec names: none at all but its own loopback.
+const LocalNetwork = "isolated"
+
+// The ports a Local sandbox's FFmpeg sends RTP to on its own loopback, where the agent picks
+// it up. Nothing outside the sandbox can reach them.
+const (
+	LocalRTPVideo = 5004
+	LocalRTPAudio = 5006
+)
 
 // Limits on one container.
 type Limits struct {
@@ -97,8 +123,11 @@ type GPU struct {
 var (
 	validSession = regexp.MustCompile(`^[a-f0-9]{8,64}$`)
 	validEmuID   = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,63}$`)
-	pinnedImage  = regexp.MustCompile(`^[a-z0-9]+([._-][a-z0-9]+)*(:[0-9]+)?(/[a-z0-9]+([._-][a-z0-9]+)*)+(:[A-Za-z0-9_][A-Za-z0-9._-]{0,127})?@sha256:[0-9a-f]{64}$`)
-	envKey       = regexp.MustCompile(`^[A-Z_][A-Z0-9_]{0,63}$`)
+	// An image built on this machine has no registry digest. Its own id is as fixed: it names
+	// the image's contents, and no tag can be moved onto it.
+	localImage  = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
+	pinnedImage = regexp.MustCompile(`^[a-z0-9]+([._-][a-z0-9]+)*(:[0-9]+)?(/[a-z0-9]+([._-][a-z0-9]+)*)+(:[A-Za-z0-9_][A-Za-z0-9._-]{0,127})?@sha256:[0-9a-f]{64}$`)
+	envKey      = regexp.MustCompile(`^[A-Z_][A-Z0-9_]{0,63}$`)
 )
 
 // envDenied are variables a caller may not set: they would change what the loader does or
@@ -117,8 +146,38 @@ func Build(r Request) (Spec, error) {
 	if !validEmuID.MatchString(r.Emulator) {
 		return Spec{}, errors.New("bad emulator id")
 	}
-	if !pinnedImage.MatchString(r.Image) {
+	if r.Local {
+		if r.Image != "" || r.Stream != "pipe" || r.PublishLoopback {
+			return Spec{}, errors.New("the local sandbox has no images, no desktop stream and no ports")
+		}
+		if err := hostPath(r.IODir); err != nil {
+			return Spec{}, fmt.Errorf("the socket's folder: %w", err)
+		}
+		r.Network, r.RTPHost, r.RTPVideo, r.RTPAudio = LocalNetwork, "127.0.0.1", LocalRTPVideo, LocalRTPAudio
+	} else if !Pinned(r.Image) {
 		return Spec{}, ErrNotPinned
+	}
+	if r.Encoder != "" && r.Encoder != "x264" && r.Encoder != "vaapi" {
+		return Spec{}, fmt.Errorf("encoder %q is neither x264 nor vaapi", r.Encoder)
+	}
+	if r.Encoder == "vaapi" && !r.GPU.DRI {
+		return Spec{}, errors.New("encoding on the graphics card needs it passed through (docker.gpu DRI)")
+	}
+	if r.Width == 0 && r.Height == 0 {
+		r.Width, r.Height = 1280, 720
+	}
+	if r.FPS == 0 {
+		r.FPS = 60
+	}
+	if r.Kbps == 0 {
+		r.Kbps = 6000
+	}
+	if r.Width < 320 || r.Width > 3840 || r.Height < 240 || r.Height > 2160 || r.Width%2 != 0 || r.Height%2 != 0 ||
+		r.FPS < 15 || r.FPS > 120 || r.Kbps < 300 || r.Kbps > 50000 {
+		return Spec{}, errors.New("the stream's size, rate or bitrate is out of range")
+	}
+	if len(r.Keys) > 8192 || strings.ContainsAny(r.Keys, "\n\r\x00") {
+		return Spec{}, errors.New("the key map is too long")
 	}
 	for name, p := range map[string]string{"game": r.ROM, "save folder": r.SaveDir} {
 		if err := hostPath(p); err != nil {
@@ -154,6 +213,19 @@ func Build(r Request) (Spec, error) {
 		"WITTYPLAY_STREAM=" + r.Stream,
 		"WITTYPLAY_ROM=" + ContainerROM + "/" + filepath.Base(r.ROM),
 		"WITTYPLAY_INPUT_PORT=" + strconv.Itoa(InputPort),
+		"WITTYPLAY_WIDTH=" + strconv.Itoa(r.Width),
+		"WITTYPLAY_HEIGHT=" + strconv.Itoa(r.Height),
+		"WITTYPLAY_FPS=" + strconv.Itoa(r.FPS),
+		"WITTYPLAY_KBPS=" + strconv.Itoa(r.Kbps),
+	}
+	if r.Encoder != "" {
+		env = append(env, "WITTYPLAY_ENCODER="+r.Encoder)
+	}
+	if r.Keys != "" {
+		env = append(env, "WITTYPLAY_KEYS="+r.Keys)
+	}
+	if r.Local {
+		env = append(env, "WITTYPLAY_IO="+ContainerIO)
 	}
 	if r.BIOSDir != "" {
 		env = append(env, "WITTYPLAY_BIOS="+ContainerBIOS)
@@ -195,6 +267,9 @@ func Build(r Request) (Spec, error) {
 		}
 		mounts = append(mounts, Mount{Source: r.ProgramDir, Target: ContainerProgram, ReadOnly: true})
 	}
+	if r.Local {
+		mounts = append(mounts, Mount{Source: r.IODir, Target: ContainerIO, ReadOnly: false})
+	}
 	if r.AppImage && r.ProgramDir == "" {
 		return Spec{}, errors.New("an AppImage needs the emulator's folder")
 	}
@@ -227,6 +302,7 @@ func Build(r Request) (Spec, error) {
 			ContainerEmuHome: fmt.Sprintf("rw,noexec,nosuid,nodev,size=64m,uid=%d,gid=%d,mode=0700", l.UID, l.UID),
 		},
 		Mounts:      mounts,
+		Local:       r.Local,
 		Network:     r.Network,
 		StopTimeout: DefaultStop,
 	}
@@ -241,6 +317,8 @@ func Build(r Request) (Spec, error) {
 		if r.Stream == "pipe" {
 			port = InputPort
 		}
+		// On another machine's daemon (Docker Desktop's virtual machine) the relay isn't on the
+		// container's network either, so it's reached through the host's gateway name.
 		s.Publish = []Publish{{Port: port, Proto: "tcp", HostIP: netip.MustParseAddr("127.0.0.1")}}
 		if r.Stream == "kasmvnc" {
 			s.Publish = append(s.Publish, Publish{Port: InputPort, Proto: "tcp", HostIP: netip.MustParseAddr("127.0.0.1")})
@@ -287,13 +365,20 @@ func hostPath(p string) error {
 	if filepath.Clean(p) != p {
 		return errors.New("isn't a clean path")
 	}
-	for _, bad := range []string{"/", "/etc", "/proc", "/sys", "/dev", "/var/run", "/run", "/boot", "/root"} {
-		if p == bad || strings.HasPrefix(p, bad+"/") && (bad == "/proc" || bad == "/sys" || bad == "/dev") {
+	// These and everything under them. /run and /var/run are refused themselves, and so is
+	// what the system keeps there, but not /run/media and /run/user/<id>/..., where Linux mounts
+	// people's own disks.
+	for _, bad := range []string{"/etc", "/proc", "/sys", "/dev", "/boot", "/root", "/var/run", "/var/lib/docker", "/var/lib/containers", "/run/docker", "/run/containerd", "/run/podman", "/run/systemd", "/run/dbus", "/run/secrets"} {
+		if p == bad || strings.HasPrefix(p, bad+"/") {
 			return fmt.Errorf("%s can't be given to a container", p)
 		}
 	}
-	if strings.Contains(p, "docker.sock") {
-		return errors.New("the Docker socket is never given to a container")
+	if p == "/" || p == "/run" || p == "/var" || p == "/usr" || p == "/home" {
+		return fmt.Errorf("%s can't be given to a container", p)
+	}
+	// A daemon's socket is the machine: Docker's, Podman's, containerd's, whatever its folder.
+	if low := strings.ToLower(p); strings.HasSuffix(low, ".sock") || strings.Contains(low, "docker.sock") || strings.Contains(low, "podman.sock") || strings.Contains(low, "containerd.sock") {
+		return errors.New("a daemon's socket is never given to a container")
 	}
 	return nil
 }
@@ -314,12 +399,25 @@ func Check(s Spec) error {
 		return errors.New("a container is never privileged")
 	case s.PidsLimit <= 0 || s.MemoryBytes <= 0 || s.NanoCPUs <= 0:
 		return errors.New("a container needs pids, memory and CPU limits")
-	case s.Network == "" || s.Network == "host" || s.Network == "bridge":
+	case s.Network == "" || s.Network == "host" || s.Network == "bridge" || s.Network == "none" || strings.HasPrefix(s.Network, "container:"):
 		return fmt.Errorf("network %q isn't WittyPlay's own", s.Network)
+	case s.Local != (s.Network == LocalNetwork):
+		return errors.New("only the local sandbox, and always the local sandbox, has no network")
+	case s.Local && (s.Image != "" || len(s.Publish) > 0 || len(s.ExtraHosts) > 0 || s.NvidiaGPUs):
+		return errors.New("the local sandbox has no images, ports or hosts")
 	case s.Labels[LabelManaged] != "true" || s.Labels[LabelSession] == "":
 		return errors.New("a container must carry WittyPlay's labels")
-	case !pinnedImage.MatchString(s.Image):
+	case !s.Local && !Pinned(s.Image):
 		return ErrNotPinned
+	}
+	if !s.Init {
+		return errors.New("a container needs an init, so that nothing outlives its emulator")
+	}
+	for _, e := range s.Env {
+		k, _, _ := strings.Cut(e, "=")
+		if k == "LD_PRELOAD" || k == "LD_LIBRARY_PATH" || k == "LD_AUDIT" || k == "DOCKER_HOST" {
+			return fmt.Errorf("the variable %s can't be set", k)
+		}
 	}
 	for _, o := range s.SecurityOpt {
 		if strings.Contains(o, "unconfined") || strings.HasPrefix(o, "seccomp") || strings.HasPrefix(o, "apparmor") {
@@ -343,15 +441,26 @@ func Check(s Spec) error {
 			return errors.New("a port is only ever published on 127.0.0.1")
 		}
 	}
+	roms := 0
 	for _, m := range s.Mounts {
 		if err := hostPath(m.Source); err != nil {
 			return fmt.Errorf("mount %s: %w", m.Source, err)
+		}
+		if strings.HasPrefix(m.Target, ContainerROM+"/") {
+			roms++
+		}
+		if m.Target != ContainerSaves && m.Target != ContainerBIOS && m.Target != ContainerProgram && !strings.HasPrefix(m.Target, ContainerROM+"/") &&
+			!(s.Local && m.Target == ContainerIO) {
+			return fmt.Errorf("%s isn't somewhere WittyPlay mounts anything", m.Target)
 		}
 		if m.Target == ContainerROM || strings.HasPrefix(m.Target, ContainerROM+"/") || m.Target == ContainerBIOS || m.Target == ContainerProgram {
 			if !m.ReadOnly {
 				return fmt.Errorf("%s must be read-only", m.Target)
 			}
 		}
+	}
+	if roms != 1 {
+		return errors.New("a container gets exactly one game, read-only")
 	}
 	for _, d := range s.Devices {
 		if d != "/dev/dri" {
@@ -362,4 +471,7 @@ func Check(s Spec) error {
 }
 
 // Pinned says an image reference names a digest.
-func Pinned(ref string) bool { return pinnedImage.MatchString(ref) }
+func Pinned(ref string) bool { return pinnedImage.MatchString(ref) || localImage.MatchString(ref) }
+
+// LocalImage says a reference is an image id on this machine, which can't be pulled.
+func LocalImage(ref string) bool { return localImage.MatchString(ref) }

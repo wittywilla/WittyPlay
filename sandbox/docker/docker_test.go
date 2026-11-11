@@ -144,18 +144,43 @@ func TestCheckRefusesWeakenedSpecs(t *testing.T) {
 		t.Fatal(err)
 	}
 	mut := map[string]func(*Spec){
-		"root":         func(s *Spec) { s.User = "0:0" },
-		"writable":     func(s *Spec) { s.ReadOnlyRoot = false },
-		"caps":         func(s *Spec) { s.CapAdd = []string{"SYS_ADMIN"} },
-		"no nnp":       func(s *Spec) { s.SecurityOpt = nil },
-		"unconfined":   func(s *Spec) { s.SecurityOpt = append(s.SecurityOpt, "seccomp=unconfined") },
-		"privileged":   func(s *Spec) { s.Privileged = true },
-		"no pids":      func(s *Spec) { s.PidsLimit = 0 },
-		"no memory":    func(s *Spec) { s.MemoryBytes = 0 },
-		"public port":  func(s *Spec) { s.Publish = []Publish{{Port: 1, Proto: "tcp", HostIP: netip.MustParseAddr("0.0.0.0")}} },
-		"rom writable": func(s *Spec) { s.Mounts[0].ReadOnly = false },
-		"device":       func(s *Spec) { s.Devices = []string{"/dev/kvm"} },
-		"no label":     func(s *Spec) { s.Labels = map[string]string{} },
+		"root":              func(s *Spec) { s.User = "0:0" },
+		"writable":          func(s *Spec) { s.ReadOnlyRoot = false },
+		"caps":              func(s *Spec) { s.CapAdd = []string{"SYS_ADMIN"} },
+		"no nnp":            func(s *Spec) { s.SecurityOpt = nil },
+		"unconfined":        func(s *Spec) { s.SecurityOpt = append(s.SecurityOpt, "seccomp=unconfined") },
+		"privileged":        func(s *Spec) { s.Privileged = true },
+		"no pids":           func(s *Spec) { s.PidsLimit = 0 },
+		"no memory":         func(s *Spec) { s.MemoryBytes = 0 },
+		"public port":       func(s *Spec) { s.Publish = []Publish{{Port: 1, Proto: "tcp", HostIP: netip.MustParseAddr("0.0.0.0")}} },
+		"rom writable":      func(s *Spec) { s.Mounts[0].ReadOnly = false },
+		"device":            func(s *Spec) { s.Devices = []string{"/dev/kvm"} },
+		"no label":          func(s *Spec) { s.Labels = map[string]string{} },
+		"no cpu":            func(s *Spec) { s.NanoCPUs = 0 },
+		"no init":           func(s *Spec) { s.Init = false },
+		"apparmor off":      func(s *Spec) { s.SecurityOpt = append(s.SecurityOpt, "apparmor=unconfined") },
+		"cap drop few":      func(s *Spec) { s.CapDrop = []string{"NET_RAW"} },
+		"host network":      func(s *Spec) { s.Network = "host" },
+		"no network":        func(s *Spec) { s.Network = "none" },
+		"another's network": func(s *Spec) { s.Network = "container:abc" },
+		"tag only":          func(s *Spec) { s.Image = "ghcr.io/a/b:latest" },
+		"no image":          func(s *Spec) { s.Image = "" },
+		"exec tmp":          func(s *Spec) { s.Tmpfs = map[string]string{"/tmp": "rw,exec,nosuid,nodev"} },
+		"suid tmp":          func(s *Spec) { s.Tmpfs = map[string]string{"/tmp": "rw,noexec,nodev"} },
+		"no tmp":            func(s *Spec) { s.Tmpfs = map[string]string{} },
+		"docker socket": func(s *Spec) {
+			s.Mounts = append(s.Mounts, Mount{Source: "/var/run/docker.sock", Target: "/saves/docker.sock"})
+		},
+		"a socket by another name": func(s *Spec) { s.Mounts[1].Source = "/home/me/.docker/run/docker.sock" },
+		"podman socket":            func(s *Spec) { s.Mounts[1].Source = "/run/user/1000/podman/podman.sock" },
+		"etc under saves":          func(s *Spec) { s.Mounts[1].Source = "/etc/cron.d" },
+		"an extra mount":           func(s *Spec) { s.Mounts = append(s.Mounts, Mount{Source: "/home/me", Target: "/host"}) },
+		"two games": func(s *Spec) {
+			s.Mounts = append(s.Mounts, Mount{Source: "/library/other.iso", Target: "/game/other.iso", ReadOnly: true})
+		},
+		"bios writable":     func(s *Spec) { s.Mounts[2].ReadOnly = false },
+		"ld_preload":        func(s *Spec) { s.Env = append(slices.Clone(s.Env), "LD_PRELOAD=/saves/x.so") },
+		"local on a daemon": func(s *Spec) { s.Local = true },
 	}
 	for name, m := range mut {
 		s := good
@@ -172,10 +197,14 @@ func TestCheckRefusesWeakenedSpecs(t *testing.T) {
 	}
 }
 
+var specUser int64 = 100
+
 func spec(t *testing.T, session string) Spec {
 	t.Helper()
 	r := request()
 	r.SessionID = session
+	specUser++ // each session is someone else's, as one person only ever has one
+	r.UserID = specUser
 	s, err := Build(r)
 	if err != nil {
 		t.Fatal(err)

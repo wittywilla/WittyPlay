@@ -10,13 +10,16 @@
 # Build from the WittyPlay repository's root (the input agent is built from source):
 #   docker build -f docker/images/base/Dockerfile -t ghcr.io/wittywilla/wittyplay-emu-base:dev .
 
-# TODO: pin by digest (golang:1.26-bookworm@sha256:...) once the release builds it.
-ARG GO_IMAGE=golang:1.26-bookworm
-# TODO: pin by digest (debian:bookworm-slim@sha256:...) once the release builds it.
-ARG DEBIAN_IMAGE=debian:bookworm-slim
-# KasmVNC's own .deb for bookworm. TODO: check its SHA-256 and set KASMVNC_SHA256.
-ARG KASMVNC_VERSION=1.3.3
-ARG KASMVNC_SHA256=TODO
+# Both base images are pinned by digest (the multi-platform index, read from Docker Hub on
+# 2026-11-11), so a build can't be handed something else under the same tag. To move to newer
+# ones: docker buildx imagetools inspect golang:1.26-bookworm, and the same for debian.
+ARG GO_IMAGE=golang:1.26-bookworm@sha256:dc40a13b61304647ed7e5d581d246b86413dfc29d63c6d018310feb93cd98fc0
+ARG DEBIAN_IMAGE=debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
+# KasmVNC's own .deb for bookworm, checked against GitHub's digest for each asset. A build for
+# a platform with no hash here stops: nothing unchecked is ever installed.
+ARG KASMVNC_VERSION=1.5.2
+ARG KASMVNC_SHA256_AMD64=5f4bfda43e89178782eac37ae463b1d95d16ac5e45da8b7989ec75404e764993
+ARG KASMVNC_SHA256_ARM64=b847429cbcf95736fdd5c3be682eea38cae4d689f012eec9c2d5f221b175d1c2
 
 # ---------------------------------------------------------------- the input agent
 FROM ${GO_IMAGE} AS agent
@@ -29,7 +32,8 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/wittyplay-input-ag
 # ---------------------------------------------------------------- the image
 FROM ${DEBIAN_IMAGE}
 ARG KASMVNC_VERSION
-ARG KASMVNC_SHA256
+ARG KASMVNC_SHA256_AMD64
+ARG KASMVNC_SHA256_ARM64
 ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -43,10 +47,14 @@ RUN apt-get update \
       ffmpeg \
       libgl1 libegl1 libgles2 libvulkan1 mesa-vulkan-drivers libgl1-mesa-dri \
       libfuse2 fonts-dejavu-core tini \
+ && case "${TARGETARCH}" in \
+      amd64) kasm_sha="${KASMVNC_SHA256_AMD64}" ;; \
+      arm64) kasm_sha="${KASMVNC_SHA256_ARM64}" ;; \
+      *) echo "no checked KasmVNC download for ${TARGETARCH}" >&2; exit 1 ;; \
+    esac \
  && curl -fsSL --proto '=https' -o /tmp/kasmvnc.deb \
-      "https://github.com/kasmtech/KasmVNC/releases/download/v${KASMVNC_VERSION}/kasmvncserver_bookworm_${KASMVNC_VERSION}_${TARGETARCH}.deb" \
- && if [ "${KASMVNC_SHA256}" != "TODO" ]; then echo "${KASMVNC_SHA256}  /tmp/kasmvnc.deb" | sha256sum -c -; \
-    else echo "WARNING: KasmVNC's download isn't pinned (KASMVNC_SHA256=TODO)" >&2; fi \
+      "https://github.com/kasmtech/KasmVNC/releases/download/v${KASMVNC_VERSION}/kasmvncserver_debian_bookworm_${KASMVNC_VERSION}_${TARGETARCH}.deb" \
+ && echo "${kasm_sha}  /tmp/kasmvnc.deb" | sha256sum -c - \
  && apt-get install -y --no-install-recommends /tmp/kasmvnc.deb \
  && rm -f /tmp/kasmvnc.deb \
  && apt-get purge -y curl && apt-get autoremove -y \

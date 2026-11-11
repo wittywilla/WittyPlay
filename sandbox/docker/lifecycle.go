@@ -37,16 +37,26 @@ type Container struct {
 	Started   time.Time
 
 	mu         sync.Mutex
+	paused     bool
 	lastActive time.Time
 	done       chan struct{}
 	doneOnce   sync.Once
 	reason     string
+	lastLog    string
+}
+
+// LastLog is the end of what an emulator said before it ended by itself, for the log.
+func (c *Container) LastLog() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.lastLog
 }
 
 // Done is closed once the container has been stopped and removed.
 func (c *Container) Done() <-chan struct{} { return c.done }
 
-// Reason says why it ended: "stopped", "idle", "lifetime", "exited".
+// Reason says why it ended: "stopped", "idle", "lifetime", "exited", "replaced" (the same person
+// started another), "unwatched".
 func (c *Container) Reason() string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -155,6 +165,10 @@ func (l *Lifecycle) Start(ctx context.Context, s Spec) (*Container, error) {
 	if old := l.Get(sid); old != nil {
 		_ = l.Stop(ctx, sid)
 	}
+	// One game at a time for each person, as with cores: starting another ends the one before.
+	if old := l.ForUser(s.Labels[LabelUser]); old != nil && s.Labels[LabelUser] != "" {
+		_ = l.stop(ctx, old.SessionID, "replaced")
+	}
 	l.mu.Lock()
 	if l.sessions == nil {
 		l.sessions = map[string]*Container{}
@@ -171,7 +185,7 @@ func (l *Lifecycle) Start(ctx context.Context, s Spec) (*Container, error) {
 		l.mu.Unlock()
 	}()
 
-	if l.Pull {
+	if l.Pull && !s.Local && !LocalImage(s.Image) {
 		if err := l.RT.Pull(ctx, s.Image); err != nil {
 			return nil, fmt.Errorf("pulling %s: %w", s.Image, err)
 		}
@@ -226,9 +240,68 @@ func (l *Lifecycle) Touch(sessionID string) {
 	}
 }
 
+// ForUser returns the container a person is playing in, or nil.
+func (l *Lifecycle) ForUser(user string) *Container {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for _, c := range l.sessions {
+		if c.UserID == user {
+			return c
+		}
+	}
+	return nil
+}
+
+// Paused says a session's emulator is frozen.
+func (c *Container) Paused() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.paused
+}
+
+// Pause freezes a session's emulator, and Resume lets it go on. A paused session still counts
+// against the limit, and is still stopped when it has sat for as long as an idle one may.
+func (l *Lifecycle) Pause(ctx context.Context, sessionID string) error {
+	return l.setPaused(ctx, sessionID, true)
+}
+
+// Resume lets a paused emulator go on.
+func (l *Lifecycle) Resume(ctx context.Context, sessionID string) error {
+	return l.setPaused(ctx, sessionID, false)
+}
+
+func (l *Lifecycle) setPaused(ctx context.Context, sessionID string, paused bool) error {
+	c := l.Get(sessionID)
+	if c == nil {
+		return ErrNoContainer
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.paused == paused {
+		return nil
+	}
+	var err error
+	if paused {
+		err = l.RT.Pause(ctx, c.ID)
+	} else {
+		err = l.RT.Unpause(ctx, c.ID)
+	}
+	if err != nil {
+		return err
+	}
+	c.paused = paused
+	c.lastActive = l.now()
+	return nil
+}
+
 // Stop stops and removes a session's container.
 func (l *Lifecycle) Stop(ctx context.Context, sessionID string) error {
 	return l.stop(ctx, sessionID, "stopped")
+}
+
+// StopBecause is Stop with a reason of the caller's.
+func (l *Lifecycle) StopBecause(ctx context.Context, sessionID, why string) error {
+	return l.stop(ctx, sessionID, why)
 }
 
 func (l *Lifecycle) stop(ctx context.Context, sessionID, why string) error {
@@ -240,6 +313,9 @@ func (l *Lifecycle) stop(ctx context.Context, sessionID, why string) error {
 		return ErrNoContainer
 	}
 	defer c.finish(why)
+	if c.Paused() {
+		_ = l.RT.Unpause(ctx, c.ID) // a frozen process can't be asked to stop
+	}
 	err := l.RT.Stop(ctx, c.ID, DefaultStop)
 	if rerr := l.RT.Remove(ctx, c.ID); rerr != nil {
 		return errors.Join(err, rerr)
@@ -287,6 +363,15 @@ func (l *Lifecycle) Reap(ctx context.Context) {
 		default:
 			if info, err := l.RT.Inspect(ctx, c.ID); err == nil && !info.Running {
 				l.log().Info("docker: a container ended by itself", "session", c.SessionID, "state", info.State)
+				// What it said last is the only clue to why, and it goes with the container.
+				if out, err := l.RT.Logs(ctx, c.ID, 40); err == nil {
+					if len(out) > 4096 {
+						out = out[len(out)-4096:]
+					}
+					c.mu.Lock()
+					c.lastLog = out
+					c.mu.Unlock()
+				}
 				_ = l.stop(ctx, c.SessionID, "exited")
 			}
 		}

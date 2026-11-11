@@ -15,6 +15,7 @@
     ],
     "dockerSettings": [
       "docker.enabled",
+      "docker.runtime",
       "docker.network",
       "docker.internal",
       "docker.publishLoopback",

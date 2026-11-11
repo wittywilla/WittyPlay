@@ -140,18 +140,37 @@ func init() {
 		configure(c.Config, c.Encoders)
 		return nil, nil, nil
 	}
+	// A game in a standalone emulator. Only the server calls these, with a game it has checked
+	// this person may play; a refusal comes back as an answer, not a failure.
+	Handlers["docker.Launch"] = func(ctx context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
+		var o LaunchOptions
+		if err := service.Arg(args, 0, &o); err != nil {
+			return nil, nil, err
+		}
+		ds, err := Docker.Launch(ctx, o)
+		var no *Refusal
+		if errors.As(err, &no) {
+			return []any{LaunchResult{Refusal: no}}, nil, nil
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+		return []any{LaunchResult{Session: ds}}, nil, nil
+	}
+	Handlers["docker.Offers"] = func(ctx context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
+		var console, systemDir string
+		if err := service.Arg(args, 0, &console); err != nil {
+			return nil, nil, err
+		}
+		if err := service.Arg(args, 1, &systemDir); err != nil {
+			return nil, nil, err
+		}
+		return []any{Docker.Offers(ctx, console, systemDir)}, nil, nil
+	}
 	Handlers["stream.Manager.Start"] = func(ctx context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
 		var o stream.Options
 		if err := service.Arg(args, 0, &o); err != nil {
 			return nil, nil, err
-		}
-		// A standalone emulator in a container, only when the Docker backend is on and an
-		// installed one plays this console. Anything else, or Docker missing, goes on below.
-		if ds, handled, err := Docker.Start(ctx, &o); handled {
-			if err != nil {
-				return nil, nil, err
-			}
-			return []any{ds}, nil, nil
 		}
 		o.OnCoreOptions = func(coreID string, list []ipc.Option) {
 			_ = wittymodule.Notify("stream.coreoptions", struct {

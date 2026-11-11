@@ -16,7 +16,10 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -62,12 +65,15 @@ type Installer struct {
 	// AllowPlaceholders installs an entry whose hash says TODO, recording what it got. For
 	// developers checking a new entry, never for a server people use.
 	AllowPlaceholders bool
-	// OnProgress hears how far a download has got: bytes so far, and the total if the server
-	// said it (else -1). Optional; called from the installing goroutine.
-	OnProgress   func(id string, got, total int64)
+	// OnProgress hears how far an install has got. Optional; called from the installing goroutine.
+	OnProgress   func(id string, p Progress)
 	MaxDownload  int64 // DefaultMaxDownload if 0
 	MaxUnpacked  int64 // DefaultMaxUnpacked if 0
 	GOOS, GOARCH string
+	// Platform, if set, says where emulators run, which isn't always where this program does:
+	// a Docker daemon in a virtual machine runs Linux programs whatever the server's own system
+	// is. It's asked at each install.
+	Platform func() (goos, goarch string)
 
 	mu   sync.Mutex
 	busy map[string]bool
@@ -86,6 +92,11 @@ func (in *Installer) hosts() []string {
 }
 
 func (in *Installer) platform() (string, string) {
+	if in.Platform != nil {
+		if goos, goarch := in.Platform(); goos != "" && goarch != "" {
+			return goos, goarch
+		}
+	}
 	goos, goarch := in.GOOS, in.GOARCH
 	if goos == "" {
 		goos = runtime.GOOS
@@ -94,6 +105,12 @@ func (in *Installer) platform() (string, string) {
 		goarch = runtime.GOARCH
 	}
 	return goos, goarch
+}
+
+// Artifact is the download of e for where emulators run, or nil.
+func (in *Installer) Artifact(e *Emulator) *Artifact {
+	goos, goarch := in.platform()
+	return e.For(goos, goarch)
 }
 
 // List returns what's installed, by id.
@@ -209,17 +226,32 @@ func (in *Installer) Install(ctx context.Context, e *Emulator) (*Installed, erro
 	}
 	defer os.RemoveAll(stage)
 
+	// The download is kept beside the staging folder under a name made from the hash it must
+	// have, so that a try that was cut short is carried on from, and a part of some other
+	// version's file never is. A file nobody has hashed has no such name and always starts again.
 	file := filepath.Join(stage, "download")
-	var progress func(got, total int64)
-	if in.OnProgress != nil {
-		progress = func(got, total int64) { in.OnProgress(e.ID, got, total) }
+	keep := !art.Placeholder()
+	if keep {
+		file = filepath.Join(dir, ".partial-"+art.SHA256[:16])
+		in.clearPartials(dir, filepath.Base(file), filepath.Base(stage))
 	}
-	sum, size, err := in.fetch(ctx, art.URL, file, progress)
+	var progress func(Progress)
+	if in.OnProgress != nil {
+		progress = func(p Progress) { in.OnProgress(e.ID, p) }
+	}
+	sum, size, err := in.fetch(ctx, art.URL, file, art.Size, progress)
 	if err != nil {
 		return nil, err
 	}
 	if !art.Placeholder() && sum != art.SHA256 {
+		_ = os.Remove(file) // nothing of it can be trusted, so nothing of it is kept
 		return nil, fmt.Errorf("%w: expected %s, got %s", ErrHash, art.SHA256, sum)
+	}
+	if keep {
+		defer os.Remove(file)
+	}
+	if progress != nil {
+		progress(Progress{Phase: PhaseUnpacking, Got: size, Total: size})
 	}
 	tree := filepath.Join(stage, "tree")
 	if err := os.Mkdir(tree, 0o755); err != nil {
@@ -271,6 +303,20 @@ func (in *Installer) Install(ctx context.Context, e *Emulator) (*Installed, erro
 	return &rec, nil
 }
 
+// clearPartials removes downloads and staging folders left from other versions and other tries.
+func (in *Installer) clearPartials(dir string, keep ...string) {
+	list, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, d := range list {
+		n := d.Name()
+		if !slices.Contains(keep, n) && (strings.HasPrefix(n, ".partial-") || strings.HasPrefix(n, ".staging-") || strings.HasPrefix(n, ".old-")) {
+			_ = os.RemoveAll(filepath.Join(dir, n))
+		}
+	}
+}
+
 // Uninstall removes an emulator and everything under its folder. Saves and settings aren't
 // there: they're in each person's own folder.
 func (in *Installer) Uninstall(id string) error {
@@ -297,9 +343,30 @@ func (in *Installer) Uninstall(id string) error {
 	return in.writeState(st)
 }
 
-// fetch streams one file to disk through SHA-256, refusing more than the cap, and returns its
-// hash in hex and its size.
-func (in *Installer) fetch(ctx context.Context, url, to string, progress func(got, total int64)) (string, int64, error) {
+// Progress is how far an install has got.
+type Progress struct {
+	Phase string // downloading | verifying | unpacking | done
+	Got   int64
+	Total int64 // -1: not known
+	// Resumed is how much of the download was kept from an earlier try.
+	Resumed int64
+}
+
+// Phases of an install.
+const (
+	PhaseDownloading = "downloading"
+	PhaseVerifying   = "verifying"
+	PhaseUnpacking   = "unpacking"
+	PhaseDone        = "done"
+)
+
+// fetch brings one file to disk at "to" and returns its SHA-256 in hex and its size. It carries
+// on from what an earlier try left there when the server allows (a Range request), and starts
+// again when it doesn't. Whatever it carried on from, the hash is taken over the whole file as it
+// is on disk at the end, so a part that was tampered with between tries is caught like any other
+// bad download. It refuses more than the cap, and anything that isn't want bytes when want is
+// known.
+func (in *Installer) fetch(ctx context.Context, url, to string, want int64, progress func(Progress)) (string, int64, error) {
 	client := http.Client{}
 	if in.Client != nil {
 		client = *in.Client
@@ -317,53 +384,117 @@ func (in *Installer) fetch(ctx context.Context, url, to string, progress func(go
 		}
 		return nil
 	}
+	limit := in.MaxDownload
+	if limit <= 0 {
+		limit = DefaultMaxDownload
+	}
+	if want > limit {
+		return "", 0, ErrTooLarge
+	}
+	var have int64
+	if st, err := os.Lstat(to); err == nil {
+		if !st.Mode().IsRegular() || st.Size() > limit || (want > 0 && st.Size() > want) {
+			if err := os.Remove(to); err != nil {
+				return "", 0, err
+			}
+		} else {
+			have = st.Size()
+		}
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", 0, err
+	}
+	if have > 0 && (want <= 0 || have < want) {
+		req.Header.Set("Range", "bytes="+strconv.FormatInt(have, 10)+"-")
+	}
+	if want > 0 && have == want {
+		// All of it is here from last time: only the hash is left to check.
+		sum, err := hashFile(to)
+		return sum, have, err
 	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", 0, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	flags := os.O_WRONLY | os.O_CREATE
+	switch {
+	case resp.StatusCode == http.StatusPartialContent && have > 0 &&
+		strings.HasPrefix(resp.Header.Get("Content-Range"), "bytes "+strconv.FormatInt(have, 10)+"-"):
+		flags |= os.O_APPEND
+	case resp.StatusCode == http.StatusOK:
+		have = 0
+		flags |= os.O_TRUNC
+	case resp.StatusCode == http.StatusRequestedRangeNotSatisfiable && have > 0:
+		// What's here is no part of what the server has now: start again next time.
+		_ = os.Remove(to)
+		return "", 0, errors.New("the download changed since it was started; try again")
+	default:
 		return "", 0, fmt.Errorf("the download server answered %s", resp.Status)
 	}
-	limit := in.MaxDownload
-	if limit <= 0 {
-		limit = DefaultMaxDownload
+	total := int64(-1)
+	if resp.ContentLength >= 0 {
+		total = have + resp.ContentLength
 	}
-	if resp.ContentLength > limit {
+	if total > limit || (want > 0 && total >= 0 && total != want) {
 		return "", 0, ErrTooLarge
 	}
-	f, err := os.OpenFile(to, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if want > 0 {
+		total = want
+	}
+	f, err := os.OpenFile(to, flags, 0o600)
 	if err != nil {
 		return "", 0, err
 	}
-	h := sha256.New()
-	var dst io.Writer = io.MultiWriter(f, h)
+	var dst io.Writer = f
 	if progress != nil {
-		dst = &progressWriter{w: dst, total: resp.ContentLength, fn: progress}
+		progress(Progress{Phase: PhaseDownloading, Got: have, Total: total, Resumed: have})
+		dst = &progressWriter{w: f, got: have, lastReport: have, fn: func(got int64) {
+			progress(Progress{Phase: PhaseDownloading, Got: got, Total: total, Resumed: have})
+		}}
 	}
-	n, err := io.Copy(dst, io.LimitReader(resp.Body, limit+1))
+	n, err := io.Copy(dst, io.LimitReader(resp.Body, limit-have+1))
 	if cerr := f.Close(); err == nil {
 		err = cerr
 	}
 	if err != nil {
-		return "", 0, err
+		return "", 0, err // what arrived stays, for the next try to carry on from
 	}
-	if n > limit {
+	size := have + n
+	if size > limit || (want > 0 && size > want) {
+		_ = os.Remove(to)
 		return "", 0, ErrTooLarge
 	}
-	return hex.EncodeToString(h.Sum(nil)), n, nil
+	if want > 0 && size < want {
+		return "", 0, errors.New("the download ended early; try again and it carries on from here")
+	}
+	if progress != nil {
+		progress(Progress{Phase: PhaseVerifying, Got: size, Total: size, Resumed: have})
+	}
+	sum, err := hashFile(to)
+	return sum, size, err
+}
+
+func hashFile(name string) (string, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // progressWriter reports bytes written, at most every 1 MiB.
 type progressWriter struct {
 	w          io.Writer
-	got, total int64
+	got        int64
 	lastReport int64
-	fn         func(got, total int64)
+	fn         func(got int64)
 }
 
 func (p *progressWriter) Write(b []byte) (int, error) {
@@ -371,7 +502,7 @@ func (p *progressWriter) Write(b []byte) (int, error) {
 	p.got += int64(n)
 	if p.got-p.lastReport >= 1<<20 || err != nil {
 		p.lastReport = p.got
-		p.fn(p.got, p.total)
+		p.fn(p.got)
 	}
 	return n, err
 }

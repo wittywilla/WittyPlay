@@ -42,7 +42,15 @@ type Status struct {
 	Host       string `json:"host"` // DOCKER_HOST, or the default socket
 	APIVersion string `json:"apiVersion,omitempty"`
 	OS         string `json:"os,omitempty"`
-	Error      string `json:"error,omitempty"`
+	// Arch is the machine containers run on, in Go's names (amd64, arm64). On Docker Desktop
+	// that's the virtual machine, which is where an emulator's download has to fit.
+	Arch string `json:"arch,omitempty"`
+	// Rootless: the daemon itself doesn't run as root, so reaching it isn't root on this machine.
+	Rootless bool `json:"rootless,omitempty"`
+	// CPUs and MemoryMB are what the daemon has to give, for refusing what can't run here.
+	CPUs     int    `json:"cpus,omitempty"`
+	MemoryMB int64  `json:"memoryMB,omitempty"`
+	Error    string `json:"error,omitempty"`
 }
 
 // Mount is one folder or file from the host.
@@ -87,7 +95,11 @@ type Spec struct {
 	Devices    []string // host device paths mapped at the same path, such as /dev/dri
 	NvidiaGPUs bool     // ask the NVIDIA runtime for every GPU
 
-	Network    string // a network name, or "none"
+	// Local: this is for the sandbox without Docker (sandbox/local), which has no images and
+	// no network at all. Docker's engine refuses such a spec.
+	Local bool
+
+	Network    string // a network name; "isolated" for Local
 	Publish    []Publish
 	ExtraHosts []string
 
@@ -100,6 +112,7 @@ type Info struct {
 	Name    string            `json:"name"`
 	Image   string            `json:"image"`
 	Running bool              `json:"running"`
+	Paused  bool              `json:"paused,omitempty"`
 	State   string            `json:"state"`
 	Labels  map[string]string `json:"labels,omitempty"`
 	// IP is its address on WittyPlay's network.
@@ -134,6 +147,9 @@ type Runtime interface {
 	Start(ctx context.Context, id string) error
 	Stop(ctx context.Context, id string, timeout time.Duration) error
 	Remove(ctx context.Context, id string) error
+	// Pause freezes every process in a container, and Unpause lets them go on.
+	Pause(ctx context.Context, id string) error
+	Unpause(ctx context.Context, id string) error
 	Logs(ctx context.Context, id string, tail int) (string, error)
 	Inspect(ctx context.Context, id string) (Info, error)
 	// List finds containers carrying all of these labels, running or not.
