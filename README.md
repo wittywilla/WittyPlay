@@ -42,7 +42,7 @@ Plays console games from WittyMediaServer on any screen with a browser or a clie
 - **A game menu and picture effects,** rewind, cheats, and IPS and BPS patches applied to a copy.
 - **Sorts games into consoles** from their files, with the settings for each console and core as data.
 - **Refuses encrypted game files** with a clear message, such as encrypted 3DS files. Nothing is decrypted.
-- **Optional: standalone emulators in Docker.** PCSX2, Cemu, xemu, Flycast and others can each run in a hardened container, streamed into the same WebRTC session or shown through KasmVNC. This is off by default, and libretro cores always stay in the process sandbox. See [docs/DOCKER-BACKEND.md](docs/DOCKER-BACKEND.md).
+- **Optional: standalone emulators.** PCSX2, PPSSPP, Flycast, melonDS and others, downloaded from their own projects with the licence shown first, each run one per game in a hardened Docker container or a bubblewrap sandbox, and streamed over WebRTC (or shown as a desktop in a sandboxed frame). Off by default; libretro cores always stay in the process sandbox; no emulator, game or BIOS is bundled. Settings for each emulator are published as a schema an app draws its form from. See [docs/DOCKER-BACKEND.md](docs/DOCKER-BACKEND.md), and its "What hasn't been run".
 
 The games library, its metadata and where saves are kept stay with the server.
 

@@ -1,187 +1,290 @@
-# The Docker backend: standalone emulators in containers
+# Standalone emulators: in containers, or a sandbox of this machine's own
 
-WittyPlay normally runs libretro cores in its own sandboxed game runner (the **process** backend). The Docker backend is an optional second way to play. It runs a *standalone* emulator (PCSX2, Cemu, xemu, Flycast and others), each in a hardened container of its own, one container per game.
+WittyPlay normally runs libretro cores in its own sandboxed game runner. This is a second, optional way to play: a *standalone* emulator (PCSX2, PPSSPP, Flycast, melonDS and others), downloaded from its own project, run one per game in a hardened Docker container or a bubblewrap sandbox, and streamed to the player over WebRTC.
 
-- **It's off by default.** `docker.enabled` is `false`, and while it's off nothing reaches the Docker daemon.
-- **Libretro cores always use the process sandbox**, whatever the Docker settings say.
-- **It falls back by itself.** If Docker isn't installed or can't be reached, the module starts normally and games play on a core instead, with a notice. Nothing fails.
-- **WebRTC first, KasmVNC as a fallback.** A container normally streams through the same WebRTC session a core does. KasmVNC, a desktop in the browser, is only for emulators whose setup needs a desktop (their own menus and a mouse).
+- **It's off by default.** Nothing here runs, and nothing reaches a Docker daemon, until an administrator turns it on in **Settings, Standalone emulators**.
+- **Libretro cores are untouched.** They always run in the process sandbox. A game goes to a standalone emulator only when someone chooses **Play with …** on its page.
+- **Nothing is bundled.** No emulator, game, BIOS, firmware or key comes with WittyPlay. Emulators are separate programs under their own licences, shown before an install; firmware is yours to provide.
+- **Read "What hasn't been run" at the end.** The code is covered by tests against a stand-in for Docker. It has not yet played a game on a real Docker host.
 
-## Architecture
+## How it fits together
 
 ```
- Browser                 wittymediaserver         wittyplay-module                   Docker
-+-----------+           +--------------+  HTTP  +-------------------------+        +----------------------------------+
-| <video>   |  WebRTC   | sign-in,     | 127.   | DockerBackend           |  API   | wittyplay-<session> (uid 1000)   |
-| gamepad,  |<----------| admin check, | 0.0.1  |  Lifecycle (limits,     |------->|  read-only root, cap-drop ALL,   |
-| keyboard  |  H.264 +  | sets         |------->|   idle, orphan sweep)   |        |  no-new-privileges, seccomp,     |
-|           |  Opus     | X-Witty-User |        |  emulators.Installer    |        |  pids/mem/cpu limits             |
-|           |           | X-Witty-Admin|        |  stream.Relay  <--------+--RTP---|  Xvfb -> FFmpeg x11grab + pulse  |
-|           |  /kasm/   |              |        |   (RTP -> WebRTC)       |  UDP   |  (pipe stream)                   |
-|  KasmVNC  |---------->|  proxy       |------->|  KasmProxy (ticket +    |--HTTP->|  KasmVNC :6901 (kasmvnc stream)  |
-|  page     |           |              |        |   per-session password) |        |                                  |
-|           |  input    |              |        |  inputagent.Forwarder --+--TCP-->|  wittyplay-input-agent :7000     |
-+-----------+  channel  +--------------+        +-------------------------+        |   -> xdotool keys on the display |
-                                                                                   |  the emulator (/opt/emulator,    |
-                                                                                   |   read-only; AppImage -> /run/app)|
-                                                                                   +----------------------------------+
-                                                     WittyPlay's own bridge network: no inter-container traffic,
-                                                     optionally internal (no internet); ports only ever on 127.0.0.1
+ Browser                  wittymediaserver                wittyplay-module                    Docker, or bubblewrap
++------------+           +-------------------+   RPC     +---------------------------+       +--------------------------------+
+| Play with  |  POST     | may this account  | docker.   | Launch: installed? fits   |  API  | wittyplay-<session>, uid 1000  |
+| PCSX2      |---------->| play this game?   | Launch    | this machine? settings -> |------>|  read-only root, no caps,      |
+|            | /games/   | finds its file    |---------->| the emulator's own files  |       |  no-new-privileges, seccomp,   |
+|            | {id}/play |                   |           | Lifecycle: one each, idle |       |  pids/memory/CPU limits        |
+|            | /emulator |                   |           | limit, orphan sweep       |       |                                |
+| <video>    |  WebRTC   | passes /docker/…  |   HTTP    | stream.Relay  <-----------+--RTP--|  Xvfb -> FFmpeg (x11grab +     |
+| gamepads,  |<----------| through as the    |---------->|  (RTP -> WebRTC, bitrate  |  UDP  |  PulseAudio) -> H.264 + Opus   |
+| keyboard   |  H.264 +  | person signed in  |           |   follows loss)           |       |                                |
+|            |  Opus     |                   |           | inputagent.Forwarder -----+--TCP->|  wittyplay-input-agent ->      |
+| sandboxed  |           | /kasm/{sid}/      |           | KasmProxy (ticket in the  |       |  xdotool keys and mouse        |
+| <iframe>   |---------->| {ticket}/… public |---------->|  address + per-session    |-HTTP->|  KasmVNC :6901 (desktop only)  |
+| (desktop)  |           | with the ticket   |           |  password)                |       |  the emulator, read-only       |
++------------+           +-------------------+           +---------------------------+       +--------------------------------+
 ```
-
-The pieces:
 
 | Package | What it does |
 | --- | --- |
-| `emulators` | The built-in list of emulators (`manifest.json`) and the installer. Downloads come only from allowed hosts over HTTPS, are pinned to a SHA-256 and unpacked safely, and are recorded in `installed.json`. |
-| `sandbox/docker` | The `Runtime` interface, the hardened `Build` and `Check`, the `Lifecycle`, the `KasmProxy`, the settings and backend choice, and a `Fake` for tests. |
+| `emulators` | The built-in list (`manifest.json`), the installer, and settings as data (`settings.go`). |
+| `sandbox/docker` | The `Runtime` interface, the hardened `Build` and `Check`, the `Lifecycle`, the `KasmProxy`, the backend's settings, and a `Fake` for tests. |
 | `sandbox/docker/engine` | The only package that imports the Docker Engine SDK. |
-| `sandbox/docker/inputagent`, `cmd/wittyplay-input-agent` | The input agent inside the container. |
-| `stream/relay.go` | Turns RTP from a container into WebRTC. |
-| `rpc/docker.go` | The routes, the session start and the startup sweep. |
-| `docker/images/` | The base image, an example emulator image, and how to build and pin them. |
+| `sandbox/local` | The same `Runtime` without Docker: bubblewrap under a systemd scope. Linux only. |
+| `sandbox/docker/inputagent`, `cmd/wittyplay-input-agent` | The agent beside the emulator: input in, bitrate requests, and for the local sandbox the picture and sound out. |
+| `stream/relay.go`, `stream/ratelad.go` | RTP into WebRTC, and the bitrate ladder. |
+| `rpc/docker.go` | Routes, the launch, diagnostics, installs as background jobs. |
+| `docker/images/` | The base image and its entrypoint, an example emulator image, and how to build and pin them. |
 
-## When a game goes to Docker
+## Playing a game
 
-Starting a game (`stream.Manager.Start`) goes to Docker only when **all** of these are true:
+1. The game's page asks the server `GET /api/v1/games/{id}/emulators`. The server checks the account may see the game, and asks WittyPlay (`docker.Offers`) which installed emulators play its console and whether each is ready, with a sentence when it isn't.
+2. **Play with PCSX2** posts `POST /api/v1/games/{id}/play/emulator` `{"emulator":"pcsx2"}`. The server checks the account's limits again, finds the game's file in its library (unpacking an archive if need be), and calls WittyPlay's `docker.Launch` with the file, the account and the emulator's name. **A browser never names a file and never reaches the launch itself.**
+3. WittyPlay refuses politely, in a sentence the page shows, when: the backend is off, the emulator isn't installed or was turned off, its download was never verified, no image is pinned, the runtime isn't reachable, the machine is too small, firmware is missing, or as many emulators are running as are allowed.
+4. Otherwise it writes this person's settings into the emulator's own files, starts the container, and answers with where to connect, pause, resume and stop.
+5. The player connects the same way it does to a core's game: a WebRTC offer with `input` and `events` data channels to `…/docker/sessions/{sid}/connect`.
 
-1. `docker.enabled` is on.
-2. An emulator in the list plays the game's console, and that emulator is installed.
-3. No administrator has set that emulator to `process` in `docker.backend`.
-4. The emulator has an image pinned to a digest, either in the list or in `docker.images`.
-5. Docker answers.
-
-If 1, 2 or 3 isn't true, the game takes the usual process path, unchanged. If 4 or 5 isn't true, it also takes the process path, and the player gets a notice explaining why. The answer to a start is `{"id", "backend", "emulator"}` plus one of these:
-
-- `connect`: for `docker+webrtc`, the route the client posts its hello and offer to. The answer is the same `Connected` a core's game gives.
-- `kasmUrl`: for `docker+kasmvnc`, `/kasm/<session>/?ticket=...`.
+Opening the same game again while it's running rejoins it. Starting a different game ends the one before: one game each. A game nobody has been connected to for two minutes is stopped; so is one with no input for `docker.idleMinutes`, and any after `docker.maxHours`. When a game ends, everyone connected gets `{"type":"ended","reason":…,"text":…}` on `events`.
 
 ## Routes
 
-These are on the module's service, behind the service token. Only the server can reach them, and it passes people's requests through. The server sets `X-Witty-User` to the signed-in account and `X-Witty-Admin: 1` for an administrator, and must strip both from anything a browser sends. A request without them is refused, so a server that doesn't send them yet gets refusals, never access.
+On the module's own service, behind the service token; the server passes them through under `/api/v1/modules/wittyplay` and says who is asking in `X-Witty-User` and `X-Witty-Admin`, which it strips from anything a browser sends. A request without them is refused.
 
 | Method | Path | Who | What |
 | --- | --- | --- | --- |
-| GET | `/docker/status` | admin | Whether the backend is on, whether Docker answers, its API version, how many containers are running |
-| GET | `/docker/settings` | admin | The settings, their schema and the backends |
-| PUT | `/docker/settings` | admin | Replace the settings. They're checked, saved under the module's data folder, and turning Docker on runs the orphan sweep |
-| GET | `/docker/emulators` | admin | The list, with what's installed and why an entry can't be installed |
-| GET | `/docker/installed` | admin | What's installed |
-| POST | `/docker/emulators/{id}/install` | admin | Start an install. Returns `202` and the job at once |
-| GET | `/docker/emulators/{id}/install` | admin | The job: `running`, `done` or `failed`, with bytes received and the total |
+| GET | `/docker/status` | admin | On or off, which runtime, whether it answers, its machine, the local sandbox's availability |
+| GET | `/docker/diagnostics` | admin | Everything a game depends on, each as `ok`, `warn`, `fail` or `off` with a sentence |
+| GET, PUT | `/docker/settings` | admin | The backend's settings and their schema |
+| GET | `/docker/emulators` | admin | The list: licence, requirements, what's installed, whether an update is listed, why it can't be installed or run, the install job, firmware found |
+| POST | `/docker/emulators/{id}/install` | admin | Start an install: `{"license": "<the entry's licence>"}`. 202 and the job. Installing over an older version is the update |
+| GET, DELETE | `/docker/emulators/{id}/install` | admin | The job's progress; cancel it |
 | DELETE | `/docker/emulators/{id}` | admin | Uninstall. Refused while someone is playing with it |
-| POST | `/docker/sessions/{sid}/connect` | the player | WebRTC: `{"hello", "offer"}` returns `Connected` |
-| DELETE | `/docker/sessions/{sid}` | the player or an admin | Stop a game in a container |
-| any | `/kasm/{sid}/...` | the player, with the session's ticket | The KasmVNC proxy |
+| GET, PUT | `/docker/emulators/{id}/settings` | anyone signed in | That emulator's settings: schema, layers, what they come to. Who may write what is below |
+| GET | `/docker/sessions` | anyone signed in | Games running: your own, or everyone's for an administrator |
+| POST | `/docker/sessions/{sid}/connect` | the player | WebRTC: `{"hello","offer"}` returns `Connected` |
+| POST | `/docker/sessions/{sid}/pause`, `/resume` | the player | Freeze the emulator, and let it go on |
+| DELETE | `/docker/sessions/{sid}` | the player or an admin | Stop |
+| GET | `/kasm/{sid}/{ticket}/…` | whoever holds the ticket | The desktop, for emulators shown that way |
 
-Without a user the answer is `401`, without admin it's `403`, and with Docker off an install gets `409`. A session that belongs to someone else answers `404`.
+Two calls only the server makes: `docker.Launch` and `docker.Offers`.
 
 ## Settings
 
-Every setting is admin-only. They're listed in `module.json` (`capabilities.dockerSettings`) and described by `docker.Schema()`, which `GET /docker/settings` returns.
+### The backend's (admin only)
+
+Listed in `module.json` (`capabilities.dockerSettings`), described by `docker.Schema()`, which `GET /docker/settings` returns so a page draws the form from data.
 
 | Key | Default | What it does |
 | --- | --- | --- |
 | `docker.enabled` | `false` | The switch |
+| `docker.runtime` | `docker` | `docker` (a Docker or Podman daemon) or `local` (bubblewrap on this machine) |
 | `docker.network` | `wittyplay` | WittyPlay's own bridge network |
-| `docker.internal` | `false` | No way out to the internet. Use it where the module can reach container addresses directly (Linux without Docker Desktop) |
-| `docker.publishLoopback` | `false` | Publish the stream ports on 127.0.0.1 instead, for Docker Desktop |
-| `docker.maxContainers` | 2 | Containers at once |
-| `docker.memoryMB`, `docker.cpus`, `docker.pids` | 4096, 2, 512 | Limits for each container |
-| `docker.idleMinutes`, `docker.maxHours` | 10, 6 | A container with no input for this long is stopped, and none runs longer than this |
-| `docker.gpu` | `{}` | `{"DRI": true}` for `/dev/dri`, `{"Nvidia": true}` for the NVIDIA runtime |
-| `docker.backend` | `{}` | Per emulator: `docker+webrtc`, `docker+kasmvnc`, or `process` (don't use Docker for it) |
-| `docker.images` | `{}` | Per emulator: your own image, pinned `repo:tag@sha256:...` |
+| `docker.internal` | `false` | No way out to the internet for emulators. For a host that reaches container addresses directly (Linux without Docker Desktop) |
+| `docker.publishLoopback` | `false` | Publish the agent's port on 127.0.0.1 instead, for Docker Desktop and rootless daemons |
+| `docker.maxContainers` | 2 | Emulators at once |
+| `docker.memoryMB`, `docker.cpus`, `docker.pids` | 4096, 2, 512 | Limits for each. Never more memory than the machine has |
+| `docker.idleMinutes`, `docker.maxHours` | 10, 6 | Stopped after this long without input; never longer than this |
+| `docker.gpu` | `{}` | `{"DRI": true}` for `/dev/dri`, `{"Nvidia": true}` for the NVIDIA runtime. Off unless set |
+| `docker.backend` | `{}` | Per emulator: `docker+webrtc`, `docker+kasmvnc`, or `process` (not offered) |
+| `docker.images` | `{}` | Per emulator: your own image, `repo:tag@sha256:…`, or `sha256:…` for one built on this machine |
 
-## Security model
+### Each emulator's (the config API)
 
-A standalone emulator is a large native program that parses untrusted files. It's treated the way a core is: as something that might be compromised.
+`GET /docker/emulators/{id}/settings[?game=<item>]` answers `{schema, admin, user, game, effective, canAdmin}`. Each field of the schema has a `key`, a `kind` (`toggle`, `number`, `text`, `choice`, `map`), a `label`, `help`, a `default`, limits or choices, and a `scope`:
 
-**The container.** `docker.Build` makes the spec in one place, and `docker.Check` checks every spec again before the engine creates it, so nothing weaker reaches Docker.
+- `scope: "admin"`: only an administrator sets it, for everyone (the graphics backend, the stream's size, the keys).
+- `scope: "user"`: each person may set their own, and again for one game (resolution scale, widescreen, bitrate).
 
-- It runs as uid:gid `1000:1000`, never root, and is never privileged.
-- The root filesystem is read-only.
-- `--cap-drop ALL` with no capabilities added, `no-new-privileges`, and Docker's default seccomp profile. Any `seccomp=` or `apparmor=` override, and anything "unconfined", is refused.
-- Every container has pids, memory (with no extra swap) and CPU limits, and `--init`.
-- `/tmp` and `$HOME` are tmpfs mounts with `noexec,nosuid,nodev`. **`/run/app` is the only tmpfs that allows execution, and only for an AppImage**: FUSE isn't available to an unprivileged container, so an AppImage unpacks itself there (`APPIMAGE_EXTRACT_AND_RUN=1`, `TMPDIR=/run/app`). It's still `nosuid,nodev`, owned by uid 1000 with mode 0700.
-- Mounts: the game at `/game/<file>`, the BIOS folder at `/bios` and the installed emulator at `/opt/emulator` are all read-only. `/saves` (this person's saves and settings for this emulator) is the only writable one. `/`, `/etc`, `/proc`, `/sys`, `/dev`, `/run` and `/var/run` are refused, and so is anything containing `docker.sock`.
-- The only device passed through is `/dev/dri`, and only when an admin turns it on. NVIDIA GPUs go through the NVIDIA runtime's device request instead.
-- Images must be pinned to a digest. A tag alone is refused.
-- Every container carries `wittyplay.managed`, `wittyplay.session`, `wittyplay.user` and `wittyplay.emulator` labels. WittyPlay only ever stops or removes containers that have them.
+Values layer: the default, then the administrator's, then the person's, then the person's for that game. `PUT` takes `{"scope": "admin"|"user"|"game", "game": <item>, "values": {key: value|null}}`; `null` clears a key. Every value is checked against the schema; a person can't write an admin-only setting or anyone else's layer. They're kept in `docker/emulator-settings.json` in the module's folder.
 
-**The network.** WittyPlay's network is a bridge of its own with inter-container traffic off, so one session can't reach another. It can be internal. Ports are only published on `127.0.0.1` (for Docker Desktop), never on another address. The relay only listens on a private or loopback address, and only takes RTP from the container's own address.
+Every emulator has these, which WittyPlay itself uses:
 
-**The secrets.** Every session gets three random 256-bit secrets:
-
-- **The KasmVNC password.** The proxy adds it on the way in, so the browser never sees it. The proxy also strips the browser's cookies and authorisation headers, and KasmVNC's `WWW-Authenticate` and `Set-Cookie`.
-- **The KasmVNC ticket**, which the proxy requires on top of the server's sign-in. It travels as a header, a query parameter, or a `SameSite=Strict`, `HttpOnly` cookie scoped to the session's path.
-- **The input agent's token**, which the agent clears from its environment and the entrypoint clears before the emulator starts.
-
-Only the person playing can reach a session's desktop or WebRTC connection. An administrator can stop it, but can't watch it.
-
-**Its lifetime.** A container is stopped after `docker.idleMinutes` with no input, after `docker.maxHours` whatever happens, and when its emulator exits. When the module starts, and when Docker is turned on, it removes any container carrying WittyPlay's label that it didn't start, which is what a crash leaves behind. This runs only when Docker is on and reachable, and never stops the module from starting.
-
-## Setup
-
-1. Install Docker Engine (Linux) or Docker Desktop (macOS, Windows) on the server's machine, and make sure the user WittyMediaServer runs as can reach the daemon. `DOCKER_HOST` is honoured. Use a rootless daemon if you can.
-2. Build and push the images, or pull published ones once they have digests: see [docker/images/README.md](../docker/images/README.md).
-3. In WittyMediaServer, as an admin, open WittyPlay's Docker settings: turn on `docker.enabled`, and on Docker Desktop also `docker.publishLoopback`.
-4. Install an emulator from the list. Its download is checked against its SHA-256 before anything is unpacked.
-5. Put any BIOS or firmware you own in your BIOS folder. It's mounted read-only.
-6. Start a game for that emulator's console.
-
-`GET /docker/status` says whether Docker answered, and why not if it didn't.
-
-### Hashes in the list
-
-| Emulator | Download | SHA-256 |
+| Key | Scope | What |
 | --- | --- | --- |
-| PCSX2 2.2.0 | `pcsx2-v2.2.0-linux-appimage-x64-Qt.AppImage` | checked |
-| DuckStation 0.1-12442 | `DuckStation-x64.AppImage`, pinned to the tag `v0.1-12442` instead of the moving `latest` | checked, but never offered for download (non-commercial licence) |
-| xemu 0.8.5 | `xemu-v0.8.5-x86_64.AppImage` | checked |
-| Cemu 2.6 | `Cemu-2.6-x86_64.AppImage` | checked, and matches GitHub's own digest |
-| melonDS 1.0 | `melonDS-appimage-x86_64.zip` (the asset's real name), holding `melonDS-x86_64.AppImage` | checked, and matches GitHub's own digest |
-| Flycast 2.4 | `flycast-x86_64.AppImage` | checked |
-| Lichii build-130 | x86-64 and arm64 AppImages | checked |
-| Dolphin, PPSSPP, RPCS3 | none in the list (image only) | none |
+| `stream.size` | admin | 480p, 720p (default) or 1080p |
+| `stream.fps` | admin | 30 or 60 |
+| `stream.encoder` | admin | `x264` (the processor) or `vaapi` (the graphics card, with `docker.gpu` DRI) |
+| `stream.kbps` | user | The most bitrate, 800 to 20000, default 6000 |
+| `keys.p1` … `keys.p4` | admin | Which X key each controller button presses, for each of four players |
 
-Every container image digest is still `TODO`. Until one is filled in, either in the list or in `docker.images`, that emulator plays on a core instead.
+And its own from the list, each saying where its value goes: a key in one of the emulator's INI files, a variable, or words on its command line. They're written before each start into the person's own settings folder for that emulator (`/saves/config` inside). PCSX2, Dolphin, PPSSPP and Flycast have a graphics backend, resolution scale and widescreen; the others have the common settings only, and their own menus for the rest (reachable when shown as a desktop). **The emulators' own key names were written from their documentation and haven't been run.**
 
-## GPU
+Firmware: an emulator's entry names the files it looks for (`ps2-*.bin`, `keys.txt` …). The list and the game's page say which are in the server's BIOS folder; the folder is mounted read-only at `/bios`. A game whose emulator needs firmware isn't started without any.
 
-- **Intel and AMD:** set `docker.gpu` to `{"DRI": true}`. `/dev/dri` is passed through, and the image's Mesa drivers use it. The user uid 1000 maps to on the host needs to be able to open the render node: add it to the `render` group, or use a rootless daemon whose user is in that group.
-- **NVIDIA:** install the NVIDIA Container Toolkit, then set `{"Nvidia": true}`. The container asks the NVIDIA runtime for every GPU.
-- Without either, the picture is drawn by Mesa's software renderer (llvmpipe). That's enough for older consoles, but slow for PS2 and later.
+## The emulators
 
-## Troubleshooting
+Every download is pinned to a version, a size and a SHA-256, from the project's own GitHub release. The hashes were checked on 2026-11-11: PCSX2, xemu and Flycast by downloading and hashing, the rest against GitHub's own digest for the asset.
+
+| Emulator | Consoles (library id) | Version | Download | Licence | Needs at least | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| PCSX2 | PlayStation 2 (`ps2`) | 2.2.0 | x86-64 | GPL-3.0-or-later | 4 GB, 4 cores | Needs a PS2 BIOS |
+| PPSSPP | PSP (`psp`) | 1.20.4 | x86-64, arm64 | GPL-2.0-or-later | 1 GB, 2 cores | |
+| melonDS | Nintendo DS (`nds`) | 1.0 | x86-64, arm64 | GPL-3.0-or-later | 1 GB, 2 cores | |
+| Flycast | Dreamcast (`dc`), NAOMI | 2.4 | x86-64 | GPL-2.0-only | 1 GB, 2 cores | |
+| Dolphin | GameCube, Wii | 2412 | none: Dolphin publishes no Linux build of its own | GPL-2.0-or-later | 4 GB, 2 cores | Needs an image with Dolphin in it |
+| xemu | Xbox | 0.8.5 | x86-64 | GPL-2.0-or-later | 4 GB, 4 cores | Desktop. Needs Xbox boot ROM, BIOS, disk image |
+| Cemu | Wii U | 2.6 | x86-64 | MPL-2.0 | 8 GB, 4 cores, a graphics card | Desktop. Needs your keys |
+| RPCS3 | PlayStation 3 | 0.0.43-20581 | x86-64 | GPL-2.0-only | 8 GB, 6 cores, a graphics card | Desktop. Needs Sony's system software |
+| Lichii | Switch | build-130 | x86-64, arm64 | GPL-3.0-or-later | 8 GB, 4 cores, a graphics card | Experimental, by its authors' word. Desktop. Needs your keys |
+| DuckStation | PlayStation (`ps1`) | 0.1-12442 | **never offered**: CC BY-NC-ND forbids commercial use | CC-BY-NC-ND-4.0 | 1 GB, 2 cores | An administrator can build an unmodified image of their own |
+
+**Consoles the library doesn't know.** WittyPlay's console table has `ps2`, `psp`, `nds`, `dc` and `ps1`. For GameCube, Wii, Xbox, Wii U, PS3 and Switch, add a custom console whose id is `custom-gamecube`, `custom-wii`, `custom-xbox`, `custom-wiiu`, `custom-ps3` or `custom-switch`: an emulator for `gamecube` plays `custom-gamecube`.
+
+**Images.** No image has been published, so every `image.digest` in the list says `TODO`. Until one is, each emulator runs only where an administrator has built the base image and pinned it under `docker.images` (see [docker/images/README.md](../docker/images/README.md)), or with `docker.runtime` set to `local`, which needs no image.
+
+## The security model, in plain words
+
+**What you're trusting.** A standalone emulator is a large program that reads untrusted files. It's treated as something that may be taken over by a bad game file, the way a core is.
+
+**The Docker socket is the machine.** Whatever can talk to a Docker daemon that runs as root can start a container that owns the host. Turning this backend on with such a daemon means WittyMediaServer's own account can do that, and so can anything that takes over the server or this module. This is the largest thing you decide here, and there are three ways to make it smaller:
+
+- **A rootless daemon.** `dockerd-rootless-setuptool.sh install`, then start the server with `DOCKER_HOST=unix:///run/user/<uid>/docker.sock`. The daemon is then only that user. Turn on `docker.publishLoopback`: a rootless daemon's containers aren't reachable by address.
+- **Podman.** `systemctl --user enable --now podman.socket`, then `DOCKER_HOST=unix:///run/user/<uid>/podman/podman.sock`. Podman answers Docker's API, without a root daemon. With `docker.publishLoopback` on, as above.
+- **No daemon at all.** `docker.runtime: local`, below.
+
+Diagnostics says which you have ("Who the daemon runs as"). The socket is never given to a container: `Check` refuses any mount whose path is or ends in a socket.
+
+**The container.** `docker.Build` makes the spec in one place, and `docker.Check` checks every spec again before anything is created, so nothing weaker reaches Docker. A test holds each of these in place:
+
+- Runs as uid:gid `1000:1000`, never root, never privileged, with `--init`.
+- Read-only root filesystem.
+- `--cap-drop ALL`, nothing added; `no-new-privileges`; Docker's default seccomp and AppArmor profiles. Any override, and anything "unconfined", is refused.
+- pids, memory (no extra swap) and CPU limits on every one.
+- `/tmp` and `$HOME` are tmpfs, `noexec,nosuid,nodev`. `/run/app` is the only tmpfs that allows execution, only for an AppImage (FUSE isn't available to an unprivileged container, so it unpacks itself there), still `nosuid,nodev`.
+- Mounts, and no others: the one game at `/game/<file>`, the BIOS folder at `/bios` and the installed emulator at `/opt/emulator`, all read-only; `/saves` (this person's saves and settings for this emulator), writable. System folders, Docker's and Podman's own folders and any socket are refused as sources.
+- No host network, no other container's, not the default bridge: WittyPlay's own bridge with inter-container traffic off, optionally internal. Ports only ever on `127.0.0.1`.
+- No devices but `/dev/dri`, and only when an administrator turns it on. NVIDIA goes through its runtime's device request.
+- The image is pinned to a digest, or is an image id on this machine. A tag alone is refused.
+- Labelled `wittyplay.managed`, `.session`, `.user`, `.emulator`. WittyPlay only ever stops or removes containers carrying them.
+
+`/saves` is a bind mount, which has no size limit of its own: an emulator can fill the disk the module's folder is on. Put that folder on a volume with a quota if that matters to you.
+
+**The local sandbox** (`docker.runtime: local`, Linux only). bubblewrap with every namespace unshared (`--unshare-all`): the emulator sees no other process, has no capabilities, and has **no network at all**, only a loopback of its own. Its root is the system's `/usr` and a few folders of `/etc`, read-only, with the same four mounts as a container. A systemd scope (`systemd-run --user --scope`) holds it to the same memory, process and CPU limits, and it dies with the module. The picture, sound and input cross through one Unix socket, guarded by the session's secret. It is **weaker than a container** in two ways: there's no system-call filter, and the emulator runs on this machine's own libraries rather than an image's. It is stronger in one: nothing holds a daemon's socket. It needs `bwrap`, `systemd-run`, `Xvfb`, `xdpyinfo`, `xdotool`, `pulseaudio`, `pactl`, an `ffmpeg` with `x11grab` and `pulse`, and `wittyplay-input-agent` beside the module; Status says which are missing. macOS and Windows have no local sandbox: bubblewrap is Linux's, the emulators listed are Linux programs, and those systems' own sandboxes have no X display to capture.
+
+**The desktop (KasmVNC).** Its page and scripts come out of the container, so that page must never be one of the server's own: it could read the app's storage and act as whoever is playing. It's shown in a frame sandboxed without `allow-same-origin`, and every answer carries `Content-Security-Policy: … sandbox allow-scripts allow-pointer-lock`, set by WittyPlay and again by the server whatever the container sent. A browser sends no sign-in from such a frame, so the route can't ask for one: the session's random 256-bit ticket, in the address, is the way in. Only the person who started the game is given it; it ends with the game; it's compared in constant time; and a wrong one gets the same "not found" as no session. The proxy adds the container's own password, strips cookies in both directions, and keeps redirects inside the session's address. Reading only.
+
+**Downloads.** Only over HTTPS from hosts on a list; redirects elsewhere are refused. Each is held to the size the list gives and its SHA-256 before anything is unpacked, and a download that was cut short is carried on from, with the whole file hashed at the end. An entry without a checked hash can't be installed, and an install recorded as unverified is never run. Unpacking refuses paths that lead out, links that lead out, writing through a link, anything that isn't a file, folder or link, and more than 4 GiB or 100,000 files; nothing is ever setuid.
+
+**Settings files.** The emulator can write to its own settings folder, so WittyPlay writes there through `os.Root`: a link left in that folder can't turn a settings write into a write elsewhere.
+
+**Secrets.** Each session has a KasmVNC password (never sent to a browser), a ticket, and the input agent's token, which the agent and the entrypoint clear from the environment before the emulator starts.
+
+**Who can do what.** Administrators: the backend's settings, installs, removal, admin-scoped emulator settings, stopping anyone's game. Anyone signed in: play a game their account's limits allow, their own settings, their own sessions. Nobody but the player connects to a game: an administrator can stop one, not watch it.
+
+## Setting it up
+
+1. Choose where emulators run (above) and make sure the server's account can reach it.
+2. Docker only: build the base image and pin it (see [docker/images/README.md](../docker/images/README.md)). For an image you don't push, use its id: `docker image inspect --format '{{.Id}}' wittyplay-emu-base:dev`, and set that `sha256:…` for each emulator under **Your own image for each**. The base image runs whatever emulator is installed, mounted at `/opt/emulator`.
+3. **Settings, Standalone emulators**: turn them on. On Docker Desktop or a rootless daemon also turn on **Publish on 127.0.0.1**. Read Diagnostics.
+4. Install an emulator. Its licence is shown first.
+5. Put firmware you own in a `BIOS` folder beside your games, or in the server's BIOS folder.
+6. Open a game for that console and choose **Play with …**.
+
+### Small machines
+
+A Raspberry Pi 3 has 1 GB of memory: Diagnostics says no emulator in the list fits, each is marked with why, and a start is refused in a sentence before anything runs. On a Pi 4 or 5 the arm64 downloads (PPSSPP, melonDS) are offered; PCSX2 and the rest are x86-64 only and say so. Encoding 720p60 with x264 takes most of one fast core beside the emulator: use 480p or 30 frames a second on small machines, or `vaapi` where a graphics card is passed through.
+
+### Graphics cards
+
+- **Intel and AMD:** `docker.gpu` `{"DRI": true}`. The user uid 1000 maps to needs to open the render node: the `render` group, or a rootless daemon whose user is in it.
+- **NVIDIA:** the NVIDIA Container Toolkit, then `{"Nvidia": true}`.
+- Without either, Mesa's software renderer draws. Enough for older consoles; slow for PS2 and later, and a notice says so when a game starts.
+
+## Delay
+
+How the picture gets out: the emulator draws to a virtual X display (Xvfb); FFmpeg grabs it (`x11grab`) and PulseAudio's monitor, encodes H.264 and Opus, and sends RTP to WittyPlay, which hands the packets as they are to the browser's WebRTC connection. Nothing is encoded twice.
+
+What keeps it short: no input buffering in FFmpeg, `zerolatency` (no B-frames, no lookahead), a rate buffer a quarter of a second deep, 10 ms Opus frames, a keyframe every second, RTP relayed without a jitter buffer of WittyPlay's own.
+
+The budget for 720p at 60 frames a second on a home network, glass to glass (a button pressed to the picture changing):
+
+| Step | Typical |
+| --- | --- |
+| Input: browser to data channel to the agent | 2 to 5 ms |
+| The agent's `xdotool` (one process per event) | 2 to 5 ms |
+| The emulator's own input delay | 1 to 3 frames: 17 to 50 ms |
+| Waiting for the next capture | up to 17 ms, 8 on average |
+| Encoding (x264 ultrafast, or VA-API) | 3 to 8 ms |
+| Relay and network | 1 to 3 ms |
+| The browser's jitter buffer, decoding, the display's refresh | 25 to 45 ms |
+| **Outside the emulator** | **about 45 to 85 ms; the aim is under 80** |
+
+**This has not been measured.** To measure it: film the screen and the controller with a phone at 240 frames a second and count frames between the press and the change (each is 4.2 ms); and in Chrome, `chrome://webrtc-internals` gives `jitterBufferDelay` and `totalDecodeTime` for the video track, which are the browser's part.
+
+**Bitrate.** The stream starts at `stream.kbps`. Changing the encoder's bitrate means starting its FFmpeg again, a short freeze, so it moves in a few large steps: down 30% after loss has stayed above 8% for three reports in a row, back up after most of a minute without loss, never twice in 20 seconds, never below 800 kbit/s or above where it started.
+
+**Remote players.** A game in an emulator uses the same WebRTC settings a core's game does: the server's fixed UDP port, public address and STUN servers (`gamingUdpPort`, `gamingPublicIp`, `gamingStun`). **No STUN server is used unless the owner sets one**, and there is no TURN relay: a player whose network blocks UDP to the server can't connect. The desktop fallback is HTTP and a WebSocket through the server, and works wherever the server's pages do.
+
+## Input, and its limits
+
+The agent turns the browser's input into X key and mouse events with `xdotool`. It doesn't make a virtual gamepad: `/dev/uinput` would have to be passed into the container, which the hardening refuses.
+
+- **Four players**, each with keys of their own (`inputagent.DefaultKeys`), changeable with `keys.p1` to `keys.p4`. **The emulator's own settings have to map those keys to its controllers**; nothing does that for you yet, so out of the box only what the emulator's default keyboard layout happens to share with player 1's keys works. Player 4's defaults are the function keys, which some emulators keep for themselves.
+- **No analogue.** Each stick becomes its four directions' keys past half-way. Triggers are on or off.
+- A pointer or the first touch moves and clicks the mouse.
+- **No rumble, motion or lights.** A keyboard has no way back.
+
+## When something's wrong
 
 | What you see | What to do |
 | --- | --- |
-| "Docker isn't reachable on this server, so this game runs on a core instead." | `GET /docker/status` says why. Check that the daemon is running, that `DOCKER_HOST` is right, and that the server's user can use the socket. |
-| "… has no container image pinned to a digest yet" | Build and push the image, then set its digest in `docker.images`. |
-| An install fails with "nobody has checked this emulator's download yet" | Its hash is `TODO`, so it can't be installed. That's on purpose. |
-| A black picture over WebRTC | The container isn't reaching the relay. On Docker Desktop turn on `docker.publishLoopback`. On Linux, check that a firewall allows UDP from WittyPlay's bridge to the host. The container's logs (`docker logs wittyplay-<session>`) show FFmpeg's errors. |
-| The KasmVNC page says "no" | The ticket is missing or wrong. Open the `kasmUrl` from the start answer, not a bookmark. Tickets end with the session. |
-| "already running as many emulator containers as it allows" | Raise `docker.maxContainers`, or stop a game. |
-| Containers left after a crash | They're removed at the next start, or when Docker is turned on. You can also remove them by hand: `docker ps -a --filter label=wittyplay.managed=true`. |
-| An AppImage won't start | It needs `/run/app` with exec, which only a program whose entry ends in `.AppImage` gets. Check the image's `TMPDIR` and `APPIMAGE_EXTRACT_AND_RUN`. |
+| "Docker isn't reachable on this server: …" | The rest of the sentence is Docker's own error. Check the daemon is running, `DOCKER_HOST` is what the server was started with, and its account can use the socket. Diagnostics shows the address it tried |
+| "… has no container image pinned yet" | Build the base image and set its id under **Your own image for each** |
+| "… needs about 4 GB of memory, and each emulator is given …" | Raise `docker.memoryMB`, if the machine has it |
+| "… needs firmware of your own …" | Put it in the BIOS folder. The list shows which files are looked for |
+| "… was installed from a download nobody had checked" | Install it again |
+| An install fails with "doesn't match the hash it was pinned to" | The project replaced the file, or something between you and it did. Nothing was installed. Report it |
+| A black picture | The container isn't reaching the relay. On Docker Desktop or rootless, turn on `docker.publishLoopback`. On Linux, check a firewall allows UDP from WittyPlay's bridge to the host. `docker logs wittyplay-<session>` shows FFmpeg's errors |
+| The game stops by itself after a minute or two | Nobody was connected: a game left unwatched for two minutes is stopped. If the emulator crashed, the module's log has its last lines |
+| Buttons do nothing | The emulator doesn't know the agent's keys. Map them in its own settings (as a desktop), or set `keys.p1` to the keys it already uses |
+| The desktop's frame is empty | Its ticket ended with the game, or the page was opened outside its frame. Start the game again |
+| "already running as many emulator containers as it allows" | Raise `docker.maxContainers`, or stop a game in **Running now** |
+| Containers left after a crash | Removed at the next start, or when the backend is turned on. By hand: `docker ps -a --filter label=wittyplay.managed=true` |
 
-To run the integration test against a real daemon: `go test -tags docker_integration -run Integration -v ./sandbox/docker/engine/`. It pulls busybox pinned by digest, creates a container from `Build`'s spec, checks the hardening through Docker's own inspect, and removes everything.
+## Testing on a real Docker host
 
-## The input agent's limits
+The tests in this repository run against `docker.Fake`, which applies the same `Check` the engine does. One test needs a daemon:
 
-The agent turns the browser's input into X key and mouse events with `xdotool`. It doesn't use a virtual gamepad, because `/dev/uinput` would have to be passed into the container, which the hardening refuses.
+```
+go test -tags docker_integration -run Integration -v ./sandbox/docker/engine/
+```
 
-- **Player 1 only.** Input for other players is ignored.
-- **No analogue.** The left stick becomes its four directions' keys (`i`, `k`, `j`, `l`) once it's past half-way. The right stick and analogue triggers are dropped. Pressure-sensitive buttons are either on or off.
-- **Keys, not a pad.** Each emulator's own settings have to map its controls to the agent's keys (`inputagent.Keys`: `z`, `x`, `a`, `s`, `q`, `w`, the arrow keys, Return, BackSpace and so on). An image ships those settings.
-- A pointer or the first touch moves and clicks the mouse.
-- There's no rumble, motion or lights.
+It pulls busybox by digest, creates a container from `Build`'s spec, reads the hardening back through Docker's own inspect, and removes everything.
+
+Then by hand, on Linux with Docker (and again with a rootless daemon, Podman, and `docker.runtime: local`):
+
+1. `docker build -f docker/images/base/Dockerfile -t wittyplay-emu-base:dev .` from the repository's root. It must fail if KasmVNC's hash doesn't match.
+2. Turn the backend on; Diagnostics shows the daemon, its API version, and whether it's rootless.
+3. Install Flycast. Watch the progress bar; cancel half-way and install again, and see it carry on rather than start over. Unplug the network mid-download and see the job fail with a reason.
+4. Pin the image's id for Flycast. Play a Dreamcast game: picture and sound within a few seconds, player 1's keys once mapped in Flycast.
+5. `docker inspect wittyplay-<session>`: `ReadonlyRootfs`, `CapDrop: [ALL]`, `SecurityOpt: [no-new-privileges:true]`, `User: 1000:1000`, `PidsLimit`, `Memory`, `NanoCpus`, the four mounts and their modes, `NetworkMode: wittyplay`. `docker exec` in and confirm: `id`, `touch /x` fails, `cat /proc/1/status | grep Cap` is all zeros, no route to another session's container.
+6. Pause and resume from the player. Stop from **Running now** as an administrator. Close the tab and see the container go after two minutes. Kill the module and start it: the container left behind is removed.
+7. Start a second game as the same person: the first ends with "You started another game". As a second person at the limit: "already running as many …".
+8. Set PCSX2's resolution scale for one game and check `PCSX2.ini` under the module's `docker/saves/<user>/pcsx2/config`.
+9. An emulator shown as a desktop (xemu): the frame shows it; the page's address without its ticket is "not found"; in the browser's tools the frame's origin is `null` and it has no cookies.
+10. Add packet loss (`tc qdisc add dev <bridge> root netem loss 15%`) and see the bitrate step down in the module's log, and back up after it's removed.
+11. Measure the delay as "Delay" describes, and write the numbers into this page.
+
+## What hasn't been run
+
+Written plainly, so nobody takes a passing test for a played game. On the machine this was finished on there was no Docker and no Linux.
+
+- **No game has been played through this on a real Docker host.** The integration test above has not been run by the people who wrote this version.
+- **The container image has never been built.** The Dockerfile's base images and KasmVNC are pinned by digests read from the registries, but `docker build` hasn't been run, and KasmVNC 1.5.2's command line in the entrypoint is from its documentation.
+- **The entrypoint's FFmpeg command**, the encoder loop, and VA-API encoding have only been checked for shell syntax.
+- **The local sandbox** has unit tests for every flag it passes and for its socket, and has never started bubblewrap. `wittyplay-input-agent` isn't yet among the programs the module ships.
+- **Rootless Docker and Podman** are documented from their own documentation. Podman may not accept every option WittyPlay sets on its network.
+- **KasmVNC inside a sandboxed frame.** The frame has no origin of its own to keep storage in; KasmVNC's page may need a change to work that way. If it doesn't work, it fails closed: nothing is shown, and nothing is exposed.
+- **Each emulator's own settings keys and command-line arguments** are from their documentation.
+- **Whether the server's sandbox for modules lets this module reach a Docker socket** hasn't been checked on Linux.
+- **Delay** has a budget and a way to measure it, and no measurement.
 
 ## Legal
 
-- **WittyPlay never downloads a BIOS, firmware, keys, or games**, and the images don't contain any. Many of these emulators won't start a game without firmware (PS2 BIOS, Xbox BIOS and EEPROM, Wii U and Switch keys and firmware, and so on). Use only firmware you've dumped from hardware you own, and games you've obtained legally. Breaking copy protection to get them may be illegal where you live.
-- **DuckStation** is licensed CC BY-NC-ND 4.0, which doesn't allow commercial use or modified versions. WittyPlay lists it, but never offers it for download, just as with non-commercial cores. An admin who's sure their use is non-commercial can build an image of their own, unmodified, and set it in `docker.images`.
-- Every other emulator is under its own licence (GPL, MPL), named in the list. WittyPlay doesn't modify them. The images run upstream's own release builds, and a container image that bundles one has to carry its licence and point to its source.
-- Lichii is marked experimental by its own authors.
+- **WittyPlay never downloads a BIOS, firmware, keys, or games**, and the images contain none. Use only firmware you've dumped from hardware you own, and games you've obtained legally. Breaking copy protection to get them may be illegal where you live.
+- Each emulator is a separate program under its own licence, named in the list and shown before an install, downloaded unmodified from its own project's release. A container image that bundles one has to carry its licence and point to its source.
+- **DuckStation** (CC BY-NC-ND 4.0) is listed and never offered for download, as with non-commercial cores.
+- **Lichii** is marked experimental by its own authors, and is the one entry whose place in this list the project's owner should look at again: emulators of current consoles have been the subject of legal action against their authors.
 - None of these projects is associated with WittyPlay, nor with any console maker.
