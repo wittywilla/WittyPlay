@@ -25,9 +25,14 @@ import (
 	"github.com/wittywilla/wittymodule/service"
 	"github.com/wittywilla/wittyplay"
 	"github.com/wittywilla/wittyplay/rpc"
+	"github.com/wittywilla/wittyplay/sandbox/docker"
+	"github.com/wittywilla/wittyplay/sandbox/docker/engine"
 )
 
 func main() {
+	// The optional Docker backend. Connecting doesn't reach the daemon; nothing does until an
+	// administrator turns the backend on.
+	rpc.ConnectDocker = func() (docker.Runtime, error) { return engine.Connect() }
 	service.Main(service.Config{
 		Manifest:  wittyplay.ManifestJSON,
 		Handlers:  rpc.Handlers,

@@ -20,10 +20,26 @@ func writeDiscFiles(t *testing.T, files map[string]string) string {
 	return dir
 }
 
+// needCapitals skips a test where the folder ignores capitals (macOS's and Windows' usual
+// filesystems): there a sheet's name in other capitals is found as written, so discFolder
+// rightly has nothing to do, and what it does on Linux can't be seen.
+func needCapitals(t *testing.T, dir string) {
+	t.Helper()
+	p := filepath.Join(dir, "capitals-probe")
+	if err := os.WriteFile(p, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(p)
+	if _, err := os.Stat(filepath.Join(dir, "CAPITALS-PROBE")); err == nil {
+		t.Skip("this filesystem ignores capitals, so no link is needed")
+	}
+}
+
 func TestDiscFolder(t *testing.T) {
 	const cue = "FILE \"GAME DISC 1.BIN\" BINARY\r\n  TRACK 01 MODE2/2352\r\n    INDEX 01 00:00:00\r\n"
 	t.Run("the sheet's name is in other capitals", func(t *testing.T) {
 		dir := writeDiscFiles(t, map[string]string{"Game Disc 1.cue": cue, "Game Disc 1.bin": "data"})
+		needCapitals(t, dir)
 		save := t.TempDir()
 		got, err := discFolder(filepath.Join(dir, "Game Disc 1.cue"), save)
 		if err != nil {
@@ -77,6 +93,7 @@ func TestDiscFolder(t *testing.T) {
 			"game.m3u": "#EXTM3U\nDisc 1.cue\nDisc 2.cue\n", "Disc 1.cue": `FILE "DISC 1.BIN" BINARY`, "Disc 1.bin": "one",
 			"Disc 2.cue": `FILE "Disc 2.bin" BINARY`, "Disc 2.bin": "two",
 		})
+		needCapitals(t, dir)
 		save := t.TempDir()
 		got, err := discFolder(filepath.Join(dir, "game.m3u"), save)
 		if err != nil {

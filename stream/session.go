@@ -151,6 +151,7 @@ type Manager struct {
 	badEnc   map[string]bool // encoders that failed to start here
 	janitor  sync.Once
 	udp      *udpShared
+	relays   map[string]*Relay // standalone emulators' streams: relay.go
 }
 
 // NewManager makes a manager; sessions start with Start.

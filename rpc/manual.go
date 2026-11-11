@@ -137,10 +137,18 @@ func init() {
 		configure(c.Config, c.Encoders)
 		return nil, nil, nil
 	}
-	Handlers["stream.Manager.Start"] = func(_ context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
+	Handlers["stream.Manager.Start"] = func(ctx context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
 		var o stream.Options
 		if err := service.Arg(args, 0, &o); err != nil {
 			return nil, nil, err
+		}
+		// A standalone emulator in a container, only when the Docker backend is on and an
+		// installed one plays this console. Anything else, or Docker missing, goes on below.
+		if ds, handled, err := Docker.Start(ctx, &o); handled {
+			if err != nil {
+				return nil, nil, err
+			}
+			return []any{ds}, nil, nil
 		}
 		o.OnCoreOptions = func(coreID string, list []ipc.Option) {
 			_ = wittymodule.Notify("stream.coreoptions", struct {
@@ -163,12 +171,16 @@ func init() {
 		if err := service.Arg(args, 0, &id); err != nil {
 			return nil, nil, err
 		}
-		s := Mgr.Get(id)
-		if s == nil {
+		var done <-chan struct{}
+		if s := Mgr.Get(id); s != nil {
+			done = s.Done()
+		} else if ds := Docker.Session(id); ds != nil {
+			done = ds.Done()
+		} else {
 			return []any{true}, nil, nil
 		}
 		select {
-		case <-s.Done():
+		case <-done:
 			return []any{true}, nil, nil
 		case <-ctx.Done():
 			return []any{false}, nil, nil
@@ -257,8 +269,17 @@ func openUpload(st *cores.CustomStore, path string) (*os.File, error) {
 	return os.Open(path)
 }
 
-// Routes are what isn't a call: a browser's connection to a game, passed straight through.
+// Routes are what isn't a call: a browser's connection to a game, passed straight through, and
+// the Docker backend's routes (docker.go). Containers a crash left behind are removed here, in
+// the background, only when Docker is on and reachable; nothing about Docker can stop the
+// service starting.
 func Routes(mux *http.ServeMux) {
+	Docker.Routes(mux)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		Docker.Startup(ctx)
+	}()
 	mux.HandleFunc("GET /ws/{sid}", func(w http.ResponseWriter, r *http.Request) {
 		s := Mgr.Get(r.PathValue("sid"))
 		if s == nil {
@@ -278,8 +299,11 @@ func Routes(mux *http.ServeMux) {
 	})
 }
 
-// Busy says a game is being played.
-func Busy() bool { return Mgr.Count() > 0 }
+// Busy says a game is being played, by a core or in a container.
+func Busy() bool { return Mgr.Count() > 0 || Docker.Count() > 0 }
 
 // Stop saves and ends every game, as the server goes away.
-func Stop() { Mgr.StopAll() }
+func Stop() {
+	Mgr.StopAll()
+	Docker.StopAll()
+}

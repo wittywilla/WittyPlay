@@ -12,6 +12,21 @@
   "capabilities": {
     "ipc": [
       "1"
+    ],
+    "dockerSettings": [
+      "docker.enabled",
+      "docker.network",
+      "docker.internal",
+      "docker.publishLoopback",
+      "docker.maxContainers",
+      "docker.memoryMB",
+      "docker.cpus",
+      "docker.pids",
+      "docker.idleMinutes",
+      "docker.maxHours",
+      "docker.gpu",
+      "docker.backend",
+      "docker.images"
     ]
   },
   "group": "games",

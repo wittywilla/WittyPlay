@@ -75,7 +75,7 @@ func TestSeveralFingersOnATouchScreen(t *testing.T) {
 	inputs := [engine.MaxPorts]engine.PadState{}
 	fingers := []engine.PointerState{{X: -100, Y: 200, Pressed: true}, {X: 3000, Y: -4000, Pressed: true}}
 	newTestCore(t, engine.Handlers{
-		Input:   func() *[engine.MaxPorts]engine.PadState { return &inputs },
+		Input: func() *[engine.MaxPorts]engine.PadState { return &inputs },
 		Pointer: func() engine.PointerState {
 			if len(fingers) == 0 {
 				return engine.PointerState{}

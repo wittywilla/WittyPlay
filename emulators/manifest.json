@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "note": "Every sha256 and image digest marked TODO is a placeholder: nobody has checked that file yet. Install refuses a placeholder unless a developer turns it on. Never fill one in without downloading the file and hashing it yourself. URLs for entries with a TODO hash haven't been checked either.",
+  "emulators": [
+    {
+      "id": "pcsx2",
+      "name": "PCSX2",
+      "systems": ["ps2"],
+      "license": "GPL-3.0-or-later",
+      "upstream": "https://github.com/PCSX2/pcsx2",
+      "version": "2.2.0",
+      "artifacts": [
+        {"os": "linux", "arch": "amd64", "url": "https://github.com/PCSX2/pcsx2/releases/download/v2.2.0/pcsx2-v2.2.0-linux-appimage-x64-Qt.AppImage", "sha256": "188cd6a7db7dab8dd509b744f5f02f7dc5746f9d637303b08063f46a779967ab", "archive": "appimage", "entry": "pcsx2-v2.2.0-linux-appimage-x64-Qt.AppImage"}
+      ],
+      "display": "x11",
+      "stream": "pipe",
+      "args": ["-nogui", "-fullscreen", "--"],
+      "needsBios": true,
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-pcsx2:2.2.0", "digest": "TODO"}
+    },
+    {
+      "id": "dolphin",
+      "name": "Dolphin",
+      "systems": ["gamecube", "wii"],
+      "license": "GPL-2.0-or-later",
+      "upstream": "https://github.com/dolphin-emu/dolphin",
+      "version": "2412",
+      "artifacts": [],
+      "display": "x11",
+      "stream": "pipe",
+      "args": ["--batch", "--exec"],
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-dolphin:2412", "digest": "TODO"}
+    },
+    {
+      "id": "duckstation",
+      "name": "DuckStation",
+      "systems": ["psx"],
+      "license": "CC-BY-NC-ND-4.0",
+      "nonCommercial": true,
+      "upstream": "https://github.com/stenzek/duckstation",
+      "version": "0.1-12442",
+      "artifacts": [
+        {"os": "linux", "arch": "amd64", "url": "https://github.com/stenzek/duckstation/releases/download/v0.1-12442/DuckStation-x64.AppImage", "sha256": "4d5c3dcfd9937dc9e77b8fcd5f879b8ec0c69551d5ed13462592073608542fca", "archive": "appimage", "entry": "DuckStation-x64.AppImage"}
+      ],
+      "display": "x11",
+      "stream": "pipe",
+      "args": ["-batch", "-fullscreen", "--"],
+      "needsBios": true,
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-duckstation:0.1-12442", "digest": "TODO"}
+    },
+    {
+      "id": "ppsspp",
+      "name": "PPSSPP",
+      "systems": ["psp"],
+      "license": "GPL-2.0-or-later",
+      "upstream": "https://github.com/hrydgard/ppsspp",
+      "version": "1.18.1",
+      "artifacts": [],
+      "display": "x11",
+      "stream": "pipe",
+      "args": ["--fullscreen"],
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-ppsspp:1.18.1", "digest": "TODO"}
+    },
+    {
+      "id": "xemu",
+      "name": "xemu",
+      "systems": ["xbox"],
+      "license": "GPL-2.0-or-later",
+      "upstream": "https://github.com/xemu-project/xemu",
+      "version": "0.8.5",
+      "artifacts": [
+        {"os": "linux", "arch": "amd64", "url": "https://github.com/xemu-project/xemu/releases/download/v0.8.5/xemu-v0.8.5-x86_64.AppImage", "sha256": "fd282e299dbc3207b8afb84059da99feffc65a86eb29d96c9108fde368d4c99e", "archive": "appimage", "entry": "xemu-v0.8.5-x86_64.AppImage"}
+      ],
+      "display": "x11",
+      "stream": "kasmvnc",
+      "args": ["-full-screen", "-dvd_path"],
+      "needsBios": true,
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-xemu:0.8.5", "digest": "TODO"}
+    },
+    {
+      "id": "cemu",
+      "name": "Cemu",
+      "systems": ["wiiu"],
+      "license": "MPL-2.0",
+      "upstream": "https://github.com/cemu-project/Cemu",
+      "version": "2.6",
+      "artifacts": [
+        {"os": "linux", "arch": "amd64", "url": "https://github.com/cemu-project/Cemu/releases/download/v2.6/Cemu-2.6-x86_64.AppImage", "sha256": "0c20c4aeb800bb13d9bab9474ef45a6f8fcde6402cad9b32ac2a1bbd03186313", "archive": "appimage", "entry": "Cemu-2.6-x86_64.AppImage"}
+      ],
+      "display": "x11",
+      "stream": "kasmvnc",
+      "args": ["-f", "-g"],
+      "needsBios": true,
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-cemu:2.6", "digest": "TODO"}
+    },
+    {
+      "id": "rpcs3",
+      "name": "RPCS3",
+      "systems": ["ps3"],
+      "license": "GPL-2.0-only",
+      "upstream": "https://github.com/RPCS3/rpcs3",
+      "version": "TODO",
+      "artifacts": [],
+      "display": "x11",
+      "stream": "kasmvnc",
+      "args": ["--no-gui"],
+      "needsBios": true,
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-rpcs3:latest", "digest": "TODO"}
+    },
+    {
+      "id": "melonds",
+      "name": "melonDS",
+      "systems": ["nds"],
+      "license": "GPL-3.0-or-later",
+      "upstream": "https://github.com/melonDS-emu/melonDS",
+      "version": "1.0",
+      "artifacts": [
+        {"os": "linux", "arch": "amd64", "url": "https://github.com/melonDS-emu/melonDS/releases/download/1.0/melonDS-appimage-x86_64.zip", "sha256": "a26557d3aca8695d1cf93108ce12be7f3a46943e8c1b5e645f81f2585132ce6a", "archive": "zip", "entry": "melonDS-x86_64.AppImage"}
+      ],
+      "display": "x11",
+      "stream": "pipe",
+      "args": ["-f"],
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-melonds:1.0", "digest": "TODO"}
+    },
+    {
+      "id": "flycast",
+      "name": "Flycast",
+      "systems": ["dreamcast", "naomi"],
+      "license": "GPL-2.0-only",
+      "upstream": "https://github.com/flyinghead/flycast",
+      "version": "2.4",
+      "artifacts": [
+        {"os": "linux", "arch": "amd64", "url": "https://github.com/flyinghead/flycast/releases/download/v2.4/flycast-x86_64.AppImage", "sha256": "35be06ecbdea633a6985ebd9a05926a31974036e3a14d78c3b7810639e81db5f", "archive": "appimage", "entry": "flycast-x86_64.AppImage"}
+      ],
+      "display": "x11",
+      "stream": "pipe",
+      "args": [],
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-flycast:2.4", "digest": "TODO"}
+    },
+    {
+      "id": "lichii",
+      "name": "Lichii",
+      "systems": ["switch", "switch2"],
+      "license": "GPL-3.0-or-later",
+      "upstream": "https://github.com/zortos293/Lichii",
+      "version": "build-130",
+      "experimental": true,
+      "artifacts": [
+        {"os": "linux", "arch": "amd64", "url": "https://github.com/zortos293/Lichii/releases/download/build-130/lichii-linux-x86_64.AppImage", "sha256": "25b94803565f645a5bbc3cca7b5ae89aa1e03091d014f44f37cef0f5a2ab4c90", "archive": "appimage", "entry": "lichii-linux-x86_64.AppImage"},
+        {"os": "linux", "arch": "arm64", "url": "https://github.com/zortos293/Lichii/releases/download/build-130/lichii-linux-aarch64.AppImage", "sha256": "a7b07483e774c6893bb6c348db11077fb1966160607e2f08232d0e63c66026e9", "archive": "appimage", "entry": "lichii-linux-aarch64.AppImage"}
+      ],
+      "display": "x11",
+      "stream": "kasmvnc",
+      "args": ["-f", "-g"],
+      "needsBios": true,
+      "image": {"ref": "ghcr.io/wittywilla/wittyplay-emu-lichii:build-130", "digest": "TODO"}
+    }
+  ]
+}

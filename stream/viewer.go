@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
@@ -491,6 +492,36 @@ func itoa(n int) string {
 	return string(b)
 }
 
+// networking is how every peer connection reaches browsers here: the shared UDP port, the public
+// addresses and STUN servers the server was given. Games and relays (relay.go) share it.
+func (m *Manager) networking(log *slog.Logger) (webrtc.SettingEngine, []webrtc.ICEServer) {
+	var se webrtc.SettingEngine
+	cfg := m.config()
+	if cfg.UDPPort > 0 {
+		mux, err := m.sharedUDP(cfg.UDPPort)
+		if err != nil {
+			log.Warn("the WebRTC UDP port is unavailable; using any free port", "port", cfg.UDPPort, "err", err)
+		} else {
+			se.SetICEUDPMux(mux)
+		}
+	}
+	if len(cfg.PublicIPs) > 0 {
+		se.SetNAT1To1IPs(cfg.PublicIPs, webrtc.ICECandidateTypeHost)
+	}
+	// A connection that has really gone should pause the game quickly, not run it unwatched
+	// for the half minute the defaults allow.
+	se.SetICETimeouts(iceDisconnected, iceFailed, iceKeepalive)
+	if cfg.LoopbackOnly {
+		se.SetIncludeLoopbackCandidate(true)
+		se.SetIPFilter(func(ip net.IP) bool { return ip.IsLoopback() })
+	}
+	var ice []webrtc.ICEServer
+	if len(cfg.STUN) > 0 {
+		ice = append(ice, webrtc.ICEServer{URLs: cfg.STUN})
+	}
+	return se, ice
+}
+
 // MaxOfferSize bounds an SDP offer; a real one is a few kilobytes.
 const MaxOfferSize = 64 << 10
 
@@ -545,31 +576,8 @@ func (s *Session) peer(ctx context.Context, v *viewer, offer string) (string, er
 	if err := webrtc.RegisterDefaultInterceptors(me, ir); err != nil {
 		return "", err
 	}
-	var se webrtc.SettingEngine
-	cfg := s.m.config()
-	if cfg.UDPPort > 0 {
-		mux, err := s.m.sharedUDP(cfg.UDPPort)
-		if err != nil {
-			s.log.Warn("the WebRTC UDP port is unavailable; using any free port", "port", cfg.UDPPort, "err", err)
-		} else {
-			se.SetICEUDPMux(mux)
-		}
-	}
-	if len(cfg.PublicIPs) > 0 {
-		se.SetNAT1To1IPs(cfg.PublicIPs, webrtc.ICECandidateTypeHost)
-	}
-	// A connection that has really gone should pause the game quickly, not run it unwatched
-	// for the half minute the defaults allow.
-	se.SetICETimeouts(iceDisconnected, iceFailed, iceKeepalive)
-	if cfg.LoopbackOnly {
-		se.SetIncludeLoopbackCandidate(true)
-		se.SetIPFilter(func(ip net.IP) bool { return ip.IsLoopback() })
-	}
+	se, ice := s.m.networking(s.log)
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithInterceptorRegistry(ir), webrtc.WithSettingEngine(se))
-	var ice []webrtc.ICEServer
-	if len(cfg.STUN) > 0 {
-		ice = append(ice, webrtc.ICEServer{URLs: cfg.STUN})
-	}
 	pc, err := api.NewPeerConnection(webrtc.Configuration{ICEServers: ice})
 	if err != nil {
 		return "", err
