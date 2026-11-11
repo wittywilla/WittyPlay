@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // Runs WittyPlay's browser tests, which feed simulated gamepads to the real code in
 // plain Node: esbuild (a development dependency, as vite 8 no longer brings it) puts each
 // together, and Node's own test runner runs it.

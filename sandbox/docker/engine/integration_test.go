@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 //go:build docker_integration
 
 // Run with a Docker daemon reachable (DOCKER_HOST or the default socket):

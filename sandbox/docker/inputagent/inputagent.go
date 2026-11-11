@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package inputagent carries a player's input into a standalone emulator's container. WittyPlay
 // sends the same pad, pointer and touch messages a game runner gets (package ipc) over TCP to a
 // small agent inside the container, which turns them into key and mouse events on the

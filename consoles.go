@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package wittyplay knows the consoles a game library can hold and how to tell
 // which console a file belongs to. It has no dependencies, so the server's
 // scanner can use it without pulling in anything that runs or streams a game.

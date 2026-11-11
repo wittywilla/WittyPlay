@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 import { DOWN, LEFT, RIGHT, UP, type Control, type ControlsData, type Layout, type Orientation } from './consoles'
 
 // On-screen controls. Layouts come from the server, and all numbers in them are

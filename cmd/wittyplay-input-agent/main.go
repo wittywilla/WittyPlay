@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Command wittyplay-input-agent runs inside a standalone emulator's container and turns a player's
 // input from WittyPlay into key and mouse events on the container's X display. See package
 // inputagent for what it does and doesn't do. It's built into the container images, not shipped

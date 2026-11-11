@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // How frames reach the browser. Three ways, tried in this order, all behind one
 // interface so the rest of the player never knows which is in use:
 //   1. WebRTC: lowest latency, the normal case

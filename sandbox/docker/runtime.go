@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package docker is WittyPlay's optional Docker backend: a standalone emulator (emulators) in a
 // container of its own, one per session. The process sandbox (stream, hostsandbox) stays the
 // default and is what every libretro core runs in. This backend is off until an administrator

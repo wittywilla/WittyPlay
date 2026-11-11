@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DOWN, LEFT, RIGHT, UP, type Control, type ControlsData, type Layout, type Orientation } from './consoles'
 import { clamp, isStick, layoutFor, onStick as fingerOnStick, touchMask, touchStick } from './touch'

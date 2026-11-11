@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 import { padKey, type ControlsData } from './consoles'
 import {
   compile, effectiveKeys, effectiveMap, effectiveOptions, knownPad, menuHeld, newReading, noteHat, parseModel, readPad, resolveProfile, standingOf,

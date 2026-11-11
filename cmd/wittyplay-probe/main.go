@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Command wittyplay-probe measures and inspects game streaming. docs/GAMING.md explains how
 // to use it.
 package main

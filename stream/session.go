@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package stream runs game sessions on the server: it starts a runner process,
 // reads its raw frames, encodes them with FFmpeg and sends them to viewers over
 // WebRTC or a WebSocket. docs/GAMING.md has the reasoning.

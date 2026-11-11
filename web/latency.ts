@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // Where the time goes between a button and the screen, measured on real frames and
 // real presses. The server sends each frame's record, the browser adds what it saw, and
 // the two clocks are lined up with pings. Nothing here runs unless something asks for

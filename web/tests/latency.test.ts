@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import { adviceFor, ClockSync, LatencyMeter, parseRecord, PhaseLock, Series, SteadinessWatch, TIMING_PONG, TIMING_RECORD } from '../latency'

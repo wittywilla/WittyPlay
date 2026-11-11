@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // The picture's last step, in the browser: scanlines, a CRT's curve and glow, an LCD's
 // grid, colour. The server knows nothing about it, so it costs a low-end server nothing.
 //

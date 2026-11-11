@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 // A person's settings, as the server holds them: the same data for this player, the

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package patch applies a person's own IPS and BPS patch files to a copy of a game. A
 // patch is an untrusted file, so every length is checked before it's used and the
 // output's size is limited before any memory is set aside.

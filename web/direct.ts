@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // WebRTC with the browser's own video path taken out. Frames still arrive as RTP, with lost
 // packets asked for again, but they're taken as soon as they're whole and decoded here with
 // WebCodecs, then drawn straight onto a canvas that doesn't wait for the page's compositor.

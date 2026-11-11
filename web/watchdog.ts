@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // When a WebRTC stream has really gone. A picture that stops on a connection that's still up
 // is the game, its encoder or this machine being busy, and the server has watchdogs of its own
 // for those that start another encoder or game within seconds. A new connection wouldn't help:

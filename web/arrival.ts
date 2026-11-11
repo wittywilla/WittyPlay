@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // How late frames are arriving: each frame's arrival against its timestamp, less the quickest
 // seen lately. A queue growing anywhere on the way shows up here before anything is lost.
 export class ArrivalDelay {

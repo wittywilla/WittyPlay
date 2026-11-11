@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package rpc answers a server's calls to WittyPlay's service: gen.go is generated, by kit/facade in
 // WittyModule, and this is what can't be.
 package rpc

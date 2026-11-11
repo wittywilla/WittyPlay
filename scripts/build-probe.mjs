@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // Bundles the test page for wittyplay-probe, which embeds what this writes. Run it after
 // changing web/transport.ts or web/latency.ts, after npm ci, with esbuild from this checkout:
 //

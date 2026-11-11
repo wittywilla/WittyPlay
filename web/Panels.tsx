@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyboardEvent } from 'react'
 import { reducedMotion } from './display'
 import { downloadBlob, fileName, layerDocument, levelName, LEVEL_RANK, pickFile, type Choice, type CoreOptionsView, type CustomControl, type Issue, type Level, type OptionInfo, type Preset, type Report, type Schema, type SettingDef, type SettingsApi, type SettingsHost, type SettingsView } from './settings'

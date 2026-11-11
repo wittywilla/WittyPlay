@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package cores finds libretro cores on this machine and installs them on an
 // administrator's request. A core is someone else's native code, so downloads
 // are held to one host, one list of names and one file.

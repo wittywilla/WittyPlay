@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 package ipc
 
 // Version names this protocol, as the capability "ipc" in WittyPlay's manifest.

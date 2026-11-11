@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // What a controller is called, and what went wrong in words a person can act on. No browser
 // objects in here, so these can be tested on their own (logic.test.mjs).
 

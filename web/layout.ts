@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // Where the picture goes on the screen. No browser objects in here, so tests can feed
 // it any shape of screen and game.
 

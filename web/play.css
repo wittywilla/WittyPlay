@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Copyright (C) 2026 WittyWilla and contributors */
 /* WittyPlay's player. It takes colours from the app's theme variables where they
    exist, and falls back to its own so it can stand alone. */
 .wp-root {

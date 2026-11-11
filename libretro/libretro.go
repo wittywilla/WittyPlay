@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package libretro is a small libretro frontend: it loads a core (a shared
 // library the user installed), runs it one frame at a time and hands back raw
 // video and audio. It uses no cgo, so one Go toolchain builds it everywhere.

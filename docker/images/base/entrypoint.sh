@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 WittyWilla and contributors
 # WittyPlay's container entrypoint. It starts a display, sound and the input agent, then the
 # emulator it was given as arguments, and streams it one of two ways, as WITTYPLAY_STREAM says:
 #

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 import type { Binding, KeyMap, PadMap, Profile, ProfileOptions } from './mapping'
 
 // A console's controller comes from the server as data, so a TV app and this player

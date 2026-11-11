@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // Builds a reader module as a web bundle a server can load without being updated:
 // one script (index.js) and one stylesheet (style.css), for `wittymodule pack -web`.
 //

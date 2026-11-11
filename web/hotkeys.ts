@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 import type { DisplayValues } from './display'
 
 // Shortcuts: from a keyboard, or a controller by holding one button and pressing

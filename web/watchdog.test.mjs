@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // The watchdog that says a WebRTC picture has stopped, with the clock and the browser stood in
 // for. Run with: node --test (Node 22 needs --experimental-strip-types).
 import assert from 'node:assert/strict'

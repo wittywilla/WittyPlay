@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // The screen's refresh rate, from animation frames, for version 2's hello: the server keeps a
 // game to the screen when the two are close, so a 60.0988 Hz game on a 60 Hz screen never
 // drops a frame. A browser doesn't say its rate, so it's measured once, in the background.

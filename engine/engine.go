@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package engine is what the host needs from something that runs a game: a
 // libretro core in production, a small built-in core in tests.
 package engine

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Command wittyplay-check plays real games headlessly and says what happened. It
 // starts the real runner with its sandbox on, exactly as the server does, loads
 // each game with a real core, presses buttons, and records whether the game

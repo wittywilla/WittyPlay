@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package testcore is a tiny game written in Go: a square you move around a
 // coloured field, a tone while a button is held, and a counter kept in save
 // memory. It needs no third-party core or ROM, so the whole path from library

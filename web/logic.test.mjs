@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // The parts of the player with no browser in them. Run with: node --test
 // (Node 22 needs --experimental-strip-types.)
 import assert from 'node:assert/strict'

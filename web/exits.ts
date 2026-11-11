@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // Leaving what opens over a game: the game menu and its panels, the controller screen and the
 // touch editor. Each is left the same ways, on a phone or a computer: its × or Back, Esc, a
 // controller's B or Back, a phone's or browser's Back, and a tap outside a sheet. Then the game

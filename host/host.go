@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package host is the program that runs one game: it reads commands on one
 // stream, writes frames on another and paces the engine at its own frame rate.
 // cmd/wittyplay-game-runner wraps it in a process; tests run it directly.

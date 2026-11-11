@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 package wittyplay
 
 // coreOptions are the settings a core starts with here when its own default doesn't

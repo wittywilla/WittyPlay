@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // How a controller's raw state becomes a console's buttons. No browser objects in
 // here, so tests can feed it simulated pads. Which profile applies mirrors Resolve in
 // profiles.go; testdata/resolve.json keeps the two the same.

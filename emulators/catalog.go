@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
 // Package emulators is the list of standalone emulators WittyPlay knows, and what installs one.
 // A standalone emulator is a desktop program, not a libretro core: PCSX2, Dolphin, RPCS3 and the
 // like. It never runs in the module's own process or the game runner. It runs in a container

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
 // The test page for wittyplay-probe. It connects the same way the player does, using the
 // player's own code, presses buttons on a timer, reads the numbers host/stamp.go draws into
 // each picture, and posts what it measured. scripts/build-probe.mjs bundles it.
