@@ -395,7 +395,7 @@ func (b *DockerBackend) ready(ctx context.Context, e *emulators.Emulator, consol
 	if !set.Enabled {
 		return nil, docker.Status{}, nil, "", refuse("off", "%s", errDockerOff.Error())
 	}
-	if console != "" && !contains(e.Systems, console) {
+	if console != "" && !e.Plays(console) {
 		return nil, docker.Status{}, nil, "", refuse("wrong-console", "%s doesn't play that console's games.", e.Name)
 	}
 	if set.Overrides[e.ID] == docker.BackendProcess {
@@ -434,15 +434,6 @@ func (b *DockerBackend) ready(ctx context.Context, e *emulators.Emulator, consol
 	return rt, st, in, image, nil
 }
 
-func contains(list []string, v string) bool {
-	for _, s := range list {
-		if s == v {
-			return true
-		}
-	}
-	return false
-}
-
 // Launch starts a game in a standalone emulator, or says in a Refusal why it can't.
 func (b *DockerBackend) Launch(ctx context.Context, o LaunchOptions) (*DockerSession, error) {
 	e := emulators.Find(o.Emulator)
@@ -460,8 +451,8 @@ func (b *DockerBackend) Launch(ctx context.Context, o LaunchOptions) (*DockerSes
 		if s.UserID == o.UserID && s.ItemID == o.ItemID && s.Emulator == e.ID {
 			b.mu.Unlock()
 			if s.Backend == docker.BackendDockerKasmVNC {
-				if t, ok := b.proxy.Ticket(s.ID); ok {
-					s.KasmURL = "/kasm/" + s.ID + "/?ticket=" + t
+				if p, ok := b.proxy.Path(s.ID); ok {
+					s.KasmURL = p
 				}
 			}
 			return s, nil
@@ -656,7 +647,7 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 			_ = lc.Stop(context.WithoutCancel(ctx), sid)
 			return fail(err)
 		}
-		ds.KasmURL = "/kasm/" + sid + "/?ticket=" + ticket
+		ds.KasmURL = "/kasm/" + sid + "/" + ticket + "/"
 	}
 	b.mu.Lock()
 	b.sessions[sid] = ds
@@ -1028,7 +1019,7 @@ func (b *DockerBackend) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /docker/sessions/{sid}/pause", b.user(b.servePause(true)))
 	mux.HandleFunc("POST /docker/sessions/{sid}/resume", b.user(b.servePause(false)))
 	mux.HandleFunc("DELETE /docker/sessions/{sid}", b.user(b.serveStop))
-	mux.Handle("/kasm/", b.user(b.serveKasm))
+	mux.HandleFunc("/kasm/", b.serveKasm)
 }
 
 type handler func(w http.ResponseWriter, r *http.Request, user int64, admin bool)
@@ -1730,24 +1721,19 @@ func (b *DockerBackend) serveStop(w http.ResponseWriter, r *http.Request, user i
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// serveKasm is the KasmVNC proxy: only for the person playing, and with that session's ticket
-// (KasmProxy checks it). Every request counts as someone playing, for the idle limit.
-func (b *DockerBackend) serveKasm(w http.ResponseWriter, r *http.Request, user int64, _ bool) {
+// serveKasm is the KasmVNC proxy. Who is asking isn't looked at: the page it serves runs in a
+// sandboxed frame that carries nobody's sign-in, so the session's ticket in the address is the
+// way in, and KasmProxy checks it. Every request counts as someone playing, for the idle limit.
+func (b *DockerBackend) serveKasm(w http.ResponseWriter, r *http.Request) {
 	rest := strings.TrimPrefix(r.URL.Path, "/kasm/")
 	sid, _, _ := strings.Cut(rest, "/")
-	s := b.own(w, sid, user, false)
-	if s == nil {
-		return
-	}
-	if s.Backend != docker.BackendDockerKasmVNC {
-		http.NotFound(w, r)
-		return
-	}
-	b.mu.Lock()
-	lc := b.lc
-	b.mu.Unlock()
-	if lc != nil {
-		lc.Touch(sid)
+	if s := b.Session(sid); s != nil && s.Backend == docker.BackendDockerKasmVNC {
+		b.mu.Lock()
+		lc := b.lc
+		b.mu.Unlock()
+		if lc != nil {
+			lc.Touch(sid)
+		}
 	}
 	r2 := r.Clone(r.Context())
 	r2.Header.Del(HeaderUser)

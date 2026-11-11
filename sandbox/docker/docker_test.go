@@ -374,11 +374,24 @@ func TestUnavailableIsReported(t *testing.T) {
 
 func TestKasmProxyEnforcesAuth(t *testing.T) {
 	password := NewSecret()
-	var gotAuth, gotCookie, gotPath, gotQuery string
+	var gotAuth, gotCookie, gotPath, gotQuery, gotWitty string
 	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotAuth, gotCookie, gotPath, gotQuery = r.Header.Get("Authorization"), r.Header.Get("Cookie"), r.URL.Path, r.URL.RawQuery
+		gotAuth, gotCookie, gotPath, gotQuery, gotWitty = r.Header.Get("Authorization"), r.Header.Get("Cookie"), r.URL.Path, r.URL.RawQuery, r.Header.Get("X-Witty-User")
+		// A container that has been taken over tries what it can on the browser.
 		w.Header().Set("WWW-Authenticate", `Basic realm="kasm"`)
-		_, _ = w.Write([]byte("desktop"))
+		w.Header().Set("Content-Security-Policy", "script-src *")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		http.SetCookie(w, &http.Cookie{Name: "wms_session", Value: "stolen", Path: "/"})
+		switch r.URL.Path {
+		case "/go":
+			w.Header().Set("Location", "/vnc.html")
+			w.WriteHeader(http.StatusFound)
+		case "/away":
+			w.Header().Set("Location", "https://example.org/phish")
+			w.WriteHeader(http.StatusFound)
+		default:
+			_, _ = w.Write([]byte("desktop"))
+		}
 	}))
 	defer up.Close()
 	u, _ := url.Parse(up.URL)
@@ -388,82 +401,107 @@ func TestKasmProxyEnforcesAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(ticket) != 64 {
+		t.Fatalf("a ticket of %d characters", len(ticket))
+	}
+	if path, ok := p.Path("sess1"); !ok || path != "/kasm/sess1/"+ticket+"/" {
+		t.Fatalf("path: %q", path)
+	}
 	mux := http.NewServeMux()
 	mux.Handle("/kasm/", http.StripPrefix("/kasm", p))
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
+	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 
-	get := func(path string, hdr map[string]string) *http.Response {
-		req, _ := http.NewRequest("GET", srv.URL+path, nil)
+	do := func(method, path string, hdr map[string]string) *http.Response {
+		req, _ := http.NewRequest(method, srv.URL+path, nil)
 		for k, v := range hdr {
 			req.Header.Set(k, v)
 		}
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := client.Do(req)
 		if err != nil {
 			t.Fatal(err)
 		}
 		resp.Body.Close()
 		return resp
 	}
+	get := func(path string, hdr map[string]string) *http.Response { return do("GET", path, hdr) }
 
-	if r := get("/kasm/sess1/", nil); r.StatusCode != http.StatusForbidden {
-		t.Errorf("no ticket: %d", r.StatusCode)
+	// Without the ticket in the address there's nothing there, whatever else a request carries:
+	// not the ticket as a parameter, a header or a cookie, and not the container's own password.
+	for what, r := range map[string]*http.Response{
+		"no ticket":                get("/kasm/sess1/", nil),
+		"a wrong ticket":           get("/kasm/sess1/"+strings.Repeat("0", 64)+"/", nil),
+		"a short ticket":           get("/kasm/sess1/"+ticket[:63]+"/", nil),
+		"the ticket as a query":    get("/kasm/sess1/?ticket="+ticket, nil),
+		"the ticket as a cookie":   get("/kasm/sess1/", map[string]string{"Cookie": "wittyplay_kasm=" + ticket}),
+		"the ticket as a header":   get("/kasm/sess1/", map[string]string{"X-WittyPlay-Kasm-Ticket": ticket}),
+		"the container's password": get("/kasm/sess1/", map[string]string{"Authorization": BasicAuthHeader(password)}),
+		"another session":          get("/kasm/other/"+ticket+"/", nil),
+		"no session":               get("/kasm/", nil),
+		"a write":                  do("POST", "/kasm/sess1/"+ticket+"/api/x", nil),
+	} {
+		if r.StatusCode != http.StatusNotFound {
+			t.Errorf("%s: %d, want 404", what, r.StatusCode)
+		}
+		if !strings.Contains(r.Header.Get("Content-Security-Policy"), "sandbox") {
+			t.Errorf("%s: an answer without the sandbox", what)
+		}
 	}
-	if r := get("/kasm/sess1/", map[string]string{TicketHeader: "wrong"}); r.StatusCode != http.StatusForbidden {
-		t.Errorf("wrong ticket: %d", r.StatusCode)
-	}
-	if r := get("/kasm/sess1/", map[string]string{"Authorization": BasicAuthHeader(password)}); r.StatusCode != http.StatusForbidden {
-		t.Errorf("the container's own password from a browser got in: %d", r.StatusCode)
-	}
-	if r := get("/kasm/other/", map[string]string{TicketHeader: ticket}); r.StatusCode != http.StatusNotFound {
-		t.Errorf("another session with this ticket: %d", r.StatusCode)
+	if gotPath != "" {
+		t.Fatalf("a refused request reached the container: %q", gotPath)
 	}
 
-	r := get("/kasm/sess1/vnc.html?ticket="+ticket+"&x=1", map[string]string{"Cookie": "wms_session=secret"})
+	r := get("/kasm/sess1/"+ticket+"/vnc.html?x=1", map[string]string{"Cookie": "wms_session=secret", "Authorization": "Bearer mine", "X-Witty-User": "7"})
 	if r.StatusCode != http.StatusOK {
-		t.Fatalf("right ticket: %d", r.StatusCode)
+		t.Fatalf("the right ticket: %d", r.StatusCode)
 	}
 	if gotAuth != BasicAuthHeader(password) {
 		t.Errorf("the container wasn't given its password: %q", gotAuth)
 	}
-	if gotCookie != "" {
-		t.Errorf("the browser's cookies reached the container: %q", gotCookie)
+	if gotCookie != "" || gotWitty != "" {
+		t.Errorf("the browser's cookies or the server's headers reached the container: %q %q", gotCookie, gotWitty)
 	}
-	if gotPath != "/vnc.html" || strings.Contains(gotQuery, "ticket") || !strings.Contains(gotQuery, "x=1") {
+	if gotPath != "/vnc.html" || gotQuery != "x=1" || strings.Contains(gotPath+gotQuery, ticket) {
 		t.Errorf("upstream saw %q ? %q", gotPath, gotQuery)
 	}
-	if r.Header.Get("WWW-Authenticate") != "" {
-		t.Error("KasmVNC's password prompt reached the browser")
+	// What the container sent to turn the browser against the server doesn't arrive.
+	if r.Header.Get("WWW-Authenticate") != "" || len(r.Cookies()) != 0 || r.Header.Get("Access-Control-Allow-Origin") != "" {
+		t.Errorf("the container's headers reached the browser: %v", r.Header)
 	}
-	var cookie *http.Cookie
-	for _, c := range r.Cookies() {
-		if c.Name == ticketCookie {
-			cookie = c
-		}
+	csp := r.Header.Values("Content-Security-Policy")
+	if len(csp) != 1 || csp[0] != SandboxPolicy {
+		t.Errorf("the content policy: %q", csp)
 	}
-	if cookie == nil || !cookie.HttpOnly || cookie.Path != "/kasm/sess1" || cookie.SameSite != http.SameSiteStrictMode {
-		t.Fatalf("ticket cookie: %+v", cookie)
+	// The sandbox gives scripts, and never the server's origin: a page from a container can't
+	// read the app's storage or ask the server anything as the person signed in.
+	box := SandboxPolicy[strings.Index(SandboxPolicy, "sandbox"):]
+	if !strings.Contains(box, "allow-scripts") || strings.Contains(box, "allow-same-origin") || strings.Contains(box, "allow-top-navigation") || strings.Contains(box, "allow-popups") {
+		t.Errorf("the sandbox: %q", box)
 	}
-	if r := get("/kasm/sess1/websockify", map[string]string{"Cookie": ticketCookie + "=" + ticket}); r.StatusCode != http.StatusOK {
-		t.Errorf("by cookie: %d", r.StatusCode)
+	// Redirects stay within this session's address, or go nowhere.
+	if loc := get("/kasm/sess1/"+ticket+"/go", nil).Header.Get("Location"); loc != "/kasm/sess1/"+ticket+"/vnc.html" {
+		t.Errorf("a redirect within the desktop: %q", loc)
+	}
+	if loc := get("/kasm/sess1/"+ticket+"/away", nil).Header.Get("Location"); loc != "" {
+		t.Errorf("a redirect to somewhere else: %q", loc)
 	}
 
-	p.Forget("sess1")
-	if r := get("/kasm/sess1/", map[string]string{TicketHeader: ticket}); r.StatusCode != http.StatusNotFound {
-		t.Errorf("after Forget: %d", r.StatusCode)
+	// Only loopback and private addresses can be a container; a session that's forgotten or has
+	// run out is gone.
+	pub, _ := url.Parse("http://203.0.113.5:6901")
+	if _, err := p.Register("x", pub, password, time.Hour); err == nil {
+		t.Error("a public address was accepted as a container")
 	}
-
-	// Expired tickets, public upstreams and short passwords are refused.
-	if _, err := p.Register("s2", u, password, -time.Second); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := p.Ticket("s2"); ok {
-		t.Error("an expired ticket was handed out")
-	}
-	if _, err := p.Register("s3", &url.URL{Scheme: "http", Host: "8.8.8.8:6901"}, password, time.Hour); err == nil {
-		t.Error("a public upstream was accepted")
-	}
-	if _, err := p.Register("s4", u, "short", time.Hour); err == nil {
+	if _, err := p.Register("x", u, "short", time.Hour); err == nil {
 		t.Error("a short password was accepted")
+	}
+	p.Forget("sess1")
+	if r := get("/kasm/sess1/"+ticket+"/", nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("after forgetting: %d", r.StatusCode)
+	}
+	old, _ := p.Register("sess2", u, password, -time.Second)
+	if r := get("/kasm/sess2/"+old+"/", nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("a ticket that has run out: %d", r.StatusCode)
 	}
 }

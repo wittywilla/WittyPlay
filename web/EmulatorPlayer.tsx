@@ -285,7 +285,7 @@ export function EmulatorPlayer({ host, session, title, onExit }: Props) {
         <>
           <p className="wp-emu-note">{session.name} is shown through its own desktop. Click inside it to use the keyboard and mouse.</p>
           {src
-            ? <iframe className="wp-emu-frame" title={`${title}, in ${session.name}`} src={src} sandbox="allow-scripts allow-same-origin allow-pointer-lock" allow="fullscreen; gamepad; autoplay" />
+            ? <iframe className="wp-emu-frame" title={`${title}, in ${session.name}`} src={src} sandbox="allow-scripts allow-pointer-lock" allow="fullscreen; gamepad; autoplay" />
             : <div className="wp-error" role="alert"><p>The server gave no address for this emulator’s desktop.</p><button type="button" className="wp-btn primary" onClick={() => onExit()}>Back</button></div>}
           {paused && <div className="wp-status" role="status">Paused</div>}
         </>

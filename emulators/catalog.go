@@ -195,11 +195,26 @@ func ForSystem(system string) []Emulator {
 	}
 	var out []Emulator
 	for _, e := range m.Emulators {
-		if slices.Contains(e.Systems, system) {
+		if e.Plays(system) {
 			out = append(out, e)
 		}
 	}
 	return out
+}
+
+// CustomPrefix starts the id of a console an administrator added themselves (WittyPlay's
+// custom consoles). The list names consoles by WittyPlay's own ids where it has one (ps2, psp,
+// nds, dc, ps1); for one it doesn't know (gamecube, wii, xbox, wiiu, ps3, switch) an
+// administrator adds a custom console named for it, custom-gamecube and so on, and that's the
+// console an emulator for "gamecube" plays.
+const CustomPrefix = "custom-"
+
+// Plays says whether an emulator plays a console's games, by the console's id.
+func (e *Emulator) Plays(console string) bool {
+	if console == "" {
+		return false
+	}
+	return slices.Contains(e.Systems, console) || slices.Contains(e.Systems, strings.TrimPrefix(console, CustomPrefix))
 }
 
 // Parse reads a manifest and checks it.

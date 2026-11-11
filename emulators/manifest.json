@@ -264,7 +264,7 @@
       "id": "duckstation",
       "name": "DuckStation",
       "systems": [
-        "psx"
+        "ps1"
       ],
       "license": "CC-BY-NC-ND-4.0",
       "nonCommercial": true,
@@ -603,7 +603,7 @@
       "id": "flycast",
       "name": "Flycast",
       "systems": [
-        "dreamcast",
+        "dc",
         "naomi"
       ],
       "license": "GPL-2.0-only",

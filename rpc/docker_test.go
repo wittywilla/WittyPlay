@@ -14,10 +14,12 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/wittywilla/wittyplay"
 	"github.com/wittywilla/wittyplay/emulators"
 	"github.com/wittywilla/wittyplay/sandbox/docker"
 	"github.com/wittywilla/wittyplay/stream"
@@ -149,7 +151,7 @@ func TestDockerRoutesAreAdminOnly(t *testing.T) {
 		t.Fatal("a refused request changed the settings")
 	}
 	// The player's routes need someone signed in.
-	for _, rt := range [][2]string{{"GET", "/kasm/abc/"}, {"POST", "/docker/sessions/abc/connect"}, {"POST", "/docker/sessions/abc/pause"}, {"POST", "/docker/sessions/abc/resume"},
+	for _, rt := range [][2]string{{"POST", "/docker/sessions/abc/connect"}, {"POST", "/docker/sessions/abc/pause"}, {"POST", "/docker/sessions/abc/resume"},
 		{"DELETE", "/docker/sessions/abc"}, {"GET", "/docker/sessions"}, {"GET", "/docker/emulators/pcsx2/settings"}, {"PUT", "/docker/emulators/pcsx2/settings"}} {
 		if w := r.as(t, 0, false, rt[0], rt[1], ""); w.Code != http.StatusUnauthorized {
 			t.Errorf("%s %s signed out: %d, want 401", rt[0], rt[1], w.Code)
@@ -298,7 +300,7 @@ func TestDockerSessionLaunch(t *testing.T) {
 	if _, err := r.launch(5, 1, "snes", "pcsx2", rom); refusal(err) != "wrong-console" {
 		t.Fatalf("a SNES game in PCSX2: %v", err)
 	}
-	if _, err := r.launch(5, 1, "dreamcast", "flycast", rom); refusal(err) != "not-installed" {
+	if _, err := r.launch(5, 1, "dc", "flycast", rom); refusal(err) != "not-installed" {
 		t.Fatalf("an emulator that isn't installed: %v", err)
 	}
 	if _, err := r.launch(5, 1, "ps2", "nope", rom); refusal(err) != "no-emulator" {
@@ -314,7 +316,7 @@ func TestDockerSessionLaunch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("launch: %v", err)
 	}
-	if ds.Backend != docker.BackendDockerKasmVNC || !strings.HasPrefix(ds.KasmURL, "/kasm/"+ds.ID+"/?ticket=") {
+	if ds.Backend != docker.BackendDockerKasmVNC || !strings.HasPrefix(ds.KasmURL, "/kasm/"+ds.ID+"/") || len(ds.KasmURL) != len("/kasm/"+ds.ID+"/")+65 {
 		t.Fatalf("session: %+v", ds)
 	}
 	spec := r.fake.Specs[len(r.fake.Specs)-1]
@@ -335,12 +337,15 @@ func TestDockerSessionLaunch(t *testing.T) {
 	if err != nil || again.ID != ds.ID || len(r.fake.Specs) != 1 {
 		t.Fatalf("rejoining: %v, %d specs", err, len(r.fake.Specs))
 	}
-	// Only the player may use the desktop, and only with the ticket.
-	if w := r.as(t, 6, true, "GET", "/kasm/"+ds.ID+"/", ""); w.Code != http.StatusNotFound {
-		t.Errorf("someone else's desktop: %d", w.Code)
+	// The desktop is reached by the ticket in its address and nothing else: being the player, or
+	// an administrator, without it is not enough.
+	for _, who := range []int{5, 1} {
+		if w := r.as(t, who, who == 1, "GET", "/kasm/"+ds.ID+"/", ""); w.Code != http.StatusNotFound {
+			t.Errorf("the desktop without its ticket, as %d: %d", who, w.Code)
+		}
 	}
-	if w := r.as(t, 5, false, "GET", "/kasm/"+ds.ID+"/", ""); w.Code != http.StatusForbidden {
-		t.Errorf("the desktop without a ticket: %d", w.Code)
+	if w := r.as(t, 0, false, "GET", ds.KasmURL, ""); w.Code == http.StatusNotFound || !strings.Contains(w.Header().Get("Content-Security-Policy"), "sandbox") {
+		t.Errorf("the desktop with its ticket: %d, policy %q", w.Code, w.Header().Get("Content-Security-Policy"))
 	}
 	// Uninstalling an emulator in use is refused, and so is turning the backend off under a game.
 	if w := r.as(t, 1, true, "DELETE", "/docker/emulators/cemu", ""); w.Code != http.StatusConflict {
@@ -480,7 +485,7 @@ func TestDockerRefusesSmallMachines(t *testing.T) {
 	r2.fake.Machine = &docker.Status{Arch: "amd64", CPUs: 4, MemoryMB: 3000}
 	r2.enable(t, `,"docker.images":{"flycast":"`+testImage+`"}`)
 	r2.install(t, "flycast", "flycast-x86_64.AppImage")
-	if _, err := r2.launch(5, 1, "dreamcast", "flycast", r2.rom(t)); err != nil {
+	if _, err := r2.launch(5, 1, "dc", "flycast", r2.rom(t)); err != nil {
 		t.Fatal(err)
 	}
 	if got := r2.fake.Specs[0].MemoryBytes >> 20; got > 3000 {
@@ -808,4 +813,28 @@ func TestBiosStatus(t *testing.T) {
 		t.Errorf("the BIOS folder's mount: %+v", r.fake.Specs[0].Mounts)
 	}
 	_ = ds
+}
+
+// TestEmulatorsNameConsolesTheLibraryHas: an emulator is offered on a game's page by the game's
+// console id, so the list has to use WittyPlay's own ids, or be for a console an administrator
+// adds as a custom one.
+func TestEmulatorsNameConsolesTheLibraryHas(t *testing.T) {
+	custom := []string{"gamecube", "wii", "xbox", "wiiu", "ps3", "naomi", "switch", "switch2"}
+	m, err := emulators.Builtin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range m.Emulators {
+		for _, sys := range e.Systems {
+			if wittyplay.ByID(sys) == nil && !slices.Contains(custom, sys) {
+				t.Errorf("%s plays %q, which is no console the library has", e.ID, sys)
+			}
+			if !e.Plays(sys) || !e.Plays("custom-"+sys) || e.Plays("custom-") || e.Plays("") {
+				t.Errorf("%s: Plays is wrong for %q", e.ID, sys)
+			}
+		}
+	}
+	if len(emulators.ForSystem("custom-gamecube")) == 0 || len(emulators.ForSystem("dc")) == 0 || len(emulators.ForSystem("ps1")) == 0 {
+		t.Error("an emulator isn't found by its console")
+	}
 }

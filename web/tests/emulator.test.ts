@@ -83,7 +83,7 @@ describe('the session', () => {
   test('a stream or a desktop, by its backend', () => {
     assert.equal(showingOf({ backend: 'docker+webrtc', connect: '/c' }), 'stream')
     assert.equal(showingOf({ backend: 'local+webrtc', connect: '/c' }), 'stream')
-    assert.equal(showingOf({ backend: 'docker+kasmvnc', kasmUrl: '/k/?ticket=1' }), 'desktop')
+    assert.equal(showingOf({ backend: 'docker+kasmvnc', kasmUrl: '/k/1/' }), 'desktop')
     // What it needs is missing: nothing can be shown, and the player says so.
     assert.equal(showingOf({ backend: 'docker+webrtc' }), 'none')
     assert.equal(showingOf({ backend: 'docker+kasmvnc', connect: '/c' }), 'none')
@@ -110,7 +110,7 @@ describe('the session', () => {
   })
 
   test('only this server’s own pages go in the frame', () => {
-    assert.equal(desktopSrc('/api/v1/modules/wittyplay/kasm/abc/?ticket=t'), '/api/v1/modules/wittyplay/kasm/abc/?ticket=t')
+    assert.equal(desktopSrc('/api/v1/modules/wittyplay/kasm/abc/t/'), '/api/v1/modules/wittyplay/kasm/abc/t/')
     assert.equal(desktopSrc('/api/v1/x/', (p) => 'https://media.example' + p), 'https://media.example/api/v1/x/')
     for (const bad of [undefined, '', 'https://elsewhere.example/', '//elsewhere.example/', 'javascript:alert(1)', '/\\elsewhere.example']) assert.equal(desktopSrc(bad), '', String(bad))
   })
