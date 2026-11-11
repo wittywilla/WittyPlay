@@ -1,0 +1,41 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Copyright (C) 2026 WittyWilla and contributors */
+/* A standalone emulator's player: the picture, whole, and a slim bar over its top that goes
+   away while playing. It builds on play.css, and keeps to its ways: the app's theme where a
+   panel is drawn, and its own dark glass over the picture. */
+.wp-emu { outline: none; }
+.wp-emu-stage { touch-action: none; }
+.wp-emu-pic { position: absolute; inset: 0; }
+.wp-emu-media { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.wp-emu.wp-playing:not(.wp-emu-bar-on) .wp-emu-stage { cursor: none; }
+
+.wp-emu-bar { position: absolute; top: 0; left: 0; right: 0; z-index: 7; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 6px max(8px, env(safe-area-inset-left)); background: rgba(10, 12, 18, .86); color: #f2f4f8; opacity: 0; pointer-events: none; }
+.wp-emu-bar-on .wp-emu-bar, .wp-emu-bar:focus-within { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: no-preference) { .wp-emu-bar { transition: opacity .15s ease; } }
+.wp-emu-bar .wp-btn { flex: none; min-height: 36px; padding: 0 12px; background: rgba(255, 255, 255, .12); color: #f2f4f8; white-space: nowrap; }
+.wp-emu-bar .wp-btn:hover:not(:disabled) { background: rgba(255, 255, 255, .22); }
+.wp-emu-bar .wp-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.wp-emu-bar .wp-btn.danger { border-color: rgba(255, 255, 255, .55); }
+@media (pointer: coarse) { .wp-emu-bar .wp-btn { min-height: 44px; } }
+.wp-emu-names { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.wp-emu-names strong, .wp-emu-names span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-emu-names span { color: #aab1c0; font-size: 12.5px; }
+@media (max-width: 520px) { .wp-emu-bar { flex-wrap: wrap; } .wp-emu-names { order: -1; flex-basis: 100%; } }
+
+/* A desktop keeps the pointer and the keys to itself, so the bar stays, above it. */
+.wp-emu-desktop .wp-emu-bar { position: static; flex: none; }
+.wp-emu-note { flex: none; margin: 0; padding: 4px max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left)); background: rgba(10, 12, 18, .86); color: #aab1c0; font-size: 12.5px; user-select: text; -webkit-user-select: text; }
+.wp-emu-frame { flex: 1 1 auto; min-height: 0; width: 100%; border: 0; background: #000; }
+
+.wp-emu-notices { position: absolute; top: calc(56px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 6; display: flex; align-items: flex-start; gap: 12px; width: max-content; max-width: min(92vw, 560px); padding: 10px 12px; border-radius: 10px; background: rgba(10, 12, 18, .88); color: #f2f4f8; user-select: text; -webkit-user-select: text; }
+.wp-emu-notices ul { flex: 1 1 auto; min-width: 0; margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; overflow-wrap: anywhere; }
+.wp-emu-notices .wp-btn { flex: none; min-height: 32px; padding: 0 10px; background: rgba(255, 255, 255, .12); color: #f2f4f8; }
+.wp-emu-desktop .wp-emu-notices { top: auto; bottom: 16px; }
+.wp-emu .wp-tap { top: calc(60px + env(safe-area-inset-top)); }
+.wp-emu-paused { z-index: 6; }
+
+.wp-emu-ask-wrap { position: absolute; inset: 0; z-index: 12; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .6); }
+.wp-emu-ask { width: min(100%, 420px); display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: var(--r-lg, 12px); background: var(--wp-panel); color: var(--wp-fg); border: 1px solid var(--wp-line); user-select: text; -webkit-user-select: text; }
+.wp-emu-ask h2 { margin: 0; font-size: 18px; }
+.wp-emu-ask p { margin: 0; color: var(--wp-muted); line-height: 1.45; }
+.wp-emu-ask-actions { justify-content: flex-end; flex-wrap: wrap; }

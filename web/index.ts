@@ -26,3 +26,7 @@ export type { Background, ControlsData, SaveControl } from './consoles'
 export type { ControllerData, Profile } from './mapping'
 export type { SettingsHost } from './settings'
 export { GameSettingsScreen } from './Screen'
+// A standalone emulator's game (docs/DOCKER-BACKEND.md): the same stream, or the emulator's desktop.
+export { EmulatorPlayer } from './EmulatorPlayer'
+export type { Connected, EmulatorBackend, EmulatorHost, EmulatorSession } from './emulator'
+export type { Hello, StreamInfo } from './transport'
