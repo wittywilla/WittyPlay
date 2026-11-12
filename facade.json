@@ -81,6 +81,13 @@
       "local": [
         "ProbeError.Error",
         "StreamError.Error"
+      ],
+      "internal": [
+        "Relay",
+        "RelayOptions",
+        "Manager.StartRelay",
+        "Manager.GetRelay",
+        "Manager.FFmpegPath"
       ]
     }
   ]

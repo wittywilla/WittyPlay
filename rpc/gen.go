@@ -11,7 +11,6 @@ import (
 	ipc "github.com/wittywilla/wittyplay/ipc"
 	patch "github.com/wittywilla/wittyplay/patch"
 	stream "github.com/wittywilla/wittyplay/stream"
-	netip "net/netip"
 
 	"github.com/wittywilla/wittymodule/service"
 )
@@ -1206,14 +1205,6 @@ var Handlers = map[string]service.Handler{
 		r0 := recv.Count()
 		return []any{r0}, back, err
 	},
-	"stream.Manager.FFmpegPath": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		recv, err := resolveManager(rawRecv)
-		if err != nil {
-			return nil, nil, err
-		}
-		r0 := recv.FFmpegPath()
-		return []any{r0}, back, err
-	},
 	"stream.Manager.ForUser": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 int64
 		if err := service.Arg(args, 0, &a0); err != nil {
@@ -1236,18 +1227,6 @@ var Handlers = map[string]service.Handler{
 			return nil, nil, err
 		}
 		r0 := recv.Get(a0)
-		return []any{r0}, back, err
-	},
-	"stream.Manager.GetRelay": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var a0 string
-		if err := service.Arg(args, 0, &a0); err != nil {
-			return nil, nil, err
-		}
-		recv, err := resolveManager(rawRecv)
-		if err != nil {
-			return nil, nil, err
-		}
-		r0 := recv.GetRelay(a0)
 		return []any{r0}, back, err
 	},
 	"stream.Manager.Modes": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
@@ -1282,18 +1261,6 @@ var Handlers = map[string]service.Handler{
 		r0, err := recv.ProbeOptions(ctx, a0, a1, a2)
 		return []any{r0}, back, err
 	},
-	"stream.Manager.StartRelay": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var a0 stream.RelayOptions
-		if err := service.Arg(args, 0, &a0); err != nil {
-			return nil, nil, err
-		}
-		recv, err := resolveManager(rawRecv)
-		if err != nil {
-			return nil, nil, err
-		}
-		r0, err := recv.StartRelay(a0)
-		return []any{r0}, back, err
-	},
 	"stream.Manager.UsingCore": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 string
 		if err := service.Arg(args, 0, &a0); err != nil {
@@ -1312,142 +1279,6 @@ var Handlers = map[string]service.Handler{
 			return nil, nil, err
 		}
 		r0, err := stream.Probe(ctx, a0)
-		return []any{r0}, back, err
-	},
-	"stream.Relay.AllowFrom": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var a0 netip.Addr
-		if err := service.Arg(args, 0, &a0); err != nil {
-			return nil, nil, err
-		}
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		recv.AllowFrom(a0)
-		return nil, back, err
-	},
-	"stream.Relay.AudioPort": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		r0 := recv.AudioPort()
-		return []any{r0}, back, err
-	},
-	"stream.Relay.Connect": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var a0 stream.Hello
-		if err := service.Arg(args, 0, &a0); err != nil {
-			return nil, nil, err
-		}
-		var a1 string
-		if err := service.Arg(args, 1, &a1); err != nil {
-			return nil, nil, err
-		}
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		r0, err := recv.Connect(ctx, a0, a1)
-		return []any{r0}, back, err
-	},
-	"stream.Relay.End": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var a0 string
-		if err := service.Arg(args, 0, &a0); err != nil {
-			return nil, nil, err
-		}
-		var a1 string
-		if err := service.Arg(args, 1, &a1); err != nil {
-			return nil, nil, err
-		}
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		recv.End(a0, a1)
-		return nil, back, err
-	},
-	"stream.Relay.ID": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		r0 := recv.ID()
-		return []any{r0}, back, err
-	},
-	"stream.Relay.LastInput": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		r0 := recv.LastInput()
-		return []any{r0}, back, err
-	},
-	"stream.Relay.Packets": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		r0 := recv.Packets()
-		return []any{r0}, back, err
-	},
-	"stream.Relay.Push": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var a0 bool
-		if err := service.Arg(args, 0, &a0); err != nil {
-			return nil, nil, err
-		}
-		var a1 []byte
-		if err := service.Arg(args, 1, &a1); err != nil {
-			return nil, nil, err
-		}
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		recv.Push(a0, a1)
-		return nil, back, err
-	},
-	"stream.Relay.Stop": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		recv.Stop()
-		return nil, back, err
-	},
-	"stream.Relay.Unwatched": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		r0 := recv.Unwatched()
-		return []any{r0}, back, err
-	},
-	"stream.Relay.VideoPort": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		r0 := recv.VideoPort()
-		return []any{r0}, back, err
-	},
-	"stream.Relay.Viewers": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var recv stream.Relay
-		if err := service.Recv(rawRecv, &recv); err != nil {
-			return nil, nil, err
-		}
-		back = &recv
-		r0 := recv.Viewers()
 		return []any{r0}, back, err
 	},
 	"stream.Runner.Release": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
