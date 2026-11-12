@@ -60,7 +60,7 @@ func (b *DockerBackend) serveManual(w http.ResponseWriter, r *http.Request, _ in
 }
 
 // serveAddManual adds it: the program named, or with none named, the one found.
-func (b *DockerBackend) serveAddManual(w http.ResponseWriter, r *http.Request, _ int64, _ bool) {
+func (b *DockerBackend) serveAddManual(w http.ResponseWriter, r *http.Request, user int64, _ bool) {
 	e := emulators.Find(r.PathValue("id"))
 	if e == nil || e.Manual == nil {
 		writeJSONError(w, http.StatusNotFound, "no-emulator", "No emulator by that name is added by hand.")
@@ -82,6 +82,7 @@ func (b *DockerBackend) serveAddManual(w http.ResponseWriter, r *http.Request, _
 	if body.Program == "" {
 		found, ok := emulators.Detect(e, b.dropFolder(e.ID), goos)
 		if !ok {
+			b.log.WarnContext(r.Context(), "an emulator added by hand wasn't found", "emulator", e.ID, "dir", b.dropFolder(e.ID), "why", "not where it's usually installed, nor in the drop folder")
 			writeJSONError(w, http.StatusNotFound, "not-found", e.Name+" wasn't found where it's usually installed, or in "+b.dropFolder(e.ID)+". Give its full path.")
 			return
 		}
@@ -89,14 +90,21 @@ func (b *DockerBackend) serveAddManual(w http.ResponseWriter, r *http.Request, _
 	} else {
 		found, err := emulators.IdentifyFor(e, body.Program, goos)
 		if err != nil {
+			b.log.WarnContext(r.Context(), "a program wasn't recognised as the emulator", "emulator", e.ID, "path", body.Program, "why", err.Error())
 			writeJSONError(w, http.StatusBadRequest, "not-it", err.Error())
 			return
 		}
 		id = found
 	}
 	if _, err := b.inst.RegisterManual(e, id); err != nil {
+		b.log.WarnContext(r.Context(), "an emulator added by hand couldn't be recorded", "emulator", e.ID, "path", id.Program, "err", err)
 		writeJSONError(w, http.StatusConflict, "register", err.Error())
 		return
 	}
+	found := "named"
+	if body.Program == "" {
+		found = "detected"
+	}
+	b.log.InfoContext(r.Context(), "emulator added by hand", "emulator", e.ID, "version", id.Version, "how", id.How, "found", found, "path", id.Program, "by", user, "audit", "yes")
 	writeJSON(w, http.StatusOK, b.manualView(e))
 }

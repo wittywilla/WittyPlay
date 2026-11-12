@@ -132,7 +132,9 @@ func (s *Session) attach(v *viewer) {
 		s.startOpusLocked()
 	}
 	s.applyPauseLocked()
+	n := len(s.viewers)
 	s.viewMu.Unlock()
+	s.log.Info("viewer connected", "conn", v.conn, "codec", v.codec, "watch", v.watch, "viewers", n)
 	if v.pendingLatency != "" {
 		v.setLatency(latencyNamed(v.pendingLatency))
 	}
@@ -203,7 +205,9 @@ func (s *Session) detach(v *viewer) {
 	}
 	s.applyPauseLocked()
 	s.updatePaceLocked()
+	n := len(s.viewers)
 	s.viewMu.Unlock()
+	s.log.Info("viewer disconnected", "conn", v.conn, "evicted", v.evicted.Load(), "viewers", n)
 }
 
 // anyWebRTCLocked says whether anyone is listening to Opus: over WebRTC, or a version 2

@@ -108,7 +108,21 @@ func (s *Session) logStats() {
 			made := s.stats.made.Swap(0)
 			if frames > 0 {
 				el := time.Since(last).Seconds()
-				s.log.Info("streaming", "encoder", s.Info().Encoder, "gameFps", float64(made)/el, "fps", float64(frames)/el, "encodeMs", mean, "worstMs", worst, "renderer", s.info.Renderer)
+				gameFps, fps := float64(made)/el, float64(frames)/el
+				// Quiet while all is well; a game falling well behind its own rate, or an
+				// encoder slower than a frame, is worth a warning.
+				s.viewMu.Lock()
+				paused := s.paused
+				s.viewMu.Unlock()
+				lv, want := slog.LevelDebug, s.info.FPS
+				if want > 0 && !paused && (gameFps < want*0.8 || mean > 1000/want) {
+					lv = slog.LevelWarn
+				}
+				topic := "capture" // a line of detail; a warning stands on its own
+				if lv != slog.LevelDebug {
+					topic = ""
+				}
+				s.log.Log(context.Background(), lv, "streaming", "topic", topic, "encoder", s.Info().Encoder, "gameFps", gameFps, "fps", fps, "encodeMs", mean, "worstMs", worst, "renderer", s.info.Renderer)
 			}
 			last = time.Now()
 		}

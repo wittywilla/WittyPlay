@@ -87,6 +87,9 @@ type Identified struct {
 	Dir     string `json:"dir"`     // the folder it's run from, given read-only
 	Entry   string `json:"entry"`   // the program, relative to Dir
 	Version string `json:"version,omitempty"`
+	// How says what showed it's the emulator, for the log: "bundle identifier", "file name", or
+	// "file name and a file beside it".
+	How string `json:"how,omitempty"`
 }
 
 // Identify checks a path is this emulator, on this system: a Mac app bundle (or the program
@@ -138,7 +141,11 @@ func identify(e *Emulator, p, goos string) (Identified, error) {
 	if !besideOK(e, filepath.Dir(p), base) {
 		return Identified{}, fmt.Errorf("%s has that name, but nothing beside it says it's %s (%s)", base, e.Name, strings.Join(e.Manual.Beside, " or "))
 	}
-	id := Identified{Program: p, Dir: filepath.Dir(p), Entry: base}
+	how := "file name"
+	if len(e.Manual.Beside) > 0 && !strings.HasSuffix(strings.ToLower(base), ".appimage") {
+		how = "file name and a file beside it"
+	}
+	id := Identified{Program: p, Dir: filepath.Dir(p), Entry: base, How: how}
 	if e.Manual.VersionFrom != "" {
 		if m := regexp.MustCompile(e.Manual.VersionFrom).FindStringSubmatch(base); len(m) > 1 {
 			id.Version = m[1]
@@ -213,7 +220,7 @@ func identifyBundle(e *Emulator, bundle string) (Identified, error) {
 	}
 	parent := filepath.Dir(bundle)
 	rel, _ := filepath.Rel(parent, prog)
-	return Identified{Program: prog, Dir: parent, Entry: filepath.ToSlash(rel), Version: version}, nil
+	return Identified{Program: prog, Dir: parent, Entry: filepath.ToSlash(rel), Version: version, How: "bundle identifier"}, nil
 }
 
 // readPlist reads a property list, XML or binary, with the Mac's own plutil.

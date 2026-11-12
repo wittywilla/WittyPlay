@@ -491,17 +491,53 @@ var DefaultHosts = []string{
 // ErrHost is a download address on no list.
 var ErrHost = errors.New("that address isn't an approved download host")
 
+// SafeURL is an address as it may be logged or shown: no login, no query, no fragment. What
+// can't be parsed is left out altogether.
+func SafeURL(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return "(an address that can't be read)"
+	}
+	u.User, u.RawQuery, u.ForceQuery, u.Fragment, u.RawFragment = nil, "", false, "", ""
+	return u.String()
+}
+
+// URLHost is an address's host alone, for a log.
+func URLHost(raw string) string {
+	if u, err := url.Parse(raw); err == nil {
+		return u.Hostname()
+	}
+	return ""
+}
+
+// CleanURLError takes the login and query out of the address in an error from net/http, which
+// quotes the whole address it was asked for.
+func CleanURLError(err error) error {
+	var ue *url.Error
+	if errors.As(err, &ue) {
+		c := *ue
+		c.URL = SafeURL(ue.URL)
+		return &c
+	}
+	return err
+}
+
 // CheckURL says whether an address may be fetched: https, no credentials, on a host listed.
+// What it says never repeats a login or a query.
 func CheckURL(raw string, hosts []string) error {
 	u, err := url.Parse(raw)
 	if err != nil {
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			err = ue.Err // which, unlike the url.Error, doesn't quote the address
+		}
 		return fmt.Errorf("a bad download address: %w", err)
 	}
 	if u.Scheme != "https" {
-		return fmt.Errorf("the download address %q isn't https", raw)
+		return fmt.Errorf("the download address %q isn't https", SafeURL(raw))
 	}
 	if u.User != nil {
-		return fmt.Errorf("the download address %q carries credentials", raw)
+		return fmt.Errorf("the download address %q carries credentials", SafeURL(raw))
 	}
 	if !slices.Contains(hosts, strings.ToLower(u.Hostname())) {
 		return fmt.Errorf("%w: %s", ErrHost, u.Hostname())

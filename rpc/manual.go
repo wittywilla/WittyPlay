@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -28,7 +27,7 @@ import (
 )
 
 // Mgr is this process's games.
-var Mgr = stream.NewManager(stream.Config{Log: slog.New(slog.NewTextHandler(os.Stderr, nil))})
+var Mgr = stream.NewManager(stream.Config{Log: Log.With("cat", "games")})
 
 var errNoSession = errors.New("that game has ended")
 
@@ -169,6 +168,10 @@ func init() {
 		}
 		return []any{Docker.Offers(ctx, console, systemDir)}, nil, nil
 	}
+	// How standalone emulators stand, for the server's diagnostics: see Summary.
+	Handlers["docker.Summary"] = func(ctx context.Context, _ json.RawMessage, _ []json.RawMessage) ([]any, any, error) {
+		return []any{Docker.Summary(ctx)}, nil, nil
+	}
 	// Every console with an emulator set up for it, for the server's console list: a console no
 	// core plays (Xbox, PS3, Wii U) is ready when one of these is.
 	Handlers["docker.ConsoleOffers"] = func(ctx context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
@@ -227,7 +230,7 @@ func init() {
 		if err := service.Arg(args, 1, &dir); err != nil {
 			return nil, nil, err
 		}
-		return []any{stream.ProbeGPU(runner, dir, slog.New(slog.NewTextHandler(os.Stderr, nil)))}, nil, nil
+		return []any{stream.ProbeGPU(runner, dir, Log.With("cat", "games"))}, nil, nil
 	}
 	Handlers["wittyplay.Consoles"] = func(context.Context, json.RawMessage, []json.RawMessage) ([]any, any, error) {
 		return []any{wittyplay.Consoles}, nil, nil

@@ -62,6 +62,9 @@ type Relay struct {
 
 // RelayOptions start a relay.
 type RelayOptions struct {
+	// Log, when set, is the relay's logger in place of the manager's: the caller's, carrying its
+	// area and the game's session.
+	Log            *slog.Logger
 	UserID, ItemID int64
 	Title, Console string
 	Emulator       string
@@ -135,7 +138,11 @@ func (m *Manager) StartRelay(opt RelayOptions) (*Relay, error) {
 		return nil, err
 	}
 	id := newID()
-	r := &Relay{id: id, m: m, log: m.log.With("relay", id, "emulator", opt.Emulator), opt: opt, video: vc, audio: ac, vtrack: vtrack, atrack: atrack,
+	base := m.log
+	if opt.Log != nil {
+		base = opt.Log
+	}
+	r := &Relay{id: id, m: m, log: base.With("relay", id, "emulator", opt.Emulator), opt: opt, video: vc, audio: ac, vtrack: vtrack, atrack: atrack,
 		viewers: map[*relayViewer]bool{}, done: make(chan struct{})}
 	r.lastInput.Store(time.Now().UnixNano())
 	r.unwatched.Store(time.Now().UnixNano())
@@ -446,7 +453,9 @@ func (r *Relay) Connect(ctx context.Context, hello Hello, offer string) (Connect
 		delete(r.viewers, oldest)
 	}
 	r.watchedLocked()
+	n := len(r.viewers)
 	r.mu.Unlock()
+	r.log.Info("viewer connected", "conn", v.conn, "viewers", n)
 	if oldest != nil {
 		oldest.close()
 	}
@@ -487,9 +496,14 @@ func (r *Relay) input(p []byte) {
 
 func (r *Relay) drop(v *relayViewer) {
 	r.mu.Lock()
+	_, was := r.viewers[v]
 	delete(r.viewers, v)
 	r.watchedLocked()
+	n := len(r.viewers)
 	r.mu.Unlock()
+	if was {
+		r.log.Info("viewer disconnected", "conn", v.conn, "viewers", n)
+	}
 	v.close()
 }
 

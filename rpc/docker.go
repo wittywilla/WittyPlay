@@ -29,6 +29,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -66,7 +67,7 @@ var Docker = NewDockerBackend(os.Getenv(DataEnv), func() (docker.Runtime, error)
 		return nil, docker.ErrUnavailable
 	}
 	return ConnectDocker()
-}, Mgr, nil)
+}, Mgr, Log.With("cat", "emulators"))
 
 // unwatchedLimit is how long a streamed game may run with nobody connected to it: long enough
 // to reload a page or walk to another room, not long enough to hold a place for nobody.
@@ -109,7 +110,7 @@ type DockerBackend struct {
 // With dataDir empty, settings live only in memory, and nothing can be installed.
 func NewDockerBackend(dataDir string, connect func() (docker.Runtime, error), mgr *stream.Manager, log *slog.Logger) *DockerBackend {
 	if log == nil {
-		log = slog.New(slog.NewTextHandler(os.Stderr, nil))
+		log = Log.With("cat", "emulators")
 	}
 	b := &DockerBackend{dataDir: dataDir, connect: connect, mgr: mgr, log: log, settings: docker.DefaultSettings(),
 		jobs: map[string]*InstallJob{}, sessions: map[string]*DockerSession{}, store: &emulators.Store{}}
@@ -137,7 +138,7 @@ func NewDockerBackend(dataDir string, connect func() (docker.Runtime, error), mg
 	if b.inst != nil {
 		goos, _ := b.platform()
 		for _, err := range b.inst.LoadManualFile(goos) {
-			log.Warn("docker: an emulator named in manual.json wasn't added", "err", err)
+			log.Warn("docker: an emulator named in manual.json wasn't added", "file", b.inst.ManualFile(), "err", err)
 		}
 	}
 	if dataDir != "" {
@@ -499,6 +500,21 @@ func (b *DockerBackend) Launch(ctx context.Context, o LaunchOptions) (*DockerSes
 		return nil, no
 	}
 	set := b.Settings()
+	if bios := b.biosStatus(e); len(bios) > 0 {
+		var present, missing []string
+		for _, f := range bios {
+			if f.Present {
+				present = append(present, f.Name)
+			} else {
+				missing = append(missing, f.Name)
+			}
+		}
+		// Names only: never what's in them.
+		b.log.Debug("firmware for an emulator", "topic", "firmware", "emulator", e.ID, "present", strings.Join(present, ","), "missing", strings.Join(missing, ","))
+		if e.NeedsBios && len(present) == 0 {
+			b.log.Warn("an emulator needs firmware that isn't there", "emulator", e.ID, "missing", strings.Join(missing, ","))
+		}
+	}
 	if e.NeedsBios && len(b.biosStatus(e)) > 0 && !b.hasAnyBios(e) {
 		return nil, refuse("needs-bios", "%s needs firmware of your own before it can start a game, and none was found in this server's BIOS folder. WittyPlay never downloads it.", e.Name)
 	}
@@ -572,7 +588,7 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 		return nil, fmt.Errorf("copying %s's firmware for this person: %w", emu.Name, err)
 	}
 	if err := writeInputMap(emu, settingsDir, eff, runtime.GOOS, hostRT); err != nil {
-		b.log.Warn("docker: the controllers couldn't be set up in the emulator's own settings", "emulator", emu.ID, "err", err)
+		b.log.Warn("the controllers couldn't be set up in the emulator's own settings", "session", sid, "emulator", emu.ID, "dir", settingsDir, "err", err)
 	}
 	// A game kept as a folder (a PS3 disc, a Wii U game) is given whole: the emulator is
 	// pointed at the folder, or at the file in it that starts it.
@@ -642,7 +658,7 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 			bind = netip.MustParseAddr("127.0.0.1")
 			req.RTPHost = "host.docker.internal"
 		}
-		relay, err := b.mgr.StartRelay(stream.RelayOptions{UserID: o.UserID, ItemID: o.ItemID, Title: o.Title, Console: o.Console, Emulator: emu.ID,
+		relay, err := b.mgr.StartRelay(stream.RelayOptions{Log: b.log.With("session", sid), UserID: o.UserID, ItemID: o.ItemID, Title: o.Title, Console: o.Console, Emulator: emu.ID,
 			Width: w, Height: h, FPS: float64(fps), Bind: bind, Kbps: kbps,
 			Input: func(p []byte) {
 				lc.Touch(sid)
@@ -660,6 +676,7 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 		}
 		ds.relay = relay
 		req.RTPVideo, req.RTPAudio = relay.VideoPort(), relay.AudioPort()
+		b.log.Info("stream relay started", "session", sid, "emulator", emu.ID, "backend", string(backend), "size", fmt.Sprintf("%dx%d", w, h), "fps", fps, "kbps", kbps, "bind", bind.String())
 	} else {
 		req.Stream = emulators.StreamKasmVNC
 		req.KasmToken = docker.NewSecret()
@@ -794,7 +811,7 @@ wait:
 	<-ds.c.Done()
 	why := ds.c.Reason()
 	if why == "exited" {
-		b.log.Warn("docker: an emulator ended by itself", "session", ds.ID, "emulator", ds.Emulator, "said", ds.c.LastLog())
+		b.log.Warn("docker: an emulator ended by itself", "session", ds.ID, "emulator", ds.Emulator, "stderr", ds.c.LastLog())
 	}
 	if ds.relay != nil {
 		end := endings[why]
@@ -996,6 +1013,37 @@ func (b *DockerBackend) progress(id string, p emulators.Progress) {
 	}
 }
 
+// changedKeys names the top-level fields that differ between two values' JSON, for a log line
+// that says what changed and not what to.
+func changedKeys(old, now any) []string {
+	var a, b map[string]json.RawMessage
+	ab, _ := json.Marshal(old)
+	bb, _ := json.Marshal(now)
+	_ = json.Unmarshal(ab, &a)
+	_ = json.Unmarshal(bb, &b)
+	var out []string
+	for k, v := range b {
+		if string(a[k]) != string(v) {
+			out = append(out, k)
+		}
+	}
+	for k := range a {
+		if _, ok := b[k]; !ok {
+			out = append(out, k)
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+// truncateText keeps what someone sent short enough for a log line.
+func truncateText(s string, n int) string {
+	if len(s) > n {
+		return s[:n] + "…"
+	}
+	return s
+}
+
 // Install starts installing an emulator, and returns at once. The work carries on in the
 // background, whoever asked having gone or not, and Job says how it's going.
 func (b *DockerBackend) Install(id string) (InstallJob, error) {
@@ -1022,6 +1070,13 @@ func (b *DockerBackend) Install(id string) (InstallJob, error) {
 	b.jobs[id] = j
 	out := *j
 	b.mu.Unlock()
+	// Installs are kept in the log whatever its level ("audit" "yes"). The download's host only:
+	// never its whole address, which could carry a query.
+	src := ""
+	if art := b.inst.Artifact(e); art != nil {
+		src = emulators.URLHost(art.URL)
+	}
+	b.log.Info("emulator install started", "emulator", id, "version", e.Version, "source", src, "audit", "yes")
 	go func() {
 		defer cancel()
 		got, err := b.inst.Install(ctx, e)
@@ -1030,11 +1085,27 @@ func (b *DockerBackend) Install(id string) (InstallJob, error) {
 		switch {
 		case err != nil && errors.Is(ctx.Err(), context.Canceled):
 			j.State, j.Error = "cancelled", ""
+			b.log.Info("emulator install cancelled", "emulator", id, "version", e.Version, "audit", "yes")
+		case errors.Is(err, emulators.ErrHash):
+			j.State, j.Error = "failed", err.Error()
+			want, have := "", ""
+			if art := b.inst.Artifact(e); art != nil {
+				want = art.SHA256
+			}
+			if _, rest, ok := strings.Cut(err.Error(), ", got "); ok {
+				have = rest
+			}
+			b.log.Warn("an emulator's download doesn't match its pinned hash", "emulator", id, "version", e.Version, "source", src, "expected", want, "actual", have, "audit", "yes")
 		case err != nil:
 			j.State, j.Error = "failed", err.Error()
-			b.log.Warn("docker: installing an emulator", "emulator", id, "err", err)
+			b.log.Warn("docker: installing an emulator", "emulator", id, "version", e.Version, "source", src, "err", err, "audit", "yes")
 		default:
 			j.State, j.Phase, j.Installed = "done", emulators.PhaseDone, got
+			if got.Unverified {
+				b.log.Warn("an emulator was installed without a hash to check it against; it won't be run", "emulator", id, "version", got.Version, "sha256", got.SHA256, "audit", "yes")
+			} else {
+				b.log.Info("emulator installed", "emulator", id, "version", got.Version, "sha256", got.SHA256, "audit", "yes")
+			}
 		}
 	}()
 	return out, nil
@@ -1392,16 +1463,19 @@ func (b *DockerBackend) serveSetSettings(w http.ResponseWriter, r *http.Request,
 		writeJSONError(w, http.StatusBadRequest, "bad-settings", err.Error())
 		return
 	}
-	if old := b.Settings(); (old.Runtime != s.Runtime || !s.Enabled) && b.Count() > 0 {
+	old := b.Settings()
+	if (old.Runtime != s.Runtime || !s.Enabled) && b.Count() > 0 {
 		writeJSONError(w, http.StatusConflict, "in-use", "someone is playing; stop their game before turning emulators off or changing where they run")
 		return
 	}
 	if b.dataDir != "" {
 		if err := docker.SaveSettings(b.settingsPath(), s); err != nil {
+			b.log.WarnContext(r.Context(), "docker: the settings couldn't be saved", "err", err)
 			writeJSONError(w, http.StatusInternalServerError, "failed", err.Error())
 			return
 		}
 	}
+	b.log.DebugContext(r.Context(), "settings saved", "topic", "settings", "keys", strings.Join(changedKeys(old, s), ","), "enabled", s.Enabled, "runtime", s.Runtime)
 	b.mu.Lock()
 	b.settings = s
 	if b.lc != nil && b.lc.Count() == 0 {
@@ -1520,7 +1594,7 @@ func (b *DockerBackend) serveInstalled(w http.ResponseWriter, _ *http.Request, _
 	writeJSON(w, http.StatusOK, out)
 }
 
-func (b *DockerBackend) serveInstall(w http.ResponseWriter, r *http.Request, _ int64, _ bool) {
+func (b *DockerBackend) serveInstall(w http.ResponseWriter, r *http.Request, user int64, _ bool) {
 	id := r.PathValue("id")
 	e := emulators.Find(id)
 	if e == nil {
@@ -1534,9 +1608,11 @@ func (b *DockerBackend) serveInstall(w http.ResponseWriter, r *http.Request, _ i
 	}
 	_ = json.NewDecoder(io.LimitReader(r.Body, 4<<10)).Decode(&body)
 	if body.License != e.License {
+		b.log.WarnContext(r.Context(), "an emulator's licence wasn't the one shown", "emulator", id, "licence", e.License, "sent", truncateText(body.License, 80))
 		writeJSONError(w, http.StatusBadRequest, "license", fmt.Sprintf("%s is under its own licence, %s. Confirm you've seen it to install.", e.Name, e.License))
 		return
 	}
+	b.log.InfoContext(r.Context(), "emulator licence accepted", "emulator", id, "licence", e.License, "by", user, "audit", "yes")
 	// Know which machine the download is for before choosing it.
 	_, _, _ = b.runtime(r.Context())
 	j, err := b.Install(id)
@@ -1573,7 +1649,7 @@ func (b *DockerBackend) serveCancelInstall(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (b *DockerBackend) serveUninstall(w http.ResponseWriter, r *http.Request, _ int64, _ bool) {
+func (b *DockerBackend) serveUninstall(w http.ResponseWriter, r *http.Request, user int64, _ bool) {
 	id := r.PathValue("id")
 	if b.inst == nil {
 		writeJSONError(w, http.StatusNotFound, "not-installed", emulators.ErrNotInstalled.Error())
@@ -1594,8 +1670,10 @@ func (b *DockerBackend) serveUninstall(w http.ResponseWriter, r *http.Request, _
 	case errors.Is(err, emulators.ErrBusy):
 		writeJSONError(w, http.StatusConflict, "busy", err.Error())
 	case err != nil:
+		b.log.WarnContext(r.Context(), "an emulator couldn't be uninstalled", "emulator", id, "err", err)
 		writeJSONError(w, http.StatusBadRequest, "failed", err.Error())
 	default:
+		b.log.InfoContext(r.Context(), "emulator uninstalled", "emulator", id, "by", user, "audit", "yes")
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -1690,6 +1768,13 @@ func (b *DockerBackend) serveSetEmuSettings(w http.ResponseWriter, r *http.Reque
 		writeJSONError(w, http.StatusBadRequest, "bad-setting", err.Error())
 		return
 	}
+	keys := make([]string, 0, len(vals))
+	for k := range vals {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	// The names of what was set, never the values.
+	b.log.DebugContext(r.Context(), "settings saved", "topic", "settings", "emulator", e.ID, "scope", body.Scope, "game", body.Game, "keys", strings.Join(keys, ","))
 	writeJSON(w, http.StatusOK, b.emuSettings(e, user, body.Game, admin))
 }
 
