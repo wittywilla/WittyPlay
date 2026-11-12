@@ -505,3 +505,30 @@ func TestKasmProxyEnforcesAuth(t *testing.T) {
 		t.Errorf("a ticket that has run out: %d", r.StatusCode)
 	}
 }
+
+func TestServerInAContainersHostPaths(t *testing.T) {
+	s := DefaultSettings()
+	s.HostPaths = map[string]string{"/config": "/srv/wms/config", "/config/modules": "/fast/modules", "/media": "/volume1/media", "/x": ""}
+	s, err := s.Clean()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for in, want := range map[string]string{
+		"/config/modules/wittyplay/data/saves/1": "/fast/modules/wittyplay/data/saves/1",
+		"/config/bios":                           "/srv/wms/config/bios",
+		"/media/games/a.iso":                     "/volume1/media/games/a.iso",
+		"/configuration/a":                       "/configuration/a",
+		"/elsewhere":                             "/elsewhere",
+	} {
+		if got := s.HostPath(in); got != want {
+			t.Errorf("%s: %s, want %s", in, got, want)
+		}
+	}
+	if _, ok := s.HostPaths["/x"]; ok {
+		t.Error("an empty host path was kept")
+	}
+	s.HostPaths = map[string]string{"config": "/srv"}
+	if _, err := s.Clean(); err == nil {
+		t.Error("a relative folder was taken")
+	}
+}

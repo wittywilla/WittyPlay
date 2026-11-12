@@ -134,6 +134,12 @@ func NewDockerBackend(dataDir string, connect func() (docker.Runtime, error), mg
 		hr.FFmpeg = mgr.FFmpegPath
 	}
 	b.Host, b.HostMissing = hr, hr.Missing
+	if b.inst != nil {
+		goos, _ := b.platform()
+		for _, err := range b.inst.LoadManualFile(goos) {
+			log.Warn("docker: an emulator named in manual.json wasn't added", "err", err)
+		}
+	}
 	if dataDir != "" {
 		if own, err := emulators.LoadOwn(b.ownPath()); err != nil {
 			log.Warn("docker: your own emulator programs couldn't be read", "err", err)
@@ -517,6 +523,10 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 		if emu.Own {
 			art = emu.Here()
 		}
+		if emu.Manual != nil {
+			goos, _ := b.platform()
+			art = emu.ManualArtifact(goos)
+		}
 	}
 	netInfo, err := rt.EnsureNetwork(ctx, docker.NetworkSpec{Name: set.Network, Internal: set.Internal})
 	if err != nil {
@@ -551,6 +561,13 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 		limits.MemoryMB = st.MemoryMB * 3 / 4 // never promise more than the machine has
 	}
 
+	if err := os.MkdirAll(settingsDir, 0o700); err != nil { // Ryujinx ignores a data folder that isn't there
+		return nil, err
+	}
+	pgoos, _ := b.platform()
+	if err := placeFirmware(emu, pgoos, o.SystemDir, saves); err != nil {
+		return nil, fmt.Errorf("copying %s's keys and firmware for this person: %w", emu.Name, err)
+	}
 	if err := seedFirmware(emu, o.SystemDir, saves); err != nil {
 		return nil, fmt.Errorf("copying %s's firmware for this person: %w", emu.Name, err)
 	}
@@ -673,6 +690,12 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 	spec, err := docker.Build(req)
 	if err != nil {
 		return fail(err)
+	}
+	if !localRT && !hostRT {
+		// A server that runs in a container hands Docker its host's paths.
+		for i := range spec.Mounts {
+			spec.Mounts[i].Source = set.HostPath(spec.Mounts[i].Source)
+		}
 	}
 	if !localRT && !hostRT && req.RTPHost == "host.docker.internal" {
 		spec.ExtraHosts = []string{"host.docker.internal:host-gateway"}
@@ -917,7 +940,10 @@ func (b *DockerBackend) biosStatus(e *emulators.Emulator) []BiosStatus {
 			if i >= 10000 {
 				break
 			}
+			// A folder counts when something is in it: a Switch's firmware is a folder of files.
 			if !d.IsDir() {
+				names = append(names, strings.ToLower(d.Name()))
+			} else if inside, err := os.ReadDir(filepath.Join(dir, d.Name())); err == nil && len(inside) > 0 {
 				names = append(names, strings.ToLower(d.Name()))
 			}
 		}
@@ -982,6 +1008,9 @@ func (b *DockerBackend) Install(id string) (InstallJob, error) {
 	e := emulators.Find(id)
 	if e == nil {
 		return InstallJob{}, errNoEmulator
+	}
+	if e.Manual != nil || e.Own {
+		return InstallJob{}, emulators.ErrManual
 	}
 	b.mu.Lock()
 	if j := b.jobs[id]; j != nil && j.State == "running" {
@@ -1063,6 +1092,14 @@ type CatalogEntry struct {
 	WhyNot          string         `json:"whyNot,omitempty"` // why it can't run here yet
 	Job             *InstallJob    `json:"job,omitempty"`
 	Bios            []BiosStatus   `json:"bios,omitempty"`
+	// Manual: never downloaded; the administrator installs it and adds it.
+	Manual *ManualSummary `json:"manual,omitempty"`
+}
+
+// ManualSummary is what the list says about an emulator added by hand.
+type ManualSummary struct {
+	Download string `json:"download"`
+	Notes    string `json:"notes,omitempty"`
 }
 
 // InstalledJSON is an installed emulator without where it is on disk, which no page needs.
@@ -1093,6 +1130,8 @@ func (b *DockerBackend) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /docker/sessions/{sid}/pause", b.user(b.servePause(true)))
 	mux.HandleFunc("POST /docker/sessions/{sid}/resume", b.user(b.servePause(false)))
 	mux.HandleFunc("DELETE /docker/sessions/{sid}", b.user(b.serveStop))
+	mux.HandleFunc("GET /docker/emulators/{id}/manual", b.admin(b.serveManual))
+	mux.HandleFunc("POST /docker/emulators/{id}/manual", b.admin(b.serveAddManual))
 	mux.HandleFunc("GET /docker/own", b.admin(b.serveOwn))
 	mux.HandleFunc("PUT /docker/own", b.admin(b.serveSetOwn))
 	mux.HandleFunc("/kasm/", b.serveKasm)
@@ -1410,6 +1449,10 @@ func (b *DockerBackend) Catalog() ([]CatalogEntry, error) {
 		}
 		art := e.For(goos, goarch)
 		switch {
+		case e.Manual != nil:
+			// Never downloaded: added by hand (docker_manual.go).
+			c.Installable, c.Why = false, "it's never downloaded: install it yourself from "+e.Manual.Download+", then add it here"
+			c.Manual = &ManualSummary{Download: e.Manual.Download, Notes: e.Manual.Notes}
 		case b.inst == nil:
 			c.Installable, c.Why = false, "the server gave this module no folder of its own to install into"
 		case e.NonCommercial:
@@ -1430,11 +1473,11 @@ func (b *DockerBackend) Catalog() ([]CatalogEntry, error) {
 			image = e.Image.Pinned()
 		}
 		switch {
-		case in == nil && (image == "" || set.Runtime == docker.RuntimeLocal):
+		case in == nil && (image == "" || set.Runtime != docker.RuntimeDocker):
 			c.WhyNot = "" // not installed: nothing to say yet
 		case in != nil && in.Unverified:
 			c.WhyNot = "It was installed from a download nobody had checked, so it isn't run. Install it again."
-		case set.Runtime != docker.RuntimeLocal && image == "":
+		case set.Runtime == docker.RuntimeDocker && image == "":
 			c.WhyNot = "No container image is pinned for it yet. Build one from docker/images in WittyPlay and set it under “Your own image for each”."
 		case set.Overrides[e.ID] == docker.BackendProcess:
 			c.WhyNot = "It's set to “Not offered”."
@@ -1502,6 +1545,8 @@ func (b *DockerBackend) serveInstall(w http.ResponseWriter, r *http.Request, _ i
 		writeJSONError(w, http.StatusConflict, "docker-off", err.Error())
 	case errors.Is(err, errNoEmulator):
 		writeJSONError(w, http.StatusNotFound, "no-emulator", err.Error())
+	case errors.Is(err, emulators.ErrManual):
+		writeJSONError(w, http.StatusConflict, "manual", err.Error())
 	case errors.Is(err, emulators.ErrBusy):
 		writeJSONError(w, http.StatusConflict, "busy", err.Error())
 	case err != nil:

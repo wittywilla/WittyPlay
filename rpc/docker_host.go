@@ -4,6 +4,7 @@
 package rpc
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -215,4 +216,75 @@ func dumpRoot(rom string) (root, inGame string) {
 		return filepath.Dir(dir), filepath.Base(dir) + "/" + base
 	}
 	return rom, ""
+}
+
+// maxPlaced bounds what placing firmware copies: a Switch's firmware is a few hundred megabytes.
+const maxPlaced = 2 << 30
+
+// placeFirmware copies what the owner put in the BIOS folder to where the emulator looks for it
+// in its own settings folder (Placement): keys, and firmware the emulator keeps as files. A file
+// already there and as new is left alone; nothing is copied through a link.
+func placeFirmware(e *emulators.Emulator, goos, biosDir, saves string) error {
+	if biosDir == "" {
+		return nil
+	}
+	var total int64
+	for _, pl := range e.Placements(goos) {
+		from := filepath.Join(biosDir, filepath.FromSlash(pl.From))
+		to := filepath.Join(saves, filepath.FromSlash(pl.To))
+		st, err := os.Lstat(from)
+		if err != nil {
+			continue // not supplied: the status says so
+		}
+		if st.Mode().IsRegular() {
+			if err := copyIfNewer(from, to, st, &total); err != nil {
+				return err
+			}
+			continue
+		}
+		if !st.IsDir() {
+			continue
+		}
+		err = filepath.WalkDir(from, func(p string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			rel, err := filepath.Rel(from, p)
+			if err != nil {
+				return err
+			}
+			info, err := d.Info()
+			if err != nil {
+				return err
+			}
+			switch {
+			case d.IsDir():
+				return os.MkdirAll(filepath.Join(to, rel), 0o700)
+			case info.Mode().IsRegular():
+				return copyIfNewer(p, filepath.Join(to, rel), info, &total)
+			}
+			return nil // links and the rest are left out
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func copyIfNewer(from, to string, st os.FileInfo, total *int64) error {
+	if have, err := os.Lstat(to); err == nil && have.Mode().IsRegular() && have.Size() == st.Size() && !have.ModTime().Before(st.ModTime()) {
+		return nil
+	}
+	*total += st.Size()
+	if *total > maxPlaced {
+		return fmt.Errorf("the firmware to copy is larger than %d bytes", int64(maxPlaced))
+	}
+	if err := os.MkdirAll(filepath.Dir(to), 0o700); err != nil {
+		return err
+	}
+	if have, err := os.Lstat(to); err == nil && !have.Mode().IsRegular() {
+		return fmt.Errorf("%s isn't a plain file", to)
+	}
+	return copyFile(from, to, 0o600)
 }

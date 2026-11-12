@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -154,6 +155,12 @@ type Emulator struct {
 	// from the BIOS folder into the person's own folder the first time, as the BIOS folder is
 	// given read-only.
 	Seed []string `json:"seed,omitempty"`
+	// Place are firmware and keys the emulator looks for inside its own data folder rather than
+	// in a BIOS folder: each is copied there from the server's BIOS folder before a start, when
+	// the owner has put it there. Nothing is ever fetched.
+	Place []Placement `json:"place,omitempty"`
+	// Manual: never downloaded; an administrator installs it and adds it (manual.go).
+	Manual *Manual `json:"manual,omitempty"`
 	// Own: an administrator's own program (own.go), never in the built-in list. Like is the
 	// emulator in the list it's a build of, whose settings it takes.
 	Own  bool   `json:"own,omitempty"`
@@ -166,6 +173,14 @@ func (e *Emulator) Base() string {
 		return e.Like
 	}
 	return e.ID
+}
+
+// Placement is one file or folder from the BIOS folder, and where it goes in the person's own
+// folder for the emulator.
+type Placement struct {
+	From string `json:"from"` // in the BIOS folder: a file, or a folder whose contents are copied
+	To   string `json:"to"`   // relative to the person's own folder for the emulator
+	Note string `json:"note,omitempty"`
 }
 
 // Requires is the least an emulator needs.
@@ -365,6 +380,33 @@ func (m *Manifest) Validate() error {
 		}
 		if err := checkSettings(e.Settings); err != nil {
 			return bad("%v", err)
+		}
+		if e.Manual != nil {
+			if len(e.Artifacts) > 0 {
+				return bad("an emulator added by hand has no downloads")
+			}
+			if len(e.Manual.Programs) == 0 || e.Manual.Download == "" {
+				return bad("an emulator added by hand needs its program's names and its project's page")
+			}
+			for goos, pats := range e.Manual.Programs {
+				for _, pat := range pats {
+					if _, err := path.Match(pat, ""); err != nil || strings.ContainsAny(pat, "/\\") || pat == "" {
+						return bad("the program name %q for %s isn't a file name", pat, goos)
+					}
+				}
+			}
+		}
+		var places []Placement
+		places = append(places, e.Place...)
+		if e.Manual != nil {
+			for _, list := range e.Manual.Place {
+				places = append(places, list...)
+			}
+		}
+		for _, p := range places {
+			if p.From == "" || p.To == "" || !filepath.IsLocal(filepath.FromSlash(p.From)) || !filepath.IsLocal(filepath.FromSlash(p.To)) {
+				return bad("a firmware placement %q -> %q isn't inside its folders", p.From, p.To)
+			}
 		}
 		for _, f := range e.Seed {
 			if f == "" || !filepath.IsLocal(f) || filepath.Base(f) != f {

@@ -7,7 +7,7 @@ The short version, for the owner:
 - **Libretro cores** (NES to PS2, PSP, Dreamcast, 3DS, and now GameCube and Wii) run in WittyPlay's own sandboxed game runner on every server platform that libretro publishes cores for: Windows, Linux and macOS. FreeBSD has the runner but no published cores.
 - **Standalone emulators** (PCSX2, Dolphin, PPSSPP, melonDS, Flycast, xemu, Cemu, RPCS3) can now run on the server itself on macOS and Windows, not only in Docker or a Linux sandbox. They're captured, encoded and streamed over the same WebRTC path a core's game uses, with the player's controllers written into each emulator's own settings.
 - **Every console the previous work added is a real console** in the library: GameCube, Wii, Wii U, PlayStation 3, Xbox and Switch, recognised from their files' own bytes, with metadata, art and a Play button.
-- **The Switch** is a library console, and WittyPlay offers no Switch emulator. Read "The Switch" below.
+- **The Switch and the Switch 2** are library consoles, played by Ryujinx and Lichii, which the owner installs and adds by hand: WittyPlay never downloads them, their keys or their firmware. Read "The Switch and the Switch 2" below.
 
 ## The pieces
 
@@ -72,7 +72,8 @@ Run on 2026-11-11 on an Apple M3 Pro with Swiss (GameCube homebrew, GPL-2.0, `sw
 | Wii U | `wiiu` | Cemu | `.wud` and `.wux` (need your keys), `.rpx`, `.wua` |
 | PlayStation 3 | `ps3` | RPCS3 | Discs with `PS3_DISC.SFB`, folder dumps by that file, `.pkg` |
 | Xbox | `xbox` | xemu | XISO and full disc images, `.xbe` |
-| Switch | `switch` | Your own emulator program only | NSP, NSZ, XCI, XCZ (need your keys), NRO homebrew |
+| Switch | `switch` | Ryujinx or Lichii, added by hand | NSP, NSZ, XCI, XCZ (need your keys), NRO homebrew |
+| Switch 2 | `switch2` | Lichii, added by hand | The same files: a Switch 2 game is known by its folder or library |
 
 Each has a controller layout, firmware it may need, platform ids for every metadata source the server uses (IGDB, TheGamesDB, ScreenScraper, RAWG, Wikidata, libretro's database where it has one), and a page that says what's missing before anyone presses Play. Custom consoles made for these before (`custom-gamecube` and so on) are moved to the real ones automatically.
 
@@ -88,11 +89,9 @@ Values layer: default, then an administrator's for everyone, then a person's own
 
 `emulators/inputmap` writes the keys each player's buttons press into each emulator's own controller settings, in its own notation on each system: PCSX2 (4 players), Dolphin's GameCube pads and Wii Remotes with Nunchuks (4), Flycast (4), RPCS3 (2), PPSSPP, melonDS, xemu and Cemu (1 each, the most their keyboard mapping allows). Players beyond that need a real controller on the server.
 
-## The Switch
+## The Switch and the Switch 2
 
-**WittyPlay offers no Switch emulator, and the project shouldn't.** In 2024 Nintendo sued the makers of Yuzu, who settled for US$2.4 million and stopped; Ryujinx stopped later that year after Nintendo contacted its author. In February 2026 Nintendo had GitHub block Eden, Citron, MeloNX and their forks (`github/dmca`, `2026/02/2026-02-12-nintendo.md`), arguing that they exist to get round the Switch's protection. Whatever a court would decide, distributing or recommending one puts this project in that line of fire. The entry the previous work added, Lichii, was a two-week-old "very experimental Switch 2 emulator"; it's removed.
-
-What the owner can do: an administrator can add a Switch emulator they installed themselves as their own program (Settings, Standalone emulators, Your own emulator programs). WittyPlay runs it in the same sandbox and streams it; it never downloads one, never links to one, and never handles keys or firmware. Whether running one is lawful where you are is yours to judge.
+Ryujinx (Switch) and Lichii (Switch 2 and Switch) are integrated like every other standalone emulator, on every system each publishes a build for, and are never downloaded: the owner installs them from their own projects and adds them in Settings, Standalone emulators (or in `manual.json`, for a server with no screen or in a container), and WittyPlay checks each is what it says and notes its version. Keys and firmware are the owner's, put in the BIOS folder; WittyPlay copies them where each emulator looks and never fetches them. Ryujinx plays no Switch 2 games; Lichii plays some, by its authors' account very experimentally. The owner is responsible for having the right to the keys, firmware and games. Everything, with where to get each and the legal note: [STANDALONE-EMULATORS.md, The Switch and the Switch 2](STANDALONE-EMULATORS.md#the-switch-and-the-switch-2).
 
 ## Engine work in this round
 

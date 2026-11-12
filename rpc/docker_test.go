@@ -843,3 +843,48 @@ func TestEmulatorsNameConsolesTheLibraryHas(t *testing.T) {
 		t.Error("an emulator isn't found by its console")
 	}
 }
+
+// An emulator added by hand: found in its drop folder (a Linux build, as a container runs it),
+// checked, added; never installable; a program that isn't it is refused in words.
+func TestManualEmulatorRoutes(t *testing.T) {
+	r := newRig(t)
+	r.enable(t, "")
+	drop := filepath.Join(r.dir, "manual", "ryujinx")
+	if err := os.MkdirAll(drop, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(drop, "Ryujinx"), []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	w := r.as(t, 1, true, "GET", "/docker/emulators/ryujinx/manual", "")
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"detected"`) || !strings.Contains(w.Body.String(), "ryujinx.app") {
+		t.Fatalf("view: %d %s", w.Code, w.Body)
+	}
+	if w := r.as(t, 5, false, "POST", "/docker/emulators/ryujinx/manual", `{"program":""}`); w.Code != http.StatusForbidden {
+		t.Errorf("someone who isn't an administrator added it: %d", w.Code)
+	}
+	other := filepath.Join(r.dir, "Other")
+	_ = os.WriteFile(other, []byte("x"), 0o755)
+	if w := r.as(t, 1, true, "POST", "/docker/emulators/ryujinx/manual", `{"program":"`+other+`"}`); w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "isn't Ryujinx") {
+		t.Errorf("another program: %d %s", w.Code, w.Body)
+	}
+	if w := r.as(t, 1, true, "POST", "/docker/emulators/ryujinx/manual", `{"program":""}`); w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"source":"manual"`) {
+		t.Fatalf("adding it: %d %s", w.Code, w.Body)
+	}
+	if w := r.as(t, 1, true, "POST", "/docker/emulators/ryujinx/install", `{"license":"MIT"}`); w.Code < 400 {
+		t.Errorf("it could be downloaded: %d %s", w.Code, w.Body)
+	}
+	var list []CatalogEntry
+	_ = json.Unmarshal(r.as(t, 1, true, "GET", "/docker/emulators", "").Body.Bytes(), &list)
+	for _, c := range list {
+		if c.ID == "ryujinx" && (c.Installable || c.Manual == nil || c.Installed == nil) {
+			t.Errorf("in the list: %+v", c)
+		}
+	}
+	if w := r.as(t, 1, true, "DELETE", "/docker/emulators/ryujinx", ""); w.Code >= 400 {
+		t.Errorf("forgetting it: %d %s", w.Code, w.Body)
+	}
+	if _, err := os.Stat(filepath.Join(drop, "Ryujinx")); err != nil {
+		t.Errorf("forgetting it removed the program: %v", err)
+	}
+}

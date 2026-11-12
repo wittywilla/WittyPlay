@@ -41,15 +41,59 @@ It needs a signed-in desktop: a Windows service runs where windows can't be seen
 
 As [DOCKER-BACKEND.md](DOCKER-BACKEND.md) describes for the local sandbox: Xvfb, PulseAudio, FFmpeg and `xdotool` inside bubblewrap, with no network. On FreeBSD there's no bubblewrap and no other sandbox an unprivileged program can use, so an emulator there has only resource limits, and the settings page says so before it's turned on. FreeBSD's emulators come from its packages (`pkg install pcsx2 ppsspp dolphin-emu rpcs3 xemu flycast`, `games/melonds`), added as your own programs.
 
+### When WittyMediaServer itself runs in Docker
+
+The server's Docker release (`ghcr.io/wittywilla/wittymediaserver`) has no screen and no sandbox of its own to run an emulator in: its container runs with every capability dropped and a read-only root. An emulator runs beside it instead, in a container of its own started by Docker:
+
+1. Give the server Docker: mount the daemon's socket, `- /var/run/docker.sock:/var/run/docker.sock`, or better a rootless Docker's or Podman's ([DOCKER-BACKEND.md](DOCKER-BACKEND.md#the-security-model-in-plain-words) says why). In **Settings, Standalone emulators**, **Where they run** is Docker or Podman containers.
+2. Tell WittyPlay where the server's folders are on the Docker host: **This server's folders on the Docker host** (`docker.hostPaths`), as in your compose file's `volumes:`. For `- /srv/wms:/config` and `- /volume1/games:/media/games:ro` that's `/config` → `/srv/wms` and `/media` → `/volume1`. Docker mounts the game, the saves and the emulator from those host folders; without this it would look for `/config` on the host, find nothing, and the game would never start.
+3. The base image, as for any container setup: [Setting it up](DOCKER-BACKEND.md#setting-it-up).
+
+An emulator WittyPlay downloads lands on the `/config` volume by itself. One you add by hand ([Emulators you install yourself](#the-switch-and-the-switch-2)) goes there too: put its **Linux** build, the AppImage as the project publishes it or its unpacked folder, in `/config/modules/wittyplay/data/manual/<id>/` (`ryujinx`, `lichii`), from the host through the volume. WittyPlay finds it there, checks it, and runs it in its container, where an AppImage unpacks itself (no FUSE needed). Keys and firmware go in the server's BIOS folder on the same volume.
+
 ## Your own emulator programs
 
 **Settings, Standalone emulators, Your own emulator programs** adds an emulator already installed on this server: its name, the consoles it plays, the program's full path, its command line (`{game}`, `{config}`, `{bios}`, `{settings}` as in the list), and which emulator in the list it's a build of, if any, so that one's settings and controller set-up apply. WittyPlay checks the file is a program and runs it in the same sandbox as any other, on this machine or in the local sandbox, never in a container. It downloads nothing and checks no hash for it: it's yours. Up to 32.
 
-This is how a FreeBSD server uses its packages, how a Linux server uses Dolphin's Flatpak, and the only way a Switch game plays.
+This is how a FreeBSD server uses its packages, and how a Linux server uses an emulator it installed some other way. For the Switch and the Switch 2, add Ryujinx or Lichii instead (above): they come with their settings, controllers and keys handled.
 
-## The Switch
+## The Switch and the Switch 2
 
-WittyPlay offers no Switch emulator. Nintendo sued Yuzu's makers in 2024 (they settled and stopped), Ryujinx stopped later that year, and in February 2026 Nintendo had GitHub block Eden, Citron, MeloNX and their forks under the DMCA, as tools for getting round the Switch's protection (`github/dmca`, `2026/02/2026-02-12-nintendo.md`). A project that downloads or recommends one stands where they stood. The Switch is still a console in the library, with its games recognised, described and pictured, and an administrator can add a Switch emulator they installed themselves as their own program. WittyPlay never downloads one, links to one, or handles keys or firmware; whether running one is lawful where you are is yours to judge.
+Two emulators play them: **Ryujinx** (the Switch) and **Lichii** (the Switch 2, and the Switch). WittyPlay knows each as well as any other emulator: its command line, every setting from its own configuration, its controllers for up to four players, where it keeps keys and firmware, and how to stream it. **It never downloads either.** The server's owner installs them from their own projects and adds them in **Settings, Standalone emulators**. Keys and firmware are only ever the owner's own, from their own console; WittyPlay never fetches them and only says whether they're where each emulator looks.
+
+### What plays the Switch 2
+
+| Emulator | Switch | Switch 2 | Builds | Its own words |
+|---|---|---|---|---|
+| Ryujinx (Ryubing) 1.3.3 | Yes, its purpose | **No.** Nothing it publishes claims any | Windows x64 (arm64 in canary), Linux x64 and arm64, macOS (universal) | A Switch emulator |
+| Lichii (build-160 and later) | Yes | **Some games**, by its release notes, with rendering errors and crashes expected | Windows x64, Linux x64 and arm64, macOS on Apple silicon (macOS 15+) | "very experimental", no frame rate promised |
+
+### Installing them (official sources only)
+
+- **Ryujinx:** <https://ryujinx.app>, the Ryubing project's own site (its code: <https://git.ryujinx.app/ryubing/ryujinx>, MIT). Windows: the zip, unpacked anywhere (`publish/Ryujinx.exe`). Linux: the AppImage, or the tar.gz (`publish/Ryujinx`). macOS: `Ryujinx.app` in Applications. Flathub's `io.github.ryubing.Ryujinx` runs in its own sandbox and can't be pointed at by path: use the AppImage or tar.gz with WittyPlay.
+- **Lichii:** <https://github.com/zortos293/Lichii/releases> only (GPL-3.0). Its README warns that lichii.org isn't its authors' and was reported as malware. Windows: the zip (`lichii.exe`). Linux: the AppImage, or the tar.gz (`lichii/lichii`). macOS: `lichii.app`, Apple silicon and macOS 15 or later.
+
+### Adding one
+
+In **Settings, Standalone emulators**, on Ryujinx or Lichii, press **Add it**. WittyPlay shows what it found where people install it (Applications on a Mac, your Downloads and local programs folder on Windows, `~/Applications` and `/opt` on Linux) and in its drop folder, `<the module's folder>/manual/<id>/`. Leave the path empty to take that, or give the program's full path. It checks the program really is that emulator: a Mac app by its bundle identifier (`org.ryujinx.Ryujinx`; Lichii keeps yuzu's, `com.yuzu-emu.yuzu`, so also by `nx2_switches.txt` or `eden-cli` inside it), anything else by its program's name on the system it will run on and, for Lichii, the same files beside it. It notes the version: a Mac app's, a Windows program's own, or an AppImage's name's. **Forget** stops using it and leaves it where it is.
+
+Without the page, for a server with no screen or in a container: name them in `<the module's folder>/emulators/manual.json`, `{"ryujinx": "/opt/ryujinx/publish/Ryujinx", "lichii": "/opt/lichii/lichii-x86_64.AppImage"}`, and start the server again; the log says what wasn't added and why. In WittyMediaServer's Docker release the module's folder is `/config/modules/wittyplay/data`, and the build to put there is the **Linux** one: see [When WittyMediaServer itself runs in Docker](#when-wittymediaserver-itself-runs-in-docker).
+
+### Keys and firmware
+
+Put them in the server's BIOS folder (the same one PS2 BIOS files go in), from your own console:
+
+| In the BIOS folder | What it is | Where WittyPlay copies it, in each person's own folder for the emulator |
+|---|---|---|
+| `prod.keys` | Your console's keys. Required | Ryujinx: `config/system/prod.keys` (its data folder is `config`). Lichii: its `keys` folder |
+| `title.keys` | Your games' title keys. Some games need them | Beside `prod.keys` |
+| `switch-firmware/` | Your console's firmware, as the emulator installs it: the contents of its `registered` folder | Ryujinx: `config/bis/system/Contents/registered`. Lichii: its `nand/system/Contents/registered` |
+
+Lichii's folders, by system: Windows `app/user/` (it keeps everything beside its program, so each person runs a copy of their own in `app/`), Linux `config/eden` and `data/eden` (from `XDG_CONFIG_HOME` and `XDG_DATA_HOME`), macOS `home/Library/Application Support/eden`. The game's page and the emulator's card list which of these are found. Firmware can also be installed from the emulator's own menu (Ryujinx: Tools, Install Firmware), reachable through its captured window; it lands in that person's folder.
+
+### Your responsibility
+
+Keys, firmware and games are protected by law in most countries. **Use only keys and firmware dumped from a console you own, and games you own.** Getting round a console's protection may be illegal where you live, whoever's program does it. Nintendo has acted against emulator projects: it sued Yuzu's makers in 2024 (they settled and stopped), and in February 2026 it had GitHub block Eden, Citron, MeloNX and their forks (`github/dmca`, `2026/02/2026-02-12-nintendo.md`). WittyPlay downloads none of these emulators, keys or firmware, links only to the projects' own pages, and is associated with neither project nor with Nintendo. Whether you may run them, and on what, is yours to decide.
 
 ## The emulators
 

@@ -137,6 +137,8 @@ var pads = map[string]PadLayout{
 		Sticks: true, Extra: stickClicks, Right: rightStick},
 	"switch": {Art: "dual", Face: diamond, Shoulder: []PadButton{{RetroL, "L"}, {RetroR, "R"}, {RetroL2, "ZL"}, {RetroR2, "ZR"}},
 		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Extra: stickClicks, Right: rightStick, Pointer: true},
+	"switch2": {Art: "dual", Face: diamond, Shoulder: []PadButton{{RetroL, "L"}, {RetroR, "R"}, {RetroL2, "ZL"}, {RetroR2, "ZR"}},
+		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Extra: stickClicks, Right: rightStick, Pointer: true},
 	TestConsole: {Art: "four", Face: diamond, Shoulder: []PadButton{{RetroL, "L"}, {RetroR, "R"}}, Meta: selectStart, Pointer: true},
 }
 

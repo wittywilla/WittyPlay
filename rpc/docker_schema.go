@@ -24,9 +24,13 @@ func (b *DockerBackend) personSchema(e *emulators.Emulator, user int64) []emulat
 		return schema
 	}
 	var art *emulators.Artifact
-	if e.Own {
+	switch {
+	case e.Own:
 		art = e.Here()
-	} else if b.inst != nil {
+	case e.Manual != nil:
+		goos, _ := b.platform()
+		art = e.ManualArtifact(goos)
+	case b.inst != nil:
 		art = b.inst.Artifact(e)
 	}
 	dir := filepath.Join(b.dataDir, "docker", "saves", strconv.FormatInt(user, 10), e.ID, filepath.FromSlash(art.SettingsDir()))

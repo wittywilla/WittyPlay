@@ -191,6 +191,9 @@ func (in *Installer) Install(ctx context.Context, e *Emulator) (*Installed, erro
 	if e == nil {
 		return nil, errors.New("no such emulator")
 	}
+	if e.Manual != nil {
+		return nil, ErrManual
+	}
 	if !validID.MatchString(e.ID) || !validVersion.MatchString(e.Version) {
 		return nil, errors.New("that emulator's name or version can't be a folder name")
 	}
@@ -330,11 +333,16 @@ func (in *Installer) Uninstall(id string) error {
 	if err != nil {
 		return err
 	}
-	if _, ok := st[id]; !ok {
+	rec, ok := st[id]
+	if !ok {
 		return ErrNotInstalled
 	}
-	if err := os.RemoveAll(filepath.Join(in.Root(), id)); err != nil {
-		return err
+	// An emulator the administrator installed themselves is only forgotten: its files are
+	// theirs, wherever they put it.
+	if rec.Source != SourceManual {
+		if err := os.RemoveAll(filepath.Join(in.Root(), id)); err != nil {
+			return err
+		}
 	}
 	delete(st, id)
 	return in.writeState(st)

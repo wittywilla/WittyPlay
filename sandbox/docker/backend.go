@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -103,6 +104,26 @@ type Settings struct {
 	// Images: an image an administrator built (docker/images), by emulator id, over the list's.
 	// Each must be pinned to a digest.
 	Images map[string]string `json:"docker.images,omitempty"`
+	// HostPaths turn this module's own paths into the Docker host's, for a server that runs in
+	// a container itself (WittyMediaServer's Docker release): the daemon finds a folder to mount
+	// on its host, where the server's /config is wherever its volume is. Folder as the server
+	// sees it -> the same folder on the host: {"/config": "/srv/wms/config", "/media": "/volume1/media"}.
+	HostPaths map[string]string `json:"docker.hostPaths,omitempty"`
+}
+
+// HostPath is a folder of this module's as the Docker host sees it: HostPaths' longest match,
+// or the path itself.
+func (s Settings) HostPath(p string) string {
+	best := ""
+	for from := range s.HostPaths {
+		if (p == from || strings.HasPrefix(p, strings.TrimSuffix(from, "/")+"/")) && len(from) > len(best) {
+			best = from
+		}
+	}
+	if best == "" {
+		return p
+	}
+	return path.Join(s.HostPaths[best], strings.TrimPrefix(p, strings.TrimSuffix(best, "/")))
 }
 
 // DefaultSettings: off.
@@ -167,6 +188,9 @@ func Schema(emus []Choice) []Field {
 		{Key: "docker.backend", Kind: "map", Label: "How each emulator is shown", Default: map[string]Backend{}, MapOf: "choice", Choices: bs, MapKeys: emus},
 		{Key: "docker.images", Kind: "map", Label: "Your own image for each (pinned by digest)", Default: map[string]string{}, MapOf: "text", MapKeys: emus,
 			Help: "repo/name:tag@sha256:… as pushed to a registry, or sha256:… for an image built on this machine."},
+		{Key: "docker.hostPaths", Kind: "map", Label: "This server's folders on the Docker host", Default: map[string]string{}, MapOf: "text",
+			MapKeys: []Choice{{"/config", "/config (the server's data)"}, {"/media", "/media (your games)"}},
+			Help:    "Only when WittyMediaServer itself runs in a container: where each of its folders is on the machine Docker runs on, as in your compose file's volumes (/srv/wms/config, /volume1/media). Docker finds what it mounts there."},
 	}
 	for i := range f {
 		f[i].Scope = "admin"
@@ -209,6 +233,15 @@ func (s Settings) Clean() (Settings, error) {
 	}
 	if s.Images == nil {
 		s.Images = map[string]string{}
+	}
+	for from, to := range s.HostPaths {
+		if to == "" {
+			delete(s.HostPaths, from)
+			continue
+		}
+		if !strings.HasPrefix(from, "/") || !strings.HasPrefix(to, "/") || path.Clean(from) != from || path.Clean(to) != to || from == "/" || len(from) > 512 || len(to) > 512 {
+			return s, fmt.Errorf("the folders %q and %q must each be a full, clean path", from, to)
+		}
 	}
 	switch {
 	case s.MaxContainers < 0 || s.MaxContainers > 32:

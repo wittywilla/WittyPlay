@@ -129,7 +129,7 @@ Every download is pinned to a version, a size and a SHA-256, from the project's 
 | RPCS3 | PlayStation 3 (`ps3`) | 0.0.43-20582 | x86-64, arm64 | GPL-2.0-only | 8 GB, 6 cores, a graphics card | Desktop. Needs Sony's system software |
 | DuckStation | PlayStation (`ps1`) | 0.1-12442 | **never offered**: CC BY-NC-ND forbids commercial use | CC-BY-NC-ND-4.0 | 1 GB, 2 cores | An administrator can build an unmodified image of their own |
 
-The same versions are downloaded for Macs and Windows: [STANDALONE-EMULATORS.md](STANDALONE-EMULATORS.md#the-emulators). No Switch emulator is in the list: see [The Switch](STANDALONE-EMULATORS.md#the-switch).
+The same versions are downloaded for Macs and Windows: [STANDALONE-EMULATORS.md](STANDALONE-EMULATORS.md#the-emulators). Ryujinx and Lichii (the Switch and the Switch 2) are in the list with nothing to download: the owner adds them by hand, and in a container puts their Linux build in the drop folder ([The Switch and the Switch 2](STANDALONE-EMULATORS.md#the-switch-and-the-switch-2)).
 
 **Every console here is the library's own.** GameCube, Wii, Wii U, PS3, Xbox and Switch used to need a custom console named `custom-gamecube` and so on; the server now moves those to the real consoles by itself.
 
@@ -287,5 +287,5 @@ Written plainly, so nobody takes a passing test for a played game. On the machin
 - **WittyPlay never downloads a BIOS, firmware, keys, or games**, and the images contain none. Use only firmware you've dumped from hardware you own, and games you've obtained legally. Breaking copy protection to get them may be illegal where you live.
 - Each emulator is a separate program under its own licence, named in the list and shown before an install, downloaded unmodified from its own project's release. A container image that bundles one has to carry its licence and point to its source.
 - **DuckStation** (CC BY-NC-ND 4.0) is listed and never offered for download, as with non-commercial cores.
-- **No Switch emulator** is in the list, and none will be: see [The Switch](STANDALONE-EMULATORS.md#the-switch).
+- **Ryujinx and Lichii** are never downloaded: the owner installs them and adds them by hand, with keys and firmware of their own ([The Switch and the Switch 2](STANDALONE-EMULATORS.md#the-switch-and-the-switch-2)).
 - None of these projects is associated with WittyPlay, nor with any console maker.

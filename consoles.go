@@ -166,9 +166,20 @@ var Consoles = []Console{
 		Emulators: []string{"xemu"},
 		BIOS: []BIOS{{"mcpx_1.0.bin", "xemu: the boot ROM from an Xbox you own", true}, {"Complex_4627.bin", "xemu: the Xbox's BIOS, from an Xbox you own", true},
 			{"xbox_hdd.qcow2", "xemu: the Xbox's hard disk image", true}}},
+	// The Switch and the Switch 2 are played only by an emulator an administrator installs
+	// themselves (emulators/manual.go): WittyPlay never downloads one. Their keys and firmware
+	// are the owner's, from their own console.
 	{ID: "switch", Name: "Nintendo Switch", Short: "Switch", Extensions: []string{".nsp", ".xci", ".nsz", ".xcz", ".nro"},
-		Aliases: []string{"switch", "nintendoswitch", "ns", "nx"},
-		BIOS:    []BIOS{{"prod.keys", "a Switch emulator: the keys from a Switch you own; WittyPlay offers no Switch emulator itself", true}}},
+		Aliases:   []string{"switch", "nintendoswitch", "ns", "nx"},
+		Emulators: []string{"ryujinx", "lichii"},
+		BIOS: []BIOS{{"prod.keys", "the keys from a Switch you own, which a Switch emulator needs", true},
+			{"title.keys", "the title keys of games you own, for some games", false}}},
+	// A Switch 2 game's file can't be told from a Switch game's by its bytes alone, so a Switch 2
+	// game is known by its folder or its library.
+	{ID: "switch2", Name: "Nintendo Switch 2", Short: "Switch 2", Shared: []string{".xci", ".nsp", ".nsz", ".xcz"},
+		Aliases:   []string{"switch2", "nintendoswitch2", "ns2", "nx2"},
+		Emulators: []string{"lichii"},
+		BIOS:      []BIOS{{"prod.keys", "the keys from a Switch 2 you own, which a Switch 2 emulator needs", true}}},
 	{ID: TestConsole, Name: "WittyPlay test console", Short: "Test", Extensions: []string{".wittytest"},
 		Aliases: []string{"wittytest"}, Hidden: true},
 }

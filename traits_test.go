@@ -36,9 +36,8 @@ func TestEveryConsolePlayable(t *testing.T) {
 		if c.Unavailable != "" {
 			t.Errorf("%s is still marked unavailable: %s", c.ID, c.Unavailable)
 		}
-		// Switch is played only by an emulator program the owner installs: WittyPlay offers none
-		// (docs/STANDALONE-EMULATORS.md, "The Switch").
-		if len(c.Cores) == 0 && len(c.Emulators) == 0 && c.ID != "switch" {
+		// The Switch and Switch 2 are played by emulators the owner installs themselves.
+		if len(c.Cores) == 0 && len(c.Emulators) == 0 {
 			t.Errorf("%s has no cores and no emulators", c.ID)
 		}
 	}

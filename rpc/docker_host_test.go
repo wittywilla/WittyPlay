@@ -111,3 +111,45 @@ func TestDumpRoot(t *testing.T) {
 		t.Errorf("%q", got)
 	}
 }
+
+// Keys and firmware the owner put in the BIOS folder are copied to where each emulator looks,
+// on the system it runs on; a firmware folder counts as present only with something in it.
+func TestSwitchKeysAndFirmware(t *testing.T) {
+	bios, saves := t.TempDir(), t.TempDir()
+	if err := os.WriteFile(filepath.Join(bios, "prod.keys"), []byte("keys"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(bios, "switch-firmware", "a.nca"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(bios, "switch-firmware", "a.nca", "00"), []byte("nca"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	e := emulators.Find("ryujinx")
+	if err := placeFirmware(e, "linux", bios, saves); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"config/system/prod.keys", "config/bis/system/Contents/registered/a.nca/00"} {
+		if _, err := os.Stat(filepath.Join(saves, filepath.FromSlash(want))); err != nil {
+			t.Errorf("%s: %v", want, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(saves, "config", "system", "title.keys")); err == nil {
+		t.Error("title.keys was made from nothing")
+	}
+	li := emulators.Find("lichii")
+	if err := placeFirmware(li, "windows", bios, saves); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(saves, "app", "user", "keys", "prod.keys")); err != nil {
+		t.Errorf("Lichii on Windows: %v", err)
+	}
+	b := &DockerBackend{systemDir: bios}
+	got := map[string]bool{}
+	for _, s := range b.biosStatus(e) {
+		got[s.Name] = s.Present
+	}
+	if !got["prod.keys"] || got["title.keys"] || !got["switch-firmware"] {
+		t.Errorf("status: %v", got)
+	}
+}

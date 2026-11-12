@@ -27,7 +27,8 @@
       "docker.maxHours",
       "docker.gpu",
       "docker.backend",
-      "docker.images"
+      "docker.images",
+      "docker.hostPaths"
     ]
   },
   "group": "games",

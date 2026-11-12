@@ -46,10 +46,27 @@ func TestBuiltinManifestIsValid(t *testing.T) {
 	if len(m.Placeholders()) == 0 {
 		t.Log("no placeholders left")
 	}
-	// No Switch emulator is ever offered for download: docs/STANDALONE-EMULATORS.md, "The Switch".
+	// No Switch or Switch 2 emulator is ever offered for download: each is added by hand, and
+	// has no download at all (docs/STANDALONE-EMULATORS.md, "The Switch and the Switch 2").
 	for _, e := range m.Emulators {
 		if slices.Contains(e.Systems, "switch") || slices.Contains(e.Systems, "switch2") {
-			t.Errorf("%s plays the Switch, and the list must offer none", e.ID)
+			if e.Manual == nil || len(e.Artifacts) > 0 {
+				t.Errorf("%s plays the Switch, and must be added by hand with nothing to download", e.ID)
+			}
+		}
+	}
+	for _, id := range []string{"ryujinx", "lichii"} {
+		e := Find(id)
+		if e == nil || e.Manual == nil {
+			t.Fatalf("%s isn't in the list to add by hand", id)
+		}
+		if _, err := (&Installer{DataDir: t.TempDir()}).Install(t.Context(), e); err != ErrManual {
+			t.Errorf("%s could be installed: %v", id, err)
+		}
+		for _, goos := range []string{"linux", "windows", "darwin"} {
+			if len(e.Manual.Programs[goos]) == 0 || len(e.Manual.Place[goos]) == 0 {
+				t.Errorf("%s says nothing for %s", id, goos)
+			}
 		}
 	}
 	// Every platform with a download that runs natively plays here: a Mac and Windows have
