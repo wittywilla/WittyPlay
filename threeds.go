@@ -38,11 +38,17 @@ type ThreeDSFile struct {
 	Package    bool
 	// NewOnly: this game only runs on a New 3DS, so a core has to be told to be one.
 	NewOnly bool
+	// Unflagged: its program was decrypted by a tool that left the NoCrypto flag unset. It
+	// plays, but Azahar goes by the flag and calls it encrypted, so a core gets a copy of
+	// the program with the flag set, made by CopyProgram.
+	Unflagged bool
 }
 
 const (
 	ncchFlags    = 0x188 // eight flag bytes
 	ncchNoCrypto = 0x04  // in the last of them
+	ncchFixedKey = 0x01  // in the last: a fixed key, for system titles
+	ncchSeed     = 0x20  // in the last: a seed is part of the key
 	ncchNew3DS   = 0x02  // in the fifth: the platform, set for a New 3DS
 	mediaUnit    = 0x200
 	ciaAlign     = 64
@@ -85,16 +91,20 @@ func inspectNCCH(f io.ReaderAt, off, size int64) (ThreeDSFile, error) {
 	if err != nil {
 		return ThreeDSFile{}, err
 	}
-	out := ThreeDSFile{Encrypted: enc}
-	if flags, err := readAt(f, off+ncchFlags, 8); err == nil && flags[4]&ncchNew3DS != 0 {
-		out.NewOnly = true
+	out := ThreeDSFile{Encrypted: enc, Program: off, ProgramLen: size}
+	if flags, err := readAt(f, off+ncchFlags, 8); err == nil {
+		out.NewOnly = flags[4]&ncchNew3DS != 0
+		out.Unflagged = !enc && flags[7]&ncchNoCrypto == 0
 	}
 	return out, nil
 }
 
 // ncchEncrypted looks at one program's header. Its magic number sits outside what
 // is encrypted within a program, so if it's missing, the whole program is scrambled
-// by the package around it. Only a flag saying "no encryption" counts as plain.
+// by the package around it. A flag saying "no encryption" counts as plain, and so does
+// an extended header that reads plainly: some tools decrypt a program without setting
+// the flag, and its jump id then matches the program's own id. That's the test 3DS
+// emulators make themselves (Citra's "marked as encrypted but with decrypted exheader").
 func ncchEncrypted(f io.ReaderAt, off, size int64) (bool, error) {
 	if size < ncchFlags+8 {
 		return false, errors.New("this 3DS file is too short to hold a game")
@@ -110,7 +120,31 @@ func ncchEncrypted(f io.ReaderAt, off, size int64) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return flags[7]&ncchNoCrypto == 0, nil
+	if flags[7]&ncchNoCrypto != 0 {
+		return false, nil
+	}
+	return !plainExheader(f, off), nil
+}
+
+const (
+	ncchExhSize = 0x180
+	ncchProgID  = 0x118
+	ncchExhAt   = 0x200
+	exhJumpID   = 0x1C8 // in the extended header's system info
+)
+
+// plainExheader says a program's extended header reads as it stands: its jump id matches
+// the program id (the low half, as emulators allow for merged updates). Encrypted bytes
+// match by chance one time in four billion; a zero id never counts.
+func plainExheader(f io.ReaderAt, off int64) bool {
+	size, err1 := readAt(f, off+ncchExhSize, 4)
+	prog, err2 := readAt(f, off+ncchProgID, 8)
+	jump, err3 := readAt(f, off+ncchExhAt+exhJumpID, 8)
+	if err1 != nil || err2 != nil || err3 != nil || binary.LittleEndian.Uint32(size) == 0 {
+		return false
+	}
+	p := binary.LittleEndian.Uint32(prog)
+	return p != 0 && p == binary.LittleEndian.Uint32(jump)
 }
 
 func inspectCCI(f io.ReaderAt, size int64) (ThreeDSFile, error) {
@@ -131,6 +165,19 @@ func inspectCCI(f io.ReaderAt, size int64) (ThreeDSFile, error) {
 		return ThreeDSFile{}, errors.New("this 3DS game card image has no usable game inside")
 	}
 	return inspectNCCH(f, off, n)
+}
+
+// setNoCrypto marks a copied program as unencrypted: the crypto method (flags[3]) back to
+// none, and in flags[7] the NoCrypto bit on and the fixed-key and seed bits off.
+func setNoCrypto(f *os.File) error {
+	flags := make([]byte, 8)
+	if _, err := f.ReadAt(flags, ncchFlags); err != nil {
+		return err
+	}
+	flags[3] = 0
+	flags[7] = flags[7]&^(ncchFixedKey|ncchSeed) | ncchNoCrypto
+	_, err := f.WriteAt(flags, ncchFlags)
+	return err
 }
 
 func alignCIA(n int64) int64 { return (n + ciaAlign - 1) &^ (ciaAlign - 1) }
@@ -195,10 +242,15 @@ func inspectCIA(f io.ReaderAt, size int64) (ThreeDSFile, error) {
 	return inner, err
 }
 
-// CopyProgram writes the program out of an unencrypted package to a file of its
-// own. It's a plain copy of bytes that are already readable.
+// NeedsCopy says a core can't open this file as it is, but can open its program copied out.
+func (t ThreeDSFile) NeedsCopy() bool { return !t.Encrypted && (t.Package || t.Unflagged) }
+
+// CopyProgram writes the program out of an unencrypted package, or out of a file decrypted
+// without its NoCrypto flag, to a file of its own. It's a plain copy of bytes that are
+// already readable; for an unflagged program, its flags then say so, as GodMode9 sets them
+// when it decrypts: no crypto, and no key-selection bits left over.
 func (t ThreeDSFile) CopyProgram(from, to string) error {
-	if !t.Package || t.Encrypted {
+	if !t.NeedsCopy() || t.ProgramLen <= 0 {
 		return errors.New("there's no unencrypted program to copy out of this file")
 	}
 	in, err := os.Open(from)
@@ -211,6 +263,9 @@ func (t ThreeDSFile) CopyProgram(from, to string) error {
 		return err
 	}
 	_, err = io.Copy(out, io.NewSectionReader(in, t.Program, t.ProgramLen))
+	if err == nil && t.Unflagged {
+		err = setNoCrypto(out)
+	}
 	if cerr := out.Close(); err == nil {
 		err = cerr
 	}

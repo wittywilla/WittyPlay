@@ -23,6 +23,16 @@ func fakeNCCH(plain bool, size int) []byte {
 	return b
 }
 
+// fakeUnflagged is a program decrypted by a tool that left its NoCrypto flag unset: its
+// extended header is plain, so its jump id is the program id.
+func fakeUnflagged(size int) []byte {
+	b := fakeNCCH(false, size)
+	binary.LittleEndian.PutUint32(b[ncchExhSize:], 0x400)
+	binary.LittleEndian.PutUint64(b[ncchProgID:], 0x000400000012AB00)
+	binary.LittleEndian.PutUint64(b[ncchExhAt+exhJumpID:], 0x000400000012AB00)
+	return b
+}
+
 func scrambled(size int) []byte {
 	b := make([]byte, size)
 	for i := range b {
@@ -79,6 +89,8 @@ func TestInspect3DS(t *testing.T) {
 		{"plain.3ds", fakeCCI(fakeNCCH(true, size)), false, false},
 		{"encrypted.3ds", fakeCCI(fakeNCCH(false, size)), true, false},
 		{"plain.cxi", fakeNCCH(true, size), false, false},
+		{"decrypted-unflagged.3ds", fakeCCI(fakeUnflagged(size)), false, false},
+		{"decrypted-unflagged.cia", fakeCIA(fakeUnflagged(size), 0), false, false},
 		{"encrypted.cxi", fakeNCCH(false, size), true, false},
 		{"plain.cia", fakeCIA(fakeNCCH(true, size), 0), false, false},
 		// A tool took the encryption off and changed nothing else: it's marked encrypted, and
@@ -160,5 +172,50 @@ func TestCopyProgramOutOfPackage(t *testing.T) {
 	encrypted := ThreeDSFile{Package: true, Encrypted: true, ProgramLen: 1}
 	if err := encrypted.CopyProgram(path, out+".2"); err == nil {
 		t.Error("an encrypted program must not be copied out")
+	}
+}
+
+// A card image decrypted without its NoCrypto flag plays, from a copy of its program whose
+// flags say what its bytes are. Nothing else in the program changes.
+func TestCopyUnflaggedProgram(t *testing.T) {
+	inner := fakeUnflagged(0x2000)
+	inner[ncchFlags+3] = 0x01                    // the crypto method a 7.x key would use
+	inner[ncchFlags+7] = ncchFixedKey | ncchSeed // and key bits a decrypting tool clears
+	copy(inner[0x1000:], "the game's own bytes")
+	dir := t.TempDir()
+	path := filepath.Join(dir, "game.3ds")
+	if err := os.WriteFile(path, fakeCCI(inner), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	info, err := Inspect3DS(path)
+	if err != nil || info.Encrypted || info.Package || !info.Unflagged || !info.NeedsCopy() {
+		t.Fatalf("%+v %v", info, err)
+	}
+	out := filepath.Join(dir, "game.cxi")
+	if err := info.CopyProgram(path, out); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(out)
+	if err != nil || len(got) != len(inner) {
+		t.Fatalf("the program didn't come out whole (%d bytes, %v)", len(got), err)
+	}
+	if got[ncchFlags+3] != 0 || got[ncchFlags+7] != ncchNoCrypto {
+		t.Errorf("flags %x", got[ncchFlags:ncchFlags+8])
+	}
+	want := append([]byte(nil), inner...)
+	copy(want[ncchFlags:], got[ncchFlags:ncchFlags+8])
+	if !bytes.Equal(got, want) {
+		t.Error("something besides the flags changed")
+	}
+	if again, err := Inspect3DS(out); err != nil || again.Encrypted || again.Unflagged || again.NeedsCopy() {
+		t.Errorf("%+v %v", again, err)
+	}
+	// A plain, flagged card image plays as it is.
+	plain := filepath.Join(dir, "plain.3ds")
+	if err := os.WriteFile(plain, fakeCCI(fakeNCCH(true, 0x2000)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if info, err := Inspect3DS(plain); err != nil || info.NeedsCopy() {
+		t.Errorf("%+v %v", info, err)
 	}
 }

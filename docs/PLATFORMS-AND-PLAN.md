@@ -34,7 +34,7 @@ The short version, for the owner:
 | Sandbox | sandbox-exec profile: no network, no programs, writes only saves | Job object, low integrity | Landlock, seccomp, namespaces | Resource limits only | As Linux |
 | Cores to install | libretro's build server | libretro's build server | libretro's build server (x64, arm64, arm32) | None published: system packages or ones you place | As Linux |
 | Graphics-card consoles | OpenGL 4.1 through CGL; N64 and LRPS2 drawn by the processor (see README) | OpenGL; Vulkan cores fall back | OpenGL with a card passed through | Processor only | With `/dev/dri` or `--gpus all` |
-| GameCube and Wii (Dolphin core) | Loads, draws its first frame, then crawls (below) | Published; not run | Published (x64); not run | Not published | As Linux |
+| GameCube and Wii (Dolphin core) | Verified with real discs: plays on the card, Wii at 55 to 60 frames a second (below) | Published; not run | Published (x64); not run | Not published | As Linux |
 
 ### Standalone emulators
 
@@ -61,7 +61,13 @@ The short version, for the owner:
 
 ### The Dolphin core on a Mac, as run
 
-Run on 2026-11-11 on an Apple M3 Pro with Swiss (GameCube homebrew, GPL-2.0, `swiss_r2119(ntsc-u).iso`) through the real runner (`wittyplay-probe frames`): the core (Dolphin 2609.0.169) loaded with its support files from the build server, named four GameCube controllers, drew on the M3 Pro's OpenGL and gave its first frame. Then no second frame came in 15 seconds. A stack sample shows the core's CPU thread spending nearly all its time crossing into the runner's Go callbacks (purego's callback from a thread Go didn't start: `sigprocmask` and `sigaltstack` on every call). It isn't the JIT (the interpreter does the same), the audio mode, the core's logging, or running the CPU on the main thread. Until the runner answers the core's per-poll calls without that cost, play GameCube and Wii in standalone Dolphin. Whether Windows and Linux show the same is untested. Look in `libretro/libretro.go` (the callbacks) and `host/`.
+Run on 2026-11-11 on an Apple M3 Pro, with the owner's own GameCube and Wii discs through the server: both played on the M3 Pro's OpenGL, with sound and keyboard input, and save states. A Wii game ran at 55 to 60 frames a second against the console's 59.94, so its sound can crackle where it dips; Dolphin's fast memory, the usual cure, faults on purpose and stays off in the runner. Dolphin's on-screen warnings (about the Mac's OpenGL) are turned off, as they sat over the player's picture. The Wii plugs in a Wii Remote with a Nunchuk, as its controller layout is drawn.
+
+An earlier run with Swiss (GameCube homebrew, through `wittyplay-probe frames`) drew one frame and then crawled, its CPU thread spending its time in purego's callbacks from a thread Go didn't start. That hasn't been seen with real discs; if it comes back, look in `libretro/libretro.go` (the callbacks) and `host/`.
+
+### The 3DS on a Mac
+
+Azahar asks for Vulkan on a Mac, which the runner can't offer, so there the server has it draw with its own software renderer (`citra_graphics_api` Software), which kept 60 frames a second, rather than give way to Panda3DS. A 3DS file decrypted by a tool that left its NoCrypto flag unset counts as decrypted (its extended header reads plainly), and plays from a copy of its program with the flag set, as GodMode9 sets it: Azahar goes by the flag.
 
 ## The consoles
 

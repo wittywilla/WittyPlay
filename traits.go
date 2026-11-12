@@ -149,7 +149,10 @@ var traits = map[string]CoreTraits{
 		// line: off, as the runner keeps none of it. Checked against the core's own option list
 		// on a Mac (2609.0.169): efb_scale is 1 to 8 times native.
 		Options: map[string]string{"dolphin_renderer": "Hardware", "dolphin_fastmem": "disabled", "dolphin_fastmem_arena": "disabled",
-			"dolphin_log_boot_enabled": "disabled", "dolphin_log_core_enabled": "disabled", "dolphin_log_video_enabled": "disabled", "dolphin_log_common_enabled": "disabled"},
+			"dolphin_log_boot_enabled": "disabled", "dolphin_log_core_enabled": "disabled", "dolphin_log_video_enabled": "disabled", "dolphin_log_common_enabled": "disabled",
+			// Its on-screen messages are for someone at the machine: here they'd sit over a
+			// player's picture, warning about the server's graphics driver.
+			"dolphin_osd_enabled": "disabled"},
 		Resolution: pick("dolphin_efb_scale", "1", "2", "3", "4")},
 }
 

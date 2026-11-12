@@ -306,5 +306,5 @@ func (g *gameFlags) load() (ipc.Load, []string) {
 			opts[k] = v
 		}
 	}
-	return ipc.Load{Core: g.core, ROM: g.rom, System: g.system, Save: g.save, Options: opts, Assets: assets}, args
+	return ipc.Load{Core: g.core, ROM: g.rom, System: g.system, Save: g.save, Options: opts, Assets: assets, PreferDevices: wittyplay.Pad(g.console).PreferDevices}, args
 }

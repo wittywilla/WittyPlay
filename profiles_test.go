@@ -141,6 +141,14 @@ func TestConsoleDefaults(t *testing.T) {
 	if !strings.Contains(strings.Join(Pad("ps1").PreferDevices, " "), "dualshock") {
 		t.Error("PlayStation should ask for a DualShock")
 	}
+	// The Wii layout is a Wii Remote with a Nunchuk (its C and Z, its stick). Dolphin's core
+	// starts with an upright remote alone, which moves every button: A did nothing.
+	if p := Pad("wii").PreferDevices; len(p) == 0 || p[0] != "wiimote + nunchuk" {
+		t.Errorf("Wii should ask for a Wii Remote with a Nunchuk: %v", p)
+	}
+	if Traits("dolphin").Options["dolphin_osd_enabled"] != "disabled" {
+		t.Error("Dolphin's on-screen messages would sit over the player's picture")
+	}
 }
 
 func TestCleanProfile(t *testing.T) {

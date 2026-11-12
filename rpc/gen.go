@@ -718,6 +718,14 @@ var Handlers = map[string]service.Handler{
 		err = recv.CopyProgram(a0, a1)
 		return nil, back, err
 	},
+	"wittyplay.ThreeDSFile.NeedsCopy": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
+		var recv wittyplay.ThreeDSFile
+		if err := service.Recv(rawRecv, &recv); err != nil {
+			return nil, nil, err
+		}
+		r0 := recv.NeedsCopy()
+		return []any{r0}, back, err
+	},
 	"wittyplay.Traits": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 string
 		if err := service.Arg(args, 0, &a0); err != nil {

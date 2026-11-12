@@ -127,7 +127,10 @@ var pads = map[string]PadLayout{
 		Meta: startOnly, Sticks: true, Right: []PadButton{{StickLeftR, "C left"}, {StickRightR, "C right"}, {StickUpR, "C up"}, {StickDownR, "C down"}}},
 	// A Wii Remote held sideways, with the Nunchuk's stick: the way most Wii games play from a pad.
 	"wii": {Art: "dual", Face: []PadButton{{RetroY, "1"}, {RetroX, "2"}, {RetroB, "A"}, {RetroA, "B"}}, Shoulder: []PadButton{{RetroL, "C"}, {RetroR, "Z"}},
-		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Pointer: true},
+		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Pointer: true,
+		// Dolphin's core plugs in an upright Wii Remote alone unless told otherwise, and then
+		// none of this layout's buttons are where it says.
+		PreferDevices: []string{"wiimote + nunchuk"}},
 	"wiiu": {Art: "dual", Face: diamond, Shoulder: []PadButton{{RetroL, "L"}, {RetroR, "R"}, {RetroL2, "ZL"}, {RetroR2, "ZR"}},
 		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Extra: stickClicks, Right: rightStick, Pointer: true},
 	"ps3": {Art: "dual", Face: []PadButton{{RetroY, "□"}, {RetroX, "△"}, {RetroB, "✕"}, {RetroA, "○"}},
