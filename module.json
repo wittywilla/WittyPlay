@@ -8,7 +8,7 @@
   "entry": "wittyplay-module",
   "api": 3,
   "minServer": "0.6.0-alpha",
-  "maxServer": "0.6.x",
+  "maxServer": "0.8.x",
   "capabilities": {
     "ipc": [
       "1"
