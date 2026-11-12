@@ -667,5 +667,8 @@ func (c *sckCapture) close() {
 		capturesMu.Lock()
 		delete(captures, c.handlerKey)
 		capturesMu.Unlock()
+		if c.handlerKey != 0 {
+			objc.ID(c.handlerKey).Send(sel("release"))
+		}
 	})
 }

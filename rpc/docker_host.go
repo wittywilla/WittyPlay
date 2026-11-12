@@ -200,3 +200,19 @@ func seedFirmware(e *emulators.Emulator, biosDir, saves string) error {
 	}
 	return nil
 }
+
+// dumpRoot is what a game file stands for, when it stands for a folder: PS3_DISC.SFB for its
+// disc's folder (which RPCS3 boots), and a Wii U game's code/*.rpx for the game's folder, with
+// the program's place inside it (Cemu needs code, content and meta beside each other). Any
+// other file is itself.
+func dumpRoot(rom string) (root, inGame string) {
+	base := filepath.Base(rom)
+	dir := filepath.Dir(rom)
+	switch {
+	case strings.EqualFold(base, "PS3_DISC.SFB"):
+		return dir, ""
+	case strings.EqualFold(filepath.Ext(base), ".rpx") && strings.EqualFold(filepath.Base(dir), "code"):
+		return filepath.Dir(dir), filepath.Base(dir) + "/" + base
+	}
+	return rom, ""
+}

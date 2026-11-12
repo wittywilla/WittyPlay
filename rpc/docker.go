@@ -557,10 +557,12 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 	if err := writeInputMap(emu, settingsDir, eff, runtime.GOOS, hostRT); err != nil {
 		b.log.Warn("docker: the controllers couldn't be set up in the emulator's own settings", "emulator", emu.ID, "err", err)
 	}
-	rom := filepath.Clean(o.ROM)
+	// A game kept as a folder (a PS3 disc, a Wii U game) is given whole: the emulator is
+	// pointed at the folder, or at the file in it that starts it.
+	rom, inGame := dumpRoot(filepath.Clean(o.ROM))
 	var cmd []string
 	if inst != nil {
-		cmd = CommandLine(emu, art, inst.Entry, plan.Args, filepath.Base(rom))
+		cmd = CommandLine(emu, art, inst.Entry, plan.Args, path.Join(filepath.Base(rom), inGame))
 	}
 	// With nothing installed the image has the emulator in it, and runs it on WITTYPLAY_ROM.
 	req := docker.Request{

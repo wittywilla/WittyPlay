@@ -5,6 +5,7 @@ package rpc
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -90,5 +91,23 @@ func TestOwnPrograms(t *testing.T) {
 	b := &DockerBackend{}
 	if in := b.installed(e); in == nil || in.Dir != dir || in.Entry != "rpcs3" {
 		t.Errorf("installed %+v", in)
+	}
+}
+
+func TestDumpRoot(t *testing.T) {
+	for in, want := range map[string][2]string{
+		"/g/PS3/Game/PS3_DISC.SFB":  {"/g/PS3/Game", ""},
+		"/g/WiiU/Game/code/run.rpx": {"/g/WiiU/Game", "code/run.rpx"},
+		"/g/WiiU/run.rpx":           {"/g/WiiU/run.rpx", ""},
+		"/g/PS2/game.iso":           {"/g/PS2/game.iso", ""},
+	} {
+		root, rel := dumpRoot(filepath.FromSlash(in))
+		if root != filepath.FromSlash(want[0]) || rel != want[1] {
+			t.Errorf("%s: %q %q", in, root, rel)
+		}
+	}
+	got := CommandLine(&emulators.Emulator{Args: []string{"-g", "{game}"}}, nil, "Cemu", nil, path.Join("Game", "code/run.rpx"))
+	if got[2] != "/game/Game/code/run.rpx" {
+		t.Errorf("%q", got)
 	}
 }
