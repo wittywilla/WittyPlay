@@ -27,6 +27,59 @@ const (
 	SettingOnlyPlayable = "onlyPlayable"
 )
 
+// WittyPlay Online's sources (WittyMediaServer docs/plans/DESIGN-2-SDUI-GAPS.md, section 6).
+// They're about this server's profiles, saves and running games, so the server answers them
+// (its wittyplay_online.go) through each profile's limits; they're declared here so that pages,
+// editors and the checks know them.
+const (
+	SourceRecent      = Module + ".recent"
+	SourceCollections = Module + ".collections"
+	SourceFriends     = Module + ".friends"
+	SourceRooms       = Module + ".rooms"
+	SourceRoom        = Module + ".room"
+	SourceSaveStates  = Module + ".saveStates"
+	SourceMemories    = Module + ".memories"
+	SourceControllers = Module + ".controllers"
+)
+
+// onlineSources are WittyPlay Online's sources, as the catalogue describes them.
+func onlineSources() []sdui.SourceSpec {
+	limit := func(def, most int) sdui.PropSpec {
+		return sdui.PropSpec{Name: "limit", Type: "int", Label: "At most", Default: def, Min: sdui.Int(1), Max: sdui.Int(most)}
+	}
+	return []sdui.SourceSpec{
+		{Type: SourceRecent, Label: "Games you played", Icon: "history", Title: "Recent",
+			Description: "The games this profile played, newest first, each with its era, how many can play, how long it has been played and its latest save.",
+			Params:      []sdui.PropSpec{limit(20, 60)}, Yields: []string{"game"}, CardStyle: "game"},
+		{Type: SourceCollections, Label: "Classics by era", Icon: "game", Title: "Classics",
+			Description: "The games this profile may play, by era, with how many each has. With an era, that era's games.",
+			Params: []sdui.PropSpec{{Name: "era", Type: "enum", Label: "Era", Default: "",
+				Options: []sdui.EnumOption{{Value: "", Label: "Every era, as collections"}, {Value: "first", Label: "First era"}, {Value: "8-bit", Label: "8-bit"},
+					{Value: "16-bit", Label: "16-bit"}, {Value: "early-3d", Label: "3D era"}, {Value: "disc", Label: "Disc era"}, {Value: "pocket", Label: "Handheld"}}},
+				limit(40, 500)},
+			Yields: []string{"collection", "game"}, CardStyle: "tile", Paged: true},
+		{Type: SourceFriends, Label: "Friends", Icon: "users", Title: "Friends",
+			Description: "The other profiles of this server this profile may see, playing first, with what each is doing as far as it shares. A Kids profile sees only the friends an administrator chose.",
+			Params:      []sdui.PropSpec{limit(20, 100)}, Yields: []string{"view"}, CardStyle: "landscape"},
+		{Type: SourceRooms, Label: "Open rooms", Icon: "users", Title: "Open rooms",
+			Description: "Friends' games on this server that are open to join, with a seat free, of games this profile may play. None for a Kids profile.",
+			Params:      []sdui.PropSpec{limit(12, 50)}, Yields: []string{"view"}, CardStyle: "landscape"},
+		{Type: SourceRoom, Label: "Your room", Icon: "users", Title: "Your room",
+			Description: "The game this profile is playing with others: the room first (its code for the host), then each player, or Waiting… for a free seat.",
+			Params:      []sdui.PropSpec{limit(9, 9)}, Yields: []string{"view"}, CardStyle: "landscape"},
+		{Type: SourceSaveStates, Label: "Save states", Icon: "history", Title: "Save states",
+			Description: "One game's saves for this profile, its own first, newest first.", PageKinds: []string{"detail"},
+			Params: []sdui.PropSpec{{Name: "item", Type: "ref", Label: "Game", Required: true, Help: "$item on a game's page."}, limit(20, 110)},
+			Yields: []string{"view"}, CardStyle: "landscape"},
+		{Type: SourceMemories, Label: "Memories", Icon: "photo", Title: "Memories",
+			Description: "This profile's save states and kept screenshots, across its games, newest first.",
+			Params:      []sdui.PropSpec{limit(24, 500)}, Yields: []string{"view", "photo"}, CardStyle: "landscape", Paged: true},
+		{Type: SourceControllers, Label: "Controllers", Icon: "devices", Title: "Controllers",
+			Description: "Each player of the game this profile is in, and who is playing it. A controller's battery and kind are the device's to show.",
+			Params:      []sdui.PropSpec{limit(8, 8)}, Yields: []string{"view"}, CardStyle: "landscape"},
+	}
+}
+
 // UI is WittyPlay's SDUI.
 func UI() *sdui.Module {
 	m := sdui.New(Module, "Games").Colours(map[string]string{"accent": "#7F46B8"})
@@ -45,6 +98,9 @@ func UI() *sdui.Module {
 		SeeAll:    "/page/" + Module,
 		Title:     "What this server plays",
 	})
+	for _, src := range onlineSources() {
+		m.AddSource(src)
+	}
 	shelf := sdui.Shelf(Module+"-consoles", "What this server plays", sdui.Src(SourceConsoles, "only", "ready", "limit", 40))
 	m.AddInsert("games", "playing", shelf)
 	m.AddPage(sdui.Page{ID: Module, Kind: "custom", Title: "What this server plays", Icon: "game",
