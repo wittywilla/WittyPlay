@@ -1,6 +1,6 @@
-# Standalone emulators: in containers, or a sandbox of this machine's own
+# Standalone emulators in containers, and Linux's own sandbox
 
-WittyPlay normally runs libretro cores in its own sandboxed game runner. This is a second, optional way to play: a *standalone* emulator (PCSX2, PPSSPP, Flycast, melonDS and others), downloaded from its own project, run one per game in a hardened Docker container or a bubblewrap sandbox, and streamed to the player over WebRTC.
+WittyPlay normally runs libretro cores in its own sandboxed game runner. This is a second, optional way to play: a *standalone* emulator (PCSX2, PPSSPP, Flycast, melonDS and others), downloaded from its own project, run one per game in a hardened Docker container or a bubblewrap sandbox, and streamed to the player over WebRTC. On a Mac or a Windows PC they can also run on the server's own desktop: that, the settings and controllers of every emulator, your own emulator programs and the Switch are in [STANDALONE-EMULATORS.md](STANDALONE-EMULATORS.md).
 
 - **It's off by default.** Nothing here runs, and nothing reaches a Docker daemon, until an administrator turns it on in **Settings, Standalone emulators**.
 - **Libretro cores are untouched.** They always run in the process sandbox. A game goes to a standalone emulator only when someone chooses **Play with …** on its page.
@@ -119,18 +119,19 @@ Every download is pinned to a version, a size and a SHA-256, from the project's 
 
 | Emulator | Consoles (library id) | Version | Download | Licence | Needs at least | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| PCSX2 | PlayStation 2 (`ps2`) | 2.2.0 | x86-64 | GPL-3.0-or-later | 4 GB, 4 cores | Needs a PS2 BIOS |
+| PCSX2 | PlayStation 2 (`ps2`) | 2.8.2 | x86-64 | GPL-3.0-or-later | 4 GB, 4 cores | Needs a PS2 BIOS |
 | PPSSPP | PSP (`psp`) | 1.20.4 | x86-64, arm64 | GPL-2.0-or-later | 1 GB, 2 cores | |
-| melonDS | Nintendo DS (`nds`) | 1.0 | x86-64, arm64 | GPL-3.0-or-later | 1 GB, 2 cores | |
-| Flycast | Dreamcast (`dc`), NAOMI | 2.4 | x86-64 | GPL-2.0-only | 1 GB, 2 cores | |
-| Dolphin | GameCube, Wii | 2412 | none: Dolphin publishes no Linux build of its own | GPL-2.0-or-later | 4 GB, 2 cores | Needs an image with Dolphin in it |
-| xemu | Xbox | 0.8.5 | x86-64 | GPL-2.0-or-later | 4 GB, 4 cores | Desktop. Needs Xbox boot ROM, BIOS, disk image |
-| Cemu | Wii U | 2.6 | x86-64 | MPL-2.0 | 8 GB, 4 cores, a graphics card | Desktop. Needs your keys |
-| RPCS3 | PlayStation 3 | 0.0.43-20581 | x86-64 | GPL-2.0-only | 8 GB, 6 cores, a graphics card | Desktop. Needs Sony's system software |
-| Lichii | Switch | build-130 | x86-64, arm64 | GPL-3.0-or-later | 8 GB, 4 cores, a graphics card | Experimental, by its authors' word. Desktop. Needs your keys |
+| melonDS | Nintendo DS (`nds`) | 1.1 | x86-64, arm64 | GPL-3.0-or-later | 1 GB, 2 cores | |
+| Flycast | Dreamcast (`dc`) | 2.7 | x86-64 | GPL-2.0-only | 1 GB, 2 cores | |
+| Dolphin | GameCube (`gc`), Wii (`wii`) | 2609b | none: Dolphin publishes only a Flatpak for Linux | GPL-2.0-or-later | 4 GB, 2 cores | Needs an image with Dolphin in it; or play on the Dolphin core |
+| xemu | Xbox (`xbox`) | 0.8.139 | x86-64, arm64 | GPL-2.0-or-later | 4 GB, 4 cores | Desktop. Needs Xbox boot ROM, BIOS, disk image |
+| Cemu | Wii U (`wiiu`) | 2.6 | x86-64 | MPL-2.0 | 8 GB, 4 cores, a graphics card | Desktop. Needs your keys |
+| RPCS3 | PlayStation 3 (`ps3`) | 0.0.43-20582 | x86-64, arm64 | GPL-2.0-only | 8 GB, 6 cores, a graphics card | Desktop. Needs Sony's system software |
 | DuckStation | PlayStation (`ps1`) | 0.1-12442 | **never offered**: CC BY-NC-ND forbids commercial use | CC-BY-NC-ND-4.0 | 1 GB, 2 cores | An administrator can build an unmodified image of their own |
 
-**Consoles the library doesn't know.** WittyPlay's console table has `ps2`, `psp`, `nds`, `dc` and `ps1`. For GameCube, Wii, Xbox, Wii U, PS3 and Switch, add a custom console whose id is `custom-gamecube`, `custom-wii`, `custom-xbox`, `custom-wiiu`, `custom-ps3` or `custom-switch`: an emulator for `gamecube` plays `custom-gamecube`.
+The same versions are downloaded for Macs and Windows: [STANDALONE-EMULATORS.md](STANDALONE-EMULATORS.md#the-emulators). No Switch emulator is in the list: see [The Switch](STANDALONE-EMULATORS.md#the-switch).
+
+**Every console here is the library's own.** GameCube, Wii, Wii U, PS3, Xbox and Switch used to need a custom console named `custom-gamecube` and so on; the server now moves those to the real consoles by itself.
 
 **Images.** No image has been published, so every `image.digest` in the list says `TODO`. Until one is, each emulator runs only where an administrator has built the base image and pinned it under `docker.images` (see [docker/images/README.md](../docker/images/README.md)), or with `docker.runtime` set to `local`, which needs no image.
 
@@ -161,7 +162,7 @@ Diagnostics says which you have ("Who the daemon runs as"). The socket is never 
 
 `/saves` is a bind mount, which has no size limit of its own: an emulator can fill the disk the module's folder is on. Put that folder on a volume with a quota if that matters to you.
 
-**The local sandbox** (`docker.runtime: local`, Linux only). bubblewrap with every namespace unshared (`--unshare-all`): the emulator sees no other process, has no capabilities, and has **no network at all**, only a loopback of its own. Its root is the system's `/usr` and a few folders of `/etc`, read-only, with the same four mounts as a container. A systemd scope (`systemd-run --user --scope`) holds it to the same memory, process and CPU limits, and it dies with the module. The picture, sound and input cross through one Unix socket, guarded by the session's secret. It is **weaker than a container** in two ways: there's no system-call filter, and the emulator runs on this machine's own libraries rather than an image's. It is stronger in one: nothing holds a daemon's socket. It needs `bwrap`, `systemd-run`, `Xvfb`, `xdpyinfo`, `xdotool`, `pulseaudio`, `pactl`, an `ffmpeg` with `x11grab` and `pulse`, and `wittyplay-input-agent` beside the module; Status says which are missing. macOS and Windows have no local sandbox: bubblewrap is Linux's, the emulators listed are Linux programs, and those systems' own sandboxes have no X display to capture.
+**The local sandbox** (`docker.runtime: local`, Linux only). bubblewrap with every namespace unshared (`--unshare-all`): the emulator sees no other process, has no capabilities, and has **no network at all**, only a loopback of its own. Its root is the system's `/usr` and a few folders of `/etc`, read-only, with the same four mounts as a container. A systemd scope (`systemd-run --user --scope`) holds it to the same memory, process and CPU limits, and it dies with the module. The picture, sound and input cross through one Unix socket, guarded by the session's secret. It is **weaker than a container** in two ways: there's no system-call filter, and the emulator runs on this machine's own libraries rather than an image's. It is stronger in one: nothing holds a daemon's socket. It needs `bwrap`, `systemd-run`, `Xvfb`, `xdpyinfo`, `xdotool`, `pulseaudio`, `pactl`, an `ffmpeg` with `x11grab` and `pulse`, and `wittyplay-input-agent` beside the module; Status says which are missing. macOS and Windows run emulators on their own desktop instead, in their own sandboxes: see [STANDALONE-EMULATORS.md](STANDALONE-EMULATORS.md#where-they-run). On FreeBSD the local sandbox runs without bubblewrap, with resource limits only.
 
 **The desktop (KasmVNC).** Its page and scripts come out of the container, so that page must never be one of the server's own: it could read the app's storage and act as whoever is playing. It's shown in a frame sandboxed without `allow-same-origin`, and every answer carries `Content-Security-Policy: … sandbox allow-scripts allow-pointer-lock`, set by WittyPlay and again by the server whatever the container sent. A browser sends no sign-in from such a frame, so the route can't ask for one: the session's random 256-bit ticket, in the address, is the way in. Only the person who started the game is given it; it ends with the game; it's compared in constant time; and a wrong one gets the same "not found" as no session. The proxy adds the container's own password, strips cookies in both directions, and keeps redirects inside the session's address. Reading only.
 
@@ -286,5 +287,5 @@ Written plainly, so nobody takes a passing test for a played game. On the machin
 - **WittyPlay never downloads a BIOS, firmware, keys, or games**, and the images contain none. Use only firmware you've dumped from hardware you own, and games you've obtained legally. Breaking copy protection to get them may be illegal where you live.
 - Each emulator is a separate program under its own licence, named in the list and shown before an install, downloaded unmodified from its own project's release. A container image that bundles one has to carry its licence and point to its source.
 - **DuckStation** (CC BY-NC-ND 4.0) is listed and never offered for download, as with non-commercial cores.
-- **Lichii** is marked experimental by its own authors, and is the one entry whose place in this list the project's owner should look at again: emulators of current consoles have been the subject of legal action against their authors.
+- **No Switch emulator** is in the list, and none will be: see [The Switch](STANDALONE-EMULATORS.md#the-switch).
 - None of these projects is associated with WittyPlay, nor with any console maker.
