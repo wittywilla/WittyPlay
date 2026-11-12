@@ -34,7 +34,7 @@ The short version, for the owner:
 | Sandbox | sandbox-exec profile: no network, no programs, writes only saves | Job object, low integrity | Landlock, seccomp, namespaces | Resource limits only | As Linux |
 | Cores to install | libretro's build server | libretro's build server | libretro's build server (x64, arm64, arm32) | None published: system packages or ones you place | As Linux |
 | Graphics-card consoles | OpenGL 4.1 through CGL; N64 and LRPS2 drawn by the processor (see README) | OpenGL; Vulkan cores fall back | OpenGL with a card passed through | Processor only | With `/dev/dri` or `--gpus all` |
-| GameCube and Wii (Dolphin core) | Core published (x64, arm64) | Published | Published (x64) | Not published | As Linux |
+| GameCube and Wii (Dolphin core) | Loads, draws its first frame, then crawls (below) | Published; not run | Published (x64); not run | Not published | As Linux |
 
 ### Standalone emulators
 
@@ -58,6 +58,10 @@ The short version, for the owner:
 - **An emulator on Windows needs a desktop.** A Windows service runs in session 0, where windows can't be seen or captured. Run the server signed in, as the tray app does.
 - **FreeBSD has no sandbox WittyPlay can use** without root. It's offered only as "limits only", and the settings page says so.
 - **Analogue sticks and rumble in standalone emulators:** input reaches them as key presses, as no system offers a virtual gamepad to an unprivileged program without a driver. Sticks become their four directions; there is no rumble back. Libretro cores have both.
+
+### The Dolphin core on a Mac, as run
+
+Run on 2026-11-11 on an Apple M3 Pro with Swiss (GameCube homebrew, GPL-2.0, `swiss_r2119(ntsc-u).iso`) through the real runner (`wittyplay-probe frames`): the core (Dolphin 2609.0.169) loaded with its support files from the build server, named four GameCube controllers, drew on the M3 Pro's OpenGL and gave its first frame. Then no second frame came in 15 seconds. A stack sample shows the core's CPU thread spending nearly all its time crossing into the runner's Go callbacks (purego's callback from a thread Go didn't start: `sigprocmask` and `sigaltstack` on every call). It isn't the JIT (the interpreter does the same), the audio mode, the core's logging, or running the CPU on the main thread. Until the runner answers the core's per-poll calls without that cost, play GameCube and Wii in standalone Dolphin. Whether Windows and Linux show the same is untested. Look in `libretro/libretro.go` (the callbacks) and `host/`.
 
 ## The consoles
 

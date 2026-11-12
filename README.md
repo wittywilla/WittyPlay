@@ -43,7 +43,7 @@ Plays console games from WittyMediaServer on any screen with a browser or a clie
 - **Sorts games into consoles** from their files, with the settings for each console and core as data.
 - **Refuses encrypted game files** with a clear message, such as encrypted 3DS files. Nothing is decrypted.
 - **Optional: standalone emulators.** PCSX2, Dolphin, PPSSPP, melonDS, Flycast, xemu, Cemu and RPCS3, downloaded from their own projects with the licence shown first, each run one per game on the server's own desktop in its system's sandbox (macOS, Windows), in a bubblewrap sandbox (Linux), or in a hardened Docker container, and streamed over WebRTC. Every one of each emulator's settings, from its own configuration, in the web pages; every player's controller written into its own settings. Off by default; libretro cores always stay in the process sandbox; no emulator, game, BIOS or key is bundled, and no Switch emulator is offered. See [docs/STANDALONE-EMULATORS.md](docs/STANDALONE-EMULATORS.md), [docs/DOCKER-BACKEND.md](docs/DOCKER-BACKEND.md), and what plays on which server in [docs/PLATFORMS-AND-PLAN.md](docs/PLATFORMS-AND-PLAN.md).
-- **GameCube, Wii, Wii U, PlayStation 3, Xbox and Switch** are consoles of the library, recognised from their files' own bytes: GameCube and Wii on Dolphin's libretro core, the others in a standalone emulator.
+- **GameCube, Wii, Wii U, PlayStation 3, Xbox and Switch** are consoles of the library, recognised from their files' own bytes: GameCube and Wii on Dolphin's libretro core (which on a Mac loads but stalls after its first frame: see docs/PLATFORMS-AND-PLAN.md) or in standalone Dolphin, the others in a standalone emulator.
 
 The games library, its metadata and where saves are kept stay with the server.
 
