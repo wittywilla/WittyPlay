@@ -39,6 +39,7 @@ import (
 	"github.com/wittywilla/wittyplay/emulators"
 	"github.com/wittywilla/wittyplay/sandbox/docker"
 	"github.com/wittywilla/wittyplay/sandbox/docker/inputagent"
+	"github.com/wittywilla/wittyplay/sandbox/host"
 	"github.com/wittywilla/wittyplay/sandbox/local"
 	"github.com/wittywilla/wittyplay/stream"
 )
@@ -85,6 +86,10 @@ type DockerBackend struct {
 	// Both are set by NewDockerBackend; a test puts a fake in.
 	Local        docker.Runtime
 	LocalMissing func() []string
+	// Host runs an emulator on this machine's own desktop (a Mac, a Windows PC). HostMissing
+	// says what it lacks.
+	Host        docker.Runtime
+	HostMissing func() []string
 
 	mu        sync.Mutex
 	settings  docker.Settings
@@ -121,6 +126,21 @@ func NewDockerBackend(dataDir string, connect func() (docker.Runtime, error), mg
 		}
 	}
 	b.Local, b.LocalMissing = lr, lr.Missing
+	hr := &host.Runtime{Dir: filepath.Join(os.TempDir(), "wittyplay-host"), Log: log}
+	if dataDir != "" {
+		hr.Dir = filepath.Join(dataDir, "docker", "host")
+	}
+	if mgr != nil {
+		hr.FFmpeg = mgr.FFmpegPath
+	}
+	b.Host, b.HostMissing = hr, hr.Missing
+	if dataDir != "" {
+		if own, err := emulators.LoadOwn(b.ownPath()); err != nil {
+			log.Warn("docker: your own emulator programs couldn't be read", "err", err)
+		} else {
+			emulators.SetOwn(own)
+		}
+	}
 	return b
 }
 
@@ -135,13 +155,17 @@ func (b *DockerBackend) Settings() docker.Settings {
 	return b.settings
 }
 
-// platform is where emulators run: Linux, always (a container is Linux, and so is the only
-// machine with a local sandbox), on the processor the runtime last said it has. Before any
-// runtime has answered it's this machine's processor, which is right everywhere but a server
-// whose Docker runs in a virtual machine of another kind.
+// platform is where emulators run: this machine for an emulator on its desktop, or in the local
+// sandbox on FreeBSD; otherwise Linux (a container is Linux, and so is Linux's local sandbox), on
+// the processor the runtime last said it has. Before any runtime has answered it's this machine's
+// processor, which is right everywhere but a server whose Docker runs in a virtual machine of
+// another kind.
 func (b *DockerBackend) platform() (string, string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	if b.settings.Runtime == docker.RuntimeHost || (b.settings.Runtime == docker.RuntimeLocal && runtime.GOOS == "freebsd") {
+		return runtime.GOOS, runtime.GOARCH
+	}
 	if b.machine.Arch != "" {
 		return "linux", b.machine.Arch
 	}
@@ -162,6 +186,8 @@ func (b *DockerBackend) runtime(ctx context.Context) (docker.Runtime, docker.Sta
 	if rt == nil {
 		if kind == docker.RuntimeLocal {
 			rt = b.Local
+		} else if kind == docker.RuntimeHost {
+			rt = b.Host
 		} else {
 			if b.connect == nil {
 				return nil, docker.Status{Error: docker.ErrUnavailable.Error()}, docker.ErrUnavailable
@@ -401,15 +427,18 @@ func (b *DockerBackend) ready(ctx context.Context, e *emulators.Emulator, consol
 	if set.Overrides[e.ID] == docker.BackendProcess {
 		return nil, docker.Status{}, nil, "", refuse("turned-off", "An administrator has turned %s off.", e.Name)
 	}
+	if e.Own && set.Runtime == docker.RuntimeDocker {
+		return nil, docker.Status{}, nil, "", refuse("own-in-container", "%s is a program on this server, which runs only on this computer, not in a container. An administrator can choose where emulators run in Settings, Standalone emulators.", e.Name)
+	}
 	var in *emulators.Installed
 	if b.inst != nil {
-		in = b.inst.Get(e.ID)
+		in = b.installed(e)
 	}
 	image := set.Images[e.ID]
 	if image == "" {
 		image = e.Image.Pinned()
 	}
-	local := set.Runtime == docker.RuntimeLocal
+	local := set.Runtime == docker.RuntimeLocal || set.Runtime == docker.RuntimeHost
 	// Not installed is fine only for an image that has the emulator in it.
 	if in == nil && (local || image == "") {
 		return nil, docker.Status{}, nil, "", refuse("not-installed", "%s isn't installed. An administrator can install it in Settings, Standalone emulators.", e.Name)
@@ -424,7 +453,7 @@ func (b *DockerBackend) ready(ctx context.Context, e *emulators.Emulator, consol
 	if err != nil {
 		what := "Docker isn't reachable on this server"
 		if local {
-			what = "This server can't run its own sandbox"
+			what = "This server can't run emulators itself"
 		}
 		return nil, st, nil, "", refuse("unavailable", "%s: %s", what, st.Error)
 	}
@@ -481,6 +510,14 @@ func (b *DockerBackend) Launch(ctx context.Context, o LaunchOptions) (*DockerSes
 func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker.Status, set docker.Settings, backend docker.Backend, emu *emulators.Emulator,
 	inst *emulators.Installed, image string, o LaunchOptions) (*DockerSession, error) {
 	localRT := backend == docker.BackendLocalWebRTC
+	hostRT := backend == docker.BackendHostWebRTC
+	var art *emulators.Artifact
+	if b.inst != nil {
+		art = b.inst.Artifact(emu)
+		if emu.Own {
+			art = emu.Here()
+		}
+	}
 	netInfo, err := rt.EnsureNetwork(ctx, docker.NetworkSpec{Name: set.Network, Internal: set.Internal})
 	if err != nil {
 		return nil, err
@@ -495,11 +532,15 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 	}
 	// This person's settings for this emulator and this game, written into the emulator's own
 	// files before it starts.
-	schema := schemaFor(emu)
+	schema := b.personSchema(emu, o.UserID)
 	admin, own, game := b.store.Layers(emu.ID, o.UserID, o.ItemID)
 	eff := emulators.Effective(schema, admin, own, game)
+	if hostRT {
+		eff = hostPaths(eff, saves, o.SystemDir)
+	}
 	plan := emulators.Plan(schema, eff)
-	if err := plan.WriteFiles(filepath.Join(saves, "config")); err != nil {
+	settingsDir := filepath.Join(saves, filepath.FromSlash(art.SettingsDir()))
+	if err := plan.WriteFiles(settingsDir); err != nil {
 		return nil, fmt.Errorf("writing %s's settings: %w", emu.Name, err)
 	}
 	w, h := sizeOf(eff)
@@ -510,13 +551,13 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 		limits.MemoryMB = st.MemoryMB * 3 / 4 // never promise more than the machine has
 	}
 
+	if err := writeInputMap(emu, settingsDir, eff, runtime.GOOS, hostRT); err != nil {
+		b.log.Warn("docker: the controllers couldn't be set up in the emulator's own settings", "emulator", emu.ID, "err", err)
+	}
 	rom := filepath.Clean(o.ROM)
 	var cmd []string
 	if inst != nil {
-		cmd = append(cmd, docker.ContainerProgram+"/"+inst.Entry)
-		cmd = append(cmd, emu.Args...)
-		cmd = append(cmd, plan.Args...)
-		cmd = append(cmd, docker.ContainerROM+"/"+filepath.Base(rom))
+		cmd = CommandLine(emu, art, inst.Entry, plan.Args, filepath.Base(rom))
 	}
 	// With nothing installed the image has the emulator in it, and runs it on WITTYPLAY_ROM.
 	req := docker.Request{
@@ -526,6 +567,14 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 	}
 	if inst != nil {
 		req.ProgramDir, req.AppImage = inst.Dir, strings.HasSuffix(strings.ToLower(inst.Entry), ".appimage")
+		if hostRT && art != nil && art.Portable {
+			// This build keeps everything beside itself: each person runs a copy of their own.
+			dir, err := portableCopy(inst, saves)
+			if err != nil {
+				return nil, fmt.Errorf("making %s's own copy for this person: %w", emu.Name, err)
+			}
+			req.ProgramDir = dir
+		}
 	}
 	if req.Encoder == "vaapi" && !set.GPU.DRI {
 		req.Encoder = "x264"
@@ -561,7 +610,11 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 		req.Stream = emulators.StreamPipe
 		bind := netInfo.Gateway
 		req.RTPHost = bind.String()
-		if localRT || set.PublishLoopback || !bind.IsValid() {
+		if hostRT {
+			// On this machine: the encoder beside the emulator sends to loopback.
+			bind = netip.MustParseAddr("127.0.0.1")
+			req.RTPHost = "127.0.0.1"
+		} else if localRT || set.PublishLoopback || !bind.IsValid() {
 			// Docker Desktop: the host isn't on the container's network. The local sandbox:
 			// nothing arrives over the network at all.
 			bind = netip.MustParseAddr("127.0.0.1")
@@ -606,11 +659,17 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 		fwd.Store(&sd)
 		req.Local, req.IODir, req.Image, req.PublishLoopback = true, dir, "", false
 	}
+	if hostRT {
+		req.Host, req.Image, req.PublishLoopback, req.GPU = true, "", false, docker.GPU{}
+		if req.Encoder == "vaapi" {
+			req.Encoder = "x264"
+		}
+	}
 	spec, err := docker.Build(req)
 	if err != nil {
 		return fail(err)
 	}
-	if !localRT && req.RTPHost == "host.docker.internal" {
+	if !localRT && !hostRT && req.RTPHost == "host.docker.internal" {
 		spec.ExtraHosts = []string{"host.docker.internal:host-gateway"}
 	}
 	c, err := lc.Start(ctx, spec)
@@ -619,7 +678,15 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 	}
 	ds.c = c
 
-	if !localRT {
+	if hostRT {
+		hr, ok := rt.(*host.Runtime)
+		if !ok {
+			_ = lc.Stop(context.WithoutCancel(ctx), sid)
+			return fail(errors.New("this machine's runtime isn't the one that takes input"))
+		}
+		var sd sender = &hostSender{rt: hr, id: c.Info.ID}
+		fwd.Store(&sd)
+	} else if !localRT {
 		inputAddr := net.JoinHostPort(c.Info.IP.String(), strconv.Itoa(docker.InputPort))
 		if set.PublishLoopback {
 			inputAddr = net.JoinHostPort("127.0.0.1", strconv.Itoa(c.Info.HostPorts[strconv.Itoa(docker.InputPort)+"/tcp"]))
@@ -746,14 +813,14 @@ func commonSettings() []emulators.Setting {
 		{Key: "stream.fps", Kind: emulators.KindChoice, Label: "Frames a second", Default: "60", Scope: emulators.ScopeAdmin,
 			Choices: []emulators.Choice{{Value: "30", Label: "30"}, {Value: "60", Label: "60"}}},
 		{Key: "stream.encoder", Kind: emulators.KindChoice, Label: "Encode the picture with", Default: "x264", Scope: emulators.ScopeAdmin,
-			Choices: []emulators.Choice{{Value: "x264", Label: "The processor (x264)"}, {Value: "vaapi", Label: "The graphics card (VA-API; needs it passed through)"}}},
+			Choices: encoderChoices()},
 		{Key: "stream.kbps", Kind: emulators.KindNumber, Label: "Most bitrate (kbit/s)", Default: float64(6000), Min: 800, Max: 20000, Step: 100, Scope: emulators.ScopeUser,
 			Help: "The stream starts here and drops by itself when the connection loses too much, then climbs back."},
 	}
 	for p := 1; p <= inputagent.MaxPlayers; p++ {
 		out = append(out, emulators.Setting{Key: "keys.p" + strconv.Itoa(p), Kind: emulators.KindMap, Label: "Keys for player " + strconv.Itoa(p), Default: map[string]any{},
 			MapOf: emulators.KindText, MapKeys: buttons, Scope: emulators.ScopeAdmin,
-			Help: "The key each controller button presses in the emulator (an X key name such as z, Return, KP_1). Leave one empty for WittyPlay's own. The emulator's settings must map the same keys to its controller."})
+			Help: "The key each controller button presses in the emulator (an X key name such as z, Return, KP_1). Leave one empty for WittyPlay's own. WittyPlay writes the same keys into the emulator's own controller settings before each game, for as many players as it takes."})
 	}
 	return out
 }
@@ -763,9 +830,11 @@ var buttonLabels = map[string]string{"b": "B (bottom)", "y": "Y (left)", "select
 	"lup": "Left stick up", "ldown": "Left stick down", "lleft": "Left stick left", "lright": "Left stick right",
 	"rup": "Right stick up", "rdown": "Right stick down", "rleft": "Right stick left", "rright": "Right stick right"}
 
-// schemaFor is every setting of one emulator: the common ones, then its own from the list.
+// schemaFor is every setting of one emulator: the common ones, then the list's own for it, then
+// every other option its own configuration declares (emulators/schemas). An own program that's a
+// build of a listed emulator has that one's.
 func schemaFor(e *emulators.Emulator) []emulators.Setting {
-	return append(commonSettings(), e.Settings...)
+	return append(commonSettings(), emulators.FullSchema(e.Settings, e.Base())...)
 }
 
 func textOf(v emulators.Values, key string) string {
@@ -1019,6 +1088,8 @@ func (b *DockerBackend) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /docker/sessions/{sid}/pause", b.user(b.servePause(true)))
 	mux.HandleFunc("POST /docker/sessions/{sid}/resume", b.user(b.servePause(false)))
 	mux.HandleFunc("DELETE /docker/sessions/{sid}", b.user(b.serveStop))
+	mux.HandleFunc("GET /docker/own", b.admin(b.serveOwn))
+	mux.HandleFunc("PUT /docker/own", b.admin(b.serveSetOwn))
 	mux.HandleFunc("/kasm/", b.serveKasm)
 }
 
@@ -1081,6 +1152,17 @@ func (b *DockerBackend) localStatus() localStatus {
 	return localStatus{Available: true}
 }
 
+// hostStatus says whether this machine can run an emulator on its own desktop (a Mac, Windows).
+func (b *DockerBackend) hostStatus() localStatus {
+	if b.HostMissing == nil {
+		return localStatus{Why: "not on this system"}
+	}
+	if m := b.HostMissing(); len(m) > 0 {
+		return localStatus{Why: strings.Join(m, "; ")}
+	}
+	return localStatus{Available: true}
+}
+
 func (b *DockerBackend) serveStatus(w http.ResponseWriter, r *http.Request, _ int64, _ bool) {
 	set := b.Settings()
 	_, st, err := b.runtime(r.Context())
@@ -1089,8 +1171,9 @@ func (b *DockerBackend) serveStatus(w http.ResponseWriter, r *http.Request, _ in
 		Runtime string `json:"runtime"`
 		docker.Status
 		Local      localStatus `json:"local"`
+		Desktop    localStatus `json:"desktop"`
 		Containers int         `json:"containers"`
-	}{set.Enabled, set.Runtime, st, b.localStatus(), b.Count()}
+	}{set.Enabled, set.Runtime, st, b.localStatus(), b.hostStatus(), b.Count()}
 	if errors.Is(err, errDockerOff) {
 		out.Status = docker.Status{Error: err.Error()}
 	}
@@ -1314,7 +1397,7 @@ func (b *DockerBackend) Catalog() ([]CatalogEntry, error) {
 			Installable: true, Bios: b.biosStatus(&e)}
 		var in *emulators.Installed
 		if b.inst != nil {
-			in = b.inst.Get(e.ID)
+			in = b.installed(&e)
 		}
 		if in != nil {
 			c.Installed = &InstalledJSON{in.ID, in.Version, in.SHA256, in.Source, in.InstalledAt}
@@ -1480,7 +1563,7 @@ type emuSettings struct {
 }
 
 func (b *DockerBackend) emuSettings(e *emulators.Emulator, user, game int64, admin bool) emuSettings {
-	schema := emulators.Offered(schemaFor(e))
+	schema := emulators.Offered(b.personSchema(e, user))
 	a, u, g := b.store.Layers(e.ID, user, game)
 	return emuSettings{Emulator: e.ID, Name: e.Name, Schema: schema, Admin: a, User: u, Game: g, Effective: emulators.Effective(schema, a, u, g), CanAdmin: admin}
 }
@@ -1532,7 +1615,7 @@ func (b *DockerBackend) serveSetEmuSettings(w http.ResponseWriter, r *http.Reque
 		writeJSONError(w, http.StatusBadRequest, "bad-setting", "scope is admin, user or game")
 		return
 	}
-	schema := schemaFor(e)
+	schema := b.personSchema(e, user)
 	vals, err := emulators.CleanValues(schema, body.Scope, body.Values)
 	var se *emulators.ScopeError
 	if errors.As(err, &se) {
@@ -1585,8 +1668,8 @@ func (b *DockerBackend) Offers(ctx context.Context, console, systemDir string) [
 		if set.Overrides[e.ID] == docker.BackendProcess {
 			continue
 		}
-		installed := b.inst != nil && b.inst.Get(e.ID) != nil
-		if !installed && (set.Runtime == docker.RuntimeLocal || (set.Images[e.ID] == "" && e.Image.Pinned() == "")) {
+		installed := b.inst != nil && b.installed(&e) != nil
+		if !installed && (set.Runtime == docker.RuntimeLocal || set.Runtime == docker.RuntimeHost || (set.Images[e.ID] == "" && e.Image.Pinned() == "")) {
 			continue // nobody has set it up: it isn't offered at all
 		}
 		o := Offer{ID: e.ID, Name: e.Name, Version: e.Version, Stream: e.Stream, Experimental: e.Experimental, NeedsBios: e.NeedsBios}
@@ -1598,6 +1681,29 @@ func (b *DockerBackend) Offers(ctx context.Context, console, systemDir string) [
 			o.Ready = true
 		}
 		out = append(out, o)
+	}
+	return out
+}
+
+// ConsoleOffers is Offers for every console an emulator in the list plays, those with none left
+// out. With the backend off it's empty.
+func (b *DockerBackend) ConsoleOffers(ctx context.Context, systemDir string) map[string][]Offer {
+	out := map[string][]Offer{}
+	m, err := emulators.Builtin()
+	if err != nil || !b.Settings().Enabled {
+		return out
+	}
+	seen := map[string]bool{}
+	for _, e := range m.Emulators {
+		for _, c := range e.Systems {
+			if seen[c] {
+				continue
+			}
+			seen[c] = true
+			if list := b.Offers(ctx, c, systemDir); len(list) > 0 {
+				out[c] = list
+			}
+		}
 	}
 	return out
 }

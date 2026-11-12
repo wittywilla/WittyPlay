@@ -43,6 +43,8 @@ func newRig(t *testing.T) *rig {
 	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
 	mgr := stream.NewManager(stream.Config{Log: quiet, LoopbackOnly: true})
 	b := NewDockerBackend(dir, func() (docker.Runtime, error) { return fake, nil }, mgr, quiet)
+	// These tests are of the container backend, whatever this machine would start with.
+	b.settings.Runtime = docker.RuntimeDocker
 	t.Cleanup(b.StopAll)
 	mux := http.NewServeMux()
 	b.Routes(mux)
@@ -69,6 +71,9 @@ func itoa(n int) string { b, _ := json.Marshal(n); return string(b) }
 func (r *rig) enable(t *testing.T, extra string) {
 	t.Helper()
 	body := `{"docker.enabled":true,"docker.publishLoopback":true` + extra + `}`
+	if !strings.Contains(extra, "docker.runtime") {
+		body = `{"docker.enabled":true,"docker.runtime":"docker","docker.publishLoopback":true` + extra + `}`
+	}
 	if w := r.as(t, 1, true, "PUT", "/docker/settings", body); w.Code != http.StatusOK {
 		t.Fatalf("enabling: %d %s", w.Code, w.Body)
 	}
@@ -548,7 +553,7 @@ func TestDockerCatalogAndInstalled(t *testing.T) {
 	r := newRig(t)
 	w := r.as(t, 1, true, "GET", "/docker/emulators", "")
 	var list []CatalogEntry
-	if err := json.Unmarshal(w.Body.Bytes(), &list); err != nil || len(list) < 10 {
+	if err := json.Unmarshal(w.Body.Bytes(), &list); err != nil || len(list) < 9 {
 		t.Fatalf("catalog: %d %s", w.Code, w.Body)
 	}
 	for _, c := range list {
@@ -819,7 +824,7 @@ func TestBiosStatus(t *testing.T) {
 // console id, so the list has to use WittyPlay's own ids, or be for a console an administrator
 // adds as a custom one.
 func TestEmulatorsNameConsolesTheLibraryHas(t *testing.T) {
-	custom := []string{"gamecube", "wii", "xbox", "wiiu", "ps3", "naomi", "switch", "switch2"}
+	var custom []string // every console an emulator plays is the library's own now
 	m, err := emulators.Builtin()
 	if err != nil {
 		t.Fatal(err)
@@ -834,7 +839,7 @@ func TestEmulatorsNameConsolesTheLibraryHas(t *testing.T) {
 			}
 		}
 	}
-	if len(emulators.ForSystem("custom-gamecube")) == 0 || len(emulators.ForSystem("dc")) == 0 || len(emulators.ForSystem("ps1")) == 0 {
+	if len(emulators.ForSystem("gc")) == 0 || len(emulators.ForSystem("custom-gamecube")) == 0 || len(emulators.ForSystem("dc")) == 0 || len(emulators.ForSystem("ps1")) == 0 {
 		t.Error("an emulator isn't found by its console")
 	}
 }

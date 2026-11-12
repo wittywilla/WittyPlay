@@ -167,6 +167,15 @@ func init() {
 		}
 		return []any{Docker.Offers(ctx, console, systemDir)}, nil, nil
 	}
+	// Every console with an emulator set up for it, for the server's console list: a console no
+	// core plays (Xbox, PS3, Wii U) is ready when one of these is.
+	Handlers["docker.ConsoleOffers"] = func(ctx context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
+		var systemDir string
+		if err := service.Arg(args, 0, &systemDir); err != nil {
+			return nil, nil, err
+		}
+		return []any{Docker.ConsoleOffers(ctx, systemDir)}, nil, nil
+	}
 	Handlers["stream.Manager.Start"] = func(ctx context.Context, _ json.RawMessage, args []json.RawMessage) ([]any, any, error) {
 		var o stream.Options
 		if err := service.Arg(args, 0, &o); err != nil {
