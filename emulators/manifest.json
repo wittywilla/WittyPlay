@@ -1262,7 +1262,7 @@
    "bios": [
     {
      "name": "prod.keys",
-     "note": "The keys from a Switch or Switch 2 you own. Copied into each person's Lichii before it starts."
+     "note": "Optional: Lichii plays Switch 2 games without them. The keys from a Switch or Switch 2 you own, which Switch games need. Copied into each person's Lichii before it starts."
     },
     {
      "name": "title.keys",
@@ -1270,10 +1270,10 @@
     },
     {
      "name": "switch-firmware",
-     "note": "A folder: the firmware from a console you own, as Lichii installs it (its nand/system/Contents/registered folder)."
+     "note": "Optional, as for the keys. A folder: the firmware from a console you own, as Lichii installs it (its nand/system/Contents/registered folder)."
     }
    ],
-   "needsBios": true,
+   "needsBios": false,
    "artifacts": [],
    "display": "x11",
    "stream": "pipe",
@@ -1327,8 +1327,8 @@
     "notes": "Switch 2 games, and Switch games. Its own authors call it very experimental: expect rendering errors and crashes, and no frame rate is promised. Download it only from its GitHub releases: its README says lichii.org is fake.",
     "configDir": {
      "windows": "app/user/config",
-     "linux": "config/eden",
-     "darwin": "home/Library/Application Support/eden/config"
+     "linux": "config/lichii",
+     "darwin": "config/lichii"
     },
     "portable": [
      "windows"
@@ -1351,29 +1351,29 @@
      "linux": [
       {
        "from": "prod.keys",
-       "to": "data/eden/keys/prod.keys"
+       "to": "data/lichii/keys/prod.keys"
       },
       {
        "from": "title.keys",
-       "to": "data/eden/keys/title.keys"
+       "to": "data/lichii/keys/title.keys"
       },
       {
        "from": "switch-firmware",
-       "to": "data/eden/nand/system/Contents/registered"
+       "to": "data/lichii/nand/system/Contents/registered"
       }
      ],
      "darwin": [
       {
        "from": "prod.keys",
-       "to": "home/Library/Application Support/eden/keys/prod.keys"
+       "to": "data/lichii/keys/prod.keys"
       },
       {
        "from": "title.keys",
-       "to": "home/Library/Application Support/eden/keys/title.keys"
+       "to": "data/lichii/keys/title.keys"
       },
       {
        "from": "switch-firmware",
-       "to": "home/Library/Application Support/eden/nand/system/Contents/registered"
+       "to": "data/lichii/nand/system/Contents/registered"
       }
      ]
     }

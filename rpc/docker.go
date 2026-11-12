@@ -1519,7 +1519,9 @@ func (b *DockerBackend) Catalog() ([]CatalogEntry, error) {
 		}
 		if in != nil {
 			c.Installed = &InstalledJSON{in.ID, in.Version, in.SHA256, in.Source, in.InstalledAt}
-			c.UpdateAvailable = in.Version != e.Version
+			// One added by hand is whatever its owner installed: there's nothing for WittyPlay to
+			// update it to, and its version often can't be read at all.
+			c.UpdateAvailable = e.Manual == nil && in.Version != e.Version
 		}
 		art := e.For(goos, goarch)
 		switch {
@@ -1808,6 +1810,15 @@ func (b *DockerBackend) Offers(ctx context.Context, console, systemDir string) [
 			continue // nobody has set it up: it isn't offered at all
 		}
 		o := Offer{ID: e.ID, Name: e.Name, Version: e.Version, Stream: e.Stream, Experimental: e.Experimental, NeedsBios: e.NeedsBios}
+		if e.Manual != nil {
+			// Added by hand: it's whatever version its owner installed, which may not be known.
+			o.Version = ""
+			if installed {
+				if v := b.installed(&e).Version; v != "unknown" {
+					o.Version = v
+				}
+			}
+		}
 		if _, _, _, _, no := b.ready(ctx, &e, console); no != nil {
 			o.Why = no.Text
 		} else if e.NeedsBios && len(b.biosStatus(&e)) > 0 && !b.hasAnyBios(&e) {

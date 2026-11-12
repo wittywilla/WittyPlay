@@ -411,7 +411,14 @@ var (
 // is one that must never be offered: see sensitiveWords.
 func Sensitive(names ...string) bool {
 	for _, n := range names {
-		for _, w := range splitWords(n) {
+		words := splitWords(n)
+		// A multitap's port is a controller port, not a network one: PCSX2's MultitapPort1 is
+		// how players 3 and 4 plug in.
+		multitap := slices.ContainsFunc(words, func(w string) bool { return strings.EqualFold(w, "multitap") })
+		for _, w := range words {
+			if multitap && strings.EqualFold(w, "port") {
+				continue
+			}
 			if sensitiveWords[strings.ToLower(w)] {
 				return true
 			}

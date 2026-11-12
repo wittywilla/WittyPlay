@@ -90,13 +90,15 @@ func realPath(p string) string {
 	return p
 }
 
-// Profile is the sandbox an emulator runs in: no network at all, no programs but its own, and
+// Profile is the sandbox an emulator runs in: no network but a port bound on loopback, no programs but its own, and
 // writing only to its own save folder and the per-user cache folder macOS gives every program
 // (where the graphics driver keeps compiled shaders); its temporary folder is in its save folder.
 // It can read what any program here can, which a game's own file and its BIOS need.
 func Profile(appDir, saveDir, cacheDir string) string {
 	var b strings.Builder
-	b.WriteString(`(version 1)(allow default)(deny network*)`)
+	// No network, except binding a port on this machine's loopback: some emulators (Lichii's
+	// UDP services) won't start without that, and a bound port reaches nothing by itself.
+	b.WriteString(`(version 1)(allow default)(deny network*)(allow network-bind (local ip "localhost:*"))`)
 	b.WriteString(`(deny process-exec*)(allow process-exec (subpath ` + sbpl(realPath(appDir)) + `))`)
 	b.WriteString(`(deny file-write*)(allow file-write* (subpath ` + sbpl(realPath(saveDir)) + `)`)
 	if cacheDir != "" {
