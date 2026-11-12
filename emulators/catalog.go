@@ -150,6 +150,10 @@ type Emulator struct {
 	// NeedsBios: it won't start a game without firmware of the person's own.
 	NeedsBios bool  `json:"needsBios,omitempty"`
 	Image     Image `json:"image"`
+	// Seed are firmware files the emulator writes to (xemu's hard disk image): each is copied
+	// from the BIOS folder into the person's own folder the first time, as the BIOS folder is
+	// given read-only.
+	Seed []string `json:"seed,omitempty"`
 	// Own: an administrator's own program (own.go), never in the built-in list. Like is the
 	// emulator in the list it's a build of, whose settings it takes.
 	Own  bool   `json:"own,omitempty"`
@@ -361,6 +365,11 @@ func (m *Manifest) Validate() error {
 		}
 		if err := checkSettings(e.Settings); err != nil {
 			return bad("%v", err)
+		}
+		for _, f := range e.Seed {
+			if f == "" || !filepath.IsLocal(f) || filepath.Base(f) != f {
+				return bad("the firmware file %q to copy isn't a plain name", f)
+			}
 		}
 		plat := map[string]bool{}
 		for _, a := range e.Artifacts {

@@ -597,16 +597,101 @@
    "bios": [
     {
      "name": "mcpx_1.0.bin",
-     "note": "The Xbox boot ROM."
+     "note": "The Xbox boot ROM, from an Xbox you own. xemu is pointed at this name."
+    },
+    {
+     "name": "Complex_4627.bin",
+     "note": "An Xbox BIOS (kernel) image, from an Xbox you own, under this name: xemu is pointed at it."
     },
     {
      "name": "xbox_hdd.qcow2",
-     "note": "An Xbox hard disk image."
+     "note": "An Xbox hard disk image. Each person gets a copy of their own the first time, as xemu writes to it."
+    }
+   ],
+   "settings": [
+    {
+     "key": "sys.files.bootromPath",
+     "kind": "text",
+     "label": "Boot ROM",
+     "default": "/bios/mcpx_1.0.bin",
+     "scope": "admin",
+     "fixed": true,
+     "apply": {
+      "file": {
+       "file": "xemu.toml",
+       "format": "toml",
+       "path": [
+        "sys",
+        "files",
+        "bootrom_path"
+       ],
+       "type": "string"
+      }
+     }
     },
     {
-     "name": "*.bin",
-     "note": "An Xbox BIOS (kernel) image."
+     "key": "sys.files.flashromPath",
+     "kind": "text",
+     "label": "BIOS",
+     "default": "/bios/Complex_4627.bin",
+     "scope": "admin",
+     "fixed": true,
+     "apply": {
+      "file": {
+       "file": "xemu.toml",
+       "format": "toml",
+       "path": [
+        "sys",
+        "files",
+        "flashrom_path"
+       ],
+       "type": "string"
+      }
+     }
+    },
+    {
+     "key": "sys.files.eepromPath",
+     "kind": "text",
+     "label": "EEPROM",
+     "default": "/saves/eeprom.bin",
+     "scope": "admin",
+     "fixed": true,
+     "apply": {
+      "file": {
+       "file": "xemu.toml",
+       "format": "toml",
+       "path": [
+        "sys",
+        "files",
+        "eeprom_path"
+       ],
+       "type": "string"
+      }
+     }
+    },
+    {
+     "key": "sys.files.hddPath",
+     "kind": "text",
+     "label": "Hard disk image",
+     "default": "/saves/xbox_hdd.qcow2",
+     "scope": "admin",
+     "fixed": true,
+     "apply": {
+      "file": {
+       "file": "xemu.toml",
+       "format": "toml",
+       "path": [
+        "sys",
+        "files",
+        "hdd_path"
+       ],
+       "type": "string"
+      }
+     }
     }
+   ],
+   "seed": [
+    "xbox_hdd.qcow2"
    ]
   },
   {

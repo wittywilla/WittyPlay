@@ -176,3 +176,27 @@ func encoderChoices() []emulators.Choice {
 	}
 	return out
 }
+
+// seedFirmware copies the firmware an emulator writes to (xemu's hard disk image) from the BIOS
+// folder into the person's own folder, the first time: the BIOS folder is everyone's and is given
+// to the emulator read-only. A file that isn't there is the BIOS check's to report, not this.
+func seedFirmware(e *emulators.Emulator, biosDir, saves string) error {
+	if biosDir == "" {
+		return nil
+	}
+	for _, name := range e.Seed {
+		to := filepath.Join(saves, name)
+		if _, err := os.Lstat(to); err == nil {
+			continue
+		}
+		from := filepath.Join(biosDir, name)
+		st, err := os.Stat(from)
+		if err != nil || !st.Mode().IsRegular() {
+			continue
+		}
+		if err := copyFile(from, to, 0o600); err != nil {
+			return err
+		}
+	}
+	return nil
+}

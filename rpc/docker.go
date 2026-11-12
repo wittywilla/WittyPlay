@@ -551,6 +551,9 @@ func (b *DockerBackend) launch(ctx context.Context, rt docker.Runtime, st docker
 		limits.MemoryMB = st.MemoryMB * 3 / 4 // never promise more than the machine has
 	}
 
+	if err := seedFirmware(emu, o.SystemDir, saves); err != nil {
+		return nil, fmt.Errorf("copying %s's firmware for this person: %w", emu.Name, err)
+	}
 	if err := writeInputMap(emu, settingsDir, eff, runtime.GOOS, hostRT); err != nil {
 		b.log.Warn("docker: the controllers couldn't be set up in the emulator's own settings", "emulator", emu.ID, "err", err)
 	}

@@ -109,7 +109,7 @@ Every emulator has these, which WittyPlay itself uses:
 | `stream.kbps` | user | The most bitrate, 800 to 20000, default 6000 |
 | `keys.p1` … `keys.p4` | admin | Which X key each controller button presses, for each of four players |
 
-And its own from the list, each saying where its value goes: a key in one of the emulator's INI files, a variable, or words on its command line. They're written before each start into the person's own settings folder for that emulator (`/saves/config` inside). PCSX2, Dolphin, PPSSPP and Flycast have a graphics backend, resolution scale and widescreen; the others have the common settings only, and their own menus for the rest (reachable when shown as a desktop). **The emulators' own key names were written from their documentation and haven't been run.**
+And its own from the list, each saying where its value goes: a key in one of the emulator's INI files, a variable, or words on its command line. They're written before each start into the person's own settings folder for that emulator (`/saves/config` inside). Every emulator has every option its own configuration declares, generated from its source at the pinned version, plus anything found in the person's own files: see [STANDALONE-EMULATORS.md, Settings](STANDALONE-EMULATORS.md#settings). The keys come from the emulators' source; none has been run with them yet.
 
 Firmware: an emulator's entry names the files it looks for (`ps2-*.bin`, `keys.txt` …). The list and the game's page say which are in the server's BIOS folder; the folder is mounted read-only at `/bios`. A game whose emulator needs firmware isn't started without any.
 
@@ -278,7 +278,7 @@ Written plainly, so nobody takes a passing test for a played game. On the machin
 - **The local sandbox** has unit tests for every flag it passes and for its socket, and has never started bubblewrap. `wittyplay-input-agent` isn't yet among the programs the module ships.
 - **Rootless Docker and Podman** are documented from their own documentation. Podman may not accept every option WittyPlay sets on its network.
 - **KasmVNC inside a sandboxed frame.** The frame has no origin of its own to keep storage in; KasmVNC's page may need a change to work that way. If it doesn't work, it fails closed: nothing is shown, and nothing is exposed.
-- **Each emulator's own settings keys and command-line arguments** are from their documentation.
+- **Each emulator's own settings keys and command-line arguments** are from their source and documentation, not from running them.
 - **Whether the server's sandbox for modules lets this module reach a Docker socket** hasn't been checked on Linux.
 - **Delay** has a budget and a way to measure it, and no measurement.
 
