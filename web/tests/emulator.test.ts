@@ -83,6 +83,7 @@ describe('the session', () => {
   test('a stream or a desktop, by its backend', () => {
     assert.equal(showingOf({ backend: 'docker+webrtc', connect: '/c' }), 'stream')
     assert.equal(showingOf({ backend: 'local+webrtc', connect: '/c' }), 'stream')
+    assert.equal(showingOf({ backend: 'host+webrtc', connect: '/c' }), 'stream')
     assert.equal(showingOf({ backend: 'docker+kasmvnc', kasmUrl: '/k/1/' }), 'desktop')
     // What it needs is missing: nothing can be shown, and the player says so.
     assert.equal(showingOf({ backend: 'docker+webrtc' }), 'none')

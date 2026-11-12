@@ -10,7 +10,7 @@ import type { ControllerData } from './mapping'
 import type { Hello, StreamInfo } from './transport'
 import type { Explained } from './words'
 
-export type EmulatorBackend = 'docker+webrtc' | 'docker+kasmvnc' | 'local+webrtc'
+export type EmulatorBackend = 'docker+webrtc' | 'docker+kasmvnc' | 'local+webrtc' | 'host+webrtc'
 
 // What starting a game with an emulator answers (POST /api/v1/games/{id}/play/emulator).
 export type EmulatorSession = {
@@ -41,7 +41,7 @@ export interface EmulatorHost {
 export type Showing = 'stream' | 'desktop' | 'none'
 export function showingOf(s: Pick<EmulatorSession, 'backend' | 'connect' | 'kasmUrl'>): Showing {
   if (s.backend === 'docker+kasmvnc') return s.kasmUrl ? 'desktop' : 'none'
-  if (s.backend === 'docker+webrtc' || s.backend === 'local+webrtc') return s.connect ? 'stream' : 'none'
+  if (s.backend.endsWith('+webrtc')) return s.connect ? 'stream' : 'none'
   // A backend from after this player was written: go by what it gave.
   return s.connect ? 'stream' : s.kasmUrl ? 'desktop' : 'none'
 }
