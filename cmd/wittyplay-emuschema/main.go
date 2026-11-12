@@ -9,7 +9,8 @@
 //	go run ./cmd/wittyplay-emuschema                 # every emulator
 //	go run ./cmd/wittyplay-emuschema -emulator dolphin -cache /tmp/emusrc
 //
-// It reads the source over HTTPS from raw.githubusercontent.com, at a tag, and nothing else. A
+// It reads the source over HTTPS from raw.githubusercontent.com (or, for Ryujinx, its own forge),
+// at a tag, and nothing else. A
 // setting that is a path, an address, the updater or anything else that reaches outside the
 // sandbox is written fixed: never offered, always its default.
 package main
@@ -39,6 +40,9 @@ type source struct {
 	Extract func(files map[string]string) ([]option, error)
 	// KeyPrefix starts each setting's key, to keep two files' keys apart.
 	KeyPrefix func(option) string
+	// Raw and Home, for a project not on GitHub: the URL a file's path is added to, and the
+	// page the schema names as its source.
+	Raw, Home string
 }
 
 // The versions WittyPlay runs. Each tag was checked against the project's own repository.
@@ -52,6 +56,10 @@ var sources = map[string]source{
 	"cemu":    {Repo: "cemu-project/Cemu", Tag: "v2.6", Files: cemuFiles, Extract: extractCemu},
 	// RPCS3 tags its releases v0.0.43 and so on, not each build: build 20582 is this commit.
 	"rpcs3": {Repo: "RPCS3/rpcs3", Tag: "a90588e7ee8dc10aeaaa9441df674edd48d0d271", Files: rpcs3Files, Extract: extractRPCS3},
+	// Ryubing's Ryujinx left GitHub for its own Forgejo.
+	"ryujinx": {Repo: "ryubing/ryujinx", Tag: "1.3.3", Files: ryujinxFiles, Extract: extractRyujinx,
+		Raw: "https://git.ryujinx.app/ryubing/ryujinx/raw/tag/1.3.3/", Home: "https://git.ryujinx.app/ryubing/ryujinx/src/tag/1.3.3"},
+	"lichii": {Repo: "zortos293/Lichii", Tag: "build-160", Files: lichiiFiles, Extract: extractLichii},
 }
 
 // versions are what each schema says it was read from, where the tag isn't the version.
@@ -95,7 +103,7 @@ func run(id, outDir, cache string) ([2]int, []string, error) {
 	}
 	files := map[string]string{}
 	for _, p := range src.Files {
-		b, err := fetch(src.Repo, src.Tag, p, cache)
+		b, err := fetch(src, p, cache)
 		if err != nil {
 			return [2]int{}, nil, err
 		}
@@ -116,6 +124,9 @@ func run(id, outDir, cache string) ([2]int, []string, error) {
 		Source:   "https://github.com/" + src.Repo + "/tree/" + src.Tag,
 		Settings: list,
 	}
+	if src.Home != "" {
+		f.Source = src.Home
+	}
 	b, err := json.MarshalIndent(f, "", "  ")
 	if err != nil {
 		return [2]int{}, nil, err
@@ -130,7 +141,8 @@ func run(id, outDir, cache string) ([2]int, []string, error) {
 }
 
 // fetch reads one file of an emulator's source at a tag.
-func fetch(repo, tag, path, cache string) ([]byte, error) {
+func fetch(src source, path, cache string) ([]byte, error) {
+	repo, tag := src.Repo, src.Tag
 	var cached string
 	if cache != "" {
 		cached = filepath.Join(cache, filepath.FromSlash(repo), tag, filepath.FromSlash(path))
@@ -139,6 +151,9 @@ func fetch(repo, tag, path, cache string) ([]byte, error) {
 		}
 	}
 	url := "https://raw.githubusercontent.com/" + repo + "/" + tag + "/" + path
+	if src.Raw != "" {
+		url = src.Raw + path
+	}
 	client := &http.Client{Timeout: time.Minute}
 	resp, err := client.Get(url)
 	if err != nil {

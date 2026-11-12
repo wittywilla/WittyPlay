@@ -4,6 +4,7 @@
 package rpc
 
 import (
+	"encoding/json"
 	"os"
 	"path"
 	"path/filepath"
@@ -151,5 +152,28 @@ func TestSwitchKeysAndFirmware(t *testing.T) {
 	}
 	if !got["prod.keys"] || got["title.keys"] || !got["switch-firmware"] {
 		t.Errorf("status: %v", got)
+	}
+}
+
+// Ryujinx reads a Config.json only when it says its format's version: a person's first start
+// writes it, with every setting's default, into a file that wasn't there.
+func TestRyujinxSettingsFileIsRead(t *testing.T) {
+	e := emulators.Find("ryujinx")
+	schema := schemaFor(e)
+	plan := emulators.Plan(schema, emulators.Effective(schema, nil, nil, nil))
+	dir := t.TempDir()
+	if err := plan.WriteFiles(dir); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "Config.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["version"] != float64(70) || len(got) < 40 {
+		t.Errorf("version %v, %d keys", got["version"], len(got))
 	}
 }

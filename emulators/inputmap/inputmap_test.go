@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/wittywilla/wittyplay/emulators/configfile"
 	"github.com/wittywilla/wittyplay/sandbox/docker/inputagent"
 )
 
@@ -58,21 +59,46 @@ func TestDefaultKeysMapEverywhere(t *testing.T) {
 	}
 }
 
-// bindings counts what a set of targets writes, a whole file by its lines.
+// bindings counts what a set of targets writes, a whole file by its lines and a list or an
+// object by its values. A value that binds nothing (Lichii's "[empty]", Ryujinx's "Unbound")
+// doesn't count.
 func bindings(ts []Target) int {
 	n := 0
 	for _, t := range ts {
 		if t.Path == nil {
 			n += strings.Count(t.Value.(string), "<entry>")
-		} else if t.Value != "" {
-			n++
+		} else {
+			n += values(t.Value)
 		}
 	}
 	return n
 }
 
+func values(v any) int {
+	switch t := v.(type) {
+	case []any:
+		n := 0
+		for _, x := range t {
+			n += values(x)
+		}
+		return n
+	case map[string]any:
+		n := 0
+		for _, x := range t {
+			n += values(x)
+		}
+		return n
+	case string:
+		if t == "" || t == "[empty]" || t == "Unbound" {
+			return 0
+		}
+	}
+	return 1
+}
+
 func TestPlayers(t *testing.T) {
-	want := map[string]int{"pcsx2": 4, "dolphin": 4, "flycast": 4, "rpcs3": 2, "ppsspp": 1, "melonds": 1, "xemu": 1, "cemu": 1, "duckstation": 0}
+	want := map[string]int{"pcsx2": 4, "dolphin": 4, "flycast": 4, "rpcs3": 2, "ppsspp": 1, "melonds": 1, "xemu": 1, "cemu": 1, "duckstation": 0,
+		"ryujinx": 3, "lichii": 2}
 	for emu, n := range want {
 		if got := Players(emu); got != n {
 			t.Errorf("Players(%q) = %d, want %d", emu, got, n)
@@ -100,6 +126,10 @@ func TestRefusals(t *testing.T) {
 		{"pcsx2", "plan9", defaults(), "weren't verified"},
 		{"flycast", "linux", dup, "same key"},
 		{"rpcs3", "linux", kp, "same key"},
+		// Lichii drops the keypad modifier on every OS.
+		{"lichii", "windows", kp, "same key"},
+		// Avalonia's Enter and Return are one key, so the keypad's Enter is Return to Ryujinx.
+		{"ryujinx", "linux", func() KeyMap { k := one(0, "start", "Return"); k[0]["select"] = "KP_Enter"; return k }(), "same key"},
 		// PPSSPP's Windows frontend sees the keypad's Enter as Enter.
 		{"ppsspp", "windows", func() KeyMap { k := one(0, "start", "Return"); k[0]["select"] = "KP_Enter"; return k }(), "same key"},
 	} {
@@ -169,6 +199,175 @@ func TestSpotChecks(t *testing.T) {
 		if !slices.ContainsFunc(got, func(g Target) bool { return reflect.DeepEqual(g, c.want) }) {
 			t.Errorf("%s on %s: no %+v", c.emu, c.goos, c.want)
 		}
+	}
+}
+
+// Ryujinx's players are one list, written whole: every button of every player is bound, as the
+// Key enum names it (src/Ryujinx.Common/Configuration/Hid/Key.cs), the rest Unbound.
+func TestRyujinxInputConfig(t *testing.T) {
+	for _, goos := range allOS {
+		got, err := Targets("ryujinx", goos, defaults())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 1 || got[0].File != "Config.json" || got[0].Format != "json" || !reflect.DeepEqual(got[0].Path, []string{"input_config"}) {
+			t.Fatalf("%s: %+v", goos, got)
+		}
+		list := got[0].Value.([]any)
+		if len(list) != Players("ryujinx") {
+			t.Fatalf("%d players", len(list))
+		}
+		// build itself writes four players when it's given four: the default map less the
+		// second player's keypad Enter, which is the first's Return to Ryujinx.
+		var four [][]bound
+		for p, m := range defaults() {
+			var bs []bound
+			for _, b := range ryujinx.buttons {
+				if k, ok := lookup(m[b]); ok && !(p == 1 && b == "rright") {
+					bs = append(bs, bound{b, k})
+				}
+			}
+			four = append(four, bs)
+		}
+		list = ryujinx.build(goos, four)[0].Value.([]any)
+		if len(list) != 4 {
+			t.Fatalf("%d players", len(list))
+		}
+		seen := map[string]bool{}
+		for p, e := range list {
+			entry := e.(map[string]any)
+			for k, want := range map[string]any{"backend": "WindowKeyboard", "id": "0", "controller_type": "ProController",
+				"player_index": fmt.Sprint("Player", p+1), "version": int64(1)} {
+				if entry[k] != want {
+					t.Errorf("player %d: %s is %v, want %v", p+1, k, entry[k], want)
+				}
+			}
+			for b, name := range ryujinxNames {
+				g, key, _ := strings.Cut(name, "/")
+				v := entry[g].(map[string]any)[key].(string)
+				if defaults()[p][b] == "" || (p == 1 && b == "rright") {
+					if v != "Unbound" {
+						t.Errorf("player %d's %s: %s", p+1, b, v)
+					}
+					continue
+				}
+				if v == "Unbound" || v == "" || seen[v] {
+					t.Errorf("player %d's %s: %q is unbound or taken", p+1, b, v)
+				}
+				seen[v] = true
+			}
+			for _, g := range []string{"left_joycon", "right_joycon"} {
+				m := entry[g].(map[string]any)
+				if m["button_sl"] != "Unbound" || m["button_sr"] != "Unbound" {
+					t.Errorf("player %d: %s's side buttons: %v", p+1, g, m)
+				}
+			}
+		}
+		key := func(p int, g, k string) any { return list[p].(map[string]any)[g].(map[string]any)[k] }
+		for _, c := range []struct {
+			p    int
+			g, k string
+			want string
+		}{
+			{0, "right_joycon", "button_b", "Z"},
+			{0, "right_joycon", "button_plus", "Enter"},
+			{0, "left_joycon", "button_minus", "BackSpace"},
+			{0, "left_joycon_stick", "stick_up", "I"},
+			{1, "right_joycon", "button_b", "Keypad2"},
+			{1, "left_joycon", "button_minus", "KeypadSubtract"},
+			{1, "left_joycon", "dpad_right", "PageDown"},
+			{1, "left_joycon_stick", "stick_right", "PageUp"},
+			{1, "right_joycon_stick", "stick_up", "C"},
+			{2, "right_joycon", "button_b", "Number1"},
+			{2, "left_joycon_stick", "stick_down", "Plus"},
+			{3, "right_joycon", "button_b", "F1"},
+		} {
+			if got := key(c.p, c.g, c.k); got != c.want {
+				t.Errorf("%s: player %d's %s.%s is %v, want %s", goos, c.p+1, c.g, c.k, got, c.want)
+			}
+		}
+		// It goes into a real Config.json and leaves the rest of it alone.
+		old := []byte(`{"version": 70, "res_scale": 2, "input_config": [{"backend": "GamepadSDL2", "id": "x"}]}`)
+		out, err := configfile.Apply("json", old, []configfile.Edit{{Path: got[0].Path, Value: list}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(out), `"res_scale": 2`) || strings.Contains(string(out), "GamepadSDL2") ||
+			strings.Count(string(out), `"backend": "WindowKeyboard"`) != 4 {
+			t.Errorf("%s:\n%s", goos, out)
+		}
+	}
+	if got := Reserved("ryujinx", "linux", one(0, "start", "F5")); !reflect.DeepEqual(got, []string{"player 1's start (F5)"}) {
+		t.Errorf("Reserved = %v", got)
+	}
+}
+
+// Lichii reads each value only with "\default = false" beside it, and every mapping of each
+// player is written so its own defaults (the same keys for every player) don't stay bound.
+func TestLichiiControls(t *testing.T) {
+	got, err := Targets("lichii", "linux", defaults())
+	if err != nil {
+		t.Fatal(err)
+	}
+	const file = "qt-config.ini"
+	at := map[string]string{}
+	for _, g := range got {
+		if g.File != file || g.Format != "ini" || g.Path[0] != "Controls" {
+			t.Fatalf("%+v", g)
+		}
+		at[g.Path[1]] = g.Value.(string)
+	}
+	for p := range 2 {
+		prefix := fmt.Sprint("player_", p, "_")
+		for _, m := range append([]string{"connected", "type"}, lichiiMappings...) {
+			if _, ok := at[prefix+m]; !ok {
+				t.Errorf("no %s%s", prefix, m)
+			}
+			if at[prefix+m+`\default`] != "false" {
+				t.Errorf("%s%s isn't marked as set", prefix, m)
+			}
+		}
+		if at[prefix+"connected"] != "true" || at[prefix+"type"] != "0" {
+			t.Errorf("player %d isn't a connected Pro Controller", p+1)
+		}
+		for _, m := range []string{"button_home", "button_screenshot", "button_slleft", "button_srright", "motionleft", "motionright"} {
+			if at[prefix+m] != "[empty]" {
+				t.Errorf("%s%s: %s", prefix, m, at[prefix+m])
+			}
+		}
+	}
+	if len(got) != 2*2*(2+len(lichiiMappings)) {
+		t.Errorf("%d targets", len(got))
+	}
+	for key, want := range map[string]string{
+		// Qt::Key_Z is 0x5A; the keypad's 2 is Qt::Key_2 without its modifier.
+		"player_0_button_b":     "engine:keyboard,code:90,toggle:0",
+		"player_0_button_plus":  "engine:keyboard,code:16777220,toggle:0",
+		"player_1_button_b":     "engine:keyboard,code:50,toggle:0",
+		"player_1_button_minus": "engine:keyboard,code:45,toggle:0",
+		"player_0_lstick": "engine:analog_from_button,up:engine$0keyboard$1code$073$1toggle$00,down:engine$0keyboard$1code$075$1toggle$00," +
+			"left:engine$0keyboard$1code$074$1toggle$00,right:engine$0keyboard$1code$076$1toggle$00," +
+			"modifier:engine$0keyboard$1code$00$1toggle$00,modifier_scale:0.500000",
+	} {
+		if at[key] != want {
+			t.Errorf("%s = %q, want %q", key, at[key], want)
+		}
+	}
+	// On macOS the Help key stands where Insert is.
+	mac, err := Targets("lichii", "darwin", defaults())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.ContainsFunc(mac, func(g Target) bool { return strings.Contains(g.Value.(string), "code$016777304$1") }) {
+		t.Error("no Qt::Key_Help on macOS")
+	}
+	// The values go into an INI file as they are.
+	edits := make([]configfile.Edit, 0, len(got))
+	for _, g := range got {
+		edits = append(edits, configfile.Edit{Path: g.Path, Value: g.Value})
+	}
+	if _, err := configfile.Apply("ini", []byte("[Controls]\nplayer_0_button_a\\default=true\n"), edits); err != nil {
+		t.Error(err)
 	}
 }
 

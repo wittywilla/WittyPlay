@@ -626,6 +626,334 @@ struct CemuConfig
 	}
 }
 
+func TestRyujinx(t *testing.T) {
+	files := map[string]string{
+		// ryubing/ryujinx 1.3.3, src/Ryujinx/Systems/Configuration/ConfigurationFileFormat.cs (MIT)
+		"src/Ryujinx/Systems/Configuration/ConfigurationFileFormat.cs": `
+    public class ConfigurationFileFormat
+    {
+        public const int CurrentVersion = 70;
+        public int Version { get; set; }
+        /// <summary>
+        /// Enables or disables logging to a file on disk
+        /// </summary>
+        public bool EnableFileLog { get; set; }
+        public int ResScale { get; set; }
+        public float MaxAnisotropy { get; set; }
+        public AspectRatio AspectRatio { get; set; }
+        public string GraphicsShadersDumpPath { get; set; }
+        public string SystemTimeZone { get; set; }
+        public bool MatchSystemTime { get; set; }
+        public bool EnableVsync { get; set; }
+        public VSyncMode VSyncMode { get; set; }
+        public bool EnableMacroHLE { get; set; }
+        public long TickScalar { get; set; }
+        public MemoryConfiguration DramSize { get; set; }
+        public bool ShowTitleBar { get; set; }
+        public GuiColumns GuiColumns { get; set; }
+        public List<string> GameDirs { get; set; }
+        public GraphicsBackend GraphicsBackend { get; set; }
+        public string MultiplayerLdnPassphrase { get; set; }
+    }`,
+		// ryubing/ryujinx 1.3.3, src/Ryujinx/Systems/Configuration/ConfigurationState.cs (MIT)
+		"src/Ryujinx/Systems/Configuration/ConfigurationState.cs": `
+        public ConfigurationFileFormat ToFileFormat()
+        {
+            ConfigurationFileFormat configurationFile = new()
+            {
+                Version = ConfigurationFileFormat.CurrentVersion,
+                EnableFileLog = Logger.EnableFileLog,
+                ResScale = Graphics.ResScale,
+                MaxAnisotropy = Graphics.MaxAnisotropy,
+                AspectRatio = Graphics.AspectRatio,
+                GraphicsShadersDumpPath = Graphics.ShadersDumpPath,
+                SystemTimeZone = System.TimeZone,
+                MatchSystemTime = System.MatchSystemTime,
+                VSyncMode = Graphics.VSyncMode,
+                EnableMacroHLE = Graphics.EnableMacroHLE,
+                TickScalar = System.TickScalar,
+                DramSize = System.DramSize,
+                ShowTitleBar = ShowOldUI,
+                GuiColumns = new GuiColumns
+                {
+                    FavColumn = UI.GuiColumns.FavColumn,
+                },
+                GameDirs = UI.GameDirs,
+                GraphicsBackend = Graphics.GraphicsBackend,
+                MultiplayerLdnPassphrase = Multiplayer.LdnPassphrase,
+            };
+            return configurationFile;
+        }
+
+        public void LoadDefault()
+        {
+            Logger.EnableFileLog.Value = true;
+            Graphics.ResScale.Value = 1;
+            Graphics.MaxAnisotropy.Value = -1.0f;
+            Graphics.AspectRatio.Value = AspectRatio.Fixed16x9;
+            Graphics.GraphicsBackend.Value = DefaultGraphicsBackend();
+            Graphics.ShadersDumpPath.Value = string.Empty;
+            System.TimeZone.Value = "UTC";
+            ShowOldUI.Value = !OperatingSystem.IsWindows();
+            Graphics.VSyncMode.Value = VSyncMode.Switch;
+            Graphics.EnableMacroHLE.Value = true;
+            System.DramSize.Value = MemoryConfiguration.MemoryConfiguration4GiB;
+            Multiplayer.LdnPassphrase.Value = string.Empty;
+        }`,
+		// ryubing/ryujinx 1.3.3, src/Ryujinx.Common/Configuration/AspectRatioExtensions.cs,
+		// VSyncMode.cs, GraphicsBackend.cs and src/Ryujinx.HLE/MemoryConfiguration.cs (MIT)
+		"src/Ryujinx.Common/Configuration/AspectRatioExtensions.cs": `
+    [JsonConverter(typeof(TypedStringEnumConverter<AspectRatio>))]
+    public enum AspectRatio
+    {
+        Fixed4x3,
+        Fixed16x9,
+        Stretched,
+    }`,
+		"src/Ryujinx.Common/Configuration/VSyncMode.cs": `
+    public enum VSyncMode
+    {
+        Switch,
+        Unbounded,
+        Custom
+    }`,
+		"src/Ryujinx.Common/Configuration/GraphicsBackend.cs": `
+    [JsonConverter(typeof(TypedStringEnumConverter<GraphicsBackend>))]
+    public enum GraphicsBackend
+    {
+        Vulkan,
+        OpenGl,
+    }`,
+		"src/Ryujinx.HLE/MemoryConfiguration.cs": `
+    public enum MemoryConfiguration
+    {
+        MemoryConfiguration4GiB = 0,
+        MemoryConfiguration6GiB = 1,
+        MemoryConfiguration4GiBAppletDev = 4,
+    }`,
+	}
+	opts, err := extractRyujinx(files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o := find(t, opts, "enable_file_log"); o.Default != true || o.File != "Config.json" || o.Format != "json" || o.Group != "Logging" {
+		t.Errorf("file log: %+v", o)
+	}
+	if o := find(t, opts, "res_scale"); o.Default != 1.0 || o.Type != "int" {
+		t.Errorf("res scale: %+v", o)
+	}
+	if o := find(t, opts, "max_anisotropy"); o.Default != -1.0 || o.Type != "float" {
+		t.Errorf("anisotropy: %+v", o)
+	}
+	// A TypedStringEnumConverter enum is written by name; any other by number.
+	if o := find(t, opts, "aspect_ratio"); o.Default != "Fixed16x9" || len(o.Choices) != 3 || o.Choices[0].Label != "Fixed 4x3" {
+		t.Errorf("aspect: %+v", o)
+	}
+	if o := find(t, opts, "vsync_mode"); o.Default != "0" || o.Choices[1] != (emulators.Choice{Value: "1", Label: "Unbounded"}) {
+		t.Errorf("vsync: %+v", o)
+	}
+	if o := find(t, opts, "dram_size"); o.Default != "0" || o.Choices[2] != (emulators.Choice{Value: "4", Label: "4GiB applet dev"}) {
+		t.Errorf("dram: %+v", o)
+	}
+	if o := find(t, opts, "enable_macro_hle"); o.Default != true || o.Group != "Graphics" {
+		t.Errorf("macro HLE: %+v", o)
+	}
+	if o := find(t, opts, "system_time_zone"); o.Default != "UTC" {
+		t.Errorf("time zone: %+v", o)
+	}
+	// Not set in LoadDefault: a bool starts false.
+	if o := find(t, opts, "match_system_time"); o.Default != false {
+		t.Errorf("match time: %+v", o)
+	}
+	if o := find(t, opts, "multiplayer_ldn_passphrase"); !o.Fixed {
+		t.Errorf("passphrase: %+v", o)
+	}
+	for _, gone := range []string{"version", "enable_vsync", "tick_scalar", "show_title_bar", "gui_columns", "game_dirs", "graphics_backend"} {
+		if slices.ContainsFunc(opts, func(o option) bool { return o.Path[0] == gone }) {
+			t.Errorf("%s was read", gone)
+		}
+	}
+	list, _ := settings(opts, nil)
+	i := slices.IndexFunc(list, func(s emulators.Setting) bool { return s.Apply.File.Path[0] == "graphics_shaders_dump_path" })
+	if i < 0 || !list[i].Fixed {
+		t.Error("a path is offered")
+	}
+	for in, want := range map[string]string{"EnableMacroHLE": "enable_macro_hle", "VSyncMode": "vsync_mode", "StartNoUI": "start_no_ui", "EnablePtc": "enable_ptc"} {
+		if got := ryujinxSnake(in); got != want {
+			t.Errorf("%s: %s, want %s", in, got, want)
+		}
+	}
+}
+
+func TestLichii(t *testing.T) {
+	files := map[string]string{
+		// zortos293/Lichii build-160, src/common/settings.h (GPL-3.0-or-later, GPL-2.0-or-later)
+		"src/common/settings.h": `
+struct Values {
+    Linkage linkage{};
+    SwitchableSetting<bool> use_multi_core{linkage, true, "use_multi_core", Category::Core};
+    SwitchableSetting<std::string> audio_output_device_id{
+                                                          linkage, "auto", "output_device", Category::Audio, Specialization::RuntimeList};
+    Setting<bool, false> dump_audio_commands{
+                                             linkage, false, "dump_audio_commands", Category::Audio, Specialization::Default, false};
+    SwitchableSetting<u16, true> speed_limit{linkage,
+                                             100,
+                                             0,
+                                             9999,
+                                             "speed_limit",
+                                             Category::Core,
+                                             Specialization::Countable | Specialization::Percentage,
+                                             true,
+                                             true,
+                                             &use_speed_limit};
+    SwitchableSetting<CpuBackend, true> cpu_backend{linkage,
+#ifdef HAS_NCE
+                                                    CpuBackend::Nce,
+#else
+                                                    CpuBackend::Dynarmic,
+#endif
+                                                    CpuBackend::Dynarmic,
+#ifdef HAS_NCE
+                                                    CpuBackend::Nce,
+#else
+                                                    CpuBackend::Dynarmic,
+#endif
+                                                    "cpu_backend",
+                                                    Category::Cpu};
+    SwitchableSetting<ScalingFilter> scaling_filter{linkage,
+                                                    ScalingFilter::ScaleForce,
+                                                    "scaling_filter",
+                                                    Category::Renderer,
+                                                    Specialization::Default,
+                                                    true,
+                                                    true};
+    SwitchableSetting<bool> airplane_mode{linkage, true, "airplane_mode", Category::Network};
+    Setting<bool> use_gdbstub{linkage, false, "use_gdbstub", Category::Debugging};
+    Setting<bool> use_virtual_sd{linkage, true, "use_virtual_sd", Category::DataStorage};
+    Setting<bool> show_overlay{linkage, true, "show_overlay", Category::Overlay};
+    InputSetting<std::array<PlayerInput, 10>> players;
+};`,
+		// zortos293/Lichii build-160, src/common/settings_enums.h (GPL-3.0-or-later)
+		"src/common/settings_enums.h": `
+#define ENUM(NAME, ...) \
+    enum class NAME : u32 { __VA_ARGS__ }; \
+ENUM(CpuBackend, Dynarmic, Nce);
+ENUM(ScalingFilter, NearestNeighbor, Bilinear, Bicubic, Gaussian, Lanczos, ScaleForce, Fsr, Area, ZeroTangent, BSpline, Mitchell, Spline1, Mmpx, Sgsr, SgsrEdge, Fsr3);`,
+		// zortos293/Lichii build-160, src/common/settings.cpp (GPL-3.0-or-later)
+		"src/common/settings.cpp": `
+const char* TranslateCategory(Category category) {
+    switch (category) {
+    case Category::Audio:
+        return "Audio";
+    case Category::Core:
+        return "Core";
+    case Category::Cpu:
+    case Category::CpuDebug:
+        return "Cpu";
+    case Category::Renderer:
+        return "Renderer";
+    case Category::DataStorage:
+        return "Data Storage";
+    case Category::Debugging:
+        return "Debugging";
+    case Category::Network:
+        return "Network";
+    case Category::Services:
+        return "Services";
+    case Category::Overlay:
+        return "Overlay";
+    }
+    return "Miscellaneous";
+}`,
+		// zortos293/Lichii build-160, src/frontend_common/config.cpp (GPL-3.0-or-later)
+		"src/frontend_common/config.cpp": `
+    if (new_global_config) {
+        BeginGroup(Settings::TranslateCategory(Settings::Category::Renderer));
+        const auto seed = [this](const Settings::BasicSetting& setting, const std::string& value) {
+            WriteStringSetting(setting.GetLabel(), value);
+        };
+        seed(Settings::values.scaling_filter, ToString(u32(Settings::ScalingFilter::Fsr3)));
+        EndGroup();
+    }
+void Config::ReadAudioValues() {
+    BeginGroup(Settings::TranslateCategory(Settings::Category::Audio));
+    ReadCategory(Settings::Category::Audio);
+    EndGroup();
+}
+void Config::ReadCoreValues() {
+    BeginGroup(Settings::TranslateCategory(Settings::Category::Core));
+    ReadCategory(Settings::Category::Core);
+    EndGroup();
+}
+void Config::ReadDataStorageValues() {
+    BeginGroup(Settings::TranslateCategory(Settings::Category::DataStorage));
+    ReadCategory(Settings::Category::DataStorage);
+    EndGroup();
+}
+void Config::ReadDebuggingValues() {
+    BeginGroup(Settings::TranslateCategory(Settings::Category::Debugging));
+    ReadCategory(Settings::Category::Debugging);
+    EndGroup();
+}
+void Config::ReadCpuValues() {
+    BeginGroup(Settings::TranslateCategory(Settings::Category::Cpu));
+    ReadCategory(Settings::Category::Cpu);
+    ReadCategory(Settings::Category::CpuDebug);
+    EndGroup();
+}
+void Config::ReadRendererValues() {
+    BeginGroup(Settings::TranslateCategory(Settings::Category::Renderer));
+    ReadCategory(Settings::Category::Renderer);
+    EndGroup();
+}
+void Config::ReadNetworkValues() {
+    BeginGroup(Settings::TranslateCategory(Settings::Category::Services));
+    ReadCategory(Settings::Category::Network);
+    EndGroup();
+}`,
+	}
+	opts, err := extractLichii(files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o := find(t, opts, "Core", "use_multi_core"); o.Default != true || o.File != "qt-config.ini" || o.Format != "ini" || o.Fixed {
+		t.Errorf("multi core: %+v", o)
+	}
+	// Every value comes with "\default = false", or Lichii reads its own default instead.
+	if o := find(t, opts, "Core", `use_multi_core\default`); o.Default != false || !o.Fixed || o.Type != "bool" {
+		t.Errorf("multi core's default: %+v", o)
+	}
+	if o := find(t, opts, "Audio", "output_device"); o.Default != "auto" {
+		t.Errorf("device: %+v", o)
+	}
+	if o := find(t, opts, "Core", "speed_limit"); o.Default != 100.0 || o.Min != 0 || o.Max != 9999 {
+		t.Errorf("speed limit: %+v", o)
+	}
+	// NCE is ARM64's only: an x86-64 build runs Dynarmic.
+	if o := find(t, opts, "Cpu", "cpu_backend"); o.Default != "0" || len(o.Choices) != 2 {
+		t.Errorf("cpu backend: %+v", o)
+	}
+	// A new qt-config.ini is seeded with FSR 3, number 15.
+	if o := find(t, opts, "Renderer", "scaling_filter"); o.Default != "15" || o.Choices[5].Label != "Scale force" {
+		t.Errorf("scaling filter: %+v", o)
+	}
+	// The Network category is read under [Services]; Data Storage's space is %20.
+	find(t, opts, "Services", "airplane_mode")
+	find(t, opts, "Data%20Storage", "use_virtual_sd")
+	if o := find(t, opts, "Debugging", "use_gdbstub"); !o.Fixed {
+		t.Errorf("gdb: %+v", o)
+	}
+	if slices.ContainsFunc(opts, func(o option) bool {
+		return o.Path[1] == "dump_audio_commands" || o.Path[0] == "Overlay" || o.Path[1] == "players"
+	}) {
+		t.Error("a setting that isn't saved, or isn't read from qt-config.ini, was read")
+	}
+	list, skipped := settings(opts, nil)
+	if len(list) != len(opts) || len(skipped) != 0 {
+		t.Errorf("%d settings of %d options, skipped %v", len(list), len(opts), skipped)
+	}
+}
+
 func TestEvalNum(t *testing.T) {
 	consts := map[string]string{"A": "4", "B": "A * 2", "Ns::C": "0x10"}
 	for expr, want := range map[string]float64{

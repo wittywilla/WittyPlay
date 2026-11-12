@@ -59,7 +59,7 @@ This is how a FreeBSD server uses its packages, and how a Linux server uses an e
 
 ## The Switch and the Switch 2
 
-Two emulators play them: **Ryujinx** (the Switch) and **Lichii** (the Switch 2, and the Switch). WittyPlay knows each as well as any other emulator: its command line, every setting from its own configuration, its controllers for up to four players, where it keeps keys and firmware, and how to stream it. **It never downloads either.** The server's owner installs them from their own projects and adds them in **Settings, Standalone emulators**. Keys and firmware are only ever the owner's own, from their own console; WittyPlay never fetches them and only says whether they're where each emulator looks.
+Two emulators play them: **Ryujinx** (the Switch) and **Lichii** (the Switch 2, and the Switch). WittyPlay knows each as well as any other emulator: its command line, every setting from its own configuration (65 for Ryujinx, 193 for Lichii), its controllers (three players for Ryujinx, two for Lichii), where it keeps keys and firmware, and how to stream it. **It never downloads either.** The server's owner installs them from their own projects and adds them in **Settings, Standalone emulators**. Keys and firmware are only ever the owner's own, from their own console; WittyPlay never fetches them and only says whether they're where each emulator looks.
 
 ### What plays the Switch 2
 
@@ -135,6 +135,8 @@ Each player's controller becomes key presses: four players, each with keys of th
 | Dolphin | 4 GameCube pads; 4 Wii Remotes held sideways with a Nunchuk | `GCPadNew.ini`, `WiimoteNew.ini` |
 | Flycast | 4 | `mappings/SDL_Keyboard.cfg`, `emu.cfg` |
 | RPCS3 | 2 | `input_configs/global/Default.yml` |
+| Ryujinx | 3 (the fourth's function keys are its hotkeys) | `Config.json`, `input_config` |
+| Lichii | 2 (it reads the keypad as the number row) | `qt-config.ini`, `[Controls]` |
 | PPSSPP, melonDS, xemu, Cemu | 1 | their own files |
 
 Sticks become their four directions; there is no rumble back to the player, and no motion. That's the limit of key presses: no system lets an unprivileged program make a virtual gamepad without a driver.

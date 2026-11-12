@@ -1,0 +1,1808 @@
+{
+  "emulator": "ryujinx",
+  "version": "1.3.3",
+  "source": "https://git.ryujinx.app/ryubing/ryujinx/src/tag/1.3.3",
+  "settings": [
+    {
+      "key": "enableFileLog",
+      "kind": "toggle",
+      "label": "Enable file log",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_file_log"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "backendThreading",
+      "kind": "choice",
+      "label": "Backend threading",
+      "default": "Auto",
+      "choices": [
+        {
+          "value": "Auto",
+          "label": "Auto"
+        },
+        {
+          "value": "Off",
+          "label": "Off"
+        },
+        {
+          "value": "On",
+          "label": "On"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "backend_threading"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "resScale",
+      "kind": "number",
+      "label": "Res scale",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "res_scale"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "resScaleCustom",
+      "kind": "number",
+      "label": "Res scale custom",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "res_scale_custom"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "maxAnisotropy",
+      "kind": "number",
+      "label": "Max anisotropy",
+      "default": -1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "max_anisotropy"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "aspectRatio",
+      "kind": "choice",
+      "label": "Aspect ratio",
+      "default": "Fixed16x9",
+      "choices": [
+        {
+          "value": "Fixed4x3",
+          "label": "Fixed 4x3"
+        },
+        {
+          "value": "Fixed16x9",
+          "label": "Fixed 16x9"
+        },
+        {
+          "value": "Fixed16x10",
+          "label": "Fixed 16x10"
+        },
+        {
+          "value": "Fixed21x9",
+          "label": "Fixed 21x9"
+        },
+        {
+          "value": "Fixed32x9",
+          "label": "Fixed 32x9"
+        },
+        {
+          "value": "Stretched",
+          "label": "Stretched"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "aspect_ratio"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "antiAliasing",
+      "kind": "choice",
+      "label": "Anti aliasing",
+      "default": "None",
+      "choices": [
+        {
+          "value": "None",
+          "label": "None"
+        },
+        {
+          "value": "Fxaa",
+          "label": "Fxaa"
+        },
+        {
+          "value": "SmaaLow",
+          "label": "Smaa low"
+        },
+        {
+          "value": "SmaaMedium",
+          "label": "Smaa medium"
+        },
+        {
+          "value": "SmaaHigh",
+          "label": "Smaa high"
+        },
+        {
+          "value": "SmaaUltra",
+          "label": "Smaa ultra"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "anti_aliasing"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "scalingFilter",
+      "kind": "choice",
+      "label": "Scaling filter",
+      "default": "Bilinear",
+      "choices": [
+        {
+          "value": "Bilinear",
+          "label": "Bilinear"
+        },
+        {
+          "value": "Nearest",
+          "label": "Nearest"
+        },
+        {
+          "value": "Fsr",
+          "label": "Fsr"
+        },
+        {
+          "value": "Area",
+          "label": "Area"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "scaling_filter"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "scalingFilterLevel",
+      "kind": "number",
+      "label": "Scaling filter level",
+      "default": 80,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "scaling_filter_level"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphicsShadersDumpPath",
+      "kind": "text",
+      "label": "Graphics shaders dump path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "graphics_shaders_dump_path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Graphics",
+      "advanced": true
+    },
+    {
+      "key": "loggingEnableDebug",
+      "kind": "toggle",
+      "label": "Logging enable debug",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_enable_debug"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "loggingEnableStub",
+      "kind": "toggle",
+      "label": "Logging enable stub",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_enable_stub"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "loggingEnableInfo",
+      "kind": "toggle",
+      "label": "Logging enable info",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_enable_info"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "loggingEnableWarn",
+      "kind": "toggle",
+      "label": "Logging enable warn",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_enable_warn"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "loggingEnableError",
+      "kind": "toggle",
+      "label": "Logging enable error",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_enable_error"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "loggingEnableTrace",
+      "kind": "toggle",
+      "label": "Logging enable trace",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_enable_trace"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "loggingEnableGuest",
+      "kind": "toggle",
+      "label": "Logging enable guest",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_enable_guest"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "loggingEnableFsAccessLog",
+      "kind": "toggle",
+      "label": "Logging enable fs access log",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_enable_fs_access_log"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "loggingEnableAvalonia",
+      "kind": "toggle",
+      "label": "Logging enable avalonia",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_enable_avalonia"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "loggingGraphicsDebugLevel",
+      "kind": "choice",
+      "label": "Logging graphics debug level",
+      "default": "None",
+      "choices": [
+        {
+          "value": "None",
+          "label": "None"
+        },
+        {
+          "value": "Error",
+          "label": "Error"
+        },
+        {
+          "value": "Slowdowns",
+          "label": "Slowdowns"
+        },
+        {
+          "value": "All",
+          "label": "All"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "logging_graphics_debug_level"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Logging",
+      "advanced": true
+    },
+    {
+      "key": "systemLanguage",
+      "kind": "choice",
+      "label": "System language",
+      "default": "AmericanEnglish",
+      "choices": [
+        {
+          "value": "Japanese",
+          "label": "Japanese"
+        },
+        {
+          "value": "AmericanEnglish",
+          "label": "American english"
+        },
+        {
+          "value": "French",
+          "label": "French"
+        },
+        {
+          "value": "German",
+          "label": "German"
+        },
+        {
+          "value": "Italian",
+          "label": "Italian"
+        },
+        {
+          "value": "Spanish",
+          "label": "Spanish"
+        },
+        {
+          "value": "Chinese",
+          "label": "Chinese"
+        },
+        {
+          "value": "Korean",
+          "label": "Korean"
+        },
+        {
+          "value": "Dutch",
+          "label": "Dutch"
+        },
+        {
+          "value": "Portuguese",
+          "label": "Portuguese"
+        },
+        {
+          "value": "Russian",
+          "label": "Russian"
+        },
+        {
+          "value": "Taiwanese",
+          "label": "Taiwanese"
+        },
+        {
+          "value": "BritishEnglish",
+          "label": "British english"
+        },
+        {
+          "value": "CanadianFrench",
+          "label": "Canadian french"
+        },
+        {
+          "value": "LatinAmericanSpanish",
+          "label": "Latin american spanish"
+        },
+        {
+          "value": "SimplifiedChinese",
+          "label": "Simplified chinese"
+        },
+        {
+          "value": "TraditionalChinese",
+          "label": "Traditional chinese"
+        },
+        {
+          "value": "BrazilianPortuguese",
+          "label": "Brazilian portuguese"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "system_language"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "systemRegion",
+      "kind": "choice",
+      "label": "System region",
+      "default": "USA",
+      "choices": [
+        {
+          "value": "Japan",
+          "label": "Japan"
+        },
+        {
+          "value": "USA",
+          "label": "USA"
+        },
+        {
+          "value": "Europe",
+          "label": "Europe"
+        },
+        {
+          "value": "Australia",
+          "label": "Australia"
+        },
+        {
+          "value": "China",
+          "label": "China"
+        },
+        {
+          "value": "Korea",
+          "label": "Korea"
+        },
+        {
+          "value": "Taiwan",
+          "label": "Taiwan"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "system_region"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "systemTimeZone",
+      "kind": "text",
+      "label": "System time zone",
+      "default": "UTC",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "system_time_zone"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "systemTimeOffset",
+      "kind": "number",
+      "label": "System time offset",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "system_time_offset"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "matchSystemTime",
+      "kind": "toggle",
+      "label": "Match system time",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "match_system_time"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "useInputGlobalConfig",
+      "kind": "toggle",
+      "label": "Use input global config",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "use_input_global_config"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "dockedMode",
+      "kind": "toggle",
+      "label": "Docked mode",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "docked_mode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "enableDiscordIntegration",
+      "kind": "toggle",
+      "label": "Enable discord integration",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_discord_integration"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "updateCheckerType",
+      "kind": "choice",
+      "label": "Update checker type",
+      "default": "PromptAtStartup",
+      "choices": [
+        {
+          "value": "Off",
+          "label": "Off"
+        },
+        {
+          "value": "PromptAtStartup",
+          "label": "Prompt at startup"
+        },
+        {
+          "value": "CheckInBackground",
+          "label": "Check in background"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "update_checker_type"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "focusLostActionType",
+      "kind": "choice",
+      "label": "Focus lost action type",
+      "default": "DoNothing",
+      "choices": [
+        {
+          "value": "DoNothing",
+          "label": "Do nothing"
+        },
+        {
+          "value": "BlockInput",
+          "label": "Block input"
+        },
+        {
+          "value": "MuteAudio",
+          "label": "Mute audio"
+        },
+        {
+          "value": "BlockInputAndMuteAudio",
+          "label": "Block input and mute audio"
+        },
+        {
+          "value": "PauseEmulation",
+          "label": "Pause emulation"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "focus_lost_action_type"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "showConfirmExit",
+      "kind": "toggle",
+      "label": "Show confirm exit",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "show_confirm_exit"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "ignoreApplet",
+      "kind": "toggle",
+      "label": "Ignore applet",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "ignore_applet"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "skipUserProfiles",
+      "kind": "toggle",
+      "label": "Skip user profiles",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "skip_user_profiles"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "rememberWindowState",
+      "kind": "toggle",
+      "label": "Remember window state",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "remember_window_state"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "enableHardwareAcceleration",
+      "kind": "toggle",
+      "label": "Enable hardware acceleration",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_hardware_acceleration"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "hideCursor",
+      "kind": "choice",
+      "label": "Hide cursor",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Never"
+        },
+        {
+          "value": "1",
+          "label": "On idle"
+        },
+        {
+          "value": "2",
+          "label": "Always"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "hide_cursor"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "vsyncMode",
+      "kind": "choice",
+      "label": "Vsync mode",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Switch"
+        },
+        {
+          "value": "1",
+          "label": "Unbounded"
+        },
+        {
+          "value": "2",
+          "label": "Custom"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "vsync_mode"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "enableCustomVsyncInterval",
+      "kind": "toggle",
+      "label": "Enable custom vsync interval",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_custom_vsync_interval"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "customVsyncInterval",
+      "kind": "number",
+      "label": "Custom vsync interval",
+      "default": 120,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "custom_vsync_interval"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "enableShaderCache",
+      "kind": "toggle",
+      "label": "Enable shader cache",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_shader_cache"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "enableTextureRecompression",
+      "kind": "toggle",
+      "label": "Enable texture recompression",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_texture_recompression"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "enableMacroHle",
+      "kind": "toggle",
+      "label": "Enable macro hle",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_macro_hle"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "enableColorSpacePassthrough",
+      "kind": "toggle",
+      "label": "Enable color space passthrough",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_color_space_passthrough"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "enablePtc",
+      "kind": "toggle",
+      "label": "Enable ptc",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_ptc"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "enableLowPowerPtc",
+      "kind": "toggle",
+      "label": "Enable low power ptc",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_low_power_ptc"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "enableInternetAccess",
+      "kind": "toggle",
+      "label": "Enable internet access",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_internet_access"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "enableFsIntegrityChecks",
+      "kind": "toggle",
+      "label": "Enable fs integrity checks",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_fs_integrity_checks"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "fsGlobalAccessLogMode",
+      "kind": "number",
+      "label": "Fs global access log mode",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "fs_global_access_log_mode"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "System",
+      "advanced": true
+    },
+    {
+      "key": "audioBackend",
+      "kind": "choice",
+      "label": "Audio backend",
+      "default": "SDL2",
+      "choices": [
+        {
+          "value": "Dummy",
+          "label": "Dummy"
+        },
+        {
+          "value": "OpenAl",
+          "label": "Open al"
+        },
+        {
+          "value": "SoundIo",
+          "label": "Sound io"
+        },
+        {
+          "value": "SDL2",
+          "label": "SDL2"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "audio_backend"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "audioVolume",
+      "kind": "number",
+      "label": "Audio volume",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "audio_volume"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "memoryManagerMode",
+      "kind": "choice",
+      "label": "Memory manager mode",
+      "default": "HostMappedUnsafe",
+      "choices": [
+        {
+          "value": "SoftwarePageTable",
+          "label": "Software page table"
+        },
+        {
+          "value": "HostMapped",
+          "label": "Host mapped"
+        },
+        {
+          "value": "HostMappedUnsafe",
+          "label": "Host mapped unsafe"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "memory_manager_mode"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "dramSize",
+      "kind": "choice",
+      "label": "Dram size",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "4GiB"
+        },
+        {
+          "value": "1",
+          "label": "6GiB"
+        },
+        {
+          "value": "2",
+          "label": "8GiB"
+        },
+        {
+          "value": "3",
+          "label": "12GiB"
+        },
+        {
+          "value": "4",
+          "label": "4GiB applet dev"
+        },
+        {
+          "value": "5",
+          "label": "4GiB system dev"
+        },
+        {
+          "value": "6",
+          "label": "6GiB applet dev"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "dram_size"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "ignoreMissingServices",
+      "kind": "toggle",
+      "label": "Ignore missing services",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "ignore_missing_services"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "languageCode",
+      "kind": "text",
+      "label": "Language code",
+      "default": "en_US",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "language_code"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "baseStyle",
+      "kind": "text",
+      "label": "Base style",
+      "default": "Dark",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "base_style"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "gameListViewMode",
+      "kind": "number",
+      "label": "Game list view mode",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "game_list_view_mode"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "showNames",
+      "kind": "toggle",
+      "label": "Show names",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "show_names"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "gridSize",
+      "kind": "number",
+      "label": "Grid size",
+      "default": 2,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "grid_size"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "applicationSort",
+      "kind": "number",
+      "label": "Application sort",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "application_sort"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "isAscendingOrder",
+      "kind": "toggle",
+      "label": "Is ascending order",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "is_ascending_order"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "startFullscreen",
+      "kind": "toggle",
+      "label": "Start fullscreen",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "start_fullscreen"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "startNoUi",
+      "kind": "toggle",
+      "label": "Start no ui",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "start_no_ui"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "showConsole",
+      "kind": "toggle",
+      "label": "Show console",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "show_console"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Interface",
+      "advanced": true
+    },
+    {
+      "key": "enableKeyboard",
+      "kind": "toggle",
+      "label": "Enable keyboard",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_keyboard"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input"
+    },
+    {
+      "key": "enableMouse",
+      "kind": "toggle",
+      "label": "Enable mouse",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_mouse"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input"
+    },
+    {
+      "key": "disableInputWhenOutOfFocus",
+      "kind": "toggle",
+      "label": "Disable input when out of focus",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "disable_input_when_out_of_focus"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input"
+    },
+    {
+      "key": "rainbowSpeed",
+      "kind": "number",
+      "label": "Rainbow speed",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "rainbow_speed"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Input"
+    },
+    {
+      "key": "preferredGpu",
+      "kind": "text",
+      "label": "Preferred gpu",
+      "default": "",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "preferred_gpu"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "multiplayerMode",
+      "kind": "choice",
+      "label": "Multiplayer mode",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Disabled"
+        },
+        {
+          "value": "1",
+          "label": "Ldn ryu"
+        },
+        {
+          "value": "2",
+          "label": "Ldn mitm"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "multiplayer_mode"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Multiplayer"
+    },
+    {
+      "key": "multiplayerLanInterfaceId",
+      "kind": "text",
+      "label": "Multiplayer lan interface id",
+      "default": "0",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "multiplayer_lan_interface_id"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Multiplayer",
+      "advanced": true
+    },
+    {
+      "key": "multiplayerDisableP2p",
+      "kind": "toggle",
+      "label": "Multiplayer disable p2p",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "multiplayer_disable_p2p"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Multiplayer"
+    },
+    {
+      "key": "multiplayerLdnPassphrase",
+      "kind": "text",
+      "label": "Multiplayer ldn passphrase",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "multiplayer_ldn_passphrase"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Multiplayer"
+    },
+    {
+      "key": "ldnServer",
+      "kind": "text",
+      "label": "Ldn server",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "ldn_server"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Multiplayer"
+    },
+    {
+      "key": "useHypervisor",
+      "kind": "toggle",
+      "label": "Use hypervisor",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "use_hypervisor"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "enableGdbStub",
+      "kind": "toggle",
+      "label": "Enable gdb stub",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "enable_gdb_stub"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Debug",
+      "advanced": true
+    },
+    {
+      "key": "gdbStubPort",
+      "kind": "number",
+      "label": "Gdb stub port",
+      "default": 55555,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "gdb_stub_port"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Debug",
+      "advanced": true
+    },
+    {
+      "key": "debuggerSuspendOnStart",
+      "kind": "toggle",
+      "label": "Debugger suspend on start",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "debugger_suspend_on_start"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Debug",
+      "advanced": true
+    },
+    {
+      "key": "showDirtyHacks",
+      "kind": "toggle",
+      "label": "Show dirty hacks",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "Config.json",
+          "format": "json",
+          "path": [
+            "show_dirty_hacks"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Hacks"
+    }
+  ]
+}

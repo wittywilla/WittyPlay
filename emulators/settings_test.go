@@ -23,6 +23,7 @@ func TestGeneratedSchemas(t *testing.T) {
 	for id, min := range map[string]int{
 		"dolphin": 150, "pcsx2": 150, "ppsspp": 150, "rpcs3": 150,
 		"xemu": 30, "melonds": 30, "flycast": 50, "cemu": 30,
+		"ryujinx": 60, "lichii": 180,
 	} {
 		t.Run(id, func(t *testing.T) {
 			list := GeneratedSettings(id)

@@ -28,7 +28,9 @@ type KeyMap [4]map[string]string
 // Target is one value to set in an emulator's settings. File is relative to the emulator's
 // settings folder, with forward slashes. Format is ini, toml, yaml, xml or json, and Path names
 // the value as package configfile does: ini [section, key]; toml [table..., key]; yaml
-// [key, ...]; xml [element, ...]; json [key, ...]. Value is a string, an int64 or a bool.
+// [key, ...]; xml [element, ...]; json [key, ...]. Value is a string, an int64 or a bool; in
+// JSON it may also be a whole list ([]any) or object (map[string]any) of those, which replaces
+// what the file had there.
 //
 // A Target with no Path is a whole file: Value is its complete text, to be written as it is.
 // That is for a file that holds nothing but these bindings in a shape configfile can't edit
@@ -68,6 +70,8 @@ var emulators = map[string]emulator{
 	"xemu":    xemu,
 	"cemu":    cemu,
 	"rpcs3":   rpcs3,
+	"ryujinx": ryujinx,
+	"lichii":  lichii,
 }
 
 // Supported says whether this package maps keys for an emulator on at least one host OS.
@@ -125,13 +129,23 @@ func Targets(emulator, goos string, keys KeyMap) ([]Target, error) {
 }
 
 // Reserved lists the keys in keys, for the players Targets maps, that the emulator takes for
-// itself on goos before a game sees them, so binding them does nothing.
+// itself on goos before a game sees them, so binding them does nothing, or that it acts on as
+// well as passing them on, so binding them does something else too.
 func Reserved(emulator, goos string, keys KeyMap) []string {
 	var taken []string
 	switch emulator {
 	case "flycast":
 		// core/sdl/sdl.cpp (v2.7): F11 with no modifier toggles full screen and isn't passed on.
 		taken = []string{"F11"}
+	case "ryujinx":
+		// ConfigurationState.LoadDefault (1.3.3): the hotkeys toggle VSync (F1), mute (F2), show
+		// the UI (F4), pause (F5) and take a screenshot (F8), read from the same keyboard as the
+		// players' keys.
+		taken = []string{"F1", "F2", "F4", "F5", "F8"}
+	case "lichii":
+		// src/qt_common/config/uisettings.cpp default_hotkeys (build-160): Qt shortcuts with no
+		// modifier, which Qt takes before the game window sees the key.
+		taken = []string{"minus", "equal", "F4", "F5", "F6", "F8", "F9", "F10", "F11", "Escape"}
 	}
 	var out []string
 	for p := range Players(emulator) {
@@ -545,4 +559,188 @@ func rpcs3Key(goos string, k hostKey) string {
 		return "Num+,"
 	}
 	return "Num+" + k.seq
+}
+
+// ---------------------------------------------------------------- Ryujinx
+
+// Ryujinx (Ryubing 1.3.3) reads its players from Config.json's input_config, a list of
+// InputConfig (src/Ryujinx.Common/Configuration/Hid/): for the keyboard a
+// StandardKeyboardInputConfig with backend WindowKeyboard and id "0", a controller_type and a
+// player_index (Player1..), and left_joycon, right_joycon, left_joycon_stick and
+// right_joycon_stick holding a Key (Key.cs) for each button, written by name
+// (TypedStringEnumConverter) in snake_case (JsonHelper). Its default (ConfigurationState
+// .LoadDefault) is one such entry for Player1 as a ProController. The list is written whole.
+//
+// The keyboard is Avalonia's on every OS (src/Ryujinx/Input/AvaloniaKeyboardDriver.cs), which
+// hands each player's controller its own view of the one keyboard (GetGamepad("0"), NpadManager
+// .ReloadConfiguration keeps a controller per player index), so four players can each have keys.
+// A Key is looked up as an Avalonia key (AvaloniaKeyboardMappingHelper.cs), where Enter and
+// KeypadEnter are both Avalonia's Return (Key.Enter and Key.Return are one value there): the
+// keypad's Enter is the same key as Return to it. On macOS Avalonia reports the Help key, where
+// Insert is, as Help, which no Key names; that wasn't checked against a Mac.
+//
+// The default key map once gave the second player's right stick the keypad's Enter, which is
+// Return here; it's space now (inputagent.DefaultKeys), so three players each have keys of their
+// own. The fourth's are the function keys, which Ryujinx's hotkeys use.
+var ryujinxNames = names{"b": "right_joycon/button_b", "a": "right_joycon/button_a", "y": "right_joycon/button_y",
+	"x": "right_joycon/button_x", "l": "left_joycon/button_l", "r": "right_joycon/button_r", "l2": "left_joycon/button_zl",
+	"r2": "right_joycon/button_zr", "select": "left_joycon/button_minus", "start": "right_joycon/button_plus",
+	"up": "left_joycon/dpad_up", "down": "left_joycon/dpad_down", "left": "left_joycon/dpad_left", "right": "left_joycon/dpad_right",
+	"l3": "left_joycon_stick/stick_button", "r3": "right_joycon_stick/stick_button",
+	"lup": "left_joycon_stick/stick_up", "ldown": "left_joycon_stick/stick_down", "lleft": "left_joycon_stick/stick_left",
+	"lright": "left_joycon_stick/stick_right", "rup": "right_joycon_stick/stick_up", "rdown": "right_joycon_stick/stick_down",
+	"rleft": "right_joycon_stick/stick_left", "rright": "right_joycon_stick/stick_right"}
+
+var ryujinx = emulator{
+	// Three: player 4's keys are the function keys, and Ryujinx keeps F1, F2, F4, F5 and F8 for
+	// its own hotkeys, read from the same keyboard.
+	players: 3,
+	oses:    allOS,
+	buttons: keysOf(ryujinxNames),
+	ident: func(_ string, k hostKey) string {
+		if n := ryujinxKey(k); n != "KeypadEnter" {
+			return n
+		}
+		return "Enter"
+	},
+	build: func(_ string, all [][]bound) []Target {
+		var list []any
+		for p, bs := range all {
+			groups := map[string]map[string]any{}
+			for _, n := range ryujinxNames {
+				g, key, _ := strings.Cut(n, "/")
+				if groups[g] == nil {
+					groups[g] = map[string]any{}
+				}
+				groups[g][key] = "Unbound"
+			}
+			// The Joy-Cons' side buttons, which a Pro Controller doesn't have.
+			for _, g := range []string{"left_joycon", "right_joycon"} {
+				groups[g]["button_sl"], groups[g]["button_sr"] = "Unbound", "Unbound"
+			}
+			for _, b := range bs {
+				g, key, _ := strings.Cut(ryujinxNames.of(b.button), "/")
+				groups[g][key] = ryujinxKey(b.key)
+			}
+			entry := map[string]any{"version": int64(1), "backend": "WindowKeyboard", "id": "0", "name": "Keyboard",
+				"controller_type": "ProController", "player_index": "Player" + strconv.Itoa(p+1)}
+			for g, m := range groups {
+				entry[g] = m
+			}
+			list = append(list, entry)
+		}
+		return []Target{{File: "Config.json", Format: "json", Path: []string{"input_config"}, Value: list}}
+	},
+}
+
+// ryujinxSpecial names the keys that aren't letters, digits or function keys, by X keysym, as
+// Ryujinx's Key enum does (the US key each Avalonia key in AvaloniaKeyboardMappingHelper.cs
+// stands for: OemPlus is Plus, OemTilde Grave, OemQuotes Quote).
+var ryujinxSpecial = map[int]string{0xFF52: "Up", 0xFF54: "Down", 0xFF51: "Left", 0xFF53: "Right", 0xFF50: "Home",
+	0xFF57: "End", 0xFF55: "PageUp", 0xFF56: "PageDown", 0xFF63: "Insert", 0xFFFF: "Delete", 0xFF0D: "Enter",
+	0xFF08: "BackSpace", 0xFF09: "Tab", 0xFF1B: "Escape", 0x20: "Space", 0x2D: "Minus", 0x3D: "Plus",
+	0x5B: "BracketLeft", 0x5D: "BracketRight", 0x5C: "BackSlash", 0x3B: "Semicolon", 0x27: "Quote", 0x60: "Grave",
+	0x2C: "Comma", 0x2E: "Period", 0x2F: "Slash", 0xFFAB: "KeypadAdd", 0xFFAD: "KeypadSubtract",
+	0xFFAA: "KeypadMultiply", 0xFFAF: "KeypadDivide", 0xFFAE: "KeypadDecimal", 0xFF8D: "KeypadEnter"}
+
+func ryujinxKey(k hostKey) string {
+	switch s := k.sym; {
+	case s >= 'a' && s <= 'z':
+		return strings.ToUpper(string(rune(s)))
+	case s >= '0' && s <= '9':
+		return "Number" + string(rune(s))
+	case s >= 0xFFB0 && s <= 0xFFB9:
+		return "Keypad" + strconv.Itoa(s-0xFFB0)
+	case s >= 0xFFBE && s <= 0xFFC9:
+		return "F" + strconv.Itoa(s-0xFFBE+1)
+	}
+	return ryujinxSpecial[k.sym]
+}
+
+// ---------------------------------------------------------------- Lichii
+
+// Lichii (build-160, a yuzu and Eden fork) reads players from qt-config.ini's [Controls]
+// (src/qt_common/config/qt_config.cpp ReadQtPlayerValues, src/frontend_common/config.cpp
+// ReadPlayerValues), the players numbered from 0: player_0_connected, player_0_type (0 is
+// ControllerType::ProController, src/common/settings_input.h), and player_0_<mapping> for each
+// of Settings::NativeButton::mapping and NativeAnalog::mapping (src/common/settings_input.cpp).
+// A button is the ParamPackage "engine:keyboard,code:<Qt::Key>,toggle:0"
+// (src/input_common/main.cpp GenerateKeyboardParam); a stick is "engine:analog_from_button" with
+// up, down, left, right and modifier each such a package, nested with ':' written $0, ',' $1 and
+// '$' $2 (src/common/param_package.cpp), and modifier_scale; "[empty]" is nothing bound.
+//
+// Every value is read only when "<key>\default" beside it is false (Config::ReadStringSetting and
+// the like): without it Lichii uses its own default. Its defaults bind the same keys for every
+// player (QtConfig::default_buttons), so each player's buttons, sticks and motions are all
+// written, those without a key as "[empty]".
+//
+// The game window passes on QKeyEvent::key() without the modifiers (src/yuzu/bootmanager.cpp
+// GRenderWindow::keyPressEvent), so the keypad's keys are the same keys to it as the ones they
+// share a Qt::Key with: KP_2 is 2. The default key map's third player uses the main row's digits
+// and minus, which the second has on the keypad, so Lichii gets two players, as RPCS3 does.
+var lichiiNames = names{"a": "button_a", "b": "button_b", "x": "button_x", "y": "button_y", "l3": "button_lstick",
+	"r3": "button_rstick", "l": "button_l", "r": "button_r", "l2": "button_zl", "r2": "button_zr", "start": "button_plus",
+	"select": "button_minus", "left": "button_dleft", "up": "button_dup", "right": "button_dright", "down": "button_ddown",
+	"lup": "lstick", "ldown": "lstick", "lleft": "lstick", "lright": "lstick", "rup": "rstick", "rdown": "rstick",
+	"rleft": "rstick", "rright": "rstick"}
+
+// lichiiMappings is every mapping of a player Lichii reads, in the order it reads them.
+var lichiiMappings = []string{"button_a", "button_b", "button_x", "button_y", "button_lstick", "button_rstick",
+	"button_l", "button_r", "button_zl", "button_zr", "button_plus", "button_minus", "button_dleft", "button_dup",
+	"button_dright", "button_ddown", "button_slleft", "button_srleft", "button_home", "button_screenshot",
+	"button_slright", "button_srright", "lstick", "rstick", "motionleft", "motionright"}
+
+var lichii = emulator{
+	players: 2,
+	oses:    allOS,
+	buttons: keysOf(lichiiNames),
+	ident:   func(goos string, k hostKey) string { return strconv.Itoa(k.qtFor(goos)) },
+	build: func(goos string, all [][]bound) []Target {
+		const file, sec = "qt-config.ini", "Controls"
+		var out []Target
+		set := func(key, value string) {
+			out = append(out, ini(file, sec, key, value), ini(file, sec, key+`\default`, "false"))
+		}
+		for p, bs := range all {
+			prefix := "player_" + strconv.Itoa(p) + "_"
+			set(prefix+"connected", "true")
+			set(prefix+"type", "0")
+			codes := map[string]int{}
+			for _, b := range bs {
+				codes[b.button] = b.key.qtFor(goos)
+			}
+			for _, m := range lichiiMappings {
+				value := "[empty]"
+				switch m {
+				case "lstick", "rstick":
+					d := m[:1]
+					if codes[d+"up"]|codes[d+"down"]|codes[d+"left"]|codes[d+"right"] != 0 {
+						value = lichiiStick(codes[d+"up"], codes[d+"down"], codes[d+"left"], codes[d+"right"])
+					}
+				default:
+					for b, name := range lichiiNames {
+						if name == m && codes[b] != 0 {
+							value = lichiiButton(codes[b])
+						}
+					}
+				}
+				set(prefix+m, value)
+			}
+		}
+		return out
+	},
+}
+
+func lichiiButton(code int) string {
+	return "engine:keyboard,code:" + strconv.Itoa(code) + ",toggle:0"
+}
+
+// lichiiStick is GenerateAnalogParamFromKeys with no modifier key and its default scale.
+func lichiiStick(up, down, left, right int) string {
+	nested := func(code int) string {
+		r := strings.NewReplacer("$", "$2", ",", "$1", ":", "$0")
+		return r.Replace(lichiiButton(code))
+	}
+	return "engine:analog_from_button,up:" + nested(up) + ",down:" + nested(down) + ",left:" + nested(left) +
+		",right:" + nested(right) + ",modifier:" + nested(0) + ",modifier_scale:0.500000"
 }

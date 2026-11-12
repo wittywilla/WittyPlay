@@ -149,7 +149,7 @@ func DefaultKeys() KeyMap {
 	return KeyMap{
 		row("z", "a", "BackSpace", "Return", "Up", "Down", "Left", "Right", "x", "s", "q", "w", "e", "r", "d", "f", "i", "k", "j", "l", "t", "g", "v", "b"),
 		row("KP_2", "KP_1", "KP_Subtract", "KP_Add", "Home", "End", "Delete", "Next", "KP_3", "KP_5", "KP_4", "KP_6", "KP_7", "KP_9", "KP_0", "KP_Decimal",
-			"KP_8", "KP_Divide", "KP_Multiply", "Prior", "c", "h", "Insert", "KP_Enter"),
+			"KP_8", "KP_Divide", "KP_Multiply", "Prior", "c", "h", "Insert", "space"),
 		row("1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "m", "n", "o", "p", "u", "y", "minus", "equal", "bracketleft", "bracketright"),
 		row("F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "semicolon", "apostrophe", "comma", "period", "slash", "backslash", "grave", "Tab"),
 	}

@@ -229,3 +229,37 @@ func FuzzJSON(f *testing.F) {
 		fuzzApply(t, "json", old, fuzzPath(path), fuzzValue(kind, s, n, fl))
 	})
 }
+
+// A JSON value can be a whole list or object (Ryujinx's input_config), which replaces whatever
+// was there; no other format takes one.
+func TestApplyJSONLists(t *testing.T) {
+	old := `{"version": 70, "input_config": [{"backend": "GamepadSDL2"}], "keep": {"x": 1}}`
+	list := []any{map[string]any{"id": "0", "version": int64(1), "left": map[string]any{"up": "W", "ok": true}}, map[string]any{}}
+	got, err := Apply("json", []byte(old), []Edit{{[]string{"input_config"}, list}, {[]string{"keep"}, []any{"a", 1.5}}, {[]string{"new", "deep"}, map[string]any{"b": "2", "a": "1"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "{\n    \"version\": 70,\n    \"input_config\": [\n        {\n            \"id\": \"0\",\n            \"left\": {\n                \"ok\": true,\n                \"up\": \"W\"\n            },\n            \"version\": 1\n        },\n        {}\n    ],\n    \"keep\": [\n        \"a\",\n        1.5\n    ],\n    \"new\": {\n        \"deep\": {\n            \"a\": \"1\",\n            \"b\": \"2\"\n        }\n    }\n}\n"
+	if string(got) != want {
+		t.Errorf("got:\n%s\nwant:\n%s", got, want)
+	}
+	// A later edit inside the list's object still lands.
+	if _, err := Apply("json", got, []Edit{{[]string{"new", "deep"}, map[string]any{"a": "1"}}, {[]string{"new", "deep", "c"}, "3"}}); err != nil {
+		t.Error(err)
+	}
+	for _, bad := range []Edit{
+		{[]string{"a"}, []any{struct{}{}}},
+		{[]string{"a"}, map[string]any{"x": []any{func() {}}}},
+		{[]string{"a"}, []any{"\xff"}},
+	} {
+		if _, err := Apply("json", nil, []Edit{bad}); err == nil {
+			t.Errorf("%#v was written", bad.Value)
+		}
+	}
+	for _, format := range []string{"ini", "toml", "yaml", "xml"} {
+		path := []string{"a", "b"}
+		if _, err := Apply(format, nil, []Edit{{path, []any{"x"}}}); err == nil {
+			t.Errorf("%s took a list", format)
+		}
+	}
+}

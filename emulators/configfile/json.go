@@ -9,8 +9,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
+	"reflect"
+	"slices"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // JSON: nested objects. The file is read token by token into a tree that keeps its keys in the
@@ -182,6 +186,10 @@ func applyJSON(old []byte, edits []Edit) ([]byte, error) {
 				at = len(n.vals) - 1
 			}
 			child := n.vals[at]
+			if last && isComposite(e.Value) {
+				n.vals[at] = jsonNodeOf(e.Value)
+				break
+			}
 			if last {
 				if child.kind != 's' {
 					return nil, fmt.Errorf("configfile: %s holds an object or a list", strings.Join(e.Path, "."))
@@ -255,4 +263,102 @@ func jsonScalar(raw string) any {
 		return f
 	}
 	return raw
+}
+
+// isComposite says whether a value is a list or an object, which only JSON holds as one value.
+func isComposite(v any) bool {
+	switch v.(type) {
+	case []any, map[string]any:
+		return true
+	}
+	return false
+}
+
+// checkJSONValue holds a list or an object to what jsonNodeOf can write: the scalars an edit
+// may be, lists and objects of them, nested no deeper than a file this reads may be.
+func checkJSONValue(v any, depth int) error {
+	if depth > 32 {
+		return errors.New("configfile: a value nested that deep")
+	}
+	switch t := v.(type) {
+	case bool, int64, int:
+	case float64:
+		if math.IsNaN(t) || math.IsInf(t, 0) {
+			return errors.New("configfile: a number that isn't one")
+		}
+	case string:
+		if !utf8.ValidString(t) {
+			return errors.New("configfile: text that isn't UTF-8")
+		}
+	case []any:
+		for _, x := range t {
+			if err := checkJSONValue(x, depth+1); err != nil {
+				return err
+			}
+		}
+	case map[string]any:
+		for k, x := range t {
+			if !utf8.ValidString(k) {
+				return errors.New("configfile: a key that isn't UTF-8")
+			}
+			if err := checkJSONValue(x, depth+1); err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("configfile: a value of type %T", v)
+	}
+	return nil
+}
+
+// jsonNodeOf makes a value into a node to write: an object's keys in order, so the same value
+// always writes the same text.
+func jsonNodeOf(v any) *jsonNode {
+	switch t := v.(type) {
+	case []any:
+		n := &jsonNode{kind: 'a'}
+		for _, x := range t {
+			n.vals = append(n.vals, jsonNodeOf(x))
+		}
+		return n
+	case map[string]any:
+		n := &jsonNode{kind: 'o'}
+		keys := make([]string, 0, len(t))
+		for k := range t {
+			keys = append(keys, k)
+		}
+		slices.Sort(keys)
+		for _, k := range keys {
+			n.keys, n.vals = append(n.keys, k), append(n.vals, jsonNodeOf(t[k]))
+		}
+		return n
+	case int:
+		return &jsonNode{kind: 's', raw: strconv.Itoa(t)}
+	}
+	return &jsonNode{kind: 's', raw: jsonText(v)}
+}
+
+// jsonHolds says whether the file holds a list or an object at path, equal to v.
+func jsonHolds(data []byte, path []string, v any) bool {
+	root, err := parseJSON(data)
+	if err != nil {
+		return false
+	}
+	n := root
+	for _, k := range path {
+		i := slices.Index(n.keys, k)
+		if n.kind != 'o' || i < 0 {
+			return false
+		}
+		n = n.vals[i]
+	}
+	var got strings.Builder
+	n.write(&got, "")
+	var want strings.Builder
+	jsonNodeOf(v).write(&want, "")
+	var a, b any
+	if json.Unmarshal([]byte(got.String()), &a) != nil || json.Unmarshal([]byte(want.String()), &b) != nil {
+		return false
+	}
+	return reflect.DeepEqual(a, b)
 }

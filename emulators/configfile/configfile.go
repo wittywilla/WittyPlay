@@ -27,7 +27,8 @@ import (
 const MaxSize = 4 << 20
 
 // Edit sets one value. Path names it in the file's own terms (see Apply); Value is a bool, an
-// int64, a float64 or a string.
+// int64, a float64 or a string. In JSON it may also be a []any or a map[string]any of those (and
+// of each other), which replaces whatever the file had there, list or object, whole.
 type Edit struct {
 	Path  []string
 	Value any
@@ -109,8 +110,14 @@ func readsBack(format string, out []byte, edits []Edit) error {
 		return fmt.Errorf("configfile: the edited file doesn't read: %w", err)
 	}
 	for i, e := range edits {
-		if slices.ContainsFunc(edits[i+1:], func(later Edit) bool { return samePath(later.Path, e.Path) }) {
-			continue // a later edit of the same value wins
+		if slices.ContainsFunc(edits[i+1:], func(later Edit) bool { return samePath(later.Path, e.Path) || hasPrefix(later.Path, e.Path) }) {
+			continue // a later edit of the same value (or of a value inside it) wins
+		}
+		if format == "json" && isComposite(e.Value) {
+			if !jsonHolds(out, e.Path, e.Value) {
+				return fmt.Errorf("configfile: %s doesn't read back as written", strings.Join(e.Path, "/"))
+			}
+			continue
 		}
 		j := slices.IndexFunc(got, func(en Entry) bool { return samePath(en.Path, e.Path) })
 		if j < 0 || !SameValue(format, got[j].Value, e.Value) {
@@ -185,6 +192,11 @@ func checkEdit(format string, e Edit) error {
 		if strings.ContainsAny(v, "\r\n\x00") || !utf8.ValidString(v) {
 			return errors.New("configfile: a value must be one line of text")
 		}
+	case []any, map[string]any:
+		if format != "json" {
+			return errors.New("configfile: only JSON holds a list or an object as one value")
+		}
+		return checkJSONValue(v, 0)
 	default:
 		return fmt.Errorf("configfile: a value of type %T", e.Value)
 	}
