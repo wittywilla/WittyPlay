@@ -28,6 +28,7 @@ const (
 )
 
 // WittyPlay Online's sources (WittyMediaServer docs/plans/DESIGN-2-SDUI-GAPS.md, section 6).
+// Friends and a room's players are people: person cards, round, with a line and a badge.
 // They're about this server's profiles, saves and running games, so the server answers them
 // (its wittyplay_online.go) through each profile's limits; they're declared here so that pages,
 // editors and the checks know them.
@@ -60,13 +61,13 @@ func onlineSources() []sdui.SourceSpec {
 			Yields: []string{"collection", "game"}, CardStyle: "tile", Paged: true},
 		{Type: SourceFriends, Label: "Friends", Icon: "users", Title: "Friends",
 			Description: "The other profiles of this server this profile may see, playing first, with what each is doing as far as it shares. A Kids profile sees only the friends an administrator chose.",
-			Params:      []sdui.PropSpec{limit(20, 100)}, Yields: []string{"view"}, CardStyle: "landscape"},
+			Params:      []sdui.PropSpec{limit(20, 100)}, Yields: []string{"person"}, CardStyle: "person"},
 		{Type: SourceRooms, Label: "Open rooms", Icon: "users", Title: "Open rooms",
 			Description: "Friends' games on this server that are open to join, with a seat free, of games this profile may play. None for a Kids profile.",
 			Params:      []sdui.PropSpec{limit(12, 50)}, Yields: []string{"view"}, CardStyle: "landscape"},
 		{Type: SourceRoom, Label: "Your room", Icon: "users", Title: "Your room",
-			Description: "The game this profile is playing with others: the room first (its code for the host), then each player, or Waiting… for a free seat.",
-			Params:      []sdui.PropSpec{limit(9, 9)}, Yields: []string{"view"}, CardStyle: "landscape"},
+			Description: "The game this profile is playing with others: the room first (a view: its code for the host), then each player as a person, or Waiting… for a free seat.",
+			Params:      []sdui.PropSpec{limit(9, 9)}, Yields: []string{"view", "person"}, CardStyle: "person"},
 		{Type: SourceSaveStates, Label: "Save states", Icon: "history", Title: "Save states",
 			Description: "One game's saves for this profile, its own first, newest first.", PageKinds: []string{"detail"},
 			Params: []sdui.PropSpec{{Name: "item", Type: "ref", Label: "Game", Required: true, Help: "$item on a game's page."}, limit(20, 110)},
