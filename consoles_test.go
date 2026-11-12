@@ -44,6 +44,7 @@ func TestDetect(t *testing.T) {
 		{"Nintendo Switch/game.xci", "switch"},
 		{"Nintendo Switch 2/game.xci", "switch2"},
 		{"Switch 2/game.nsp", "switch2"},
+		{"game.nup", "switch2"},
 		{"game.rvz", ""}, // GameCube or Wii: the disc's header says which
 	} {
 		if got := Detect(c.path); got != c.want {

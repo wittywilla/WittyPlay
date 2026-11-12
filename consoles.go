@@ -176,7 +176,8 @@ var Consoles = []Console{
 			{"title.keys", "the title keys of games you own, for some games", false}}},
 	// A Switch 2 game's file can't be told from a Switch game's by its bytes alone, so a Switch 2
 	// game is known by its folder or its library.
-	{ID: "switch2", Name: "Nintendo Switch 2", Short: "Switch 2", Shared: []string{".xci", ".nsp", ".nsz", ".xcz"},
+	// .nup is Lichii's own package of a game (src/core/file_sys/nup_container.h, magic "NUP\x01").
+	{ID: "switch2", Name: "Nintendo Switch 2", Short: "Switch 2", Extensions: []string{".nup"}, Shared: []string{".xci", ".nsp", ".nsz", ".xcz"},
 		Aliases:   []string{"switch2", "nintendoswitch2", "ns2", "nx2"},
 		Emulators: []string{"lichii"},
 		BIOS:      []BIOS{{"prod.keys", "the keys from a Switch 2 you own, which a Switch 2 emulator needs", true}}},
