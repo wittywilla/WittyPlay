@@ -40,5 +40,6 @@ func main() {
 		Routes:    rpc.Routes,
 		Busy:      rpc.Busy,
 		OnStop:    rpc.Stop,
+		UI:        rpc.UI,
 	})
 }

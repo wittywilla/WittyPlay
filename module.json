@@ -6,7 +6,7 @@
   "license": "AGPL-3.0-or-later",
   "delivery": "helper",
   "entry": "wittyplay-module",
-  "api": 3,
+  "api": 4,
   "minServer": "0.6.0-alpha",
   "maxServer": "0.8.x",
   "capabilities": {

@@ -1,0 +1,163 @@
+{
+  "format": "wittymodule-sdui",
+  "formatVersion": 1,
+  "module": "wittyplay",
+  "catalog": 2,
+  "theme": {
+    "scope": "wittyplay",
+    "label": "Games",
+    "tokens": {
+      "accent": "#7F46B8"
+    }
+  },
+  "pages": [
+    {
+      "id": "wittyplay",
+      "kind": "custom",
+      "title": "What this server plays",
+      "icon": "game",
+      "description": "Every console, whether its games play on this server, and how.",
+      "sections": [
+        {
+          "id": "consoles",
+          "component": "Grid",
+          "props": {
+            "title": ""
+          },
+          "source": {
+            "limit": 60,
+            "only": "all",
+            "type": "wittyplay.consoles"
+          }
+        }
+      ]
+    }
+  ],
+  "inserts": [
+    {
+      "page": "games",
+      "after": "playing",
+      "section": {
+        "id": "wittyplay-consoles",
+        "component": "Shelf",
+        "props": {
+          "title": "What this server plays"
+        },
+        "source": {
+          "limit": 40,
+          "only": "ready",
+          "type": "wittyplay.consoles"
+        }
+      }
+    }
+  ],
+  "presets": [
+    {
+      "id": "wittyplay-consoles",
+      "label": "Consoles this server plays",
+      "description": "A row of the consoles whose games play here.",
+      "section": {
+        "id": "wittyplay-consoles",
+        "component": "Shelf",
+        "props": {
+          "title": "What this server plays"
+        },
+        "source": {
+          "limit": 40,
+          "only": "ready",
+          "type": "wittyplay.consoles"
+        }
+      }
+    }
+  ],
+  "sources": [
+    {
+      "type": "wittyplay.consoles",
+      "label": "Consoles this server plays",
+      "description": "Every console, whether its games play on this server, and how: a core, or a standalone emulator.",
+      "icon": "game",
+      "category": "",
+      "params": [
+        {
+          "name": "only",
+          "type": "enum",
+          "label": "Which consoles",
+          "default": "all",
+          "options": [
+            {
+              "value": "all",
+              "label": "Every console"
+            },
+            {
+              "value": "ready",
+              "label": "Those that play here"
+            }
+          ],
+          "since": 0
+        },
+        {
+          "name": "limit",
+          "type": "int",
+          "label": "At most",
+          "default": 40,
+          "min": 1,
+          "max": 60,
+          "since": 0
+        }
+      ],
+      "yields": [
+        "view"
+      ],
+      "cardStyle": "tile",
+      "paged": false,
+      "seeAll": "/page/wittyplay",
+      "title": "What this server plays",
+      "since": 2
+    }
+  ],
+  "settings": [
+    {
+      "id": "wittyplay",
+      "title": "Games",
+      "icon": "game",
+      "groups": [
+        {
+          "title": "Games page",
+          "rows": [
+            {
+              "key": "showConsoles",
+              "kind": "bool",
+              "label": "Show which consoles play here",
+              "help": "A row on the Games page, for everyone, of the consoles this server plays.",
+              "default": true
+            }
+          ]
+        },
+        {
+          "title": "For you",
+          "footer": "Each profile chooses its own.",
+          "rows": [
+            {
+              "key": "onlyPlayable",
+              "kind": "bool",
+              "label": "Only consoles that play here",
+              "help": "On the page of every console, leave out those this server can't play yet.",
+              "scope": "profile",
+              "default": false
+            }
+          ]
+        },
+        {
+          "rows": [
+            {
+              "key": "",
+              "kind": "info",
+              "label": "Setting up consoles",
+              "help": "Consoles, cores and standalone emulators are set up in Settings, Consoles & cores and Standalone emulators."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

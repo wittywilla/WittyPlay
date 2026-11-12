@@ -102,7 +102,9 @@ func resolveCores(raw json.RawMessage) (*cores.Manager, error) {
 	if err := service.Unmarshal(raw, &r); err != nil {
 		return nil, err
 	}
-	return &cores.Manager{Dir: r.Dir, System: r.System, Extra: r.Extra, Client: safeClient, Custom: func() []cores.Core { return r.Custom }}, nil
+	m := &cores.Manager{Dir: r.Dir, System: r.System, Extra: r.Extra, Client: safeClient, Custom: func() []cores.Core { return r.Custom }}
+	lastCores.Store(m) // what the server's cores are, for answering its pages (sdui.go)
+	return m, nil
 }
 
 func resolveStore(raw json.RawMessage) (*cores.CustomStore, error) {
