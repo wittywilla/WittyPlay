@@ -67,6 +67,8 @@ var (
 	ddagrabOK   bool
 )
 
+func platformPermissions() []Permission { return nil }
+
 func platformMissing() []string {
 	var out []string
 	if ff, err := exec.LookPath("ffmpeg"); err == nil {

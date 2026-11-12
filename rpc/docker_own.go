@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/wittywilla/wittyplay"
 	"github.com/wittywilla/wittyplay/emulators"
@@ -38,7 +39,7 @@ func (b *DockerBackend) serveOwn(w http.ResponseWriter, _ *http.Request, _ int64
 	writeJSON(w, http.StatusOK, map[string]any{"own": emulators.OwnList(), "max": emulators.MaxOwn})
 }
 
-func (b *DockerBackend) serveSetOwn(w http.ResponseWriter, r *http.Request, _ int64, _ bool) {
+func (b *DockerBackend) serveSetOwn(w http.ResponseWriter, r *http.Request, user int64, _ bool) {
 	if b.dataDir == "" {
 		writeJSONError(w, http.StatusConflict, "no-data", "This module has no folder of its own to keep them in.")
 		return
@@ -77,9 +78,15 @@ func (b *DockerBackend) serveSetOwn(w http.ResponseWriter, r *http.Request, _ in
 	}
 	b.mu.Unlock()
 	if err := emulators.SaveOwn(b.ownPath(), list); err != nil {
+		b.log.WarnContext(r.Context(), "your own emulator programs couldn't be saved", "err", err)
 		writeJSONError(w, http.StatusInternalServerError, "save", err.Error())
 		return
 	}
 	emulators.SetOwn(list)
+	names := make([]string, len(list))
+	for i, o := range list {
+		names[i] = o.ID
+	}
+	b.log.InfoContext(r.Context(), "own emulator programs saved", "count", len(list), "ids", strings.Join(names, ","), "by", user, "audit", "yes")
 	writeJSON(w, http.StatusOK, map[string]any{"own": list, "max": emulators.MaxOwn})
 }

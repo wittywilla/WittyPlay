@@ -57,9 +57,10 @@ type Runtime struct {
 	// Look finds a program; exec.LookPath if nil. For tests.
 	Look func(string) (string, error)
 
-	mu    sync.Mutex
-	seq   int
-	procs map[string]*proc
+	mu        sync.Mutex
+	seq       int
+	procs     map[string]*proc
+	permsSeen string // what the availability check last found, so it's logged once a change
 }
 
 // proc is one emulator and everything started beside it.
@@ -71,6 +72,41 @@ type proc struct {
 	logPath string
 	cancel  context.CancelFunc
 	game    *game // set once started
+}
+
+// Permissions macOS asks for, by the names the log and the server use.
+const (
+	PermScreenRecording = "screen-recording"
+	PermAccessibility   = "accessibility"
+)
+
+// Permission is one of them, and whether the server has it.
+type Permission struct {
+	Name    string `json:"name"`
+	Granted bool   `json:"granted"`
+}
+
+// Permissions says which of the system's permissions the server has, where the system asks for
+// any (a Mac). Elsewhere it's empty.
+func (r *Runtime) Permissions() []Permission { return platformPermissions() }
+
+// permissionFix is what someone does about a missing one, in plain words.
+func permissionFix(name string) string {
+	pane := "Screen Recording"
+	if name == PermAccessibility {
+		pane = "Accessibility"
+	}
+	return "Open System Settings → Privacy & Security → " + pane + ", turn on WittyMediaServer, then restart the server."
+}
+
+// logPermissions warns about each permission missing. The availability check says so when what
+// it finds changes, and so once each time the module starts; a refused game says so each time.
+func logPermissions(log *slog.Logger, perms []Permission) {
+	for _, p := range perms {
+		if !p.Granted {
+			log.Warn("macOS permission missing", "permission", p.Name, "fix", permissionFix(p.Name))
+		}
+	}
 }
 
 func (r *Runtime) log() *slog.Logger {
@@ -112,7 +148,18 @@ func (r *Runtime) Missing() []string {
 func (r *Runtime) Available(context.Context) docker.Status {
 	st := docker.Status{Host: "this machine (" + sandboxName() + ")", OS: runtime.GOOS, Arch: runtime.GOARCH, Rootless: true,
 		CPUs: runtime.NumCPU(), MemoryMB: memoryMB()}
-	if m := r.Missing(); len(m) > 0 {
+	m := r.Missing()
+	if perms := r.Permissions(); len(perms) > 0 {
+		key := fmt.Sprint(perms)
+		r.mu.Lock()
+		changed := key != r.permsSeen
+		r.permsSeen = key
+		r.mu.Unlock()
+		if changed {
+			logPermissions(r.log(), perms)
+		}
+	}
+	if len(m) > 0 {
 		st.Error = strings.Join(m, "; ")
 		return st
 	}
@@ -301,12 +348,16 @@ func (r *Runtime) Start(_ context.Context, id string) error {
 		return err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	g, err := startGame(ctx, p.plan, ff, logf, r.log())
+	log := r.log().With("session", p.spec.Labels[docker.LabelSession], "emulator", p.spec.Labels[docker.LabelEmu])
+	g, err := startGame(ctx, p.plan, ff, logf, log)
 	if err != nil {
 		cancel()
 		logf.Close()
+		log.Warn("the emulator wouldn't start on this machine", "path", p.plan.Program, "err", err)
 		return err
 	}
+	log.Info("emulator started on this machine", "path", p.plan.Program, "pid", g.emu.Process.Pid, "log", p.logPath)
+	started := time.Now()
 	exited := make(chan struct{})
 	r.mu.Lock()
 	p.game, p.exited, p.cancel = g, exited, cancel
@@ -316,6 +367,17 @@ func (r *Runtime) Start(_ context.Context, id string) error {
 		g.wait()
 		cancel()
 		logf.Close()
+		g.mu.Lock()
+		asked := g.asked
+		g.mu.Unlock()
+		ran := time.Since(started).Round(time.Second).String()
+		if asked {
+			log.Info("the emulator exited", "ran", ran, "code", g.emu.ProcessState.ExitCode())
+		} else {
+			// Nobody asked it to go. What it said last is logged with the session's end, from Logs;
+			// the per-game file keeps all of it.
+			log.Warn("the emulator ended by itself", "ran", ran, "code", g.emu.ProcessState.ExitCode(), "log", p.logPath)
+		}
 		r.mu.Lock()
 		p.info.Running, p.info.Paused, p.info.State = false, false, "exited"
 		r.mu.Unlock()
@@ -333,6 +395,7 @@ func (r *Runtime) Stop(ctx context.Context, id string, timeout time.Duration) er
 	if p.game == nil {
 		return nil
 	}
+	p.game.logger.Info("stopping the emulator")
 	p.game.stop(false)
 	t := time.NewTimer(timeout)
 	defer t.Stop()
@@ -342,10 +405,12 @@ func (r *Runtime) Stop(ctx context.Context, id string, timeout time.Duration) er
 	case <-t.C:
 	case <-ctx.Done():
 	}
+	p.game.logger.Warn("the emulator didn't stop in time; ending it", "waited", timeout.String())
 	p.game.stop(true)
 	select {
 	case <-p.exited:
 	case <-time.After(5 * time.Second):
+		p.game.logger.Error("the emulator didn't end, even when killed")
 		return errors.New("the emulator didn't end")
 	}
 	return nil
@@ -500,6 +565,7 @@ type game struct {
 	enc     *encoder
 	kbps    int
 	stopped bool
+	asked   bool // something here asked it to stop: not a crash
 }
 
 // startGame starts the emulator and, in the background, what streams it.
@@ -569,9 +635,11 @@ func (g *game) stream(ctx context.Context) {
 	cancel()
 	if err != nil {
 		fmt.Fprintln(g.log, "wittyplay: the emulator's window never appeared:", err)
+		g.logger.Warn("the emulator's window never appeared; ending it", "waited", windowWait.String(), "err", err)
 		g.stop(true)
 		return
 	}
+	g.logger.Info("found the emulator's window")
 	g.mu.Lock()
 	g.agent.Sink = newSink(g.emu.Process.Pid, win, g.plan.Width, g.plan.Height)
 	g.mu.Unlock()
@@ -587,10 +655,19 @@ func (g *game) stream(ctx context.Context) {
 		if err != nil {
 			fmt.Fprintln(g.log, "wittyplay: the encoder wouldn't start:", err)
 			if errors.Is(err, errNoPermission) {
+				// Each game refused says so, as nothing else will tell its owner.
+				perms := platformPermissions()
+				if len(perms) == 0 {
+					perms = []Permission{{Name: PermScreenRecording}}
+				}
+				logPermissions(g.logger, perms)
+				g.logger.Warn("the system refused to let the server capture the emulator; ending it", "err", err)
 				g.stop(true)
 				return
 			}
+			g.logger.Warn("the encoder wouldn't start", "kbps", kbps, "encoder", g.plan.Encoder, "err", err)
 		} else {
+			g.logger.Info("encoder started", "kbps", kbps, "encoder", g.plan.Encoder)
 			g.mu.Lock()
 			g.enc = enc
 			g.mu.Unlock()
@@ -613,9 +690,11 @@ func (g *game) setBitrate(kbps int) {
 		g.mu.Unlock()
 		return
 	}
+	old := g.kbps
 	g.kbps = kbps
 	enc := g.enc
 	g.mu.Unlock()
+	g.logger.Info("the stream's bitrate changed", "kbps", kbps, "was", old)
 	if enc != nil {
 		enc.close() // the loop in stream starts it again at the new rate, with a keyframe
 	}
@@ -653,7 +732,7 @@ func (g *game) suspend(paused bool) error { return suspend(g.emu, g.box, paused)
 // stop ends the emulator: politely, or now.
 func (g *game) stop(now bool) {
 	g.mu.Lock()
-	g.stopped = true
+	g.stopped, g.asked = true, true
 	enc := g.enc
 	g.mu.Unlock()
 	if enc != nil {

@@ -251,7 +251,7 @@ func (m *Manager) Start(opt Options) (*Session, error) {
 		s.Stop()
 	}
 
-	s, err := m.startOn(opt, len(opt.Fallbacks) > 0)
+	s, failed, err := m.startOn(opt, len(opt.Fallbacks) > 0)
 	if err == nil || errors.Is(err, ErrBusy) || errors.Is(err, ErrGPUBusy) {
 		return s, err
 	}
@@ -264,12 +264,12 @@ func (m *Manager) Start(opt Options) (*Session, error) {
 	// What the core they would have chosen said is the error worth showing.
 	first := err
 	for i, next := range opt.Fallbacks {
-		m.log.Info("the game would not load; trying the next core", "game", opt.Title, "err", err)
+		m.log.Info("the game would not load; trying the next core", "game", opt.Title, "session", failed, "next", next.CoreID, "err", err)
 		try := opt
 		try.Core, try.CoreOptions, try.GPU = next.Core, next.Options, next.GPU
 		try.RunnerArgs, try.CoreID = next.RunnerArgs, next.CoreID
 		last := i == len(opt.Fallbacks)-1
-		if s, err = m.startOn(try, !last); err == nil {
+		if s, failed, err = m.startOn(try, !last); err == nil {
 			return s, nil
 		}
 		if errors.Is(err, ErrBusy) || errors.Is(err, ErrGPUBusy) || errors.Is(err, ErrReplaced) {
@@ -283,8 +283,8 @@ func (m *Manager) Start(opt Options) (*Session, error) {
 }
 
 // startOn starts a game on one core. With more cores to try, a failure leaves the
-// unpacked game in place for the next.
-func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {
+// unpacked game in place for the next. The id is the session that was tried, for the log, or "".
+func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, string, error) {
 	opt = forThisGame(opt)
 	coreID := opt.CoreID
 	if coreID == "" {
@@ -294,13 +294,13 @@ func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {
 		if !moreToTry && opt.Cleanup != nil {
 			opt.Cleanup()
 		}
-		return nil, errors.New(why)
+		return nil, "", errors.New(why)
 	}
 	cfg := m.config()
 	m.mu.Lock()
 	if len(m.sessions) >= cfg.MaxSessions {
 		m.mu.Unlock()
-		return nil, ErrBusy
+		return nil, "", ErrBusy
 	}
 	if opt.GPU {
 		n := 0
@@ -315,7 +315,7 @@ func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {
 		}
 		if n >= maxGPU {
 			m.mu.Unlock()
-			return nil, ErrGPUBusy
+			return nil, "", ErrGPUBusy
 		}
 	}
 	if moreToTry {
@@ -334,14 +334,14 @@ func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, error) {
 		m.remove(s)
 		s.cleanup()
 		if s.stopAsked.Load() {
-			return nil, ErrReplaced
+			return nil, id, ErrReplaced
 		}
-		return nil, err
+		return nil, id, err
 	}
 	if opt.keep != nil {
 		opt.keep.commit()
 	}
-	return s, nil
+	return s, id, nil
 }
 
 // keptCleanup holds a session's cleanup back until the session is known to have
@@ -535,6 +535,11 @@ func (s *Session) Info() Info {
 }
 
 func (s *Session) start() error {
+	enc := "software"
+	if len(s.cfg.HWEncoders) > 0 {
+		enc = s.cfg.HWEncoders[0]
+	}
+	s.log.Info("game session started", "core", s.opt.CoreID, "console", s.opt.Console, "gpu", s.opt.GPU, "encoder", enc, "resume", s.opt.Resume)
 	// With no runner, anyone stopping this has nothing to wait for.
 	noRunner := func(err error) error {
 		close(s.spawned)
@@ -1124,6 +1129,7 @@ func (s *Session) deliverState(id uint32, b []byte) {
 // Stop saves the game and ends it. It returns once everything is written.
 func (s *Session) Stop() {
 	s.stopOnce.Do(func() {
+		s.log.Info("stopping the game", "ran", time.Since(s.began).Round(time.Second).String())
 		s.stopAsked.Store(true)
 		s.stopping.Store(true)
 		<-s.spawned // a runner may be on its way, and this needs its pipes
@@ -1190,6 +1196,14 @@ func (s *Session) finish() {
 	if v := s.exitErr.Load(); v != nil && !s.stopping.Load() {
 		why = v.(string)
 	}
+	lv := slog.LevelInfo
+	if !s.stopping.Load() {
+		lv = slog.LevelWarn
+	}
+	s.viewMu.Lock()
+	enc := s.encName
+	s.viewMu.Unlock()
+	s.log.Log(context.Background(), lv, "game session ended", "ran", time.Since(s.began).Round(time.Second).String(), "code", s.endCodeNow(), "why", truncate(why, 300), "encoder", enc)
 	if b, err := json.Marshal(map[string]string{"type": "ended", "code": s.endCodeNow(), "text": truncate(why, 300)}); err == nil && len(s.snapshotViewers()) > 0 {
 		s.broadcastEvent(b)
 		time.Sleep(300 * time.Millisecond)

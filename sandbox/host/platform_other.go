@@ -24,8 +24,10 @@ func unsupported() string {
 }
 
 func platformMissing() []string { return nil }
-func sandboxName() string       { return "none" }
-func memoryMB() int64           { return 0 }
+
+func platformPermissions() []Permission { return nil }
+func sandboxName() string               { return "none" }
+func memoryMB() int64                   { return 0 }
 
 type window struct{}
 

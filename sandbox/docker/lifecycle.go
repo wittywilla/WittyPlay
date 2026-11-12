@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -43,6 +44,15 @@ type Container struct {
 	doneOnce   sync.Once
 	reason     string
 	lastLog    string
+}
+
+// keyRun is what looks like key material in what an emulator prints: a long run of hex after a
+// word ending in "key" (Switch emulators print their keys' names, and sometimes their values).
+var keyRun = regexp.MustCompile(`(?i)(key[^\n0-9a-f]{0,16})[0-9a-f]{32,}`)
+
+// RedactKeys hides key material in what an emulator printed, before it reaches a log.
+func RedactKeys(s string) string {
+	return keyRun.ReplaceAllString(s, "${1}[hidden]")
 }
 
 // LastLog is the end of what an emulator said before it ended by itself, for the log.
@@ -214,6 +224,7 @@ func (l *Lifecycle) Start(ctx context.Context, s Spec) (*Container, error) {
 	l.mu.Lock()
 	l.sessions[sid] = c
 	l.mu.Unlock()
+	l.log().Info("docker: emulator started", "session", sid, "emulator", s.Labels[LabelEmu], "id", short(id), "local", s.Local, "host", s.Host)
 	return c, nil
 }
 
@@ -312,6 +323,7 @@ func (l *Lifecycle) stop(ctx context.Context, sessionID, why string) error {
 	if c == nil {
 		return ErrNoContainer
 	}
+	l.log().Info("docker: stopping an emulator", "session", sessionID, "reason", why, "ran", l.now().Sub(c.Started).Round(time.Second).String())
 	defer c.finish(why)
 	if c.Paused() {
 		_ = l.RT.Unpause(ctx, c.ID) // a frozen process can't be asked to stop
@@ -369,7 +381,7 @@ func (l *Lifecycle) Reap(ctx context.Context) {
 						out = out[len(out)-4096:]
 					}
 					c.mu.Lock()
-					c.lastLog = out
+					c.lastLog = RedactKeys(out)
 					c.mu.Unlock()
 				}
 				_ = l.stop(ctx, c.SessionID, "exited")

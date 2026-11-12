@@ -29,6 +29,13 @@
       "docker.backend",
       "docker.images",
       "docker.hostPaths"
+    ],
+    "logTopics": [
+      "core|Cores|What each game's core says as it runs",
+      "runner|Game runner|How each game runner ended, when it ended normally",
+      "capture|Streaming|Frame rate and encoding time every half minute while a game is watched",
+      "firmware|Firmware|Which BIOS, key and firmware files an emulator found, by name only",
+      "settings|Settings saved|Which emulator settings were changed, by name only"
     ]
   },
   "group": "games",

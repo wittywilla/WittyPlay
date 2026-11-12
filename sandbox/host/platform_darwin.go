@@ -51,6 +51,15 @@ func platformMissing() []string {
 	return out
 }
 
+// platformPermissions says which of the permissions macOS asks for the server has. Nothing is
+// known when the frameworks can't be loaded.
+func platformPermissions() []Permission {
+	if err := loadMac(); err != nil {
+		return nil
+	}
+	return []Permission{{Name: PermScreenRecording, Granted: mac.screenAccess()}, {Name: PermAccessibility, Granted: mac.postAccess()}}
+}
+
 func sandboxName() string { return "sandbox-exec" }
 
 func memoryMB() int64 {

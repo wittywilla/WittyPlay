@@ -408,7 +408,7 @@ func (in *Installer) fetch(ctx context.Context, url, to string, want int64, prog
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return "", 0, err
+		return "", 0, CleanURLError(err)
 	}
 	if have > 0 && (want <= 0 || have < want) {
 		req.Header.Set("Range", "bytes="+strconv.FormatInt(have, 10)+"-")
@@ -420,7 +420,7 @@ func (in *Installer) fetch(ctx context.Context, url, to string, want int64, prog
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", 0, err
+		return "", 0, CleanURLError(err)
 	}
 	defer resp.Body.Close()
 	flags := os.O_WRONLY | os.O_CREATE
