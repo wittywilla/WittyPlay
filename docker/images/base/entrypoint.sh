@@ -32,7 +32,7 @@ if [ "$#" -eq 0 ]; then
 	exit 2
 fi
 
-mkdir -p "$XDG_RUNTIME_DIR/pulse" "$HOME" /saves/config /saves/data 2>/dev/null || true
+mkdir -p "$XDG_RUNTIME_DIR/pulse" "$HOME" "${XDG_CONFIG_HOME:-/saves/config}" "${XDG_DATA_HOME:-/saves/data}" 2>/dev/null || true
 chmod 0700 "$XDG_RUNTIME_DIR"
 
 pids=""

@@ -6,7 +6,9 @@ package local
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -138,5 +140,36 @@ func TestMissingSaysWhy(t *testing.T) {
 	}
 	if _, err := r.Create(context.Background(), localSpec(t, nil)); !errors.Is(err, docker.ErrUnavailable) {
 		t.Errorf("create with nothing installed: %v", err)
+	}
+}
+
+// FreeBSD: no bubblewrap, so every container path becomes this machine's, under limits(1).
+func TestArgsLimitsOnly(t *testing.T) {
+	s := localSpec(t, nil)
+	work := filepath.Join(t.TempDir(), "run")
+	a, err := ArgsLimitsOnly(s, "/x/entrypoint.sh", "/x/agent", work, 123)
+	if err != nil {
+		t.Fatal(err)
+	}
+	line := strings.Join(a, " ")
+	for _, want := range []string{"limits -m " + strconv.FormatInt(s.MemoryBytes, 10) + " env -i", "HOME=" + filepath.Join(work, "home"), "XDG_RUNTIME_DIR=" + filepath.Join(work, "tmp", "runtime"),
+		"WITTYPLAY_ROM=/library/dc/game.chd", filepath.Join(work, "tools", "wittyplay-entrypoint") + " /data/emulators/flycast/2.4/flycast.AppImage /library/dc/game.chd"} {
+		if !strings.Contains(line, want) {
+			t.Errorf("missing %q in\n%s", want, line)
+		}
+	}
+	if !strings.Contains(line, "WITTYPLAY_RTP_VIDEO=40492 ") || !strings.Contains(line, "WITTYPLAY_RTP_AUDIO=40494 ") {
+		t.Errorf("the session's RTP ports are shared:\n%s", line)
+	}
+	if !strings.Contains(line, "DISPLAY=:123 ") || !strings.Contains(line, "PULSE_SERVER=unix:"+filepath.Join(work, "tmp", "runtime")) {
+		t.Errorf("the display or the sound server is shared:\n%s", line)
+	}
+	for _, c := range []string{"=" + docker.ContainerROM + "/", "=" + docker.ContainerSaves + "/", " " + docker.ContainerProgram + "/", "HOME=/home", "RUNTIME_DIR=/tmp/", ":/tmp/"} {
+		if strings.Contains(line, c) {
+			t.Errorf("a container path %q is left in\n%s", c, line)
+		}
+	}
+	if _, err := ArgsLimitsOnly(s, "e", "a", "relative", 123); err == nil {
+		t.Error("a relative session folder was taken")
 	}
 }

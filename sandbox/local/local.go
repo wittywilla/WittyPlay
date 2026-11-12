@@ -94,8 +94,22 @@ func (r *Runtime) Missing() []string {
 	if goos == "" {
 		goos = runtime.GOOS
 	}
+	if goos == "freebsd" {
+		// No bubblewrap, and no sandbox an unprivileged program can use: resource limits only,
+		// which the settings page says before it's chosen.
+		var out []string
+		for _, n := range append([]string{"limits"}, needs...) {
+			if _, err := r.look(n); err != nil {
+				out = append(out, n+" isn't installed")
+			}
+		}
+		if st, err := os.Stat(r.agent()); err != nil || st.IsDir() {
+			out = append(out, "wittyplay-input-agent isn't beside the module")
+		}
+		return out
+	}
 	if goos != "linux" {
-		return []string{"the local sandbox is bubblewrap, which only Linux has; on " + goos + " standalone emulators need Docker"}
+		return []string{"the local sandbox is bubblewrap, which only Linux has; on " + goos + " standalone emulators run on this machine's desktop or in Docker"}
 	}
 	var out []string
 	if _, err := r.look("bwrap"); err != nil {
@@ -117,7 +131,11 @@ func (r *Runtime) Missing() []string {
 
 // Available says whether the local sandbox can run here.
 func (r *Runtime) Available(context.Context) docker.Status {
-	st := docker.Status{Host: "this machine's own sandbox (bubblewrap)", OS: runtime.GOOS, Arch: runtime.GOARCH, Rootless: true,
+	host := "this machine's own sandbox (bubblewrap)"
+	if r.GOOS == "freebsd" || (r.GOOS == "" && runtime.GOOS == "freebsd") {
+		host = "this machine, with a display of its own and resource limits only"
+	}
+	st := docker.Status{Host: host, OS: runtime.GOOS, Arch: runtime.GOARCH, Rootless: true,
 		CPUs: runtime.NumCPU(), MemoryMB: memoryMB()}
 	if m := r.Missing(); len(m) > 0 {
 		st.Error = strings.Join(m, "; ")
@@ -245,7 +263,23 @@ func (r *Runtime) Start(_ context.Context, id string) error {
 	if err := os.WriteFile(entry, base.Entrypoint, 0o500); err != nil && !errors.Is(err, os.ErrPermission) {
 		return err
 	}
-	args, err := Args(p.spec, entry, r.agent(), "wittyplay-"+strings.ReplaceAll(id, "local-", ""))
+	goos := r.GOOS
+	if goos == "" {
+		goos = runtime.GOOS
+	}
+	var args []string
+	if goos == "freebsd" {
+		work := filepath.Join(r.Dir, strings.ReplaceAll(id, "local-", "run-"))
+		if err := prepareLimitsOnly(work, entry, r.agent()); err != nil {
+			return err
+		}
+		r.mu.Lock()
+		display := 100 + r.seq%800
+		r.mu.Unlock()
+		args, err = ArgsLimitsOnly(p.spec, entry, r.agent(), work, display)
+	} else {
+		args, err = Args(p.spec, entry, r.agent(), "wittyplay-"+strings.ReplaceAll(id, "local-", ""))
+	}
 	if err != nil {
 		return err
 	}
