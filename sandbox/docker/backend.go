@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"time"
@@ -34,14 +35,48 @@ const (
 // nobody picks it per emulator.
 const BackendLocalWebRTC Backend = "local+webrtc"
 
+// BackendHostWebRTC: a standalone emulator on this machine's own desktop, in the system's own
+// sandbox (sandbox/host), captured and streamed the way BackendDockerWebRTC is. It's what a game
+// gets when docker.runtime is "host": a Mac or a Windows server.
+const BackendHostWebRTC Backend = "host+webrtc"
+
 // Backends lists them, for a settings page.
-var Backends = []Backend{BackendProcess, BackendDockerWebRTC, BackendDockerKasmVNC, BackendLocalWebRTC}
+var Backends = []Backend{BackendProcess, BackendDockerWebRTC, BackendDockerKasmVNC, BackendLocalWebRTC, BackendHostWebRTC}
 
 // Runtimes an administrator can choose between.
 const (
 	RuntimeDocker = "docker" // a Docker (or Podman) daemon
-	RuntimeLocal  = "local"  // bubblewrap on this machine, Linux only
+	RuntimeLocal  = "local"  // a display of its own on this machine: bubblewrap on Linux, limits only on FreeBSD
+	RuntimeHost   = "host"   // this machine's own desktop and sandbox: macOS and Windows
 )
+
+// DefaultRuntime is what a new server starts with: this machine's own sandbox where there is
+// one that needs no daemon, Docker on Linux (whose own sandbox needs bubblewrap installed).
+func DefaultRuntime(goos string) string {
+	switch goos {
+	case "darwin", "windows":
+		return RuntimeHost
+	case "freebsd":
+		return RuntimeLocal
+	}
+	return RuntimeDocker
+}
+
+// RuntimeChoices are the runtimes a server on goos can use, for its settings page.
+func RuntimeChoices(goos string) []Choice {
+	out := []Choice{{RuntimeDocker, "Docker or Podman containers"}}
+	switch goos {
+	case "linux":
+		out = append(out, Choice{RuntimeLocal, "This machine's own sandbox (bubblewrap and a display of its own)"})
+	case "freebsd":
+		out = append(out, Choice{RuntimeLocal, "This machine, with a display of its own (limits only: FreeBSD has no sandbox WittyPlay can use)"})
+	case "darwin":
+		out = append(out, Choice{RuntimeHost, "This Mac (sandbox-exec; needs Screen Recording and Accessibility permission)"})
+	case "windows":
+		out = append(out, Choice{RuntimeHost, "This PC (a job object at low integrity; needs a signed-in desktop)"})
+	}
+	return out
+}
 
 // Settings are what an administrator sets for the Docker backend. Docker is off until Enabled is
 // set, and with it off nothing here runs and nothing reaches the daemon.
@@ -72,7 +107,7 @@ type Settings struct {
 
 // DefaultSettings: off.
 func DefaultSettings() Settings {
-	return Settings{Enabled: false, Runtime: RuntimeDocker, Network: "wittyplay", Overrides: map[string]Backend{}, Images: map[string]string{}}
+	return Settings{Enabled: false, Runtime: DefaultRuntime(runtime.GOOS), Network: "wittyplay", Overrides: map[string]Backend{}, Images: map[string]string{}}
 }
 
 // Choice is one value a setting may take, and what a page calls it.
@@ -111,8 +146,8 @@ func Schema(emus []Choice) []Field {
 	f := []Field{
 		{Key: "docker.enabled", Kind: "toggle", Label: "Run standalone emulators", Default: false,
 			Help: "Off by default. Libretro cores always run in WittyPlay's own sandbox, whatever this says."},
-		{Key: "docker.runtime", Kind: "choice", Label: "Where they run", Default: RuntimeDocker,
-			Choices: []Choice{{RuntimeDocker, "Docker or Podman containers"}, {RuntimeLocal, "This machine's own sandbox (bubblewrap, Linux only)"}},
+		{Key: "docker.runtime", Kind: "choice", Label: "Where they run", Default: DefaultRuntime(runtime.GOOS),
+			Choices: RuntimeChoices(runtime.GOOS),
 			Help:    "Reaching a Docker daemon that runs as root is as good as being root on this machine. A rootless daemon, Podman, or the local sandbox isn't."},
 		{Key: "docker.network", Kind: "text", Label: "Docker network", Default: "wittyplay"},
 		{Key: "docker.internal", Kind: "toggle", Label: "No internet for emulators", Default: false,
@@ -145,10 +180,10 @@ func (s Settings) Clean() (Settings, error) {
 		s.Network = "wittyplay"
 	}
 	if s.Runtime == "" {
-		s.Runtime = RuntimeDocker
+		s.Runtime = DefaultRuntime(runtime.GOOS)
 	}
-	if s.Runtime != RuntimeDocker && s.Runtime != RuntimeLocal {
-		return s, fmt.Errorf("runtime %q is neither docker nor local", s.Runtime)
+	if s.Runtime != RuntimeDocker && s.Runtime != RuntimeLocal && s.Runtime != RuntimeHost {
+		return s, fmt.Errorf("runtime %q is none of docker, local and host", s.Runtime)
 	}
 	if strings.ContainsAny(s.Network, "/:@ ") || s.Network == "host" || s.Network == "bridge" || s.Network == "none" || len(s.Network) > 64 {
 		return s, fmt.Errorf("network %q can't be WittyPlay's own", s.Network)
@@ -200,7 +235,7 @@ func Choose(s Settings, dockerUp bool, emulatorID, stream string) (Backend, erro
 		return BackendProcess, nil
 	}
 	if !s.Enabled {
-		return "", errors.New("standalone emulators need the Docker backend, which is off; an administrator can turn it on in Settings, Consoles & cores")
+		return "", errors.New("standalone emulators are off; an administrator can turn them on in Settings, Standalone emulators")
 	}
 	if !dockerUp {
 		return "", ErrUnavailable
@@ -214,6 +249,9 @@ func Choose(s Settings, dockerUp bool, emulatorID, stream string) (Backend, erro
 	}
 	if s.Runtime == RuntimeLocal && b != BackendProcess {
 		b = BackendLocalWebRTC // the local sandbox has no desktop stream
+	}
+	if s.Runtime == RuntimeHost && b != BackendProcess {
+		b = BackendHostWebRTC // the window itself is captured: an emulator's desktop is its window
 	}
 	if b == BackendProcess {
 		return "", errors.New("an administrator has turned this emulator off")

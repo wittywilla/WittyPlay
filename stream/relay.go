@@ -505,3 +505,7 @@ func (r *Relay) Viewers() int {
 	defer r.mu.Unlock()
 	return len(r.viewers)
 }
+
+// FFmpegPath is the encoder the server gave the module, for what runs beside an emulator on this
+// machine (sandbox/host).
+func (m *Manager) FFmpegPath() string { return m.config().FFmpeg }

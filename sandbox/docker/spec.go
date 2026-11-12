@@ -177,8 +177,9 @@ func Build(r Request) (Spec, error) {
 	} else if !Pinned(r.Image) {
 		return Spec{}, ErrNotPinned
 	}
-	if r.Encoder != "" && r.Encoder != "x264" && r.Encoder != "vaapi" {
-		return Spec{}, fmt.Errorf("encoder %q is neither x264 nor vaapi", r.Encoder)
+	hostEncoders := []string{"videotoolbox", "nvenc", "qsv", "amf"}
+	if r.Encoder != "" && r.Encoder != "x264" && r.Encoder != "vaapi" && !(r.Host && slices.Contains(hostEncoders, r.Encoder)) {
+		return Spec{}, fmt.Errorf("encoder %q isn't one for this kind of sandbox", r.Encoder)
 	}
 	if r.Encoder == "vaapi" && !r.GPU.DRI {
 		return Spec{}, errors.New("encoding on the graphics card needs it passed through (docker.gpu DRI)")

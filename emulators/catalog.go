@@ -150,6 +150,18 @@ type Emulator struct {
 	// NeedsBios: it won't start a game without firmware of the person's own.
 	NeedsBios bool  `json:"needsBios,omitempty"`
 	Image     Image `json:"image"`
+	// Own: an administrator's own program (own.go), never in the built-in list. Like is the
+	// emulator in the list it's a build of, whose settings it takes.
+	Own  bool   `json:"own,omitempty"`
+	Like string `json:"like,omitempty"`
+}
+
+// Base is the id whose settings and controller set-up apply: an own program's Like, or its own.
+func (e *Emulator) Base() string {
+	if e.Own && e.Like != "" {
+		return e.Like
+	}
+	return e.ID
 }
 
 // Requires is the least an emulator needs.
@@ -213,8 +225,15 @@ func Builtin() (*Manifest, error) {
 	return builtin, builtinErr
 }
 
-// Find returns an emulator from the built-in list, or nil.
+// Find returns an emulator from the built-in list, or an administrator's own program, or nil.
 func Find(id string) *Emulator {
+	if strings.HasPrefix(id, OwnPrefix) {
+		return findOwn(id)
+	}
+	return findBuiltin(id)
+}
+
+func findBuiltin(id string) *Emulator {
 	m, err := Builtin()
 	if err != nil {
 		return nil
@@ -240,20 +259,25 @@ func ForSystem(system string) []Emulator {
 			out = append(out, e)
 		}
 	}
-	return out
+	return append(out, ownFor(system)...)
 }
 
 // CustomPrefix starts the id of a console an administrator added themselves (WittyPlay's
-// custom consoles). The list names consoles by WittyPlay's own ids where it has one (ps2, psp,
-// nds, dc, ps1); for one it doesn't know (gamecube, wii, xbox, wiiu, ps3, switch) an
-// administrator adds a custom console named for it, custom-gamecube and so on, and that's the
-// console an emulator for "gamecube" plays.
+// custom consoles). Before GameCube, Wii, Wii U, PS3, Xbox and Switch were consoles of WittyPlay's
+// own, an administrator added custom-gamecube and the like for an emulator to play; the server
+// moves those to the real consoles, and until it has, an emulator still plays them.
 const CustomPrefix = "custom-"
+
+// legacyCustom are the names the old documentation gave those custom consoles.
+var legacyCustom = map[string]string{"custom-gamecube": "gc", "custom-ngc": "gc"}
 
 // Plays says whether an emulator plays a console's games, by the console's id.
 func (e *Emulator) Plays(console string) bool {
 	if console == "" {
 		return false
+	}
+	if real, ok := legacyCustom[console]; ok {
+		console = real
 	}
 	return slices.Contains(e.Systems, console) || slices.Contains(e.Systems, strings.TrimPrefix(console, CustomPrefix))
 }
