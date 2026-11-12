@@ -1,0 +1,2185 @@
+{
+  "emulator": "melonds",
+  "version": "1.1",
+  "source": "https://github.com/melonDS-emu/melonDS/tree/1.1",
+  "settings": [
+    {
+      "key": "instance0.window0.width",
+      "kind": "number",
+      "label": "Width",
+      "default": 256,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "Width"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "instance0.window0.height",
+      "kind": "number",
+      "label": "Height",
+      "default": 384,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "Height"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "screen.vSyncInterval",
+      "kind": "number",
+      "label": "V sync interval",
+      "default": 1,
+      "min": 1,
+      "max": 20,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Screen",
+            "VSyncInterval"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Screen"
+    },
+    {
+      "key": "k3d.renderer",
+      "kind": "choice",
+      "label": "Renderer",
+      "default": "0",
+      "max": 2,
+      "choices": [
+        {
+          "value": "0",
+          "label": "Software"
+        },
+        {
+          "value": "1",
+          "label": "Open GL"
+        },
+        {
+          "value": "2",
+          "label": "Open GL compute"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "3D",
+            "Renderer"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "3D"
+    },
+    {
+      "key": "k3d.gl.scaleFactor",
+      "kind": "number",
+      "label": "Scale factor",
+      "default": 1,
+      "min": 1,
+      "max": 16,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "3D",
+            "GL",
+            "ScaleFactor"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "3D, GL"
+    },
+    {
+      "key": "jit.maxBlockSize",
+      "kind": "number",
+      "label": "Max block size",
+      "default": 32,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "JIT",
+            "MaxBlockSize"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "JIT"
+    },
+    {
+      "key": "instance0.firmware.language",
+      "kind": "number",
+      "label": "Language",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Firmware",
+            "Language"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Firmware"
+    },
+    {
+      "key": "instance0.firmware.birthdayMonth",
+      "kind": "number",
+      "label": "Birthday month",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Firmware",
+            "BirthdayMonth"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Firmware"
+    },
+    {
+      "key": "instance0.firmware.birthdayDay",
+      "kind": "number",
+      "label": "Birthday day",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Firmware",
+            "BirthdayDay"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Firmware"
+    },
+    {
+      "key": "mp.audioMode",
+      "kind": "number",
+      "label": "Audio mode",
+      "default": 1,
+      "max": 2,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "MP",
+            "AudioMode"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "MP"
+    },
+    {
+      "key": "mp.recvTimeout",
+      "kind": "number",
+      "label": "Recv timeout",
+      "default": 25,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "MP",
+            "RecvTimeout"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "MP"
+    },
+    {
+      "key": "instance0.audio.volume",
+      "kind": "number",
+      "label": "Volume",
+      "default": 256,
+      "max": 256,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Audio",
+            "Volume"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "mic.inputType",
+      "kind": "choice",
+      "label": "Input type",
+      "default": "1",
+      "max": 3,
+      "choices": [
+        {
+          "value": "0",
+          "label": "Silence"
+        },
+        {
+          "value": "1",
+          "label": "External"
+        },
+        {
+          "value": "2",
+          "label": "Noise"
+        },
+        {
+          "value": "3",
+          "label": "Wav"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Mic",
+            "InputType"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Mic"
+    },
+    {
+      "key": "mouse.hideSeconds",
+      "kind": "number",
+      "label": "Hide seconds",
+      "default": 5,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Mouse",
+            "HideSeconds"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Mouse"
+    },
+    {
+      "key": "instance0.dSi.battery.level",
+      "kind": "number",
+      "label": "Level",
+      "default": 15,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "DSi",
+            "Battery",
+            "Level"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "D si, Battery"
+    },
+    {
+      "key": "instance0.gdb.arm7.port",
+      "kind": "number",
+      "label": "Port",
+      "default": 3334,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Gdb",
+            "ARM7",
+            "Port"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Gdb, ARM 7"
+    },
+    {
+      "key": "instance0.gdb.arm9.port",
+      "kind": "number",
+      "label": "Port",
+      "default": 3333,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Gdb",
+            "ARM9",
+            "Port"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Gdb, ARM 9"
+    },
+    {
+      "key": "lan.hostNumPlayers",
+      "kind": "number",
+      "label": "Host num players",
+      "default": 16,
+      "min": 2,
+      "max": 16,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "LAN",
+            "HostNumPlayers"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "LAN"
+    },
+    {
+      "key": "emu.consoleType",
+      "kind": "number",
+      "label": "Console type",
+      "default": 0,
+      "max": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Emu",
+            "ConsoleType"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Emu"
+    },
+    {
+      "key": "audio.interpolation",
+      "kind": "number",
+      "label": "Interpolation",
+      "default": 0,
+      "max": 4,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Audio",
+            "Interpolation"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "instance0.window0.screenRotation",
+      "kind": "choice",
+      "label": "Screen rotation",
+      "default": "0",
+      "max": 3,
+      "choices": [
+        {
+          "value": "0",
+          "label": "0deg"
+        },
+        {
+          "value": "1",
+          "label": "90deg"
+        },
+        {
+          "value": "2",
+          "label": "180deg"
+        },
+        {
+          "value": "3",
+          "label": "270deg"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "ScreenRotation"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "instance0.window0.screenGap",
+      "kind": "number",
+      "label": "Screen gap",
+      "default": 0,
+      "max": 500,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "ScreenGap"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "instance0.window0.screenLayout",
+      "kind": "choice",
+      "label": "Screen layout",
+      "default": "0",
+      "max": 3,
+      "choices": [
+        {
+          "value": "0",
+          "label": "Natural"
+        },
+        {
+          "value": "1",
+          "label": "Vertical"
+        },
+        {
+          "value": "2",
+          "label": "Horizontal"
+        },
+        {
+          "value": "3",
+          "label": "Hybrid"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "ScreenLayout"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "instance0.window0.screenSizing",
+      "kind": "choice",
+      "label": "Screen sizing",
+      "default": "0",
+      "max": 5,
+      "choices": [
+        {
+          "value": "0",
+          "label": "Even"
+        },
+        {
+          "value": "1",
+          "label": "Emph top"
+        },
+        {
+          "value": "2",
+          "label": "Emph bot"
+        },
+        {
+          "value": "3",
+          "label": "Auto"
+        },
+        {
+          "value": "4",
+          "label": "Top only"
+        },
+        {
+          "value": "5",
+          "label": "Bot only"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "ScreenSizing"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "instance0.window0.screenAspectTop",
+      "kind": "number",
+      "label": "Screen aspect top",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "ScreenAspectTop"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "instance0.window0.screenAspectBot",
+      "kind": "number",
+      "label": "Screen aspect bot",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "ScreenAspectBot"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "screen.filter",
+      "kind": "toggle",
+      "label": "Filter",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Screen",
+            "Filter"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Screen"
+    },
+    {
+      "key": "k3d.soft.threaded",
+      "kind": "toggle",
+      "label": "Threaded",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "3D",
+            "Soft",
+            "Threaded"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "3D, Soft"
+    },
+    {
+      "key": "k3d.gl.hiresCoordinates",
+      "kind": "toggle",
+      "label": "Hires coordinates",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "3D",
+            "GL",
+            "HiresCoordinates"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "3D, GL"
+    },
+    {
+      "key": "limitFps",
+      "kind": "toggle",
+      "label": "Limit FPS",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "LimitFPS"
+          ],
+          "type": "bool"
+        }
+      }
+    },
+    {
+      "key": "instance0.window0.showOsd",
+      "kind": "toggle",
+      "label": "Show OSD",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "ShowOSD"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "emu.directBoot",
+      "kind": "toggle",
+      "label": "Direct boot",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Emu",
+            "DirectBoot"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Emu"
+    },
+    {
+      "key": "instance0.ds.battery.levelOkay",
+      "kind": "toggle",
+      "label": "Level okay",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "DS",
+            "Battery",
+            "LevelOkay"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "DS, Battery"
+    },
+    {
+      "key": "instance0.dSi.battery.charging",
+      "kind": "toggle",
+      "label": "Charging",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "DSi",
+            "Battery",
+            "Charging"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "D si, Battery"
+    },
+    {
+      "key": "jit.branchOptimisations",
+      "kind": "toggle",
+      "label": "Branch optimisations",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "JIT",
+            "BranchOptimisations"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "JIT"
+    },
+    {
+      "key": "jit.literalOptimisations",
+      "kind": "toggle",
+      "label": "Literal optimisations",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "JIT",
+            "LiteralOptimisations"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "JIT"
+    },
+    {
+      "key": "jit.fastMemory",
+      "kind": "toggle",
+      "label": "Fast memory",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "JIT",
+            "FastMemory"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "JIT"
+    },
+    {
+      "key": "dSi.dsp.hle",
+      "kind": "toggle",
+      "label": "HLE",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "DSP",
+            "HLE"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "D si, DSP"
+    },
+    {
+      "key": "dldi.imagePath",
+      "kind": "text",
+      "label": "Image path",
+      "default": "dldi.bin",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DLDI",
+            "ImagePath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "DLDI"
+    },
+    {
+      "key": "dSi.sd.imagePath",
+      "kind": "text",
+      "label": "Image path",
+      "default": "dsisd.bin",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "SD",
+            "ImagePath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si, SD"
+    },
+    {
+      "key": "instance0.firmware.username",
+      "kind": "text",
+      "label": "Username",
+      "default": "melonDS",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Firmware",
+            "Username"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Firmware"
+    },
+    {
+      "key": "targetFps",
+      "kind": "number",
+      "label": "Target FPS",
+      "default": 60,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "TargetFPS"
+          ],
+          "type": "float"
+        }
+      }
+    },
+    {
+      "key": "fastForwardFps",
+      "kind": "number",
+      "label": "Fast forward FPS",
+      "default": 1000,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "FastForwardFPS"
+          ],
+          "type": "float"
+        }
+      }
+    },
+    {
+      "key": "slowmoFps",
+      "kind": "number",
+      "label": "Slowmo FPS",
+      "default": 30,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "SlowmoFPS"
+          ],
+          "type": "float"
+        }
+      }
+    },
+    {
+      "key": "instance0.window0.screenSwap",
+      "kind": "toggle",
+      "label": "Screen swap",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "ScreenSwap"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "instance0.window0.integerScaling",
+      "kind": "toggle",
+      "label": "Integer scaling",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Window0",
+            "IntegerScaling"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Window 0",
+      "advanced": true
+    },
+    {
+      "key": "screen.useGl",
+      "kind": "toggle",
+      "label": "Use GL",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Screen",
+            "UseGL"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Screen"
+    },
+    {
+      "key": "screen.vSync",
+      "kind": "toggle",
+      "label": "V sync",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Screen",
+            "VSync"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Screen"
+    },
+    {
+      "key": "k3d.gl.betterPolygons",
+      "kind": "toggle",
+      "label": "Better polygons",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "3D",
+            "GL",
+            "BetterPolygons"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "3D, GL"
+    },
+    {
+      "key": "maxFps",
+      "kind": "number",
+      "label": "Max FPS",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "MaxFPS"
+          ],
+          "type": "int"
+        }
+      }
+    },
+    {
+      "key": "audioSync",
+      "kind": "toggle",
+      "label": "Audio sync",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "AudioSync"
+          ],
+          "type": "bool"
+        }
+      }
+    },
+    {
+      "key": "jit.enable",
+      "kind": "toggle",
+      "label": "Enable",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "JIT",
+            "Enable"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "JIT"
+    },
+    {
+      "key": "emu.externalBiosEnable",
+      "kind": "toggle",
+      "label": "External BIOS enable",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Emu",
+            "ExternalBIOSEnable"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Emu"
+    },
+    {
+      "key": "ds.bios9path",
+      "kind": "text",
+      "label": "BIOS 9path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DS",
+            "BIOS9Path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "DS"
+    },
+    {
+      "key": "ds.bios7path",
+      "kind": "text",
+      "label": "BIOS 7path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DS",
+            "BIOS7Path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "DS"
+    },
+    {
+      "key": "ds.firmwarePath",
+      "kind": "text",
+      "label": "Firmware path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DS",
+            "FirmwarePath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "DS"
+    },
+    {
+      "key": "dSi.bios9path",
+      "kind": "text",
+      "label": "BIOS 9path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "BIOS9Path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si"
+    },
+    {
+      "key": "dSi.bios7path",
+      "kind": "text",
+      "label": "BIOS 7path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "BIOS7Path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si"
+    },
+    {
+      "key": "dSi.firmwarePath",
+      "kind": "text",
+      "label": "Firmware path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "FirmwarePath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si"
+    },
+    {
+      "key": "dSi.nandPath",
+      "kind": "text",
+      "label": "NAND path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "NANDPath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si"
+    },
+    {
+      "key": "dldi.enable",
+      "kind": "toggle",
+      "label": "Enable",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DLDI",
+            "Enable"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "DLDI"
+    },
+    {
+      "key": "dldi.imageSize",
+      "kind": "number",
+      "label": "Image size",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DLDI",
+            "ImageSize"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "DLDI"
+    },
+    {
+      "key": "dldi.readOnly",
+      "kind": "toggle",
+      "label": "Read only",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DLDI",
+            "ReadOnly"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "DLDI"
+    },
+    {
+      "key": "dldi.folderSync",
+      "kind": "toggle",
+      "label": "Folder sync",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DLDI",
+            "FolderSync"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "DLDI"
+    },
+    {
+      "key": "dldi.folderPath",
+      "kind": "text",
+      "label": "Folder path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DLDI",
+            "FolderPath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "DLDI"
+    },
+    {
+      "key": "dSi.sd.enable",
+      "kind": "toggle",
+      "label": "Enable",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "SD",
+            "Enable"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "D si, SD"
+    },
+    {
+      "key": "dSi.sd.imageSize",
+      "kind": "number",
+      "label": "Image size",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "SD",
+            "ImageSize"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "D si, SD"
+    },
+    {
+      "key": "dSi.sd.readOnly",
+      "kind": "toggle",
+      "label": "Read only",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "SD",
+            "ReadOnly"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "D si, SD"
+    },
+    {
+      "key": "dSi.sd.folderSync",
+      "kind": "toggle",
+      "label": "Folder sync",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "SD",
+            "FolderSync"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "D si, SD"
+    },
+    {
+      "key": "dSi.sd.folderPath",
+      "kind": "text",
+      "label": "Folder path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "SD",
+            "FolderPath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si, SD"
+    },
+    {
+      "key": "instance0.firmware.overrideSettings",
+      "kind": "toggle",
+      "label": "Override settings",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Firmware",
+            "OverrideSettings"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Firmware"
+    },
+    {
+      "key": "instance0.firmware.favouriteColour",
+      "kind": "number",
+      "label": "Favourite colour",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Firmware",
+            "FavouriteColour"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Firmware"
+    },
+    {
+      "key": "instance0.firmware.message",
+      "kind": "text",
+      "label": "Message",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Firmware",
+            "Message"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Firmware"
+    },
+    {
+      "key": "instance0.firmware.mac",
+      "kind": "text",
+      "label": "MAC",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Firmware",
+            "MAC"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Firmware"
+    },
+    {
+      "key": "lan.device",
+      "kind": "text",
+      "label": "Device",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "LAN",
+            "Device"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "LAN"
+    },
+    {
+      "key": "lan.directMode",
+      "kind": "toggle",
+      "label": "Direct mode",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "LAN",
+            "DirectMode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "LAN"
+    },
+    {
+      "key": "savestate.relocSram",
+      "kind": "toggle",
+      "label": "Reloc SRAM",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Savestate",
+            "RelocSRAM"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Savestate",
+      "advanced": true
+    },
+    {
+      "key": "audio.bitDepth",
+      "kind": "number",
+      "label": "Bit depth",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Audio",
+            "BitDepth"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "instance0.audio.dSiVolumeSync",
+      "kind": "toggle",
+      "label": "D si volume sync",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Audio",
+            "DSiVolumeSync"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "mic.device",
+      "kind": "text",
+      "label": "Device",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Mic",
+            "Device"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Mic"
+    },
+    {
+      "key": "mic.wavPath",
+      "kind": "text",
+      "label": "Wav path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Mic",
+            "WavPath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Mic"
+    },
+    {
+      "key": "lastRomFolder",
+      "kind": "text",
+      "label": "Last ROM folder",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "LastROMFolder"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    {
+      "key": "lastBiosFolder",
+      "kind": "text",
+      "label": "Last BIOS folder",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "LastBIOSFolder"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    {
+      "key": "instance0.saveFilePath",
+      "kind": "text",
+      "label": "Save file path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "SaveFilePath"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    {
+      "key": "instance0.savestatePath",
+      "kind": "text",
+      "label": "Savestate path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "SavestatePath"
+          ],
+          "type": "string"
+        }
+      },
+      "advanced": true
+    },
+    {
+      "key": "instance0.cheatFilePath",
+      "kind": "text",
+      "label": "Cheat file path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "CheatFilePath"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    {
+      "key": "instance0.enableCheats",
+      "kind": "toggle",
+      "label": "Enable cheats",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "EnableCheats"
+          ],
+          "type": "bool"
+        }
+      }
+    },
+    {
+      "key": "mouse.hide",
+      "kind": "toggle",
+      "label": "Hide",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Mouse",
+            "Hide"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Mouse"
+    },
+    {
+      "key": "pauseLostFocus",
+      "kind": "toggle",
+      "label": "Pause lost focus",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "PauseLostFocus"
+          ],
+          "type": "bool"
+        }
+      }
+    },
+    {
+      "key": "uiTheme",
+      "kind": "text",
+      "label": "UI theme",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "UITheme"
+          ],
+          "type": "string"
+        }
+      },
+      "advanced": true
+    },
+    {
+      "key": "instance0.rtc.offset",
+      "kind": "number",
+      "label": "Offset",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "RTC",
+            "Offset"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "RTC"
+    },
+    {
+      "key": "instance0.dSi.fullBiosBoot",
+      "kind": "toggle",
+      "label": "Full BIOS boot",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "DSi",
+            "FullBIOSBoot"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "D si"
+    },
+    {
+      "key": "gdb.enabled",
+      "kind": "toggle",
+      "label": "Enabled",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Gdb",
+            "Enabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Gdb"
+    },
+    {
+      "key": "instance0.gdb.arm7.breakOnStartup",
+      "kind": "toggle",
+      "label": "Break on startup",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Gdb",
+            "ARM7",
+            "BreakOnStartup"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Gdb, ARM 7"
+    },
+    {
+      "key": "instance0.gdb.arm9.breakOnStartup",
+      "kind": "toggle",
+      "label": "Break on startup",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "Instance0",
+            "Gdb",
+            "ARM9",
+            "BreakOnStartup"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Gdb, ARM 9"
+    },
+    {
+      "key": "dSi.camera0.inputType",
+      "kind": "number",
+      "label": "Input type",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "Camera0",
+            "InputType"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "D si, Camera 0"
+    },
+    {
+      "key": "dSi.camera0.imagePath",
+      "kind": "text",
+      "label": "Image path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "Camera0",
+            "ImagePath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si, Camera 0"
+    },
+    {
+      "key": "dSi.camera0.deviceName",
+      "kind": "text",
+      "label": "Device name",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "Camera0",
+            "DeviceName"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si, Camera 0"
+    },
+    {
+      "key": "dSi.camera0.xFlip",
+      "kind": "toggle",
+      "label": "X flip",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "Camera0",
+            "XFlip"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "D si, Camera 0"
+    },
+    {
+      "key": "dSi.camera1.inputType",
+      "kind": "number",
+      "label": "Input type",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "Camera1",
+            "InputType"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "D si, Camera 1"
+    },
+    {
+      "key": "dSi.camera1.imagePath",
+      "kind": "text",
+      "label": "Image path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "Camera1",
+            "ImagePath"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si, Camera 1"
+    },
+    {
+      "key": "dSi.camera1.deviceName",
+      "kind": "text",
+      "label": "Device name",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "Camera1",
+            "DeviceName"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "D si, Camera 1"
+    },
+    {
+      "key": "dSi.camera1.xFlip",
+      "kind": "toggle",
+      "label": "X flip",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "melonDS.toml",
+          "format": "toml",
+          "path": [
+            "DSi",
+            "Camera1",
+            "XFlip"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "D si, Camera 1"
+    }
+  ]
+}

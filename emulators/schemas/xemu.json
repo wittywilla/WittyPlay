@@ -1,0 +1,1378 @@
+{
+  "emulator": "xemu",
+  "version": "v0.8.139",
+  "source": "https://github.com/xemu-project/xemu/tree/v0.8.139",
+  "settings": [
+    {
+      "key": "general.showWelcome",
+      "kind": "toggle",
+      "label": "Show welcome",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "show_welcome"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.updates.check",
+      "kind": "toggle",
+      "label": "Check",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "updates",
+            "check"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General, Updates"
+    },
+    {
+      "key": "general.screenshotDir",
+      "kind": "text",
+      "label": "Screenshot dir",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "screenshot_dir"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.gamesDir",
+      "kind": "text",
+      "label": "Games dir",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "games_dir"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.skipBootAnim",
+      "kind": "toggle",
+      "label": "Skip boot anim",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "skip_boot_anim"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.lastViewedMenuIndex",
+      "kind": "number",
+      "label": "Last viewed menu index",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "last_viewed_menu_index"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.userToken",
+      "kind": "text",
+      "label": "User token",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "user_token"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.snapshots.shortcuts.f5",
+      "kind": "text",
+      "label": "F5",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "snapshots",
+            "shortcuts",
+            "f5"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General, Snapshots, Shortcuts"
+    },
+    {
+      "key": "general.snapshots.shortcuts.f6",
+      "kind": "text",
+      "label": "F6",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "snapshots",
+            "shortcuts",
+            "f6"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General, Snapshots, Shortcuts"
+    },
+    {
+      "key": "general.snapshots.shortcuts.f7",
+      "kind": "text",
+      "label": "F7",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "snapshots",
+            "shortcuts",
+            "f7"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General, Snapshots, Shortcuts"
+    },
+    {
+      "key": "general.snapshots.shortcuts.f8",
+      "kind": "text",
+      "label": "F8",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "snapshots",
+            "shortcuts",
+            "f8"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General, Snapshots, Shortcuts"
+    },
+    {
+      "key": "general.snapshots.filterCurrentGame",
+      "kind": "toggle",
+      "label": "Filter current game",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "general",
+            "snapshots",
+            "filter_current_game"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General, Snapshots"
+    },
+    {
+      "key": "display.renderer",
+      "kind": "choice",
+      "label": "Renderer",
+      "default": "OPENGL",
+      "choices": [
+        {
+          "value": "NULL",
+          "label": "NULL"
+        },
+        {
+          "value": "OPENGL",
+          "label": "OPENGL"
+        },
+        {
+          "value": "VULKAN",
+          "label": "VULKAN"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "renderer"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Display"
+    },
+    {
+      "key": "display.vulkan.validationLayers",
+      "kind": "toggle",
+      "label": "Validation layers",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "vulkan",
+            "validation_layers"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Vulkan",
+      "advanced": true
+    },
+    {
+      "key": "display.vulkan.debugShaders",
+      "kind": "toggle",
+      "label": "Debug shaders",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "vulkan",
+            "debug_shaders"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Vulkan",
+      "advanced": true
+    },
+    {
+      "key": "display.vulkan.assertOnValidationMsg",
+      "kind": "toggle",
+      "label": "Assert on validation msg",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "vulkan",
+            "assert_on_validation_msg"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Vulkan",
+      "advanced": true
+    },
+    {
+      "key": "display.vulkan.preferredPhysicalDevice",
+      "kind": "text",
+      "label": "Preferred physical device",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "vulkan",
+            "preferred_physical_device"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Display, Vulkan"
+    },
+    {
+      "key": "display.quality.surfaceScale",
+      "kind": "number",
+      "label": "Surface scale",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "quality",
+            "surface_scale"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Display, Quality"
+    },
+    {
+      "key": "display.filtering",
+      "kind": "choice",
+      "label": "Filtering",
+      "default": "linear",
+      "choices": [
+        {
+          "value": "linear",
+          "label": "Linear"
+        },
+        {
+          "value": "nearest",
+          "label": "Nearest"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "filtering"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Display"
+    },
+    {
+      "key": "display.window.fullscreenOnStartup",
+      "kind": "toggle",
+      "label": "Fullscreen on startup",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "window",
+            "fullscreen_on_startup"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Window",
+      "advanced": true
+    },
+    {
+      "key": "display.window.fullscreenExclusive",
+      "kind": "toggle",
+      "label": "Fullscreen exclusive",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "window",
+            "fullscreen_exclusive"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Window",
+      "advanced": true
+    },
+    {
+      "key": "display.window.startupSize",
+      "kind": "choice",
+      "label": "Startup size",
+      "default": "1280x960",
+      "choices": [
+        {
+          "value": "last_used",
+          "label": "Last used"
+        },
+        {
+          "value": "640x480",
+          "label": "640x 480"
+        },
+        {
+          "value": "720x480",
+          "label": "720x 480"
+        },
+        {
+          "value": "1280x720",
+          "label": "1280x 720"
+        },
+        {
+          "value": "1280x800",
+          "label": "1280x 800"
+        },
+        {
+          "value": "1280x960",
+          "label": "1280x 960"
+        },
+        {
+          "value": "1920x1080",
+          "label": "1920x 1080"
+        },
+        {
+          "value": "2560x1440",
+          "label": "2560x 1440"
+        },
+        {
+          "value": "2560x1600",
+          "label": "2560x 1600"
+        },
+        {
+          "value": "2560x1920",
+          "label": "2560x 1920"
+        },
+        {
+          "value": "3840x2160",
+          "label": "3840x 2160"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "window",
+            "startup_size"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Display, Window",
+      "advanced": true
+    },
+    {
+      "key": "display.window.lastWidth",
+      "kind": "number",
+      "label": "Last width",
+      "default": 640,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "window",
+            "last_width"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Display, Window",
+      "advanced": true
+    },
+    {
+      "key": "display.window.lastHeight",
+      "kind": "number",
+      "label": "Last height",
+      "default": 480,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "window",
+            "last_height"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Display, Window",
+      "advanced": true
+    },
+    {
+      "key": "display.window.vsync",
+      "kind": "toggle",
+      "label": "Vsync",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "window",
+            "vsync"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Window",
+      "advanced": true
+    },
+    {
+      "key": "display.ui.showMenubar",
+      "kind": "toggle",
+      "label": "Show menubar",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "ui",
+            "show_menubar"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Ui",
+      "advanced": true
+    },
+    {
+      "key": "display.ui.showNotifications",
+      "kind": "toggle",
+      "label": "Show notifications",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "ui",
+            "show_notifications"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Ui",
+      "advanced": true
+    },
+    {
+      "key": "display.ui.hideCursor",
+      "kind": "toggle",
+      "label": "Hide cursor",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "ui",
+            "hide_cursor"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Ui",
+      "advanced": true
+    },
+    {
+      "key": "display.ui.useAnimations",
+      "kind": "toggle",
+      "label": "Use animations",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "ui",
+            "use_animations"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Ui",
+      "advanced": true
+    },
+    {
+      "key": "display.ui.fit",
+      "kind": "choice",
+      "label": "Fit",
+      "default": "scale",
+      "choices": [
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "scale",
+          "label": "Scale"
+        },
+        {
+          "value": "stretch",
+          "label": "Stretch"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "ui",
+            "fit"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Display, Ui",
+      "advanced": true
+    },
+    {
+      "key": "display.ui.aspectRatio",
+      "kind": "choice",
+      "label": "Aspect ratio",
+      "default": "auto",
+      "choices": [
+        {
+          "value": "native",
+          "label": "Native"
+        },
+        {
+          "value": "auto",
+          "label": "Auto"
+        },
+        {
+          "value": "4x3",
+          "label": "4x 3"
+        },
+        {
+          "value": "16x9",
+          "label": "16x 9"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "ui",
+            "aspect_ratio"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Display, Ui",
+      "advanced": true
+    },
+    {
+      "key": "display.ui.scale",
+      "kind": "number",
+      "label": "Scale",
+      "default": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "ui",
+            "scale"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Display, Ui",
+      "advanced": true
+    },
+    {
+      "key": "display.ui.autoScale",
+      "kind": "toggle",
+      "label": "Auto scale",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "ui",
+            "auto_scale"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Ui",
+      "advanced": true
+    },
+    {
+      "key": "display.debug.video.transparency",
+      "kind": "toggle",
+      "label": "Transparency",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "debug",
+            "video",
+            "transparency"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Debug, Video",
+      "advanced": true
+    },
+    {
+      "key": "display.debug.video.xPos",
+      "kind": "number",
+      "label": "X pos",
+      "default": 100,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "debug",
+            "video",
+            "x_pos"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Display, Debug, Video",
+      "advanced": true
+    },
+    {
+      "key": "display.debug.video.yPos",
+      "kind": "number",
+      "label": "Y pos",
+      "default": 100,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "debug",
+            "video",
+            "y_pos"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Display, Debug, Video",
+      "advanced": true
+    },
+    {
+      "key": "display.debug.video.xWinsize",
+      "kind": "number",
+      "label": "X winsize",
+      "default": 600,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "debug",
+            "video",
+            "x_winsize"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Display, Debug, Video",
+      "advanced": true
+    },
+    {
+      "key": "display.debug.video.yWinsize",
+      "kind": "number",
+      "label": "Y winsize",
+      "default": 150,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "debug",
+            "video",
+            "y_winsize"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Display, Debug, Video",
+      "advanced": true
+    },
+    {
+      "key": "display.debug.video.advancedTreeState",
+      "kind": "toggle",
+      "label": "Advanced tree state",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "debug",
+            "video",
+            "advanced_tree_state"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display, Debug, Video",
+      "advanced": true
+    },
+    {
+      "key": "display.setupNvidiaProfile",
+      "kind": "toggle",
+      "label": "Setup nvidia profile",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "display",
+            "setup_nvidia_profile"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Display",
+      "advanced": true
+    },
+    {
+      "key": "audio.vp.numWorkers",
+      "kind": "number",
+      "label": "Num workers",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "audio",
+            "vp",
+            "num_workers"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio, Vp"
+    },
+    {
+      "key": "audio.useDsp",
+      "kind": "toggle",
+      "label": "Use dsp",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "audio",
+            "use_dsp"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.useDspJit",
+      "kind": "toggle",
+      "label": "Use dsp jit",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "audio",
+            "use_dsp_jit"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.hrtf",
+      "kind": "toggle",
+      "label": "Hrtf",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "audio",
+            "hrtf"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.volumeLimit",
+      "kind": "number",
+      "label": "Volume limit",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "audio",
+            "volume_limit"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "net.enable",
+      "kind": "toggle",
+      "label": "Enable",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "net",
+            "enable"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.backend",
+      "kind": "choice",
+      "label": "Backend",
+      "default": "nat",
+      "choices": [
+        {
+          "value": "nat",
+          "label": "Nat"
+        },
+        {
+          "value": "udp",
+          "label": "Udp"
+        },
+        {
+          "value": "pcap",
+          "label": "Pcap"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "net",
+            "backend"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.pcap.netif",
+      "kind": "text",
+      "label": "Netif",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "net",
+            "pcap",
+            "netif"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net, Pcap"
+    },
+    {
+      "key": "net.udp.bindAddr",
+      "kind": "text",
+      "label": "Bind addr",
+      "default": "0.0.0.0:9368",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "net",
+            "udp",
+            "bind_addr"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net, Udp"
+    },
+    {
+      "key": "net.udp.remoteAddr",
+      "kind": "text",
+      "label": "Remote addr",
+      "default": "1.2.3.4:9368",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "net",
+            "udp",
+            "remote_addr"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net, Udp"
+    },
+    {
+      "key": "sys.memLimit",
+      "kind": "choice",
+      "label": "Mem limit",
+      "default": "64",
+      "choices": [
+        {
+          "value": "64",
+          "label": "64"
+        },
+        {
+          "value": "128",
+          "label": "128"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "sys",
+            "mem_limit"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Sys"
+    },
+    {
+      "key": "sys.avpack",
+      "kind": "choice",
+      "label": "Avpack",
+      "default": "hdtv",
+      "choices": [
+        {
+          "value": "scart",
+          "label": "Scart"
+        },
+        {
+          "value": "hdtv",
+          "label": "Hdtv"
+        },
+        {
+          "value": "vga",
+          "label": "Vga"
+        },
+        {
+          "value": "rfu",
+          "label": "Rfu"
+        },
+        {
+          "value": "svideo",
+          "label": "Svideo"
+        },
+        {
+          "value": "composite",
+          "label": "Composite"
+        },
+        {
+          "value": "none",
+          "label": "None"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "sys",
+            "avpack"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Sys"
+    },
+    {
+      "key": "sys.files.bootromPath",
+      "kind": "text",
+      "label": "Bootrom path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "sys",
+            "files",
+            "bootrom_path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Sys, Files"
+    },
+    {
+      "key": "sys.files.flashromPath",
+      "kind": "text",
+      "label": "Flashrom path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "sys",
+            "files",
+            "flashrom_path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Sys, Files"
+    },
+    {
+      "key": "sys.files.eepromPath",
+      "kind": "text",
+      "label": "Eeprom path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "sys",
+            "files",
+            "eeprom_path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Sys, Files"
+    },
+    {
+      "key": "sys.files.hddPath",
+      "kind": "text",
+      "label": "Hdd path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "sys",
+            "files",
+            "hdd_path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Sys, Files"
+    },
+    {
+      "key": "sys.files.dvdPath",
+      "kind": "text",
+      "label": "Dvd path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "sys",
+            "files",
+            "dvd_path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Sys, Files"
+    },
+    {
+      "key": "perf.hardFpu",
+      "kind": "toggle",
+      "label": "Hard fpu",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "perf",
+            "hard_fpu"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Perf"
+    },
+    {
+      "key": "perf.cacheShaders",
+      "kind": "toggle",
+      "label": "Cache shaders",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "xemu.toml",
+          "format": "toml",
+          "path": [
+            "perf",
+            "cache_shaders"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Perf"
+    }
+  ]
+}

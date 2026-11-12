@@ -4,8 +4,6 @@
 package emulators
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +17,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/wittywilla/wittyplay/emulators/configfile"
 )
 
 // Settings for an emulator, as data. A page draws its form from a list of Setting, the module
@@ -73,11 +75,19 @@ type Setting struct {
 	// Apply is how the value reaches the emulator. A setting without one is used by WittyPlay
 	// itself (the stream's size, the keys).
 	Apply *Apply `json:"apply,omitempty"`
+	// Group is the heading a page lists it under: the emulator's own section, in words.
+	Group string `json:"group,omitempty"`
+	// Advanced settings are ones few people need (debugging, odd hardware): a page may tuck
+	// them away.
+	Advanced bool `json:"advanced,omitempty"`
 }
 
 // Apply is where a value goes. Exactly one of its parts is set.
 type Apply struct {
 	INI *INITarget `json:"ini,omitempty"`
+	// File is a value in one of the emulator's settings files in any format configfile
+	// knows: INI, TOML, YAML, XML or JSON.
+	File *FileTarget `json:"file,omitempty"`
 	// Env is a variable's name. It may not be one the sandbox sets.
 	Env string `json:"env,omitempty"`
 	// Args are added before the game's path; "{value}" in one is replaced by the value. For a
@@ -93,6 +103,20 @@ type INITarget struct {
 	// Values translates a setting's value to what the file says. Without one the value is
 	// written as it is.
 	Values map[string]string `json:"values,omitempty"`
+}
+
+// FileTarget is a value in a settings file under the emulator's settings folder.
+type FileTarget struct {
+	File   string `json:"file"`   // relative to the settings folder, with forward slashes
+	Format string `json:"format"` // ini, toml, yaml, xml or json
+	// Path names the value in the file: see configfile.Apply.
+	Path []string `json:"path"`
+	// Values translates a setting's value to what the file says, as INITarget's does.
+	Values map[string]string `json:"values,omitempty"`
+	// Type is how the file holds the value where its format tells types apart (TOML, YAML,
+	// JSON): bool, int, float or string. Without one it's worked out from the setting: a
+	// toggle a bool, a number by its step, a choice by what its value reads as.
+	Type string `json:"type,omitempty"`
 }
 
 var (
@@ -154,6 +178,12 @@ func checkSettings(list []Setting) error {
 					}
 				}
 			}
+			if f := a.File; f != nil {
+				n++
+				if err := checkFileTarget(f); err != nil {
+					return bad("%v", err)
+				}
+			}
 			if a.Env != "" {
 				n++
 				if !envName.MatchString(a.Env) || strings.HasPrefix(a.Env, "WITTYPLAY_") || strings.HasPrefix(a.Env, "LD_") ||
@@ -165,11 +195,47 @@ func checkSettings(list []Setting) error {
 				n++
 			}
 			if n != 1 {
-				return bad("apply needs exactly one of ini, env and args")
+				return bad("apply needs exactly one of ini, file, env and args")
 			}
 		} else if s.Fixed {
 			return bad("a fixed setting with nowhere to go")
 		}
+	}
+	return nil
+}
+
+// checkFileTarget holds a file target to what WriteFiles can write: a file inside the settings
+// folder, a format configfile knows, and a path of short printable names that the format can
+// hold.
+func checkFileTarget(f *FileTarget) error {
+	if f.File == "" || strings.Contains(f.File, "\\") || path.Clean(f.File) != f.File || !filepath.IsLocal(filepath.FromSlash(f.File)) || !iniName.MatchString(f.File) {
+		return fmt.Errorf("the file %q isn't inside the settings folder", f.File)
+	}
+	if !configfile.Known(f.Format) {
+		return fmt.Errorf("no format %q", f.Format)
+	}
+	if len(f.Path) == 0 {
+		return errors.New("a file target needs a path")
+	}
+	for _, p := range f.Path {
+		if p == "" || len(p) > 128 || !utf8.ValidString(p) || strings.IndexFunc(p, func(r rune) bool { return !unicode.IsPrint(r) }) >= 0 {
+			return fmt.Errorf("the name %q isn't up to 128 printable characters", p)
+		}
+	}
+	for _, v := range f.Values {
+		if strings.ContainsAny(v, "\r\n\x00") {
+			return errors.New("a value with a line break")
+		}
+	}
+	switch f.Type {
+	case "", "bool", "int", "float", "string":
+	default:
+		return fmt.Errorf("no type %q", f.Type)
+	}
+	// The format's own rules (an INI path is a section and a key, an XML name is a name): an
+	// edit of an empty file says whether the path can be written at all.
+	if _, err := configfile.Apply(f.Format, nil, []configfile.Edit{{Path: f.Path, Value: ""}}); err != nil {
+		return err
 	}
 	return nil
 }
@@ -350,8 +416,17 @@ func text(v any) string {
 type Applied struct {
 	Env  []string
 	Args []string
-	// Files are the INI edits, by file: section, key, value.
+	// Files are the INI edits from INI targets, by file: section, key, value.
 	Files map[string][]INIEdit
+	// Edits are the edits from file targets, by file, in that file's format. A file may have
+	// both INI edits and edits here when its format is INI.
+	Edits map[string]FileEdits
+}
+
+// FileEdits are the edits to one settings file.
+type FileEdits struct {
+	Format string
+	Edits  []configfile.Edit
 }
 
 // INIEdit sets one key.
@@ -359,7 +434,7 @@ type INIEdit struct{ Section, Key, Value string }
 
 // Plan works out what the effective values mean for a start. It writes nothing.
 func Plan(list []Setting, eff Values) Applied {
-	a := Applied{Files: map[string][]INIEdit{}}
+	a := Applied{Files: map[string][]INIEdit{}, Edits: map[string]FileEdits{}}
 	for _, s := range list {
 		v, ok := eff[s.Key]
 		if !ok || s.Apply == nil {
@@ -377,6 +452,28 @@ func Plan(list []Setting, eff Values) Applied {
 				val = mapped
 			}
 			a.Files[t.File] = append(a.Files[t.File], INIEdit{t.Section, t.Key, val})
+		case s.Apply.File != nil:
+			t := s.Apply.File
+			fe := a.Edits[t.File]
+			if fe.Format != "" && fe.Format != t.Format {
+				continue // one file has one format; a list that says otherwise is wrong
+			}
+			var typed any
+			if t.Values != nil {
+				mapped, ok := t.Values[val]
+				if !ok {
+					continue
+				}
+				typed = literal(mapped)
+			} else {
+				typed = fileValue(s, v)
+			}
+			if t.Type != "" {
+				typed = asType(t.Type, typed)
+			}
+			fe.Format = t.Format
+			fe.Edits = append(fe.Edits, configfile.Edit{Path: slices.Clone(t.Path), Value: typed})
+			a.Edits[t.File] = fe
 		case s.Apply.Env != "":
 			a.Env = append(a.Env, s.Apply.Env+"="+val)
 		case len(s.Apply.Args) > 0:
@@ -391,16 +488,104 @@ func Plan(list []Setting, eff Values) Applied {
 	return a
 }
 
+// fileValue is a setting's value as a file holds it: a toggle a bool, a number an int64 when
+// the setting steps in whole numbers and a float64 otherwise (TOML, YAML and JSON tell 2 from
+// 2.0, and an emulator reading one may refuse the other), a choice what its value reads as,
+// text a string.
+func fileValue(s Setting, v any) any {
+	switch t := v.(type) {
+	case bool:
+		return t
+	case float64:
+		if s.Step >= 1 && s.Step == math.Trunc(s.Step) && t == math.Trunc(t) && math.Abs(t) < 1<<53 {
+			return int64(t)
+		}
+		return t
+	case string:
+		if s.Kind == KindChoice {
+			return literal(t)
+		}
+		return t
+	}
+	return text(v)
+}
+
+// asType makes a value the type a file target says the file holds.
+func asType(typ string, v any) any {
+	t := text(v)
+	if n, ok := v.(int64); ok {
+		t = strconv.FormatInt(n, 10)
+	}
+	switch typ {
+	case "string":
+		return t
+	case "bool":
+		if b, err := strconv.ParseBool(t); err == nil {
+			return b
+		}
+	case "int":
+		if f, err := strconv.ParseFloat(t, 64); err == nil && f == math.Trunc(f) && math.Abs(f) < 1<<53 {
+			return int64(f)
+		}
+	case "float":
+		if f, err := strconv.ParseFloat(t, 64); err == nil && !math.IsInf(f, 0) && !math.IsNaN(f) {
+			return f
+		}
+	}
+	return v
+}
+
+// literal reads a choice's value, or what Values maps a value to, as the file should hold it:
+// "true" a bool, "2" a number, anything else a string. In an INI or XML file it's all text
+// again.
+func literal(s string) any {
+	switch s {
+	case "true":
+		return true
+	case "false":
+		return false
+	}
+	if n, err := strconv.ParseInt(s, 10, 64); err == nil && strconv.FormatInt(n, 10) == s {
+		return n
+	}
+	if f, err := strconv.ParseFloat(s, 64); err == nil && !math.IsInf(f, 0) && strings.Contains(s, ".") && !strings.ContainsAny(s, "xXpP_") {
+		return f
+	}
+	return s
+}
+
 // maxINI is the largest settings file this will edit. An emulator's own is a few kilobytes.
 const maxINI = 4 << 20
 
-// WriteFiles makes the INI edits under dir, the emulator's settings folder on this machine.
+// WriteFiles makes the edits under dir, the emulator's settings folder on this machine, each
+// file in its own format.
 //
 // The emulator can write to that folder too, and an emulator is treated as something that may
 // have been taken over: it could leave a link there pointing anywhere. So every read and write
 // goes through os.Root, which refuses to follow anything out of dir.
 func (a Applied) WriteFiles(dir string) error {
-	if len(a.Files) == 0 {
+	files := map[string]FileEdits{}
+	for name, edits := range a.Files {
+		fe := files[name]
+		fe.Format = "ini"
+		for _, e := range edits {
+			fe.Edits = append(fe.Edits, configfile.Edit{Path: []string{e.Section, e.Key}, Value: e.Value})
+		}
+		files[name] = fe
+	}
+	for name, fe := range a.Edits {
+		if len(fe.Edits) == 0 {
+			continue
+		}
+		have := files[name]
+		if have.Format != "" && have.Format != fe.Format {
+			return fmt.Errorf("the settings file %s is written as both %s and %s", name, have.Format, fe.Format)
+		}
+		have.Format = fe.Format
+		have.Edits = append(have.Edits, fe.Edits...)
+		files[name] = have
+	}
+	if len(files) == 0 {
 		return nil
 	}
 	if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -411,8 +596,8 @@ func (a Applied) WriteFiles(dir string) error {
 		return err
 	}
 	defer root.Close()
-	names := make([]string, 0, len(a.Files))
-	for name := range a.Files {
+	names := make([]string, 0, len(files))
+	for name := range files {
 		names = append(names, name)
 	}
 	sort.Strings(names)
@@ -440,9 +625,29 @@ func (a Applied) WriteFiles(dir string) error {
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
+		fe := files[name]
+		out, err := configfile.Apply(fe.Format, old, fe.Edits)
+		if err != nil {
+			// One value the file holds in a shape this won't rewrite (a list where a schema
+			// expects one value, say) mustn't stop every other setting: try them one by one
+			// and leave out the ones refused. When none can be made, the file itself is one
+			// this can't edit safely (perhaps the emulator, or something that took it over,
+			// wrote it that way): say so rather than write over the person's own.
+			out = old
+			applied := 0
+			for _, e := range fe.Edits {
+				if next, err := configfile.Apply(fe.Format, out, []configfile.Edit{e}); err == nil {
+					out = next
+					applied++
+				}
+			}
+			if applied == 0 {
+				return fmt.Errorf("the settings file %s: %w", name, err)
+			}
+		}
 		tmp := local + ".wittyplay-tmp"
 		_ = root.Remove(tmp)
-		if err := root.WriteFile(tmp, EditINI(old, a.Files[name]), 0o600); err != nil {
+		if err := root.WriteFile(tmp, out, 0o600); err != nil {
 			return err
 		}
 		if err := root.Rename(tmp, local); err != nil {
@@ -454,54 +659,23 @@ func (a Applied) WriteFiles(dir string) error {
 }
 
 // EditINI sets keys in an INI file's text and leaves everything else as it was: comments, other
-// keys, their order. A section or key that isn't there is added.
+// keys, their order. A section or key that isn't there is added. It's configfile's INI editor;
+// an edit that one refuses (a key with "=" in it, a value with a line break) is left out.
 func EditINI(old []byte, edits []INIEdit) []byte {
-	var lines []string
-	sc := bufio.NewScanner(bytes.NewReader(old))
-	sc.Buffer(make([]byte, 64<<10), maxINI)
-	for sc.Scan() {
-		lines = append(lines, strings.TrimRight(sc.Text(), "\r"))
-	}
+	conv := make([]configfile.Edit, 0, len(edits))
 	for _, e := range edits {
-		start, end := -1, len(lines) // the section's lines are (start, end)
-		for i, l := range lines {
-			t := strings.TrimSpace(l)
-			if strings.HasPrefix(t, "[") && strings.HasSuffix(t, "]") {
-				if start >= 0 {
-					end = i
-					break
-				}
-				if t[1:len(t)-1] == e.Section {
-					start = i
-				}
-			}
-		}
-		line := e.Key + " = " + e.Value
-		if start < 0 {
-			if len(lines) > 0 && strings.TrimSpace(lines[len(lines)-1]) != "" {
-				lines = append(lines, "")
-			}
-			lines = append(lines, "["+e.Section+"]", line)
-			continue
-		}
-		done := false
-		for i := start + 1; i < end; i++ {
-			k, _, ok := strings.Cut(lines[i], "=")
-			if ok && strings.TrimSpace(k) == e.Key {
-				lines[i] = line
-				done = true
-				break
-			}
-		}
-		if !done {
-			at := end
-			for at > start+1 && strings.TrimSpace(lines[at-1]) == "" {
-				at-- // before the blank lines that end the section
-			}
-			lines = slices.Insert(lines, at, line)
+		conv = append(conv, configfile.Edit{Path: []string{e.Section, e.Key}, Value: e.Value})
+	}
+	if out, err := configfile.Apply("ini", old, conv); err == nil {
+		return out
+	}
+	out := old
+	for _, e := range conv {
+		if next, err := configfile.Apply("ini", out, []configfile.Edit{e}); err == nil {
+			out = next
 		}
 	}
-	return []byte(strings.Join(lines, "\n") + "\n")
+	return out
 }
 
 // ---------------------------------------------------------------- what's kept

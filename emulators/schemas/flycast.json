@@ -1,0 +1,2173 @@
+{
+  "emulator": "flycast",
+  "version": "v2.7",
+  "source": "https://github.com/flyinghead/flycast/tree/v2.7",
+  "settings": [
+    {
+      "key": "config.dynarecEnabled",
+      "kind": "toggle",
+      "label": "Enabled",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dynarec.Enabled"
+          ]
+        }
+      },
+      "group": "Dynarec"
+    },
+    {
+      "key": "config.sh4clock",
+      "kind": "number",
+      "label": "Sh 4clock",
+      "default": 200,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Sh4Clock"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "config.dreamcastCable",
+      "kind": "number",
+      "label": "Cable",
+      "default": 3,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.Cable"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.dreamcastRegion",
+      "kind": "number",
+      "label": "Region",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.Region"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.dreamcastBroadcast",
+      "kind": "number",
+      "label": "Broadcast",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.Broadcast"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.dreamcastLanguage",
+      "kind": "number",
+      "label": "Language",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.Language"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.uiLanguage",
+      "kind": "text",
+      "label": "UI language",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "UILanguage"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "config.dreamcastAutoLoadState",
+      "kind": "toggle",
+      "label": "Auto load state",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.AutoLoadState"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.dreamcastAutoSaveState",
+      "kind": "toggle",
+      "label": "Auto save state",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.AutoSaveState"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.dreamcastSavestateSlot",
+      "kind": "number",
+      "label": "Savestate slot",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.SavestateSlot"
+          ]
+        }
+      },
+      "group": "Dreamcast",
+      "advanced": true
+    },
+    {
+      "key": "config.forceFreePlay",
+      "kind": "toggle",
+      "label": "Force free play",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "ForceFreePlay"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "config.fetchBoxart",
+      "kind": "toggle",
+      "label": "Fetch boxart",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "FetchBoxart"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "config.boxartDisplayMode",
+      "kind": "toggle",
+      "label": "Boxart display mode",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "BoxartDisplayMode"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "config.uiScaling",
+      "kind": "number",
+      "label": "UI scaling",
+      "default": 100,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "UIScaling"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "config.uiTheme",
+      "kind": "number",
+      "label": "UI theme",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "UITheme"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "config.aicaDspEnabled",
+      "kind": "toggle",
+      "label": "DSP enabled",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "aica.DSPEnabled"
+          ]
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "config.aicaBufferSize",
+      "kind": "number",
+      "label": "Buffer size",
+      "default": 2822,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "aica.BufferSize"
+          ]
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "config.aicaAutoLatency",
+      "kind": "toggle",
+      "label": "Auto latency",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "aica.AutoLatency"
+          ]
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.backend",
+      "kind": "text",
+      "label": "Backend",
+      "default": "auto",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "audio",
+            "backend"
+          ]
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.vmuSound",
+      "kind": "toggle",
+      "label": "Vmu sound",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "audio",
+            "VmuSound"
+          ]
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "config.rendUseMipmaps",
+      "kind": "toggle",
+      "label": "Use mipmaps",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.UseMipmaps"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendWideScreen",
+      "kind": "toggle",
+      "label": "Wide screen",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.WideScreen"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendSuperWideScreen",
+      "kind": "toggle",
+      "label": "Super wide screen",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.SuperWideScreen"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendShowFps",
+      "kind": "toggle",
+      "label": "Show FPS",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.ShowFPS"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendRenderToTextureBuffer",
+      "kind": "toggle",
+      "label": "Render to texture buffer",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.RenderToTextureBuffer"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendTranslucentPolygonDepthMask",
+      "kind": "toggle",
+      "label": "Translucent polygon depth mask",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.TranslucentPolygonDepthMask"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendModifierVolumes",
+      "kind": "toggle",
+      "label": "Modifier volumes",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.ModifierVolumes"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendTextureUpscale2",
+      "kind": "number",
+      "label": "Texture upscale 2",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.TextureUpscale2"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendMaxFilteredTextureSize",
+      "kind": "number",
+      "label": "Max filtered texture size",
+      "default": 256,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.MaxFilteredTextureSize"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendExtraDepthScale",
+      "kind": "number",
+      "label": "Extra depth scale",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.ExtraDepthScale"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendCustomTextures",
+      "kind": "toggle",
+      "label": "Custom textures",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.CustomTextures"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendPreloadCustomTextures",
+      "kind": "toggle",
+      "label": "Preload custom textures",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.PreloadCustomTextures"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendDumpTextures",
+      "kind": "toggle",
+      "label": "Dump textures",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.DumpTextures"
+          ]
+        }
+      },
+      "group": "Rendering",
+      "advanced": true
+    },
+    {
+      "key": "config.rendDumpUniqueTextures",
+      "kind": "toggle",
+      "label": "Dump unique textures",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.DumpUniqueTextures"
+          ]
+        }
+      },
+      "group": "Rendering",
+      "advanced": true
+    },
+    {
+      "key": "config.rendDumpReplacedTextures",
+      "kind": "toggle",
+      "label": "Dump replaced textures",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.DumpReplacedTextures"
+          ]
+        }
+      },
+      "group": "Rendering",
+      "advanced": true
+    },
+    {
+      "key": "config.rendScreenStretching",
+      "kind": "number",
+      "label": "Screen stretching",
+      "default": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.ScreenStretching"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendFog",
+      "kind": "toggle",
+      "label": "Fog",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.Fog"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendFloatVmUs",
+      "kind": "toggle",
+      "label": "Float VM us",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.FloatVMUs"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendRotate90",
+      "kind": "toggle",
+      "label": "Rotate 90",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.Rotate90"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendPerStripSorting",
+      "kind": "toggle",
+      "label": "Per strip sorting",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.PerStripSorting"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendDelayFrameSwapping",
+      "kind": "toggle",
+      "label": "Delay frame swapping",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.DelayFrameSwapping"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendWidescreenGameHacks",
+      "kind": "toggle",
+      "label": "Widescreen game hacks",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.WidescreenGameHacks"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendCrossHairColor1",
+      "kind": "number",
+      "label": "Cross hair color 1",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.CrossHairColor1"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendCrossHairColor2",
+      "kind": "number",
+      "label": "Cross hair color 2",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.CrossHairColor2"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendCrossHairColor3",
+      "kind": "number",
+      "label": "Cross hair color 3",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.CrossHairColor3"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendCrossHairColor4",
+      "kind": "number",
+      "label": "Cross hair color 4",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.CrossHairColor4"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendCrosshairSize",
+      "kind": "number",
+      "label": "Crosshair size",
+      "default": 40,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.CrosshairSize"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.taSkip",
+      "kind": "number",
+      "label": "Skip",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "ta.skip"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.pvrMaxThreads",
+      "kind": "number",
+      "label": "Max threads",
+      "default": 3,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "pvr.MaxThreads"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.pvrAutoSkipFrame",
+      "kind": "number",
+      "label": "Auto skip frame",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "pvr.AutoSkipFrame"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendResolution",
+      "kind": "number",
+      "label": "Resolution",
+      "default": 480,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.Resolution"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendIntegerScale",
+      "kind": "toggle",
+      "label": "Integer scale",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.IntegerScale"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendLinearInterpolation",
+      "kind": "toggle",
+      "label": "Linear interpolation",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.LinearInterpolation"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendVsync",
+      "kind": "toggle",
+      "label": "Vsync",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.vsync"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendPixelBufferSize",
+      "kind": "number",
+      "label": "Pixel buffer size",
+      "default": 536870912,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.PixelBufferSize"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendAnisotropicFiltering",
+      "kind": "number",
+      "label": "Anisotropic filtering",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.AnisotropicFiltering"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendTextureFiltering",
+      "kind": "number",
+      "label": "Texture filtering",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.TextureFiltering"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendThreadedRendering",
+      "kind": "toggle",
+      "label": "Threaded rendering",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.ThreadedRendering"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendDupeFrames",
+      "kind": "toggle",
+      "label": "Dupe frames",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.DupeFrames"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendPerPixelLayers",
+      "kind": "number",
+      "label": "Per pixel layers",
+      "default": 32,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.PerPixelLayers"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendNativeDepthInterpolation",
+      "kind": "toggle",
+      "label": "Native depth interpolation",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.NativeDepthInterpolation"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendEmulateFramebuffer",
+      "kind": "toggle",
+      "label": "Emulate framebuffer",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.EmulateFramebuffer"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendFixUpscaleBleedingEdge",
+      "kind": "toggle",
+      "label": "Fix upscale bleeding edge",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.FixUpscaleBleedingEdge"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendCustomGpuDriver",
+      "kind": "toggle",
+      "label": "Custom gpu driver",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.CustomGpuDriver"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.rendFramePacing",
+      "kind": "toggle",
+      "label": "Frame pacing",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "rend.FramePacing"
+          ]
+        }
+      },
+      "group": "Rendering"
+    },
+    {
+      "key": "config.debugSerialConsoleEnabled",
+      "kind": "toggle",
+      "label": "Serial console enabled",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Debug.SerialConsoleEnabled"
+          ]
+        }
+      },
+      "group": "Debug",
+      "advanced": true
+    },
+    {
+      "key": "config.debugSerialPty",
+      "kind": "toggle",
+      "label": "Serial PTY",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Debug.SerialPTY"
+          ]
+        }
+      },
+      "group": "Debug",
+      "advanced": true
+    },
+    {
+      "key": "config.debugGdbEnabled",
+      "kind": "toggle",
+      "label": "GDB enabled",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Debug.GDBEnabled"
+          ]
+        }
+      },
+      "group": "Debug",
+      "advanced": true
+    },
+    {
+      "key": "config.debugGdbWaitForConnection",
+      "kind": "toggle",
+      "label": "GDB wait for connection",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Debug.GDBWaitForConnection"
+          ]
+        }
+      },
+      "group": "Debug",
+      "advanced": true
+    },
+    {
+      "key": "config.useReios",
+      "kind": "toggle",
+      "label": "Use reios",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "UseReios"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "config.fastGdRomLoad",
+      "kind": "toggle",
+      "label": "Fast GD rom load",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "FastGDRomLoad"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "config.dreamcastRamMod32mb",
+      "kind": "toggle",
+      "label": "Ram mod 32MB",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.RamMod32MB"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "validate.openGlChecks",
+      "kind": "toggle",
+      "label": "Open gl checks",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "validate",
+            "OpenGlChecks"
+          ]
+        }
+      },
+      "group": "Validate"
+    },
+    {
+      "key": "config.dreamcastVmuPath",
+      "kind": "text",
+      "label": "VMU path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.VMUPath"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.dreamcastSavePath",
+      "kind": "text",
+      "label": "Save path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.SavePath"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.dreamcastTextureDumpPath",
+      "kind": "text",
+      "label": "Texture dump path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.TextureDumpPath"
+          ]
+        }
+      },
+      "group": "Dreamcast",
+      "advanced": true
+    },
+    {
+      "key": "config.dreamcastBoxartPath",
+      "kind": "text",
+      "label": "Boxart path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.BoxartPath"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.dreamcastHideLegacyNaomiRoms",
+      "kind": "toggle",
+      "label": "Hide legacy naomi roms",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Dreamcast.HideLegacyNaomiRoms"
+          ]
+        }
+      },
+      "group": "Dreamcast"
+    },
+    {
+      "key": "config.uploadCrashLogs",
+      "kind": "toggle",
+      "label": "Upload crash logs",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "UploadCrashLogs"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "config.discordPresence",
+      "kind": "toggle",
+      "label": "Discord presence",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "DiscordPresence"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "log.logServer",
+      "kind": "text",
+      "label": "Log server",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "log",
+            "LogServer"
+          ]
+        }
+      },
+      "group": "Log",
+      "advanced": true
+    },
+    {
+      "key": "config.profilerEnabled",
+      "kind": "toggle",
+      "label": "Enabled",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Profiler.Enabled"
+          ]
+        }
+      },
+      "group": "Profiler",
+      "advanced": true
+    },
+    {
+      "key": "config.profilerDrawGui",
+      "kind": "toggle",
+      "label": "Draw GUI",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Profiler.DrawGUI"
+          ]
+        }
+      },
+      "group": "Profiler",
+      "advanced": true
+    },
+    {
+      "key": "config.profilerOutputTty",
+      "kind": "toggle",
+      "label": "Output TTY",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Profiler.OutputTTY"
+          ]
+        }
+      },
+      "group": "Profiler",
+      "advanced": true
+    },
+    {
+      "key": "config.profilerFrameWarningTime",
+      "kind": "number",
+      "label": "Frame warning time",
+      "default": 0.01818181818181818,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "Profiler.FrameWarningTime"
+          ]
+        }
+      },
+      "group": "Profiler",
+      "advanced": true
+    },
+    {
+      "key": "network.enable",
+      "kind": "toggle",
+      "label": "Enable",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "Enable"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.actAsServer",
+      "kind": "toggle",
+      "label": "Act as server",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "ActAsServer"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.naomiSatellite",
+      "kind": "toggle",
+      "label": "Naomi satellite",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "NaomiSatellite"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.dns",
+      "kind": "text",
+      "label": "DNS",
+      "default": "dns.flyca.st",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "DNS"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.server",
+      "kind": "text",
+      "label": "Server",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "server"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.emulateBba",
+      "kind": "toggle",
+      "label": "Emulate BBA",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "EmulateBBA"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.enableUPnP",
+      "kind": "toggle",
+      "label": "Enable u pn p",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "EnableUPnP"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.ggpo",
+      "kind": "toggle",
+      "label": "GGPO",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "GGPO"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.ggpoDelay",
+      "kind": "number",
+      "label": "GGPO delay",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "GGPODelay"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.stats",
+      "kind": "toggle",
+      "label": "Stats",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "Stats"
+          ]
+        }
+      },
+      "group": "Network",
+      "advanced": true
+    },
+    {
+      "key": "network.ggpoAnalogAxes",
+      "kind": "number",
+      "label": "GGPO analog axes",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "GGPOAnalogAxes"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.ggpoChat",
+      "kind": "toggle",
+      "label": "GGPO chat",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "GGPOChat"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.ggpoChatTimeoutToggle",
+      "kind": "toggle",
+      "label": "GGPO chat timeout toggle",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "GGPOChatTimeoutToggle"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.ggpoChatTimeout",
+      "kind": "number",
+      "label": "GGPO chat timeout",
+      "default": 10,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "GGPOChatTimeout"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.networkOutput",
+      "kind": "toggle",
+      "label": "Network output",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "NetworkOutput"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.multiboardSlaves",
+      "kind": "number",
+      "label": "Multiboard slaves",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "MultiboardSlaves"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.battleCable",
+      "kind": "toggle",
+      "label": "Battle cable",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "BattleCable"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.dcNet",
+      "kind": "toggle",
+      "label": "DC net",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "DCNet"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.ispUsername",
+      "kind": "text",
+      "label": "ISP username",
+      "default": "flycast1",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "network",
+            "ISPUsername"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "config.perGameVmu",
+      "kind": "toggle",
+      "label": "Per game vmu",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "PerGameVmu"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "config.usePhysicalVmuMemory",
+      "kind": "toggle",
+      "label": "Use physical vmu memory",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "UsePhysicalVmuMemory"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "config.luaFileName",
+      "kind": "text",
+      "label": "Lua file name",
+      "default": "flycast.lua",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "LuaFileName"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "achievements.enabled",
+      "kind": "toggle",
+      "label": "Enabled",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "achievements",
+            "Enabled"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.hardcoreMode",
+      "kind": "toggle",
+      "label": "Hardcore mode",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "achievements",
+            "HardcoreMode"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.userName",
+      "kind": "text",
+      "label": "User name",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "achievements",
+            "UserName"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.token",
+      "kind": "text",
+      "label": "Token",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "achievements",
+            "Token"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.hostUrl",
+      "kind": "text",
+      "label": "Host url",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "achievements",
+            "HostUrl"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "config.aicaVolume",
+      "kind": "number",
+      "label": "Volume",
+      "default": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "aica.Volume"
+          ]
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "config.pvrRend",
+      "kind": "choice",
+      "label": "Rend",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Open GL"
+        },
+        {
+          "value": "3",
+          "label": "Open GL OIT"
+        },
+        {
+          "value": "4",
+          "label": "Vulkan"
+        },
+        {
+          "value": "5",
+          "label": "Vulkan OIT"
+        },
+        {
+          "value": "1",
+          "label": "Direct X9"
+        },
+        {
+          "value": "2",
+          "label": "Direct X11"
+        },
+        {
+          "value": "6",
+          "label": "Direct X11 OIT"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "emu.cfg",
+          "format": "ini",
+          "path": [
+            "config",
+            "pvr.rend"
+          ]
+        }
+      },
+      "group": "Rendering"
+    }
+  ]
+}

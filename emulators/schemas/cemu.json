@@ -1,0 +1,1638 @@
+{
+  "emulator": "cemu",
+  "version": "v2.6",
+  "source": "https://github.com/cemu-project/Cemu/tree/v2.6",
+  "settings": [
+    {
+      "key": "content.logflag",
+      "kind": "number",
+      "label": "Logflag",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "logflag"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.advancedPpcLogging",
+      "kind": "toggle",
+      "label": "Advanced ppc logging",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "advanced_ppc_logging"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "content.mlcPath",
+      "kind": "text",
+      "label": "Mlc path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "mlc_path"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.permanentStorage",
+      "kind": "toggle",
+      "label": "Permanent storage",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "permanent_storage"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.useDiscordPresence",
+      "kind": "toggle",
+      "label": "Use discord presence",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "use_discord_presence"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.fullscreenMenubar",
+      "kind": "toggle",
+      "label": "Fullscreen menubar",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "fullscreen_menubar"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.feralGamemode",
+      "kind": "toggle",
+      "label": "Feral gamemode",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "feral_gamemode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.checkUpdate",
+      "kind": "toggle",
+      "label": "Check update",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "check_update"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.receiveUntestedUpdates",
+      "kind": "toggle",
+      "label": "Receive untested updates",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "receive_untested_updates"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.saveScreenshot",
+      "kind": "toggle",
+      "label": "Save screenshot",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "save_screenshot"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "content.vkWarning",
+      "kind": "toggle",
+      "label": "Vk warning",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "vk_warning"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.gpDownload",
+      "kind": "toggle",
+      "label": "Gp download",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "gp_download"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.macosDisclaimer",
+      "kind": "toggle",
+      "label": "Macos disclaimer",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "macos_disclaimer"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.fullscreen",
+      "kind": "toggle",
+      "label": "Fullscreen",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "fullscreen"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.proxyServer",
+      "kind": "text",
+      "label": "Proxy server",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "proxy_server"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.consoleLanguage",
+      "kind": "choice",
+      "label": "Console language",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "JA"
+        },
+        {
+          "value": "1",
+          "label": "EN"
+        },
+        {
+          "value": "2",
+          "label": "FR"
+        },
+        {
+          "value": "3",
+          "label": "DE"
+        },
+        {
+          "value": "4",
+          "label": "IT"
+        },
+        {
+          "value": "5",
+          "label": "ES"
+        },
+        {
+          "value": "6",
+          "label": "ZH"
+        },
+        {
+          "value": "7",
+          "label": "KO"
+        },
+        {
+          "value": "8",
+          "label": "NL"
+        },
+        {
+          "value": "9",
+          "label": "PT"
+        },
+        {
+          "value": "10",
+          "label": "RU"
+        },
+        {
+          "value": "11",
+          "label": "TW"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "console_language"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.windowMaximized",
+      "kind": "toggle",
+      "label": "Window maximized",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "window_maximized"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "content.openPad",
+      "kind": "toggle",
+      "label": "Open pad",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "open_pad"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.padMaximized",
+      "kind": "toggle",
+      "label": "Pad maximized",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "pad_maximized"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "content.showIconColumn",
+      "kind": "toggle",
+      "label": "Show icon column",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "show_icon_column"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "content.gameList.style",
+      "kind": "number",
+      "label": "Style",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "GameList",
+            "style"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Game list",
+      "advanced": true
+    },
+    {
+      "key": "content.gameList.order",
+      "kind": "text",
+      "label": "Order",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "GameList",
+            "order"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Game list",
+      "advanced": true
+    },
+    {
+      "key": "content.gameList.nameWidth",
+      "kind": "number",
+      "label": "Name width",
+      "default": 500,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "GameList",
+            "name_width"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Game list",
+      "advanced": true
+    },
+    {
+      "key": "content.gameList.versionWidth",
+      "kind": "number",
+      "label": "Version width",
+      "default": 60,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "GameList",
+            "version_width"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Game list",
+      "advanced": true
+    },
+    {
+      "key": "content.gameList.dlcWidth",
+      "kind": "number",
+      "label": "Dlc width",
+      "default": 50,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "GameList",
+            "dlc_width"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Game list",
+      "advanced": true
+    },
+    {
+      "key": "content.gameList.gameTimeWidth",
+      "kind": "number",
+      "label": "Game time width",
+      "default": 140,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "GameList",
+            "game_time_width"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Game list",
+      "advanced": true
+    },
+    {
+      "key": "content.gameList.gameStartedWidth",
+      "kind": "number",
+      "label": "Game started width",
+      "default": 160,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "GameList",
+            "game_started_width"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Game list",
+      "advanced": true
+    },
+    {
+      "key": "content.gameList.regionWidth",
+      "kind": "number",
+      "label": "Region width",
+      "default": 80,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "GameList",
+            "region_width"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Game list",
+      "advanced": true
+    },
+    {
+      "key": "content.gameList.titleId",
+      "kind": "number",
+      "label": "Title id",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "GameList",
+            "title_id"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Game list",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.api",
+      "kind": "choice",
+      "label": "Api",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Open GL"
+        },
+        {
+          "value": "1",
+          "label": "Vulkan"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "api"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic"
+    },
+    {
+      "key": "content.graphic.vSync",
+      "kind": "number",
+      "label": "V sync",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "VSync"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic"
+    },
+    {
+      "key": "content.graphic.gx2drawdoneSync",
+      "kind": "toggle",
+      "label": "GX 2drawdone sync",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "GX2DrawdoneSync"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic"
+    },
+    {
+      "key": "content.graphic.upscaleFilter",
+      "kind": "number",
+      "label": "Upscale filter",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "UpscaleFilter"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic"
+    },
+    {
+      "key": "content.graphic.downscaleFilter",
+      "kind": "number",
+      "label": "Downscale filter",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "DownscaleFilter"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic"
+    },
+    {
+      "key": "content.graphic.fullscreenScaling",
+      "kind": "number",
+      "label": "Fullscreen scaling",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "FullscreenScaling"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic"
+    },
+    {
+      "key": "content.graphic.asyncCompile",
+      "kind": "toggle",
+      "label": "Async compile",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "AsyncCompile"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic"
+    },
+    {
+      "key": "content.graphic.vkAccurateBarriers",
+      "kind": "toggle",
+      "label": "Vk accurate barriers",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "vkAccurateBarriers"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic"
+    },
+    {
+      "key": "content.graphic.overlay.position",
+      "kind": "choice",
+      "label": "Position",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Disabled"
+        },
+        {
+          "value": "1",
+          "label": "Top left"
+        },
+        {
+          "value": "2",
+          "label": "Top center"
+        },
+        {
+          "value": "3",
+          "label": "Top right"
+        },
+        {
+          "value": "4",
+          "label": "Bottom left"
+        },
+        {
+          "value": "5",
+          "label": "Bottom center"
+        },
+        {
+          "value": "6",
+          "label": "Bottom right"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "Position"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.overlay.textColor",
+      "kind": "number",
+      "label": "Text color",
+      "default": 4294967295,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "TextColor"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.overlay.textScale",
+      "kind": "number",
+      "label": "Text scale",
+      "default": 100,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "TextScale"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.overlay.fps",
+      "kind": "toggle",
+      "label": "FPS",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "FPS"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.overlay.drawCalls",
+      "kind": "toggle",
+      "label": "Draw calls",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "DrawCalls"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.overlay.cpuUsage",
+      "kind": "toggle",
+      "label": "CPU usage",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "CPUUsage"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.overlay.cpuPerCoreUsage",
+      "kind": "toggle",
+      "label": "CPU per core usage",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "CPUPerCoreUsage"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.overlay.ramUsage",
+      "kind": "toggle",
+      "label": "RAM usage",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "RAMUsage"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.overlay.vramUsage",
+      "kind": "toggle",
+      "label": "VRAM usage",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "VRAMUsage"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.overlay.debug",
+      "kind": "toggle",
+      "label": "Debug",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Overlay",
+            "Debug"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Overlay",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.notification.position",
+      "kind": "choice",
+      "label": "Position",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Disabled"
+        },
+        {
+          "value": "1",
+          "label": "Top left"
+        },
+        {
+          "value": "2",
+          "label": "Top center"
+        },
+        {
+          "value": "3",
+          "label": "Top right"
+        },
+        {
+          "value": "4",
+          "label": "Bottom left"
+        },
+        {
+          "value": "5",
+          "label": "Bottom center"
+        },
+        {
+          "value": "6",
+          "label": "Bottom right"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Notification",
+            "Position"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic, Notification",
+      "advanced": true
+    },
+    {
+      "key": "content.graphic.notification.textColor",
+      "kind": "number",
+      "label": "Text color",
+      "default": 4294967295,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Notification",
+            "TextColor"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic, Notification"
+    },
+    {
+      "key": "content.graphic.notification.textScale",
+      "kind": "number",
+      "label": "Text scale",
+      "default": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Notification",
+            "TextScale"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Graphic, Notification"
+    },
+    {
+      "key": "content.graphic.notification.controllerProfiles",
+      "kind": "toggle",
+      "label": "Controller profiles",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Notification",
+            "ControllerProfiles"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Notification"
+    },
+    {
+      "key": "content.graphic.notification.controllerBattery",
+      "kind": "toggle",
+      "label": "Controller battery",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Notification",
+            "ControllerBattery"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Notification"
+    },
+    {
+      "key": "content.graphic.notification.shaderCompiling",
+      "kind": "toggle",
+      "label": "Shader compiling",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Notification",
+            "ShaderCompiling"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Notification"
+    },
+    {
+      "key": "content.graphic.notification.friendService",
+      "kind": "toggle",
+      "label": "Friend service",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Graphic",
+            "Notification",
+            "FriendService"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Graphic, Notification"
+    },
+    {
+      "key": "content.audio.api",
+      "kind": "number",
+      "label": "Api",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Audio",
+            "api"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "content.audio.delay",
+      "kind": "number",
+      "label": "Delay",
+      "default": 2,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Audio",
+            "delay"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "content.audio.tvChannels",
+      "kind": "choice",
+      "label": "TV channels",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Mono"
+        },
+        {
+          "value": "1",
+          "label": "Stereo"
+        },
+        {
+          "value": "2",
+          "label": "Surround"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Audio",
+            "TVChannels"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "content.audio.padChannels",
+      "kind": "choice",
+      "label": "Pad channels",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Mono"
+        },
+        {
+          "value": "1",
+          "label": "Stereo"
+        },
+        {
+          "value": "2",
+          "label": "Surround"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Audio",
+            "PadChannels"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "content.audio.inputChannels",
+      "kind": "choice",
+      "label": "Input channels",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Mono"
+        },
+        {
+          "value": "1",
+          "label": "Stereo"
+        },
+        {
+          "value": "2",
+          "label": "Surround"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Audio",
+            "InputChannels"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "content.audio.tvVolume",
+      "kind": "number",
+      "label": "TV volume",
+      "default": 50,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Audio",
+            "TVVolume"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "content.audio.padVolume",
+      "kind": "number",
+      "label": "Pad volume",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Audio",
+            "PadVolume"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "content.audio.inputVolume",
+      "kind": "number",
+      "label": "Input volume",
+      "default": 50,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Audio",
+            "InputVolume"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "content.audio.tvDevice",
+      "kind": "text",
+      "label": "TV device",
+      "default": "default",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Audio",
+            "TVDevice"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "content.account.onlineEnabled",
+      "kind": "toggle",
+      "label": "Online enabled",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Account",
+            "OnlineEnabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Account"
+    },
+    {
+      "key": "content.account.activeService",
+      "kind": "number",
+      "label": "Active service",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Account",
+            "ActiveService"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Account"
+    },
+    {
+      "key": "content.debug.crashDumpUnix",
+      "kind": "choice",
+      "label": "Crash dump unix",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Disabled"
+        },
+        {
+          "value": "1",
+          "label": "Enabled"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Debug",
+            "CrashDumpUnix"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Debug",
+      "advanced": true
+    },
+    {
+      "key": "content.debug.gdbPort",
+      "kind": "number",
+      "label": "GDB port",
+      "default": 1337,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "Debug",
+            "GDBPort"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Debug",
+      "advanced": true
+    },
+    {
+      "key": "content.emulatedUsbDevices.emulateSkyla.d6c86a1",
+      "kind": "toggle",
+      "label": "Emulate skylander portal",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "EmulatedUsbDevices",
+            "EmulateSkylanderPortal"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Emulated usb devices"
+    },
+    {
+      "key": "content.emulatedUsbDevices.emulateInfinityBase",
+      "kind": "toggle",
+      "label": "Emulate infinity base",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "EmulatedUsbDevices",
+            "EmulateInfinityBase"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Emulated usb devices"
+    },
+    {
+      "key": "content.emulatedUsbDevices.emulateDimen.40c6e18",
+      "kind": "toggle",
+      "label": "Emulate dimensions toypad",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "settings.xml",
+          "format": "xml",
+          "path": [
+            "content",
+            "EmulatedUsbDevices",
+            "EmulateDimensionsToypad"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Emulated usb devices"
+    }
+  ]
+}

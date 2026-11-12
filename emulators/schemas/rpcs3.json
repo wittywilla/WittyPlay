@@ -1,0 +1,5917 @@
+{
+  "emulator": "rpcs3",
+  "version": "0.0.43-20582",
+  "source": "https://github.com/RPCS3/rpcs3/tree/a90588e7ee8dc10aeaaa9441df674edd48d0d271",
+  "settings": [
+    {
+      "key": "core.ppuDecoder",
+      "kind": "choice",
+      "label": "PPU decoder",
+      "default": "Recompiler (LLVM)",
+      "choices": [
+        {
+          "value": "Interpreter (static)",
+          "label": "Interpreter (static)"
+        },
+        {
+          "value": "Recompiler (LLVM)",
+          "label": "Recompiler (LLVM)"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Decoder"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuThreads",
+      "kind": "number",
+      "label": "PPU threads",
+      "default": 2,
+      "min": 1,
+      "max": 8,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Threads"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuDebug",
+      "kind": "toggle",
+      "label": "PPU debug",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Debug"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core",
+      "advanced": true
+    },
+    {
+      "key": "core.ppuCallingHistory",
+      "kind": "toggle",
+      "label": "PPU calling history",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Calling History"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.saveLlvmLogs",
+      "kind": "toggle",
+      "label": "Save LLVM logs",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Save LLVM logs"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core",
+      "advanced": true
+    },
+    {
+      "key": "core.useLlvmCpu",
+      "kind": "text",
+      "label": "Use LLVM CPU",
+      "default": "",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Use LLVM CPU"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.maxLlvmCompileThreads",
+      "kind": "number",
+      "label": "Max LLVM compile threads",
+      "default": 0,
+      "max": 1024,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Max LLVM Compile Threads"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.llvmPrecompilation",
+      "kind": "toggle",
+      "label": "LLVM precompilation",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "LLVM Precompilation"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.threadSchedulerMode",
+      "kind": "choice",
+      "label": "Thread scheduler mode",
+      "default": "Operating System",
+      "choices": [
+        {
+          "value": "Operating System",
+          "label": "Operating System"
+        },
+        {
+          "value": "RPCS3 Scheduler",
+          "label": "RPCS3 Scheduler"
+        },
+        {
+          "value": "RPCS3 Alternative Scheduler",
+          "label": "RPCS3 Alternative Scheduler"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Thread Scheduler Mode"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.setDazAndFtz",
+      "kind": "toggle",
+      "label": "Set DAZ and FTZ",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Set DAZ and FTZ"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuDecoder",
+      "kind": "choice",
+      "label": "SPU decoder",
+      "default": "Recompiler (LLVM)",
+      "choices": [
+        {
+          "value": "Interpreter (static)",
+          "label": "Interpreter (static)"
+        },
+        {
+          "value": "Interpreter (dynamic)",
+          "label": "Interpreter (dynamic)"
+        },
+        {
+          "value": "Recompiler (ASMJIT)",
+          "label": "Recompiler (ASMJIT)"
+        },
+        {
+          "value": "Recompiler (LLVM)",
+          "label": "Recompiler (LLVM)"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Decoder"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuReservationBusyWaitingPercentage1",
+      "kind": "number",
+      "label": "SPU reservation busy waiting percentage 1",
+      "default": 100,
+      "max": 100,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Reservation Busy Waiting Percentage 1"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuReservationBusyWaitingEnabled",
+      "kind": "toggle",
+      "label": "SPU reservation busy waiting enabled",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Reservation Busy Waiting Enabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuGetllarBusyWaitingPercentage",
+      "kind": "number",
+      "label": "SPU GETLLAR busy waiting percentage",
+      "default": 100,
+      "max": 100,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU GETLLAR Busy Waiting Percentage"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.disableSpuGetllarSpinOptimization",
+      "kind": "toggle",
+      "label": "Disable SPU GETLLAR spin optimization",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Disable SPU GETLLAR Spin Optimization"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuDebug",
+      "kind": "toggle",
+      "label": "SPU debug",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Debug"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core",
+      "advanced": true
+    },
+    {
+      "key": "core.mfcDebug",
+      "kind": "toggle",
+      "label": "MFC debug",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "MFC Debug"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core",
+      "advanced": true
+    },
+    {
+      "key": "core.preferredSpuThreads",
+      "kind": "number",
+      "label": "Preferred SPU threads",
+      "default": 0,
+      "max": 6,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Preferred SPU Threads"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuDelayPenalty",
+      "kind": "number",
+      "label": "SPU delay penalty",
+      "default": 3,
+      "max": 16,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU delay penalty"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuLoopDetection",
+      "kind": "toggle",
+      "label": "SPU loop detection",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU loop detection"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.maxSpursThreads",
+      "kind": "number",
+      "label": "Max SPURS threads",
+      "default": 6,
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Max SPURS Threads"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuBlockSize",
+      "kind": "choice",
+      "label": "SPU block size",
+      "default": "Safe",
+      "choices": [
+        {
+          "value": "Safe",
+          "label": "Safe"
+        },
+        {
+          "value": "Mega",
+          "label": "Mega"
+        },
+        {
+          "value": "Giga",
+          "label": "Giga"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Block Size"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.accurateSpuDma",
+      "kind": "toggle",
+      "label": "Accurate SPU DMA",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Accurate SPU DMA"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.accurateSpuReservations",
+      "kind": "toggle",
+      "label": "Accurate SPU reservations",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Accurate SPU Reservations"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuMmioDelayEnabled",
+      "kind": "toggle",
+      "label": "SPU MMIO delay enabled",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU MMIO Delay Enabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuMmioDelay",
+      "kind": "number",
+      "label": "SPU MMIO delay",
+      "default": 100,
+      "min": 3,
+      "max": 1000,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU MMIO Delay"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.accurateCacheLineStores",
+      "kind": "toggle",
+      "label": "Accurate cache line stores",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Accurate Cache Line Stores"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.accurateRsxReservationAccess",
+      "kind": "toggle",
+      "label": "Accurate RSX reservation access",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Accurate RSX reservation access"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuReservationPriorityOverSpUs",
+      "kind": "toggle",
+      "label": "PPU reservation priority over SP us",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Reservation Priority Over SPUs"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.rsxFifoFetchAccuracy",
+      "kind": "choice",
+      "label": "RSX FIFO fetch accuracy",
+      "default": "Atomic",
+      "choices": [
+        {
+          "value": "Fast",
+          "label": "Fast"
+        },
+        {
+          "value": "Atomic",
+          "label": "Atomic"
+        },
+        {
+          "value": "Ordered \u0026 Atomic",
+          "label": "Ordered \u0026 Atomic"
+        },
+        {
+          "value": "PS3",
+          "label": "PS3"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "RSX FIFO Fetch Accuracy"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Core",
+      "advanced": true
+    },
+    {
+      "key": "core.spuVerification",
+      "kind": "toggle",
+      "label": "SPU verification",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Verification"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuCache",
+      "kind": "toggle",
+      "label": "SPU cache",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Cache"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuProfiler",
+      "kind": "toggle",
+      "label": "SPU profiler",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Profiler"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core",
+      "advanced": true
+    },
+    {
+      "key": "core.ppuProfiler",
+      "kind": "toggle",
+      "label": "PPU profiler",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Profiler"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core",
+      "advanced": true
+    },
+    {
+      "key": "core.mfcCommandsShufflingLimit",
+      "kind": "number",
+      "label": "MFC commands shuffling limit",
+      "default": 0,
+      "max": 16,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "MFC Commands Shuffling Limit"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.mfcShuffleInstructionsDecrementer",
+      "kind": "number",
+      "label": "MFC shuffle instructions decrementer",
+      "default": 30,
+      "min": 5,
+      "max": 400,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "MFC Shuffle Instructions Decrementer"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.mfcCommandsShufflingInSteps",
+      "kind": "toggle",
+      "label": "MFC commands shuffling in steps",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "MFC Commands Shuffling In Steps"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuXFloatAccuracy",
+      "kind": "choice",
+      "label": "SPU x float accuracy",
+      "default": "Approximate",
+      "choices": [
+        {
+          "value": "Accurate",
+          "label": "Accurate"
+        },
+        {
+          "value": "Approximate",
+          "label": "Approximate"
+        },
+        {
+          "value": "Relaxed",
+          "label": "Relaxed"
+        },
+        {
+          "value": "Inaccurate",
+          "label": "Inaccurate"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU XFloat Accuracy"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.accuratePpu128ByteReservationOpMaxLength",
+      "kind": "number",
+      "label": "Accurate PPU 128 byte reservation op max length",
+      "default": 0,
+      "min": -1,
+      "max": 14,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Accurate PPU 128-byte Reservation Op Max Length"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.stubPpuTraps",
+      "kind": "number",
+      "label": "Stub PPU traps",
+      "default": 0,
+      "min": -64,
+      "max": 64,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Stub PPU Traps"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.preciseSpuVerification",
+      "kind": "toggle",
+      "label": "Precise SPU verification",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Precise SPU Verification"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuVectorNaNHandling",
+      "kind": "toggle",
+      "label": "PPU vector na n handling",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Vector NaN Handling"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.useAccurateDfma",
+      "kind": "toggle",
+      "label": "Use accurate DFMA",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Use Accurate DFMA"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuSetSaturationBit",
+      "kind": "toggle",
+      "label": "PPU set saturation bit",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Set Saturation Bit"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuAccurateNonJavaMode",
+      "kind": "toggle",
+      "label": "PPU accurate non java mode",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Accurate Non-Java Mode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuAccurateVectorNaNValues",
+      "kind": "toggle",
+      "label": "PPU accurate vector na n values",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Accurate Vector NaN Values"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuSetFpccBits",
+      "kind": "toggle",
+      "label": "PPU set FPCC bits",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Set FPCC Bits"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuAccurateVectorEstimates",
+      "kind": "toggle",
+      "label": "PPU accurate vector estimates",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Accurate Vector Estimates"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.debugConsoleMode",
+      "kind": "toggle",
+      "label": "Debug console mode",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Debug Console Mode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core",
+      "advanced": true
+    },
+    {
+      "key": "core.hookStaticFunctions",
+      "kind": "toggle",
+      "label": "Hook static functions",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Hook static functions"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.hleLwmutex",
+      "kind": "toggle",
+      "label": "HLE lwmutex",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "HLE lwmutex"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.clocksScale",
+      "kind": "number",
+      "label": "Clocks scale",
+      "default": 100,
+      "min": 10,
+      "max": 3000,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Clocks scale"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuWakeUpDelay",
+      "kind": "number",
+      "label": "SPU wake up delay",
+      "default": 0,
+      "max": 3000,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Wake-Up Delay"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.spuWakeUpDelayThreadMask",
+      "kind": "number",
+      "label": "SPU wake up delay thread mask",
+      "default": 63,
+      "max": 63,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "SPU Wake-Up Delay Thread Mask"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.maxCpuPreemptCount",
+      "kind": "number",
+      "label": "Max CPU preempt count",
+      "default": 0,
+      "max": 400,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Max CPU Preempt Count"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.ppuEventWakeUpDelay",
+      "kind": "number",
+      "label": "PPU event wake up delay",
+      "default": 0,
+      "max": 200,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "PPU Event Wake-Up Delay"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.allowRsxCpuPreemptions",
+      "kind": "toggle",
+      "label": "Allow RSX CPU preemptions",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Allow RSX CPU Preemptions"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.sleepTimersAccuracy",
+      "kind": "choice",
+      "label": "Sleep timers accuracy",
+      "default": "As Host",
+      "choices": [
+        {
+          "value": "As Host",
+          "label": "As Host"
+        },
+        {
+          "value": "Usleep Only",
+          "label": "Usleep Only"
+        },
+        {
+          "value": "All Timers",
+          "label": "All Timers"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Sleep Timers Accuracy"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.usleepTimeAddend",
+      "kind": "number",
+      "label": "Usleep time addend",
+      "default": 0,
+      "min": -1000,
+      "max": 1500,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Usleep Time Addend"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.performanceReportThreshold",
+      "kind": "number",
+      "label": "Performance report threshold",
+      "default": 500,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Performance Report Threshold"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.enablePerformanceReport",
+      "kind": "toggle",
+      "label": "Enable performance report",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Enable Performance Report"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core"
+    },
+    {
+      "key": "core.assumeExternalDebugger",
+      "kind": "toggle",
+      "label": "Assume external debugger",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Core",
+            "Assume External Debugger"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Core",
+      "advanced": true
+    },
+    {
+      "key": "vfs.enableHostRoot",
+      "kind": "toggle",
+      "label": "Enable host root",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "VFS",
+            "Enable /host_root/"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "VFS"
+    },
+    {
+      "key": "vfs.initializeDirectories",
+      "kind": "toggle",
+      "label": "Initialize directories",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "VFS",
+            "Initialize Directories"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "VFS"
+    },
+    {
+      "key": "vfs.limitDiskCacheSize",
+      "kind": "toggle",
+      "label": "Limit disk cache size",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "VFS",
+            "Limit disk cache size"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "VFS"
+    },
+    {
+      "key": "vfs.diskCacheMaximumSizeMb",
+      "kind": "number",
+      "label": "Disk cache maximum size (MB)",
+      "default": 5120,
+      "max": 10240,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "VFS",
+            "Disk cache maximum size (MB)"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "VFS"
+    },
+    {
+      "key": "vfs.emptyDevHdd0Tmp",
+      "kind": "toggle",
+      "label": "Empty dev hdd 0 tmp",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "VFS",
+            "Empty /dev_hdd0/tmp/"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "VFS",
+      "advanced": true
+    },
+    {
+      "key": "vfs.emulateHddReadSpeed",
+      "kind": "toggle",
+      "label": "Emulate HDD read speed",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "VFS",
+            "Emulate HDD Read Speed"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "VFS"
+    },
+    {
+      "key": "vfs.emulateBdRomReadSpeed",
+      "kind": "toggle",
+      "label": "Emulate BD ROM read speed",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "VFS",
+            "Emulate BD-ROM Read Speed"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "VFS"
+    },
+    {
+      "key": "video.renderer",
+      "kind": "choice",
+      "label": "Renderer",
+      "default": "Vulkan",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "OpenGL",
+          "label": "OpenGL"
+        },
+        {
+          "value": "Vulkan",
+          "label": "Vulkan"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Renderer"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.resolution",
+      "kind": "choice",
+      "label": "Resolution",
+      "default": "1280x720",
+      "choices": [
+        {
+          "value": "1920x1080",
+          "label": "1920x1080"
+        },
+        {
+          "value": "1920x1080i",
+          "label": "1920x1080i"
+        },
+        {
+          "value": "1280x720",
+          "label": "1280x720"
+        },
+        {
+          "value": "720x480",
+          "label": "720x480"
+        },
+        {
+          "value": "720x480i",
+          "label": "720x480i"
+        },
+        {
+          "value": "720x576",
+          "label": "720x576"
+        },
+        {
+          "value": "720x576i",
+          "label": "720x576i"
+        },
+        {
+          "value": "1600x1080",
+          "label": "1600x1080"
+        },
+        {
+          "value": "1440x1080",
+          "label": "1440x1080"
+        },
+        {
+          "value": "1280x1080",
+          "label": "1280x1080"
+        },
+        {
+          "value": "960x1080",
+          "label": "960x1080"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Resolution"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.aspectRatio",
+      "kind": "choice",
+      "label": "Aspect ratio",
+      "default": "16:9",
+      "choices": [
+        {
+          "value": "4:3",
+          "label": "4:3"
+        },
+        {
+          "value": "16:9",
+          "label": "16:9"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Aspect ratio"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.frameLimit",
+      "kind": "choice",
+      "label": "Frame limit",
+      "default": "Auto",
+      "choices": [
+        {
+          "value": "Off",
+          "label": "Off"
+        },
+        {
+          "value": "30",
+          "label": "30"
+        },
+        {
+          "value": "50",
+          "label": "50"
+        },
+        {
+          "value": "60",
+          "label": "60"
+        },
+        {
+          "value": "120",
+          "label": "120"
+        },
+        {
+          "value": "Display",
+          "label": "Display"
+        },
+        {
+          "value": "Auto",
+          "label": "Auto"
+        },
+        {
+          "value": "PS3 Native",
+          "label": "PS3 Native"
+        },
+        {
+          "value": "Infinite",
+          "label": "Infinite"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Frame limit"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.secondFrameLimit",
+      "kind": "number",
+      "label": "Second frame limit",
+      "default": 0,
+      "max": 1000,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Second Frame Limit"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.msaa",
+      "kind": "choice",
+      "label": "MSAA",
+      "default": "Auto",
+      "choices": [
+        {
+          "value": "Disabled",
+          "label": "Disabled"
+        },
+        {
+          "value": "Auto",
+          "label": "Auto"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "MSAA"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.shaderMode",
+      "kind": "choice",
+      "label": "Shader mode",
+      "default": "Async Recompiler with Shader Interpreter",
+      "choices": [
+        {
+          "value": "Legacy Recompiler (single-threaded)",
+          "label": "Legacy Recompiler (single-threaded)"
+        },
+        {
+          "value": "Async Recompiler (multi-threaded)",
+          "label": "Async Recompiler (multi-threaded)"
+        },
+        {
+          "value": "Async Recompiler with Shader Interpreter",
+          "label": "Async Recompiler with Shader Interpreter"
+        },
+        {
+          "value": "Shader Interpreter only",
+          "label": "Shader Interpreter only"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Shader Mode"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.shaderPrecision",
+      "kind": "choice",
+      "label": "Shader precision",
+      "default": "High",
+      "choices": [
+        {
+          "value": "Ultra",
+          "label": "Ultra"
+        },
+        {
+          "value": "High",
+          "label": "High"
+        },
+        {
+          "value": "Low",
+          "label": "Low"
+        },
+        {
+          "value": "Auto",
+          "label": "Auto"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Shader Precision"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.vSyncMode",
+      "kind": "choice",
+      "label": "V sync mode",
+      "default": "Disabled",
+      "choices": [
+        {
+          "value": "Disabled",
+          "label": "Disabled"
+        },
+        {
+          "value": "Adaptive",
+          "label": "Adaptive"
+        },
+        {
+          "value": "Full",
+          "label": "Full"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "VSync Mode"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.writeColorBuffers",
+      "kind": "toggle",
+      "label": "Write color buffers",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Write Color Buffers"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.writeDepthBuffer",
+      "kind": "toggle",
+      "label": "Write depth buffer",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Write Depth Buffer"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.readColorBuffers",
+      "kind": "toggle",
+      "label": "Read color buffers",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Read Color Buffers"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.readDepthBuffer",
+      "kind": "toggle",
+      "label": "Read depth buffer",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Read Depth Buffer"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.handleRsxMemoryTiling",
+      "kind": "toggle",
+      "label": "Handle RSX memory tiling",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Handle RSX Memory Tiling"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.logShaderPrograms",
+      "kind": "toggle",
+      "label": "Log shader programs",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Log shader programs"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video",
+      "advanced": true
+    },
+    {
+      "key": "video.debugOutput",
+      "kind": "toggle",
+      "label": "Debug output",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Debug output"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video",
+      "advanced": true
+    },
+    {
+      "key": "video.debugOverlay",
+      "kind": "toggle",
+      "label": "Debug overlay",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Debug overlay"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video",
+      "advanced": true
+    },
+    {
+      "key": "video.renderdocCompatibilityMode",
+      "kind": "toggle",
+      "label": "Renderdoc compatibility mode",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Renderdoc Compatibility Mode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.useGpuTextureScaling",
+      "kind": "toggle",
+      "label": "Use GPU texture scaling",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Use GPU texture scaling"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.stretchToDisplayArea",
+      "kind": "toggle",
+      "label": "Stretch to display area",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Stretch To Display Area"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.forceHighPrecisionZBuffer",
+      "kind": "toggle",
+      "label": "Force high precision z buffer",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Force High Precision Z buffer"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.strictRenderingMode",
+      "kind": "toggle",
+      "label": "Strict rendering mode",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Strict Rendering Mode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.framebufferAliasingHeuristicBias",
+      "kind": "choice",
+      "label": "Framebuffer aliasing heuristic bias",
+      "default": "Auto",
+      "choices": [
+        {
+          "value": "Auto",
+          "label": "Auto"
+        },
+        {
+          "value": "Prefer Color",
+          "label": "Prefer Color"
+        },
+        {
+          "value": "Prefer Depth",
+          "label": "Prefer Depth"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Framebuffer Aliasing Heuristic Bias"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableZCullOcclusionQueries",
+      "kind": "toggle",
+      "label": "Disable z cull occlusion queries",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable ZCull Occlusion Queries"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableVideoOutput",
+      "kind": "toggle",
+      "label": "Disable video output",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable Video Output"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableVertexCache",
+      "kind": "toggle",
+      "label": "Disable vertex cache",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable Vertex Cache"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableFifoReordering",
+      "kind": "toggle",
+      "label": "Disable FIFO reordering",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable FIFO Reordering"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video",
+      "advanced": true
+    },
+    {
+      "key": "video.emulateSpecialDepthComparison",
+      "kind": "toggle",
+      "label": "Emulate special depth comparison",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Emulate Special Depth Comparison"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.emulateExtendedDepthRange",
+      "kind": "toggle",
+      "label": "Emulate extended depth range",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Emulate Extended Depth Range"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.enableFrameSkip",
+      "kind": "toggle",
+      "label": "Enable frame skip",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Enable Frame Skip"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.forceCpuBlit",
+      "kind": "toggle",
+      "label": "Force CPU blit",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Force CPU Blit"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableOnDiskShaderCache",
+      "kind": "toggle",
+      "label": "Disable on disk shader cache",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable On-Disk Shader Cache"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableVulkanMemoryAllocator",
+      "kind": "toggle",
+      "label": "Disable vulkan memory allocator",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable Vulkan Memory Allocator"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.useFullRgbOutputRange",
+      "kind": "toggle",
+      "label": "Use full RGB output range",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Use full RGB output range"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.strictTextureFlushing",
+      "kind": "toggle",
+      "label": "Strict texture flushing",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Strict Texture Flushing"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.multithreadedRsx",
+      "kind": "toggle",
+      "label": "Multithreaded RSX",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Multithreaded RSX"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.relaxedZcullSync",
+      "kind": "toggle",
+      "label": "Relaxed ZCULL sync",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Relaxed ZCULL Sync"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.forceHardwareMsaaResolve",
+      "kind": "toggle",
+      "label": "Force hardware MSAA resolve",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Force Hardware MSAA Resolve"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.3dDisplayEnabled",
+      "kind": "toggle",
+      "label": "3D display enabled",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "3D Display Enabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.3dDisplayMode",
+      "kind": "choice",
+      "label": "3D display mode",
+      "default": "Disabled",
+      "choices": [
+        {
+          "value": "Disabled",
+          "label": "Disabled"
+        },
+        {
+          "value": "Side-by-Side",
+          "label": "Side-by-Side"
+        },
+        {
+          "value": "Over-Under",
+          "label": "Over-Under"
+        },
+        {
+          "value": "Interlaced",
+          "label": "Interlaced"
+        },
+        {
+          "value": "Anaglyph Red-Green",
+          "label": "Anaglyph Red-Green"
+        },
+        {
+          "value": "Anaglyph Red-Blue",
+          "label": "Anaglyph Red-Blue"
+        },
+        {
+          "value": "Anaglyph Red-Cyan",
+          "label": "Anaglyph Red-Cyan"
+        },
+        {
+          "value": "Anaglyph Magenta-Cyan",
+          "label": "Anaglyph Magenta-Cyan"
+        },
+        {
+          "value": "Anaglyph Trioscopic",
+          "label": "Anaglyph Trioscopic"
+        },
+        {
+          "value": "Anaglyph Amber-Blue",
+          "label": "Anaglyph Amber-Blue"
+        },
+        {
+          "value": "Anaglyph Custom",
+          "label": "Anaglyph Custom"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "3D Display Mode"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.screenSizeInInches",
+      "kind": "number",
+      "label": "Screen size in inches",
+      "default": 24,
+      "min": 10,
+      "max": 99,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Screen size in inches"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.debugProgramAnalyser",
+      "kind": "toggle",
+      "label": "Debug program analyser",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Debug Program Analyser"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video",
+      "advanced": true
+    },
+    {
+      "key": "video.accurateZcullStats",
+      "kind": "toggle",
+      "label": "Accurate ZCULL stats",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Accurate ZCULL stats"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video",
+      "advanced": true
+    },
+    {
+      "key": "video.consecutiveFramesToDraw",
+      "kind": "number",
+      "label": "Consecutive frames to draw",
+      "default": 1,
+      "min": 1,
+      "max": 8,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Consecutive Frames To Draw"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.consecutiveFramesToSkip",
+      "kind": "number",
+      "label": "Consecutive frames to skip",
+      "default": 1,
+      "min": 1,
+      "max": 8,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Consecutive Frames To Skip"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.resolutionScale",
+      "kind": "number",
+      "label": "Resolution scale",
+      "default": 100,
+      "min": 25,
+      "max": 800,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Resolution Scale"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.anisotropicFilterOverride",
+      "kind": "number",
+      "label": "Anisotropic filter override",
+      "default": 0,
+      "max": 16,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Anisotropic Filter Override"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.textureLodBiasAddend",
+      "kind": "number",
+      "label": "Texture LOD bias addend",
+      "default": 0,
+      "min": -32,
+      "max": 32,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Texture LOD Bias Addend"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.minimumScalableDimension",
+      "kind": "number",
+      "label": "Minimum scalable dimension",
+      "default": 16,
+      "min": 1,
+      "max": 1024,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Minimum Scalable Dimension"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.shaderCompilerThreads",
+      "kind": "number",
+      "label": "Shader compiler threads",
+      "default": 0,
+      "max": 16,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Shader Compiler Threads"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.driverRecoveryTimeout",
+      "kind": "number",
+      "label": "Driver recovery timeout",
+      "default": 1000000,
+      "max": 30000000,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Driver Recovery Timeout"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.driverWakeUpDelay",
+      "kind": "number",
+      "label": "Driver wake up delay",
+      "default": 0,
+      "max": 16667,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Driver Wake-Up Delay"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.vblankRate",
+      "kind": "number",
+      "label": "Vblank rate",
+      "default": 60,
+      "min": 1,
+      "max": 6000,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Vblank Rate"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.vblankNtscFixup",
+      "kind": "toggle",
+      "label": "Vblank NTSC fixup",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Vblank NTSC Fixup"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.decrMemoryLayout",
+      "kind": "toggle",
+      "label": "DECR memory layout",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "DECR memory layout"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.allowHostGpuLabels",
+      "kind": "toggle",
+      "label": "Allow host GPU labels",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Allow Host GPU Labels"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableMslFastMath",
+      "kind": "toggle",
+      "label": "Disable MSL fast math",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable MSL Fast Math"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableAsynchronousMemoryManager",
+      "kind": "toggle",
+      "label": "Disable asynchronous memory manager",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable Asynchronous Memory Manager"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.outputScalingMode",
+      "kind": "choice",
+      "label": "Output scaling mode",
+      "default": "Bilinear",
+      "choices": [
+        {
+          "value": "Nearest",
+          "label": "Nearest"
+        },
+        {
+          "value": "Bilinear",
+          "label": "Bilinear"
+        },
+        {
+          "value": "FidelityFX Super Resolution",
+          "label": "FidelityFX Super Resolution"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Output Scaling Mode"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.recordWithOverlays",
+      "kind": "toggle",
+      "label": "Record with overlays",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Record With Overlays"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video",
+      "advanced": true
+    },
+    {
+      "key": "video.disableHardwareBlending",
+      "kind": "toggle",
+      "label": "Disable hardware blending",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable Hardware Blending"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableHardwareColorSpaceRemapping",
+      "kind": "toggle",
+      "label": "Disable hardware color space remapping",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable Hardware ColorSpace Remapping"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.fidelityFxCasSharpeningIntensity",
+      "kind": "number",
+      "label": "Fidelity FX CAS sharpening intensity",
+      "default": 50,
+      "max": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "FidelityFX CAS Sharpening Intensity"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.disableBlitEngineUpscaling",
+      "kind": "toggle",
+      "label": "Disable blit engine upscaling",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Disable Blit Engine Upscaling"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video"
+    },
+    {
+      "key": "video.vulkan.adapter",
+      "kind": "text",
+      "label": "Adapter",
+      "default": "",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Vulkan",
+            "Adapter"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Vulkan"
+    },
+    {
+      "key": "video.vulkan.exclusiveFullscreenMode",
+      "kind": "choice",
+      "label": "Exclusive fullscreen mode",
+      "default": "Automatic",
+      "choices": [
+        {
+          "value": "Automatic",
+          "label": "Automatic"
+        },
+        {
+          "value": "Disable",
+          "label": "Disable"
+        },
+        {
+          "value": "Enable",
+          "label": "Enable"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Vulkan",
+            "Exclusive Fullscreen Mode"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Vulkan"
+    },
+    {
+      "key": "video.vulkan.asynchronousTextureStreaming",
+      "kind": "toggle",
+      "label": "Asynchronous texture streaming",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Vulkan",
+            "Asynchronous Texture Streaming"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video, Vulkan"
+    },
+    {
+      "key": "video.vulkan.asynchronousQueueScheduler",
+      "kind": "choice",
+      "label": "Asynchronous queue scheduler",
+      "default": "Safe",
+      "choices": [
+        {
+          "value": "Safe",
+          "label": "Safe"
+        },
+        {
+          "value": "Fast",
+          "label": "Fast"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Vulkan",
+            "Asynchronous Queue Scheduler"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Vulkan"
+    },
+    {
+      "key": "video.vulkan.vramAllocationLimitMb",
+      "kind": "number",
+      "label": "VRAM allocation limit (MB)",
+      "default": 65536,
+      "min": 256,
+      "max": 65536,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Vulkan",
+            "VRAM allocation limit (MB)"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video, Vulkan"
+    },
+    {
+      "key": "video.vulkan.useReBarForGpuUploads",
+      "kind": "toggle",
+      "label": "Use re BAR for GPU uploads",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Vulkan",
+            "Use Re-BAR for GPU uploads"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video, Vulkan"
+    },
+    {
+      "key": "video.performanceOverlay.enabled",
+      "kind": "toggle",
+      "label": "Enabled",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Enabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.enableFramerateGraph",
+      "kind": "toggle",
+      "label": "Enable framerate graph",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Enable Framerate Graph"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.enableFrametimeGraph",
+      "kind": "toggle",
+      "label": "Enable frametime graph",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Enable Frametime Graph"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.framerateDatapoints",
+      "kind": "number",
+      "label": "Framerate datapoints",
+      "default": 50,
+      "min": 2,
+      "max": 6000,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Framerate datapoints"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.frametimeDatapoints",
+      "kind": "number",
+      "label": "Frametime datapoints",
+      "default": 170,
+      "min": 2,
+      "max": 6000,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Frametime datapoints"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.detailLevel",
+      "kind": "choice",
+      "label": "Detail level",
+      "default": "Medium",
+      "choices": [
+        {
+          "value": "None",
+          "label": "None"
+        },
+        {
+          "value": "Minimal",
+          "label": "Minimal"
+        },
+        {
+          "value": "Low",
+          "label": "Low"
+        },
+        {
+          "value": "Medium",
+          "label": "Medium"
+        },
+        {
+          "value": "High",
+          "label": "High"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Detail level"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.framerateGraph.3d3e2b9",
+      "kind": "choice",
+      "label": "Framerate graph detail level",
+      "default": "All",
+      "choices": [
+        {
+          "value": "Minimal",
+          "label": "Minimal"
+        },
+        {
+          "value": "Show min and max",
+          "label": "Show min and max"
+        },
+        {
+          "value": "Show 1% and average",
+          "label": "Show 1% and average"
+        },
+        {
+          "value": "All",
+          "label": "All"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Framerate graph detail level"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.frametimeGraph.58396eb",
+      "kind": "choice",
+      "label": "Frametime graph detail level",
+      "default": "All",
+      "choices": [
+        {
+          "value": "Minimal",
+          "label": "Minimal"
+        },
+        {
+          "value": "Show min and max",
+          "label": "Show min and max"
+        },
+        {
+          "value": "Show 1% and average",
+          "label": "Show 1% and average"
+        },
+        {
+          "value": "All",
+          "label": "All"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Frametime graph detail level"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.metricsUpdateIntervalMs",
+      "kind": "number",
+      "label": "Metrics update interval (ms)",
+      "default": 350,
+      "min": 1,
+      "max": 1000,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Metrics update interval (ms)"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.fontSizePx",
+      "kind": "number",
+      "label": "Font size (px)",
+      "default": 10,
+      "min": 4,
+      "max": 36,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Font size (px)"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.position",
+      "kind": "choice",
+      "label": "Position",
+      "default": "Top Left",
+      "choices": [
+        {
+          "value": "Top Left",
+          "label": "Top Left"
+        },
+        {
+          "value": "Top Right",
+          "label": "Top Right"
+        },
+        {
+          "value": "Bottom Left",
+          "label": "Bottom Left"
+        },
+        {
+          "value": "Bottom Right",
+          "label": "Bottom Right"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Position"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.font",
+      "kind": "text",
+      "label": "Font",
+      "default": "n023055ms.ttf",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Font"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.horizontalMargin",
+      "kind": "number",
+      "label": "Horizontal margin (%)",
+      "default": 4,
+      "max": 100,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Horizontal Margin (%)"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.verticalMargin",
+      "kind": "number",
+      "label": "Vertical margin (%)",
+      "default": 7,
+      "max": 100,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Vertical Margin (%)"
+          ],
+          "type": "float"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.centerHorizontally",
+      "kind": "toggle",
+      "label": "Center horizontally",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Center Horizontally"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.centerVertically",
+      "kind": "toggle",
+      "label": "Center vertically",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Center Vertically"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.opacity",
+      "kind": "number",
+      "label": "Opacity (%)",
+      "default": 70,
+      "max": 100,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Opacity (%)"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.bodyColorHex",
+      "kind": "text",
+      "label": "Body color (hex)",
+      "default": "#FFE138FF",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Body Color (hex)"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.bodyBackgroundHex",
+      "kind": "text",
+      "label": "Body background (hex)",
+      "default": "#002339FF",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Body Background (hex)"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.titleColorHex",
+      "kind": "text",
+      "label": "Title color (hex)",
+      "default": "#F26C24FF",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Title Color (hex)"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.titleBackgroundHex",
+      "kind": "text",
+      "label": "Title background (hex)",
+      "default": "#00000000",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Title Background (hex)"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.performanceOverlay.useWindowSpace",
+      "kind": "toggle",
+      "label": "Use window space",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Performance Overlay",
+            "Use Window Space"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video, Performance Overlay",
+      "advanced": true
+    },
+    {
+      "key": "video.nativeUi.defaultFont",
+      "kind": "text",
+      "label": "Default font",
+      "default": "Arial",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Native UI",
+            "Default Font"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Video, Native UI",
+      "advanced": true
+    },
+    {
+      "key": "video.shaderLoadingDialog.allowCustomBackground",
+      "kind": "toggle",
+      "label": "Allow custom background",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Shader Loading Dialog",
+            "Allow custom background"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Video, Shader Loading Dialog"
+    },
+    {
+      "key": "video.shaderLoadingDialog.darkeningEffe.0c34838",
+      "kind": "number",
+      "label": "Darkening effect strength",
+      "default": 30,
+      "max": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Shader Loading Dialog",
+            "Darkening effect strength"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video, Shader Loading Dialog"
+    },
+    {
+      "key": "video.shaderLoadingDialog.blurEffectStrength",
+      "kind": "number",
+      "label": "Blur effect strength",
+      "default": 0,
+      "max": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Video",
+            "Shader Loading Dialog",
+            "Blur effect strength"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Video, Shader Loading Dialog"
+    },
+    {
+      "key": "audio.renderer",
+      "kind": "choice",
+      "label": "Renderer",
+      "default": "Cubeb",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "Cubeb",
+          "label": "Cubeb"
+        },
+        {
+          "value": "FAudio",
+          "label": "FAudio"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Renderer"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.audioProvider",
+      "kind": "choice",
+      "label": "Audio provider",
+      "default": "CellAudio",
+      "choices": [
+        {
+          "value": "None",
+          "label": "None"
+        },
+        {
+          "value": "CellAudio",
+          "label": "CellAudio"
+        },
+        {
+          "value": "RSXAudio",
+          "label": "RSXAudio"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Audio Provider"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.rsxAudioAvport",
+      "kind": "choice",
+      "label": "RSX audio avport",
+      "default": "HDMI 0",
+      "choices": [
+        {
+          "value": "HDMI 0",
+          "label": "HDMI 0"
+        },
+        {
+          "value": "HDMI 1",
+          "label": "HDMI 1"
+        },
+        {
+          "value": "AV multiout",
+          "label": "AV multiout"
+        },
+        {
+          "value": "SPDIF 0",
+          "label": "SPDIF 0"
+        },
+        {
+          "value": "SPDIF 1",
+          "label": "SPDIF 1"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "RSXAudio Avport"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.dumpToFile",
+      "kind": "toggle",
+      "label": "Dump to file",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Dump to file"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Audio",
+      "advanced": true
+    },
+    {
+      "key": "audio.convertTo16Bit",
+      "kind": "toggle",
+      "label": "Convert to 16 bit",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Convert to 16 bit"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.audioFormat",
+      "kind": "choice",
+      "label": "Audio format",
+      "default": "Stereo",
+      "choices": [
+        {
+          "value": "Stereo",
+          "label": "Stereo"
+        },
+        {
+          "value": "Surround 5.1",
+          "label": "Surround 5.1"
+        },
+        {
+          "value": "Surround 7.1",
+          "label": "Surround 7.1"
+        },
+        {
+          "value": "Automatic",
+          "label": "Automatic"
+        },
+        {
+          "value": "Manual",
+          "label": "Manual"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Audio Format"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.audioChannelLayout",
+      "kind": "choice",
+      "label": "Audio channel layout",
+      "default": "Automatic",
+      "choices": [
+        {
+          "value": "Automatic",
+          "label": "Automatic"
+        },
+        {
+          "value": "Mono",
+          "label": "Mono"
+        },
+        {
+          "value": "Stereo",
+          "label": "Stereo"
+        },
+        {
+          "value": "Stereo LFE",
+          "label": "Stereo LFE"
+        },
+        {
+          "value": "Quadraphonic",
+          "label": "Quadraphonic"
+        },
+        {
+          "value": "Quadraphonic LFE",
+          "label": "Quadraphonic LFE"
+        },
+        {
+          "value": "Surround 5.1",
+          "label": "Surround 5.1"
+        },
+        {
+          "value": "Surround 7.1",
+          "label": "Surround 7.1"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Audio Channel Layout"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.audioDevice",
+      "kind": "text",
+      "label": "Audio device",
+      "default": "@@@default@@@",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Audio Device"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.masterVolume",
+      "kind": "number",
+      "label": "Master volume",
+      "default": 100,
+      "max": 200,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Master Volume"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.enableBuffering",
+      "kind": "toggle",
+      "label": "Enable buffering",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Enable Buffering"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.desiredAudioBufferDuration",
+      "kind": "number",
+      "label": "Desired audio buffer duration",
+      "default": 34,
+      "min": 4,
+      "max": 250,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Desired Audio Buffer Duration"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.enableTimeStretching",
+      "kind": "toggle",
+      "label": "Enable time stretching",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Enable Time Stretching"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.disableSamplingSkip",
+      "kind": "toggle",
+      "label": "Disable sampling skip",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Disable Sampling Skip"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.timeStretchingThreshold",
+      "kind": "number",
+      "label": "Time stretching threshold",
+      "default": 75,
+      "max": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Time Stretching Threshold"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.microphoneType",
+      "kind": "choice",
+      "label": "Microphone type",
+      "default": "Null",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "Standard",
+          "label": "Standard"
+        },
+        {
+          "value": "SingStar",
+          "label": "SingStar"
+        },
+        {
+          "value": "Real SingStar",
+          "label": "Real SingStar"
+        },
+        {
+          "value": "Rocksmith",
+          "label": "Rocksmith"
+        },
+        {
+          "value": "Eye Toy",
+          "label": "Eye Toy"
+        },
+        {
+          "value": "PS Eye",
+          "label": "PS Eye"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Microphone Type"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.microphoneDevices",
+      "kind": "text",
+      "label": "Microphone devices",
+      "default": "@@@@@@@@@@@@",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Microphone Devices"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "audio.musicHandler",
+      "kind": "choice",
+      "label": "Music handler",
+      "default": "Qt",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "Qt",
+          "label": "Qt"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Audio",
+            "Music Handler"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Audio"
+    },
+    {
+      "key": "inputOutput.keyboard",
+      "kind": "choice",
+      "label": "Keyboard",
+      "default": "Null",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "Basic",
+          "label": "Basic"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Keyboard"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.mouse",
+      "kind": "choice",
+      "label": "Mouse",
+      "default": "Basic",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "Basic",
+          "label": "Basic"
+        },
+        {
+          "value": "Raw",
+          "label": "Raw"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Mouse"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.camera",
+      "kind": "choice",
+      "label": "Camera",
+      "default": "Null",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "Fake",
+          "label": "Fake"
+        },
+        {
+          "value": "Qt",
+          "label": "Qt"
+        },
+        {
+          "value": "SDL",
+          "label": "SDL"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Camera"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.cameraType",
+      "kind": "choice",
+      "label": "Camera type",
+      "default": "Unknown",
+      "choices": [
+        {
+          "value": "Unknown",
+          "label": "Unknown"
+        },
+        {
+          "value": "EyeToy",
+          "label": "EyeToy"
+        },
+        {
+          "value": "PS Eye",
+          "label": "PS Eye"
+        },
+        {
+          "value": "UVC 1.1",
+          "label": "UVC 1.1"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Camera type"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.cameraFlip",
+      "kind": "choice",
+      "label": "Camera flip",
+      "default": "None",
+      "choices": [
+        {
+          "value": "None",
+          "label": "None"
+        },
+        {
+          "value": "Horizontal",
+          "label": "Horizontal"
+        },
+        {
+          "value": "Vertical",
+          "label": "Vertical"
+        },
+        {
+          "value": "Both",
+          "label": "Both"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Camera flip"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.cameraId",
+      "kind": "text",
+      "label": "Camera ID",
+      "default": "Default",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Camera ID"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.sdlCameraId",
+      "kind": "text",
+      "label": "SDL camera ID",
+      "default": "Default",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "SDL Camera ID"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.move",
+      "kind": "choice",
+      "label": "Move",
+      "default": "Null",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "Real",
+          "label": "Real"
+        },
+        {
+          "value": "Fake",
+          "label": "Fake"
+        },
+        {
+          "value": "Mouse",
+          "label": "Mouse"
+        },
+        {
+          "value": "Raw Mouse",
+          "label": "Raw Mouse"
+        },
+        {
+          "value": "Gun",
+          "label": "Gun"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Move"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.buzzEmulatedController",
+      "kind": "choice",
+      "label": "Buzz emulated controller",
+      "default": "Null",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "1 controller",
+          "label": "1 controller"
+        },
+        {
+          "value": "2 controllers",
+          "label": "2 controllers"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Buzz emulated controller"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.turntableEmulatedController",
+      "kind": "choice",
+      "label": "Turntable emulated controller",
+      "default": "Null",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "1 controller",
+          "label": "1 controller"
+        },
+        {
+          "value": "2 controllers",
+          "label": "2 controllers"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Turntable emulated controller"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.ghLtarEmulatedController",
+      "kind": "choice",
+      "label": "GH ltar emulated controller",
+      "default": "Null",
+      "choices": [
+        {
+          "value": "Null",
+          "label": "Null"
+        },
+        {
+          "value": "1 controller",
+          "label": "1 controller"
+        },
+        {
+          "value": "2 controllers",
+          "label": "2 controllers"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "GHLtar emulated controller"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.padHandlerMode",
+      "kind": "choice",
+      "label": "Pad handler mode",
+      "default": "Single-threaded",
+      "choices": [
+        {
+          "value": "Single-threaded",
+          "label": "Single-threaded"
+        },
+        {
+          "value": "Multi-threaded",
+          "label": "Multi-threaded"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Pad handler mode"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.keepPadsConnected",
+      "kind": "toggle",
+      "label": "Keep pads connected",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Keep pads connected"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.padHandlerSleepMicroseconds",
+      "kind": "number",
+      "label": "Pad handler sleep (microseconds)",
+      "default": 1000,
+      "max": 100000,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Pad handler sleep (microseconds)"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.backgroundInputEnabled",
+      "kind": "toggle",
+      "label": "Background input enabled",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Background input enabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.showMoveCursor",
+      "kind": "toggle",
+      "label": "Show move cursor",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Show move cursor"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.paintMoveSpheres",
+      "kind": "toggle",
+      "label": "Paint move spheres",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Paint move spheres"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.allowMoveHueSetByGame",
+      "kind": "toggle",
+      "label": "Allow move hue set by game",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Allow move hue set by game"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.lockOverlayInputToPlayerOne",
+      "kind": "toggle",
+      "label": "Lock overlay input to player one",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Lock overlay input to player one"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output",
+      "advanced": true
+    },
+    {
+      "key": "inputOutput.emulatedMidiDevices",
+      "kind": "text",
+      "label": "Emulated midi devices",
+      "default": "Keyboardßßß@@@Keyboardßßß@@@Keyboardßßß@@@",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Emulated Midi devices"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.loadSdlGameControllerMappings",
+      "kind": "toggle",
+      "label": "Load SDL game controller mappings",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Load SDL GameController Mappings"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.mouseBasedGyroEnabled",
+      "kind": "toggle",
+      "label": "Mouse based gyro enabled",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Mouse-based gyro enabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.ioDebugOverlay",
+      "kind": "toggle",
+      "label": "IO debug overlay",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "IO Debug overlay"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output",
+      "advanced": true
+    },
+    {
+      "key": "inputOutput.mouseDebugOverlay",
+      "kind": "toggle",
+      "label": "Mouse debug overlay",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Mouse Debug overlay"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Input/Output",
+      "advanced": true
+    },
+    {
+      "key": "inputOutput.fakeMoveRotationCone",
+      "kind": "number",
+      "label": "Fake move rotation cone",
+      "default": 10,
+      "min": 1,
+      "max": 180,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Fake Move Rotation Cone"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.fakeMoveRotationConeVertical",
+      "kind": "number",
+      "label": "Fake move rotation cone (vertical)",
+      "default": 10,
+      "min": 1,
+      "max": 180,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "Fake Move Rotation Cone (Vertical)"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "inputOutput.usioHandlerMode",
+      "kind": "choice",
+      "label": "USIO handler mode",
+      "default": "Fighting Games",
+      "choices": [
+        {
+          "value": "Fighting Games",
+          "label": "Fighting Games"
+        },
+        {
+          "value": "Shooter Games",
+          "label": "Shooter Games"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Input/Output",
+            "USIO handler mode"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Input/Output"
+    },
+    {
+      "key": "system.enterButtonAssignment",
+      "kind": "choice",
+      "label": "Enter button assignment",
+      "default": "Enter with cross",
+      "choices": [
+        {
+          "value": "Enter with circle",
+          "label": "Enter with circle"
+        },
+        {
+          "value": "Enter with cross",
+          "label": "Enter with cross"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "System",
+            "Enter button assignment"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "system.dateFormat",
+      "kind": "choice",
+      "label": "Date format",
+      "default": "ddmmyyyy",
+      "choices": [
+        {
+          "value": "yyyymmdd",
+          "label": "yyyymmdd"
+        },
+        {
+          "value": "ddmmyyyy",
+          "label": "ddmmyyyy"
+        },
+        {
+          "value": "mmddyyyy",
+          "label": "mmddyyyy"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "System",
+            "Date Format"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "system.timeFormat",
+      "kind": "choice",
+      "label": "Time format",
+      "default": "clock24",
+      "choices": [
+        {
+          "value": "clock12",
+          "label": "clock12"
+        },
+        {
+          "value": "clock24",
+          "label": "clock24"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "System",
+            "Time Format"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "system.consoleTimeOffsetS",
+      "kind": "number",
+      "label": "Console time offset (s)",
+      "default": 0,
+      "min": -3153600000,
+      "max": 3153600000,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "System",
+            "Console time offset (s)"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "system.hddModelName",
+      "kind": "text",
+      "label": "HDD model name",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "System",
+            "HDD Model Name"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "system.hddSerialNumber",
+      "kind": "text",
+      "label": "HDD serial number",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "System",
+            "HDD Serial Number"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "System"
+    },
+    {
+      "key": "net.internetEnabled",
+      "kind": "choice",
+      "label": "Internet enabled",
+      "default": "Disconnected",
+      "choices": [
+        {
+          "value": "Disconnected",
+          "label": "Disconnected"
+        },
+        {
+          "value": "Connected",
+          "label": "Connected"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "Internet enabled"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.ipAddress",
+      "kind": "text",
+      "label": "IP address",
+      "default": "0.0.0.0",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "IP address"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.bindAddress",
+      "kind": "text",
+      "label": "Bind address",
+      "default": "0.0.0.0",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "Bind address"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.dnsAddress",
+      "kind": "text",
+      "label": "DNS address",
+      "default": "8.8.8.8",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "DNS address"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.ipSwapList",
+      "kind": "text",
+      "label": "IP swap list",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "IP swap list"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net",
+      "advanced": true
+    },
+    {
+      "key": "net.upnpEnabled",
+      "kind": "toggle",
+      "label": "UPNP enabled",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "UPNP Enabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.deriveMacFromPsid",
+      "kind": "toggle",
+      "label": "Derive MAC from PSID",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "Derive MAC from PSID"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.psnStatus",
+      "kind": "choice",
+      "label": "PSN status",
+      "default": "Disconnected",
+      "choices": [
+        {
+          "value": "Disconnected",
+          "label": "Disconnected"
+        },
+        {
+          "value": "Simulated",
+          "label": "Simulated"
+        },
+        {
+          "value": "RPCN",
+          "label": "RPCN"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "PSN status"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.psnCountry",
+      "kind": "text",
+      "label": "PSN country",
+      "default": "us",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "PSN Country"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "net.clansEnabled",
+      "kind": "toggle",
+      "label": "Clans enabled",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Net",
+            "Clans Enabled"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Net"
+    },
+    {
+      "key": "savestate.startPaused",
+      "kind": "toggle",
+      "label": "Start paused",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Savestate",
+            "Start Paused"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Savestate",
+      "advanced": true
+    },
+    {
+      "key": "savestate.suspendEmulationSavestateMode",
+      "kind": "toggle",
+      "label": "Suspend emulation savestate mode",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Savestate",
+            "Suspend Emulation Savestate Mode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Savestate",
+      "advanced": true
+    },
+    {
+      "key": "savestate.compatibleSavestateMode",
+      "kind": "toggle",
+      "label": "Compatible savestate mode",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Savestate",
+            "Compatible Savestate Mode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Savestate",
+      "advanced": true
+    },
+    {
+      "key": "savestate.inspectionModeSavestates",
+      "kind": "toggle",
+      "label": "Inspection mode savestates",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Savestate",
+            "Inspection Mode Savestates"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Savestate",
+      "advanced": true
+    },
+    {
+      "key": "savestate.saveDiscGameData",
+      "kind": "toggle",
+      "label": "Save disc game data",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Savestate",
+            "Save Disc Game Data"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Savestate",
+      "advanced": true
+    },
+    {
+      "key": "savestate.maximumSaveStateFiles",
+      "kind": "number",
+      "label": "Maximum save state files",
+      "default": 4,
+      "max": 64,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Savestate",
+            "Maximum SaveState Files"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Savestate",
+      "advanced": true
+    },
+    {
+      "key": "savestate.maximumSaveStateFilesSpaceMiB",
+      "kind": "number",
+      "label": "Maximum save state files space (mi B)",
+      "default": 4096,
+      "max": 524288,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Savestate",
+            "Maximum SaveState Files Space (MiB)"
+          ],
+          "type": "int"
+        }
+      },
+      "group": "Savestate",
+      "advanced": true
+    },
+    {
+      "key": "miscellaneous.automaticallyStartGamesAfterBoot",
+      "kind": "toggle",
+      "label": "Automatically start games after boot",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Automatically start games after boot"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.exitRpcs3WhenProcessFinishes",
+      "kind": "toggle",
+      "label": "Exit RPCS 3 when process finishes",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Exit RPCS3 when process finishes"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.pauseEmulationOnRpcs3FocusLoss",
+      "kind": "toggle",
+      "label": "Pause emulation on RPCS 3 focus loss",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Pause emulation on RPCS3 focus loss"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.startGamesInFullscreenMode",
+      "kind": "toggle",
+      "label": "Start games in fullscreen mode",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Start games in fullscreen mode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.startBigPictureModeOnBoot",
+      "kind": "toggle",
+      "label": "Start big picture mode on boot",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Start Big Picture Mode on boot"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.preventDisplaySleepWhileR.008c50b",
+      "kind": "toggle",
+      "label": "Prevent display sleep while running games",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Prevent display sleep while running games"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showTrophyPopups",
+      "kind": "toggle",
+      "label": "Show trophy popups",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show trophy popups"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showRpcnPopups",
+      "kind": "toggle",
+      "label": "Show RPCN popups",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show RPCN popups"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showShaderCompilationHint",
+      "kind": "toggle",
+      "label": "Show shader compilation hint",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show shader compilation hint"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showPpuCompilationHint",
+      "kind": "toggle",
+      "label": "Show PPU compilation hint",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show PPU compilation hint"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showAutosaveAutoloadHint",
+      "kind": "toggle",
+      "label": "Show autosave autoload hint",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show autosave/autoload hint"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showPressureIntensityToggleHint",
+      "kind": "toggle",
+      "label": "Show pressure intensity toggle hint",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show pressure intensity toggle hint"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showAnalogLimiterToggleHint",
+      "kind": "toggle",
+      "label": "Show analog limiter toggle hint",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show analog limiter toggle hint"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showMouseAndKeyboardToggleHint",
+      "kind": "toggle",
+      "label": "Show mouse and keyboard toggle hint",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show mouse and keyboard toggle hint"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showFatalErrorHints",
+      "kind": "toggle",
+      "label": "Show fatal error hints",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show fatal error hints"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.showCaptureHints",
+      "kind": "toggle",
+      "label": "Show capture hints",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Show capture hints"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous",
+      "advanced": true
+    },
+    {
+      "key": "miscellaneous.useNativeUserInterface",
+      "kind": "toggle",
+      "label": "Use native user interface",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Use native user interface"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous",
+      "advanced": true
+    },
+    {
+      "key": "miscellaneous.useRecursiveScan",
+      "kind": "toggle",
+      "label": "Use recursive scan",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Use recursive scan"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.gdbServer",
+      "kind": "text",
+      "label": "GDB server",
+      "default": "127.0.0.1:2345",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "GDB Server"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.silenceAllLogs",
+      "kind": "toggle",
+      "label": "Silence all logs",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Silence All Logs"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous",
+      "advanced": true
+    },
+    {
+      "key": "miscellaneous.windowTitleFormat",
+      "kind": "text",
+      "label": "Window title format",
+      "default": "FPS: %F | %R | %V | %T [%t]",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Window Title Format"
+          ],
+          "type": "string"
+        }
+      },
+      "group": "Miscellaneous",
+      "advanced": true
+    },
+    {
+      "key": "miscellaneous.pauseEmulationDuringHomeMenu",
+      "kind": "toggle",
+      "label": "Pause emulation during home menu",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Pause Emulation During Home Menu"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.playMusicDuringBootSequence",
+      "kind": "toggle",
+      "label": "Play music during boot sequence",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Play music during boot sequence"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    },
+    {
+      "key": "miscellaneous.enableGameMode",
+      "kind": "toggle",
+      "label": "Enable game mode",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "config.yml",
+          "format": "yaml",
+          "path": [
+            "Miscellaneous",
+            "Enable GameMode"
+          ],
+          "type": "bool"
+        }
+      },
+      "group": "Miscellaneous"
+    }
+  ]
+}

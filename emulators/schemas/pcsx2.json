@@ -1,0 +1,7170 @@
+{
+  "emulator": "pcsx2",
+  "version": "v2.8.2",
+  "source": "https://github.com/PCSX2/pcsx2/tree/v2.8.2",
+  "settings": [
+    {
+      "key": "emuCoreTraceLog.enabled",
+      "kind": "toggle",
+      "label": "Enabled",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "Enabled"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeBios",
+      "kind": "toggle",
+      "label": "EE bios",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.bios"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeMemory",
+      "kind": "toggle",
+      "label": "EE memory",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.memory"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeGiftag",
+      "kind": "toggle",
+      "label": "EE giftag",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.giftag"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeVifcode",
+      "kind": "toggle",
+      "label": "EE vifcode",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.vifcode"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeMskpath3",
+      "kind": "toggle",
+      "label": "EE mskpath 3",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.mskpath3"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeR5900",
+      "kind": "toggle",
+      "label": "EE r5900",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.r5900"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeCop0",
+      "kind": "toggle",
+      "label": "EE cop 0",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.cop0"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeCop1",
+      "kind": "toggle",
+      "label": "EE cop 1",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.cop1"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeCop2",
+      "kind": "toggle",
+      "label": "EE cop 2",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.cop2"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeCache",
+      "kind": "toggle",
+      "label": "EE cache",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.cache"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeKnownhw",
+      "kind": "toggle",
+      "label": "EE knownhw",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.knownhw"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeUnknownhw",
+      "kind": "toggle",
+      "label": "EE unknownhw",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.unknownhw"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeDmahw",
+      "kind": "toggle",
+      "label": "EE dmahw",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.dmahw"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeIpu",
+      "kind": "toggle",
+      "label": "EE ipu",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.ipu"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeDmac",
+      "kind": "toggle",
+      "label": "EE dmac",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.dmac"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeCounters",
+      "kind": "toggle",
+      "label": "EE counters",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.counters"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeSpr",
+      "kind": "toggle",
+      "label": "EE spr",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.spr"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeVif",
+      "kind": "toggle",
+      "label": "EE vif",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.vif"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.eeGif",
+      "kind": "toggle",
+      "label": "EE gif",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "EE.gif"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopBios",
+      "kind": "toggle",
+      "label": "IOP bios",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.bios"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopMemcards",
+      "kind": "toggle",
+      "label": "IOP memcards",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.memcards"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopPad",
+      "kind": "toggle",
+      "label": "IOP pad",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.pad"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopR3000a",
+      "kind": "toggle",
+      "label": "IOP r3000a",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.r3000a"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopCop2",
+      "kind": "toggle",
+      "label": "IOP cop 2",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.cop2"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopMemory",
+      "kind": "toggle",
+      "label": "IOP memory",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.memory"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopKnownhw",
+      "kind": "toggle",
+      "label": "IOP knownhw",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.knownhw"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopUnknownhw",
+      "kind": "toggle",
+      "label": "IOP unknownhw",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.unknownhw"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopDmahw",
+      "kind": "toggle",
+      "label": "IOP dmahw",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.dmahw"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopDmac",
+      "kind": "toggle",
+      "label": "IOP dmac",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.dmac"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopCounters",
+      "kind": "toggle",
+      "label": "IOP counters",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.counters"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopCdvd",
+      "kind": "toggle",
+      "label": "IOP cdvd",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.cdvd"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.iopMdec",
+      "kind": "toggle",
+      "label": "IOP mdec",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "IOP.mdec"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreTraceLog.miscSif",
+      "kind": "toggle",
+      "label": "MISC sif",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/TraceLog",
+            "MISC.sif"
+          ]
+        }
+      },
+      "group": "Emu core, Trace log",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreSpeedhacks.eeCycleRate",
+      "kind": "number",
+      "label": "EE cycle rate",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Speedhacks",
+            "EECycleRate"
+          ]
+        }
+      },
+      "group": "Emu core, Speedhacks"
+    },
+    {
+      "key": "emuCoreSpeedhacks.eeCycleSkip",
+      "kind": "number",
+      "label": "EE cycle skip",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Speedhacks",
+            "EECycleSkip"
+          ]
+        }
+      },
+      "group": "Emu core, Speedhacks"
+    },
+    {
+      "key": "emuCoreSpeedhacks.fastCdvd",
+      "kind": "toggle",
+      "label": "Fast CDVD",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Speedhacks",
+            "fastCDVD"
+          ]
+        }
+      },
+      "group": "Emu core, Speedhacks"
+    },
+    {
+      "key": "emuCoreSpeedhacks.intcStat",
+      "kind": "toggle",
+      "label": "Intc stat",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Speedhacks",
+            "IntcStat"
+          ]
+        }
+      },
+      "group": "Emu core, Speedhacks"
+    },
+    {
+      "key": "emuCoreSpeedhacks.waitLoop",
+      "kind": "toggle",
+      "label": "Wait loop",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Speedhacks",
+            "WaitLoop"
+          ]
+        }
+      },
+      "group": "Emu core, Speedhacks"
+    },
+    {
+      "key": "emuCoreSpeedhacks.vuFlagHack",
+      "kind": "toggle",
+      "label": "Vu flag hack",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Speedhacks",
+            "vuFlagHack"
+          ]
+        }
+      },
+      "group": "Emu core, Speedhacks"
+    },
+    {
+      "key": "emuCoreSpeedhacks.vuThread",
+      "kind": "toggle",
+      "label": "Vu thread",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Speedhacks",
+            "vuThread"
+          ]
+        }
+      },
+      "group": "Emu core, Speedhacks"
+    },
+    {
+      "key": "emuCoreSpeedhacks.vu1instant",
+      "kind": "toggle",
+      "label": "Vu 1instant",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Speedhacks",
+            "vu1Instant"
+          ]
+        }
+      },
+      "group": "Emu core, Speedhacks"
+    },
+    {
+      "key": "emuCoreProfiler.enabled",
+      "kind": "toggle",
+      "label": "Enabled",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Profiler",
+            "Enabled"
+          ]
+        }
+      },
+      "group": "Emu core, Profiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreProfiler.recBlocksEe",
+      "kind": "toggle",
+      "label": "Rec blocks EE",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Profiler",
+            "RecBlocks_EE"
+          ]
+        }
+      },
+      "group": "Emu core, Profiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreProfiler.recBlocksIop",
+      "kind": "toggle",
+      "label": "Rec blocks IOP",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Profiler",
+            "RecBlocks_IOP"
+          ]
+        }
+      },
+      "group": "Emu core, Profiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreProfiler.recBlocksVu0",
+      "kind": "toggle",
+      "label": "Rec blocks VU 0",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Profiler",
+            "RecBlocks_VU0"
+          ]
+        }
+      },
+      "group": "Emu core, Profiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreProfiler.recBlocksVu1",
+      "kind": "toggle",
+      "label": "Rec blocks VU 1",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Profiler",
+            "RecBlocks_VU1"
+          ]
+        }
+      },
+      "group": "Emu core, Profiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.enableEe",
+      "kind": "toggle",
+      "label": "Enable EE",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "EnableEE"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.enableIop",
+      "kind": "toggle",
+      "label": "Enable IOP",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "EnableIOP"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.enableEeCache",
+      "kind": "toggle",
+      "label": "Enable EE cache",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "EnableEECache"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.enableVu0",
+      "kind": "toggle",
+      "label": "Enable VU 0",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "EnableVU0"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.enableVu1",
+      "kind": "toggle",
+      "label": "Enable VU 1",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "EnableVU1"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.enableFastmem",
+      "kind": "toggle",
+      "label": "Enable fastmem",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "EnableFastmem"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.pauseOnTlbMiss",
+      "kind": "toggle",
+      "label": "Pause on TLB miss",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "PauseOnTLBMiss"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.vu0overflow",
+      "kind": "toggle",
+      "label": "Vu 0overflow",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "vu0Overflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.vu0extraOverflow",
+      "kind": "toggle",
+      "label": "Vu 0extra overflow",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "vu0ExtraOverflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.vu0signOverflow",
+      "kind": "toggle",
+      "label": "Vu 0sign overflow",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "vu0SignOverflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.vu0underflow",
+      "kind": "toggle",
+      "label": "Vu 0underflow",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "vu0Underflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.vu1overflow",
+      "kind": "toggle",
+      "label": "Vu 1overflow",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "vu1Overflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.vu1extraOverflow",
+      "kind": "toggle",
+      "label": "Vu 1extra overflow",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "vu1ExtraOverflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.vu1signOverflow",
+      "kind": "toggle",
+      "label": "Vu 1sign overflow",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "vu1SignOverflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.vu1underflow",
+      "kind": "toggle",
+      "label": "Vu 1underflow",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "vu1Underflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.fpuOverflow",
+      "kind": "toggle",
+      "label": "Fpu overflow",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "fpuOverflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.fpuExtraOverflow",
+      "kind": "toggle",
+      "label": "Fpu extra overflow",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "fpuExtraOverflow"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpuRecompiler.fpuFullMode",
+      "kind": "toggle",
+      "label": "Fpu full mode",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU/Recompiler",
+            "fpuFullMode"
+          ]
+        }
+      },
+      "group": "Emu core, CPU, Recompiler",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreCpu.extraMemory",
+      "kind": "toggle",
+      "label": "Extra memory",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/CPU",
+            "ExtraMemory"
+          ]
+        }
+      },
+      "group": "Emu core, CPU"
+    },
+    {
+      "key": "emuCoreGs.vsyncEnable",
+      "kind": "toggle",
+      "label": "Vsync enable",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "VsyncEnable"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.disableMailboxPresentation",
+      "kind": "toggle",
+      "label": "Disable mailbox presentation",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DisableMailboxPresentation"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.extendedUpscalingMultipliers",
+      "kind": "toggle",
+      "label": "Extended upscaling multipliers",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ExtendedUpscalingMultipliers"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.vsyncQueueSize",
+      "kind": "number",
+      "label": "Vsync queue size",
+      "default": 2,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "VsyncQueueSize"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.framerateNtsc",
+      "kind": "number",
+      "label": "Framerate NTSC",
+      "default": 59.94,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "FramerateNTSC"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.frameratePal",
+      "kind": "number",
+      "label": "Framerate PAL",
+      "default": 50,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "FrameratePAL"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.aspectRatio",
+      "kind": "choice",
+      "label": "Aspect ratio",
+      "default": "Auto 4:3/3:2",
+      "choices": [
+        {
+          "value": "Stretch",
+          "label": "Stretch"
+        },
+        {
+          "value": "Auto 4:3/3:2",
+          "label": "Auto 4:3/3:2"
+        },
+        {
+          "value": "4:3",
+          "label": "4:3"
+        },
+        {
+          "value": "16:9",
+          "label": "16:9"
+        },
+        {
+          "value": "10:7",
+          "label": "10:7"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "AspectRatio"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.fmvAspectRatioSwitch",
+      "kind": "choice",
+      "label": "FMV aspect ratio switch",
+      "default": "Off",
+      "choices": [
+        {
+          "value": "Off",
+          "label": "Off"
+        },
+        {
+          "value": "Auto 4:3/3:2",
+          "label": "Auto 4:3/3:2"
+        },
+        {
+          "value": "4:3",
+          "label": "4:3"
+        },
+        {
+          "value": "16:9",
+          "label": "16:9"
+        },
+        {
+          "value": "10:7",
+          "label": "10:7"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "FMVAspectRatioSwitch"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.screenshotSize",
+      "kind": "choice",
+      "label": "Screenshot size",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Window resolution"
+        },
+        {
+          "value": "1",
+          "label": "Internal resolution"
+        },
+        {
+          "value": "2",
+          "label": "Internal resolution uncorrected"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ScreenshotSize"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.screenshotFormat",
+      "kind": "choice",
+      "label": "Screenshot format",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "PNG"
+        },
+        {
+          "value": "1",
+          "label": "JPEG"
+        },
+        {
+          "value": "2",
+          "label": "Web p"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ScreenshotFormat"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.screenshotQuality",
+      "kind": "number",
+      "label": "Screenshot quality",
+      "default": 90,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ScreenshotQuality"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.organizeScreenshotsByGame",
+      "kind": "toggle",
+      "label": "Organize screenshots by game",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OrganizeScreenshotsByGame"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.organizeVideoCaptureByGame",
+      "kind": "toggle",
+      "label": "Organize video capture by game",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OrganizeVideoCaptureByGame"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.stretchY",
+      "kind": "number",
+      "label": "Stretch y",
+      "default": 100,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "StretchY"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.pcrtcAntiblur",
+      "kind": "toggle",
+      "label": "Pcrtc antiblur",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "pcrtc_antiblur"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.disableInterlaceOffset",
+      "kind": "toggle",
+      "label": "Disable interlace offset",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "disable_interlace_offset"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.pcrtcOffsets",
+      "kind": "toggle",
+      "label": "Pcrtc offsets",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "pcrtc_offsets"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.pcrtcOverscan",
+      "kind": "toggle",
+      "label": "Pcrtc overscan",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "pcrtc_overscan"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.integerScaling",
+      "kind": "toggle",
+      "label": "Integer scaling",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "IntegerScaling"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.useDebugDevice",
+      "kind": "toggle",
+      "label": "Use debug device",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UseDebugDevice"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.useBlitSwapChain",
+      "kind": "toggle",
+      "label": "Use blit swap chain",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UseBlitSwapChain"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.disableShaderCache",
+      "kind": "toggle",
+      "label": "Disable shader cache",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DisableShaderCache"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.disableFramebufferFetch",
+      "kind": "toggle",
+      "label": "Disable framebuffer fetch",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DisableFramebufferFetch"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.disableVertexShaderExpand",
+      "kind": "toggle",
+      "label": "Disable vertex shader expand",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DisableVertexShaderExpand"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.skipDuplicateFrames",
+      "kind": "toggle",
+      "label": "Skip duplicate frames",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SkipDuplicateFrames"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowSpeed",
+      "kind": "toggle",
+      "label": "Osd show speed",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowSpeed"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowFps",
+      "kind": "toggle",
+      "label": "Osd show FPS",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowFPS"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowVps",
+      "kind": "toggle",
+      "label": "Osd show VPS",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowVPS"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowCpu",
+      "kind": "toggle",
+      "label": "Osd show CPU",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowCPU"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowGpu",
+      "kind": "toggle",
+      "label": "Osd show GPU",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowGPU"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowGpuDebug",
+      "kind": "toggle",
+      "label": "Osd show GPU debug",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowGPUDebug"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.osdShowGpuStats",
+      "kind": "toggle",
+      "label": "Osd show GPU stats",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowGPUStats"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.osdShowResolution",
+      "kind": "toggle",
+      "label": "Osd show resolution",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowResolution"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowGsStats",
+      "kind": "toggle",
+      "label": "Osd show GS stats",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowGSStats"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.osdShowIndicators",
+      "kind": "toggle",
+      "label": "Osd show indicators",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowIndicators"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowSettings",
+      "kind": "toggle",
+      "label": "Osd show settings",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowSettings"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdshowPatches",
+      "kind": "toggle",
+      "label": "Osdshow patches",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdshowPatches"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowInputs",
+      "kind": "toggle",
+      "label": "Osd show inputs",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowInputs"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowFrameTimes",
+      "kind": "toggle",
+      "label": "Osd show frame times",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowFrameTimes"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowVersion",
+      "kind": "toggle",
+      "label": "Osd show version",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowVersion"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowHardwareInfo",
+      "kind": "toggle",
+      "label": "Osd show hardware info",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowHardwareInfo"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowVideoCapture",
+      "kind": "toggle",
+      "label": "Osd show video capture",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowVideoCapture"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.osdShowInputRec",
+      "kind": "toggle",
+      "label": "Osd show input rec",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowInputRec"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdShowTextureReplacements",
+      "kind": "toggle",
+      "label": "Osd show texture replacements",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdShowTextureReplacements"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdBoldText",
+      "kind": "toggle",
+      "label": "Osd bold text",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdBoldText"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.hwSpinGpuForReadbacks",
+      "kind": "toggle",
+      "label": "HW spin GPU for readbacks",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "HWSpinGPUForReadbacks"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.hwSpinCpuForReadbacks",
+      "kind": "toggle",
+      "label": "HW spin CPU for readbacks",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "HWSpinCPUForReadbacks"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.paltex",
+      "kind": "toggle",
+      "label": "Paltex",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "paltex"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.autoflushSw",
+      "kind": "toggle",
+      "label": "Autoflush sw",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "autoflush_sw"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.preloadFrameWithGsData",
+      "kind": "toggle",
+      "label": "Preload frame with gs data",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "preload_frame_with_gs_data"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.mipmap",
+      "kind": "toggle",
+      "label": "Mipmap",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "mipmap"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacks",
+      "kind": "toggle",
+      "label": "User hacks",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksAlignSpriteX",
+      "kind": "toggle",
+      "label": "User hacks align sprite x",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_align_sprite_X"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksAutoFlushLevel",
+      "kind": "choice",
+      "label": "User hacks auto flush level",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Disabled"
+        },
+        {
+          "value": "1",
+          "label": "Sprites only"
+        },
+        {
+          "value": "2",
+          "label": "Enabled"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_AutoFlushLevel"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksCpuFbConversion",
+      "kind": "toggle",
+      "label": "User hacks CPU FB conversion",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_CPU_FB_Conversion"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksReadTcOnClose",
+      "kind": "toggle",
+      "label": "User hacks read TC on close",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_ReadTCOnClose"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksDisableDepthSupport",
+      "kind": "toggle",
+      "label": "User hacks disable depth support",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_DisableDepthSupport"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksDisablePartialInvalidation",
+      "kind": "toggle",
+      "label": "User hacks disable partial invalidation",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_DisablePartialInvalidation"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksDisableSafeFeatures",
+      "kind": "toggle",
+      "label": "User hacks disable safe features",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_Disable_Safe_Features"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksDisableRenderFixes",
+      "kind": "toggle",
+      "label": "User hacks disable render fixes",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_DisableRenderFixes"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksMergePpSprite",
+      "kind": "toggle",
+      "label": "User hacks merge pp sprite",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_merge_pp_sprite"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksForceEvenSpritePosition",
+      "kind": "toggle",
+      "label": "User hacks force even sprite position",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_ForceEvenSpritePosition"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.userHacksBilinearHack",
+      "kind": "choice",
+      "label": "User hacks bilinear hack",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Automatic"
+        },
+        {
+          "value": "1",
+          "label": "Force bilinear"
+        },
+        {
+          "value": "2",
+          "label": "Force nearest"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_BilinearHack"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksNativePaletteDraw",
+      "kind": "toggle",
+      "label": "User hacks native palette draw",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_NativePaletteDraw"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksTextureInsideRt",
+      "kind": "choice",
+      "label": "User hacks texture inside rt",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Disabled"
+        },
+        {
+          "value": "1",
+          "label": "Inside targets"
+        },
+        {
+          "value": "2",
+          "label": "Merge targets"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_TextureInsideRt"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksLimit24bitDepth",
+      "kind": "choice",
+      "label": "User hacks limit 24bit depth",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Disabled"
+        },
+        {
+          "value": "1",
+          "label": "Prioritize upper"
+        },
+        {
+          "value": "2",
+          "label": "Prioritize lower"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_Limit24BitDepth"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksEstimateTextureRegion",
+      "kind": "toggle",
+      "label": "User hacks estimate texture region",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_EstimateTextureRegion"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksDrawBuffering",
+      "kind": "toggle",
+      "label": "User hacks draw buffering",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_DrawBuffering"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.fxaa",
+      "kind": "toggle",
+      "label": "Fxaa",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "fxaa"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.shadeBoost",
+      "kind": "toggle",
+      "label": "Shade boost",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ShadeBoost"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.dumpGsData",
+      "kind": "toggle",
+      "label": "Dump GS data",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DumpGSData"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.saveRt",
+      "kind": "toggle",
+      "label": "Save RT",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveRT"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveFrame",
+      "kind": "toggle",
+      "label": "Save frame",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveFrame"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveTexture",
+      "kind": "toggle",
+      "label": "Save texture",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveTexture"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveDepth",
+      "kind": "toggle",
+      "label": "Save depth",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveDepth"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveAlpha",
+      "kind": "toggle",
+      "label": "Save alpha",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveAlpha"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveInfo",
+      "kind": "toggle",
+      "label": "Save info",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveInfo"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveTransferImages",
+      "kind": "toggle",
+      "label": "Save transfer images",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveTransferImages"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveDrawStats",
+      "kind": "toggle",
+      "label": "Save draw stats",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveDrawStats"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.saveFrameStats",
+      "kind": "toggle",
+      "label": "Save frame stats",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveFrameStats"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.saveHwConfig",
+      "kind": "toggle",
+      "label": "Save HW config",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveHWConfig"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.dumpReplaceableTextures",
+      "kind": "toggle",
+      "label": "Dump replaceable textures",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DumpReplaceableTextures"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.dumpReplaceableMipmaps",
+      "kind": "toggle",
+      "label": "Dump replaceable mipmaps",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DumpReplaceableMipmaps"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.dumpTexturesWithFmvActive",
+      "kind": "toggle",
+      "label": "Dump textures with FMV active",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DumpTexturesWithFMVActive"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.dumpDirectTextures",
+      "kind": "toggle",
+      "label": "Dump direct textures",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DumpDirectTextures"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.dumpPaletteTextures",
+      "kind": "toggle",
+      "label": "Dump palette textures",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DumpPaletteTextures"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.loadTextureReplacements",
+      "kind": "toggle",
+      "label": "Load texture replacements",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "LoadTextureReplacements"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.loadTextureReplacementsAsync",
+      "kind": "toggle",
+      "label": "Load texture replacements async",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "LoadTextureReplacementsAsync"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.precacheTextureReplacements",
+      "kind": "toggle",
+      "label": "Precache texture replacements",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "PrecacheTextureReplacements"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.enableVideoCapture",
+      "kind": "toggle",
+      "label": "Enable video capture",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "EnableVideoCapture"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.enableVideoCaptureParameters",
+      "kind": "toggle",
+      "label": "Enable video capture parameters",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "EnableVideoCaptureParameters"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.videoCaptureAutoResolution",
+      "kind": "toggle",
+      "label": "Video capture auto resolution",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "VideoCaptureAutoResolution"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.enableAudioCapture",
+      "kind": "toggle",
+      "label": "Enable audio capture",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "EnableAudioCapture"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.enableAudioCaptureParameters",
+      "kind": "toggle",
+      "label": "Enable audio capture parameters",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "EnableAudioCaptureParameters"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.linearPresentMode",
+      "kind": "choice",
+      "label": "Linear present mode",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Off"
+        },
+        {
+          "value": "1",
+          "label": "Bilinear smooth"
+        },
+        {
+          "value": "2",
+          "label": "Bilinear sharp"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "linear_present_mode"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.deinterlaceMode",
+      "kind": "choice",
+      "label": "Deinterlace mode",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Automatic"
+        },
+        {
+          "value": "1",
+          "label": "Off"
+        },
+        {
+          "value": "2",
+          "label": "Weave TFF"
+        },
+        {
+          "value": "3",
+          "label": "Weave BFF"
+        },
+        {
+          "value": "4",
+          "label": "Bob TFF"
+        },
+        {
+          "value": "5",
+          "label": "Bob BFF"
+        },
+        {
+          "value": "6",
+          "label": "Blend TFF"
+        },
+        {
+          "value": "7",
+          "label": "Blend BFF"
+        },
+        {
+          "value": "8",
+          "label": "Adaptive TFF"
+        },
+        {
+          "value": "9",
+          "label": "Adaptive BFF"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "deinterlace_mode"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdScale",
+      "kind": "number",
+      "label": "Osd scale",
+      "default": 100,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdScale"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdMargin",
+      "kind": "number",
+      "label": "Osd margin",
+      "default": 10,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdMargin"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdFontPath",
+      "kind": "text",
+      "label": "Osd font path",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdFontPath"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.osdMessagesPos",
+      "kind": "choice",
+      "label": "Osd messages pos",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "None"
+        },
+        {
+          "value": "1",
+          "label": "Top left"
+        },
+        {
+          "value": "2",
+          "label": "Top center"
+        },
+        {
+          "value": "3",
+          "label": "Top right"
+        },
+        {
+          "value": "4",
+          "label": "Center left"
+        },
+        {
+          "value": "5",
+          "label": "Center"
+        },
+        {
+          "value": "6",
+          "label": "Center right"
+        },
+        {
+          "value": "7",
+          "label": "Bottom left"
+        },
+        {
+          "value": "8",
+          "label": "Bottom center"
+        },
+        {
+          "value": "9",
+          "label": "Bottom right"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdMessagesPos"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.osdPerformancePos",
+      "kind": "choice",
+      "label": "Osd performance pos",
+      "default": "3",
+      "choices": [
+        {
+          "value": "0",
+          "label": "None"
+        },
+        {
+          "value": "1",
+          "label": "Top left"
+        },
+        {
+          "value": "2",
+          "label": "Top center"
+        },
+        {
+          "value": "3",
+          "label": "Top right"
+        },
+        {
+          "value": "4",
+          "label": "Center left"
+        },
+        {
+          "value": "5",
+          "label": "Center"
+        },
+        {
+          "value": "6",
+          "label": "Center right"
+        },
+        {
+          "value": "7",
+          "label": "Bottom left"
+        },
+        {
+          "value": "8",
+          "label": "Bottom center"
+        },
+        {
+          "value": "9",
+          "label": "Bottom right"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OsdPerformancePos"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.renderer",
+      "kind": "choice",
+      "label": "Renderer",
+      "default": "-1",
+      "choices": [
+        {
+          "value": "-1",
+          "label": "Auto"
+        },
+        {
+          "value": "3",
+          "label": "DX 11"
+        },
+        {
+          "value": "11",
+          "label": "Null"
+        },
+        {
+          "value": "12",
+          "label": "OGL"
+        },
+        {
+          "value": "13",
+          "label": "SW"
+        },
+        {
+          "value": "14",
+          "label": "VK"
+        },
+        {
+          "value": "17",
+          "label": "Metal"
+        },
+        {
+          "value": "15",
+          "label": "DX 12"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "Renderer"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.upscaleMultiplier",
+      "kind": "number",
+      "label": "Upscale multiplier",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "upscale_multiplier"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.hwMipmap",
+      "kind": "toggle",
+      "label": "Hw mipmap",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "hw_mipmap"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.hwAccurateAlphaTest",
+      "kind": "toggle",
+      "label": "HW accurate alpha test",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "HWAccurateAlphaTest"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.hwaa1",
+      "kind": "toggle",
+      "label": "HWAA 1",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "HWAA1"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.useDebugBlend",
+      "kind": "toggle",
+      "label": "Use debug blend",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UseDebugBlend"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.hwrov",
+      "kind": "toggle",
+      "label": "HWROV",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "HWROV"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.hwrovLogging",
+      "kind": "toggle",
+      "label": "HWROV logging",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "HWROVLogging"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.hwrovBarriersVk",
+      "kind": "toggle",
+      "label": "HWROV barriers VK",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "HWROVBarriersVK"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.accurateBlendingUnit",
+      "kind": "choice",
+      "label": "Accurate blending unit",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Minimum"
+        },
+        {
+          "value": "1",
+          "label": "Basic"
+        },
+        {
+          "value": "2",
+          "label": "Medium"
+        },
+        {
+          "value": "3",
+          "label": "High"
+        },
+        {
+          "value": "4",
+          "label": "Full"
+        },
+        {
+          "value": "5",
+          "label": "Maximum"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "accurate_blending_unit"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.filter",
+      "kind": "choice",
+      "label": "Filter",
+      "default": "2",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Nearest"
+        },
+        {
+          "value": "1",
+          "label": "Forced"
+        },
+        {
+          "value": "2",
+          "label": "PS 2"
+        },
+        {
+          "value": "3",
+          "label": "Forced but sprite"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "filter"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.texturePreloading",
+      "kind": "choice",
+      "label": "Texture preloading",
+      "default": "2",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Off"
+        },
+        {
+          "value": "1",
+          "label": "Partial"
+        },
+        {
+          "value": "2",
+          "label": "Full"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "texture_preloading"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.gsDumpCompression",
+      "kind": "choice",
+      "label": "GS dump compression",
+      "default": "2",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Uncompressed"
+        },
+        {
+          "value": "1",
+          "label": "LZMA"
+        },
+        {
+          "value": "2",
+          "label": "Zstandard"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "GSDumpCompression"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.hwDownloadMode",
+      "kind": "choice",
+      "label": "HW download mode",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Enabled"
+        },
+        {
+          "value": "1",
+          "label": "Enabled force full"
+        },
+        {
+          "value": "2",
+          "label": "No readbacks"
+        },
+        {
+          "value": "3",
+          "label": "Unsynchronized"
+        },
+        {
+          "value": "4",
+          "label": "Disabled"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "HWDownloadMode"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.casMode",
+      "kind": "choice",
+      "label": "CAS mode",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Disabled"
+        },
+        {
+          "value": "1",
+          "label": "Sharpen only"
+        },
+        {
+          "value": "2",
+          "label": "Sharpen and resize"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "CASMode"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.casSharpness",
+      "kind": "number",
+      "label": "CAS sharpness",
+      "default": 50,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "CASSharpness"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.ditheringPs2",
+      "kind": "number",
+      "label": "Dithering ps 2",
+      "default": 2,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "dithering_ps2"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.maxAnisotropy",
+      "kind": "number",
+      "label": "Max anisotropy",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "MaxAnisotropy"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.extrathreads",
+      "kind": "number",
+      "label": "Extrathreads",
+      "default": 2,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "extrathreads"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.extrathreadsHeight",
+      "kind": "number",
+      "label": "Extrathreads height",
+      "default": 4,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "extrathreads_height"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.tvShader",
+      "kind": "number",
+      "label": "TV shader",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "TVShader"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksSkipDrawStart",
+      "kind": "number",
+      "label": "User hacks skip draw start",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_SkipDraw_Start"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksSkipDrawEnd",
+      "kind": "number",
+      "label": "User hacks skip draw end",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_SkipDraw_End"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksHalfPixelOffset",
+      "kind": "choice",
+      "label": "User hacks half pixel offset",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Off"
+        },
+        {
+          "value": "1",
+          "label": "Normal"
+        },
+        {
+          "value": "2",
+          "label": "Special"
+        },
+        {
+          "value": "3",
+          "label": "Special aggressive"
+        },
+        {
+          "value": "4",
+          "label": "Native"
+        },
+        {
+          "value": "5",
+          "label": "Native w tex offset"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_HalfPixelOffset"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksRoundSpriteOffset",
+      "kind": "number",
+      "label": "User hacks round sprite offset",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_round_sprite_offset"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksNativeScaling",
+      "kind": "choice",
+      "label": "User hacks native scaling",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Off"
+        },
+        {
+          "value": "1",
+          "label": "Normal"
+        },
+        {
+          "value": "2",
+          "label": "Aggressive"
+        },
+        {
+          "value": "3",
+          "label": "Normal upscaled"
+        },
+        {
+          "value": "4",
+          "label": "Aggressive upscaled"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_native_scaling"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksTcOffsetX",
+      "kind": "number",
+      "label": "User hacks TC offset x",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_TCOffsetX"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksTcOffsetY",
+      "kind": "number",
+      "label": "User hacks TC offset y",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_TCOffsetY"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksCpuSpriteRenderBw",
+      "kind": "number",
+      "label": "User hacks CPU sprite render BW",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_CPUSpriteRenderBW"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksCpuSpriteRenderLevel",
+      "kind": "number",
+      "label": "User hacks CPU sprite render level",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_CPUSpriteRenderLevel"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksCpuclutRender",
+      "kind": "number",
+      "label": "User hacks CPUCLUT render",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_CPUCLUTRender"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.userHacksGpuTargetClutMode",
+      "kind": "choice",
+      "label": "User hacks GPU target CLUT mode",
+      "default": "0",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Disabled"
+        },
+        {
+          "value": "1",
+          "label": "Enabled"
+        },
+        {
+          "value": "2",
+          "label": "Inside target"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UserHacks_GPUTargetCLUTMode"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.triFilter",
+      "kind": "choice",
+      "label": "Tri filter",
+      "default": "-1",
+      "choices": [
+        {
+          "value": "-1",
+          "label": "Automatic"
+        },
+        {
+          "value": "0",
+          "label": "Off"
+        },
+        {
+          "value": "1",
+          "label": "PS 2"
+        },
+        {
+          "value": "2",
+          "label": "Forced"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "TriFilter"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.overrideTextureBarriers",
+      "kind": "number",
+      "label": "Override texture barriers",
+      "default": -1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "OverrideTextureBarriers"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.depthFeedbackMode",
+      "kind": "choice",
+      "label": "Depth feedback mode",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "None"
+        },
+        {
+          "value": "1",
+          "label": "Auto"
+        },
+        {
+          "value": "2",
+          "label": "Depth"
+        },
+        {
+          "value": "3",
+          "label": "Depth as RT"
+        }
+      ],
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "DepthFeedbackMode"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.shadeBoostBrightness",
+      "kind": "number",
+      "label": "Shade boost brightness",
+      "default": 50,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ShadeBoost_Brightness"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.shadeBoostContrast",
+      "kind": "number",
+      "label": "Shade boost contrast",
+      "default": 50,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ShadeBoost_Contrast"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.shadeBoostSaturation",
+      "kind": "number",
+      "label": "Shade boost saturation",
+      "default": 50,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ShadeBoost_Saturation"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.shadeBoostGamma",
+      "kind": "number",
+      "label": "Shade boost gamma",
+      "default": 50,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ShadeBoost_Gamma"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.exclusiveFullscreenControl",
+      "kind": "number",
+      "label": "Exclusive fullscreen control",
+      "default": -1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "ExclusiveFullscreenControl"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.pngCompressionLevel",
+      "kind": "number",
+      "label": "Png compression level",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "png_compression_level"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.saveDrawStart",
+      "kind": "number",
+      "label": "Save draw start",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveDrawStart"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveDrawCount",
+      "kind": "number",
+      "label": "Save draw count",
+      "default": 5000,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveDrawCount"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveDrawBy",
+      "kind": "number",
+      "label": "Save draw by",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveDrawBy"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveFrameStart",
+      "kind": "number",
+      "label": "Save frame start",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveFrameStart"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveFrameCount",
+      "kind": "number",
+      "label": "Save frame count",
+      "default": -1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveFrameCount"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.saveFrameBy",
+      "kind": "number",
+      "label": "Save frame by",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SaveFrameBy"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.videoCaptureCodec",
+      "kind": "text",
+      "label": "Video capture codec",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "VideoCaptureCodec"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.videoCaptureFormat",
+      "kind": "text",
+      "label": "Video capture format",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "VideoCaptureFormat"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.videoCaptureParameters",
+      "kind": "text",
+      "label": "Video capture parameters",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "VideoCaptureParameters"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.audioCaptureCodec",
+      "kind": "text",
+      "label": "Audio capture codec",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "AudioCaptureCodec"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.audioCaptureParameters",
+      "kind": "text",
+      "label": "Audio capture parameters",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "AudioCaptureParameters"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.videoCaptureBitrate",
+      "kind": "number",
+      "label": "Video capture bitrate",
+      "default": 6000,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "VideoCaptureBitrate"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.videoCaptureWidth",
+      "kind": "number",
+      "label": "Video capture width",
+      "default": 640,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "VideoCaptureWidth"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.videoCaptureHeight",
+      "kind": "number",
+      "label": "Video capture height",
+      "default": 480,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "VideoCaptureHeight"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.audioCaptureBitrate",
+      "kind": "number",
+      "label": "Audio capture bitrate",
+      "default": 192,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "AudioCaptureBitrate"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.adapter",
+      "kind": "text",
+      "label": "Adapter",
+      "default": "",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "Adapter"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.hwDumpDirectory",
+      "kind": "text",
+      "label": "HW dump directory",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "HWDumpDirectory"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGs.swDumpDirectory",
+      "kind": "text",
+      "label": "SW dump directory",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SWDumpDirectory"
+          ]
+        }
+      },
+      "group": "Emu core, GS",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.globalEnable",
+      "kind": "toggle",
+      "label": "Global enable",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Global_Enable"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.showMessages",
+      "kind": "toggle",
+      "label": "Show messages",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Show_Messages"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.showMessagesKeyOnOff",
+      "kind": "toggle",
+      "label": "Show messages key on off",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Show_Messages_Key_On_Off"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.showMessagesVoiceOff",
+      "kind": "toggle",
+      "label": "Show messages voice off",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Show_Messages_Voice_Off"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.showMessagesDmaTransfer",
+      "kind": "toggle",
+      "label": "Show messages DMA transfer",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Show_Messages_DMA_Transfer"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.showMessagesAutoDma",
+      "kind": "toggle",
+      "label": "Show messages auto DMA",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Show_Messages_AutoDMA"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.showMessagesCacheStats",
+      "kind": "toggle",
+      "label": "Show messages cache stats",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Show_Messages_CacheStats"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.logRegisterAccess",
+      "kind": "toggle",
+      "label": "Log register access",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Log_Register_Access"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.logDmaTransfers",
+      "kind": "toggle",
+      "label": "Log DMA transfers",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Log_DMA_Transfers"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.logWaveOutput",
+      "kind": "toggle",
+      "label": "Log WAVE output",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Log_WAVE_Output"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.dumpInfo",
+      "kind": "toggle",
+      "label": "Dump info",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Dump_Info"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.dumpMemory",
+      "kind": "toggle",
+      "label": "Dump memory",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Dump_Memory"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Debug.dumpRegs",
+      "kind": "toggle",
+      "label": "Dump regs",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Debug",
+            "Dump_Regs"
+          ]
+        }
+      },
+      "group": "SPU 2, Debug",
+      "advanced": true
+    },
+    {
+      "key": "spu2Output.standardVolume",
+      "kind": "number",
+      "label": "Standard volume",
+      "default": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Output",
+            "StandardVolume"
+          ]
+        }
+      },
+      "group": "SPU 2, Output"
+    },
+    {
+      "key": "spu2Output.fastForwardVolume",
+      "kind": "number",
+      "label": "Fast forward volume",
+      "default": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Output",
+            "FastForwardVolume"
+          ]
+        }
+      },
+      "group": "SPU 2, Output"
+    },
+    {
+      "key": "spu2Output.outputMuted",
+      "kind": "toggle",
+      "label": "Output muted",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Output",
+            "OutputMuted"
+          ]
+        }
+      },
+      "group": "SPU 2, Output"
+    },
+    {
+      "key": "spu2Output.driverName",
+      "kind": "text",
+      "label": "Driver name",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Output",
+            "DriverName"
+          ]
+        }
+      },
+      "group": "SPU 2, Output"
+    },
+    {
+      "key": "spu2Output.deviceName",
+      "kind": "text",
+      "label": "Device name",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "SPU2/Output",
+            "DeviceName"
+          ]
+        }
+      },
+      "group": "SPU 2, Output"
+    },
+    {
+      "key": "dev9Eth.ethEnable",
+      "kind": "toggle",
+      "label": "Eth enable",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "EthEnable"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Eth.ethApi",
+      "kind": "choice",
+      "label": "Eth api",
+      "default": "Unset",
+      "choices": [
+        {
+          "value": "Unset",
+          "label": "Unset"
+        },
+        {
+          "value": "PCAP Bridged",
+          "label": "PCAP Bridged"
+        },
+        {
+          "value": "PCAP Switched",
+          "label": "PCAP Switched"
+        },
+        {
+          "value": "TAP",
+          "label": "TAP"
+        },
+        {
+          "value": "Sockets",
+          "label": "Sockets"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "EthApi"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Eth.ethDevice",
+      "kind": "text",
+      "label": "Eth device",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "EthDevice"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Eth.ethLogDhcp",
+      "kind": "toggle",
+      "label": "Eth log DHCP",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "EthLogDHCP"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Eth.ethLogDns",
+      "kind": "toggle",
+      "label": "Eth log DNS",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "EthLogDNS"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Eth.interceptDhcp",
+      "kind": "toggle",
+      "label": "Intercept DHCP",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "InterceptDHCP"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Eth.autoMask",
+      "kind": "toggle",
+      "label": "Auto mask",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "AutoMask"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Eth.autoGateway",
+      "kind": "toggle",
+      "label": "Auto gateway",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "AutoGateway"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Eth.modeDns1",
+      "kind": "choice",
+      "label": "Mode DNS 1",
+      "default": "Auto",
+      "choices": [
+        {
+          "value": "Manual",
+          "label": "Manual"
+        },
+        {
+          "value": "Auto",
+          "label": "Auto"
+        },
+        {
+          "value": "Internal",
+          "label": "Internal"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "ModeDNS1"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Eth.modeDns2",
+      "kind": "choice",
+      "label": "Mode DNS 2",
+      "default": "Auto",
+      "choices": [
+        {
+          "value": "Manual",
+          "label": "Manual"
+        },
+        {
+          "value": "Auto",
+          "label": "Auto"
+        },
+        {
+          "value": "Internal",
+          "label": "Internal"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Eth",
+            "ModeDNS2"
+          ]
+        }
+      },
+      "group": "DEV 9, Eth",
+      "advanced": true
+    },
+    {
+      "key": "dev9Hdd.hddEnable",
+      "kind": "toggle",
+      "label": "Hdd enable",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Hdd",
+            "HddEnable"
+          ]
+        }
+      },
+      "group": "DEV 9, Hdd",
+      "advanced": true
+    },
+    {
+      "key": "dev9Hdd.hddFile",
+      "kind": "text",
+      "label": "Hdd file",
+      "default": "DEV9hdd.raw",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "DEV9/Hdd",
+            "HddFile"
+          ]
+        }
+      },
+      "group": "DEV 9, Hdd",
+      "advanced": true
+    },
+    {
+      "key": "emuCoreGamefixes.vuAddSubHack",
+      "kind": "toggle",
+      "label": "Vu add sub hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "VuAddSubHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.fpuMulHack",
+      "kind": "toggle",
+      "label": "Fpu mul hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "FpuMulHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.xgKickHack",
+      "kind": "toggle",
+      "label": "Xg kick hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "XgKickHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.eeTimingHack",
+      "kind": "toggle",
+      "label": "EE timing hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "EETimingHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.instantDmaHack",
+      "kind": "toggle",
+      "label": "Instant DMA hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "InstantDMAHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.softwareRendererFmvHack",
+      "kind": "toggle",
+      "label": "Software renderer FMV hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "SoftwareRendererFMVHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.skipMpegHack",
+      "kind": "toggle",
+      "label": "Skip MPEG hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "SkipMPEGHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.ophFlagHack",
+      "kind": "toggle",
+      "label": "OPH flag hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "OPHFlagHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.dmaBusyHack",
+      "kind": "toggle",
+      "label": "DMA busy hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "DMABusyHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.viffifoHack",
+      "kind": "toggle",
+      "label": "VIFFIFO hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "VIFFIFOHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.vif1stallHack",
+      "kind": "toggle",
+      "label": "VIF 1stall hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "VIF1StallHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.giffifoHack",
+      "kind": "toggle",
+      "label": "GIFFIFO hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "GIFFIFOHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.goemonTlbHack",
+      "kind": "toggle",
+      "label": "Goemon tlb hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "GoemonTlbHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.ibitHack",
+      "kind": "toggle",
+      "label": "Ibit hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "IbitHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.vuSyncHack",
+      "kind": "toggle",
+      "label": "VU sync hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "VUSyncHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.vuOverflowHack",
+      "kind": "toggle",
+      "label": "VU overflow hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "VUOverflowHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.blitInternalFpsHack",
+      "kind": "toggle",
+      "label": "Blit internal FPS hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "BlitInternalFPSHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "emuCoreGamefixes.fullVu0syncHack",
+      "kind": "toggle",
+      "label": "Full VU 0sync hack",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/Gamefixes",
+            "FullVU0SyncHack"
+          ]
+        }
+      },
+      "group": "Emu core, Gamefixes"
+    },
+    {
+      "key": "debuggerAnalysis.runCondition",
+      "kind": "choice",
+      "label": "Run condition",
+      "default": "If Debugger Is Open",
+      "choices": [
+        {
+          "value": "Always",
+          "label": "Always"
+        },
+        {
+          "value": "If Debugger Is Open",
+          "label": "If Debugger Is Open"
+        },
+        {
+          "value": "Never",
+          "label": "Never"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "RunCondition"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.generateSymbolsForIrxExports",
+      "kind": "toggle",
+      "label": "Generate symbols for IRX exports",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "GenerateSymbolsForIRXExports"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.automaticallySelectSym.1a7bcb0",
+      "kind": "toggle",
+      "label": "Automatically select symbols to clear",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "AutomaticallySelectSymbolsToClear"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.importSymbolsFromElf",
+      "kind": "toggle",
+      "label": "Import symbols from ELF",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "ImportSymbolsFromELF"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.demangleSymbols",
+      "kind": "toggle",
+      "label": "Demangle symbols",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "DemangleSymbols"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.demangleParameters",
+      "kind": "toggle",
+      "label": "Demangle parameters",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "DemangleParameters"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.functionScanMode",
+      "kind": "choice",
+      "label": "Function scan mode",
+      "default": "Scan From ELF",
+      "choices": [
+        {
+          "value": "Scan From ELF",
+          "label": "Scan From ELF"
+        },
+        {
+          "value": "Scan From Memory",
+          "label": "Scan From Memory"
+        },
+        {
+          "value": "Skip",
+          "label": "Skip"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "FunctionScanMode"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.customFunctionScanRange",
+      "kind": "toggle",
+      "label": "Custom function scan range",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "CustomFunctionScanRange"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.functionScanStartAddress",
+      "kind": "text",
+      "label": "Function scan start address",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "FunctionScanStartAddress"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.functionScanEndAddress",
+      "kind": "text",
+      "label": "Function scan end address",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "FunctionScanEndAddress"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "debuggerAnalysis.generateFunctionHashes",
+      "kind": "toggle",
+      "label": "Generate function hashes",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Debugger/Analysis",
+            "GenerateFunctionHashes"
+          ]
+        }
+      },
+      "group": "Debugger, Analysis",
+      "advanced": true
+    },
+    {
+      "key": "emuCore.savestateCompressionType",
+      "kind": "choice",
+      "label": "Savestate compression type",
+      "default": "2",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Uncompressed"
+        },
+        {
+          "value": "1",
+          "label": "Deflate"
+        },
+        {
+          "value": "2",
+          "label": "Zstandard"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "SavestateCompressionType"
+          ]
+        }
+      },
+      "group": "Emu core",
+      "advanced": true
+    },
+    {
+      "key": "emuCore.savestateCompressionRatio",
+      "kind": "choice",
+      "label": "Savestate compression ratio",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Low"
+        },
+        {
+          "value": "1",
+          "label": "Medium"
+        },
+        {
+          "value": "2",
+          "label": "High"
+        },
+        {
+          "value": "3",
+          "label": "Very high"
+        }
+      ],
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "SavestateCompressionRatio"
+          ]
+        }
+      },
+      "group": "Emu core",
+      "advanced": true
+    },
+    {
+      "key": "filenames.bios",
+      "kind": "text",
+      "label": "BIOS",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Filenames",
+            "BIOS"
+          ]
+        }
+      },
+      "group": "Filenames"
+    },
+    {
+      "key": "framerate.nominalScalar",
+      "kind": "number",
+      "label": "Nominal scalar",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Framerate",
+            "NominalScalar"
+          ]
+        }
+      },
+      "group": "Framerate"
+    },
+    {
+      "key": "framerate.turboScalar",
+      "kind": "number",
+      "label": "Turbo scalar",
+      "default": 2,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Framerate",
+            "TurboScalar"
+          ]
+        }
+      },
+      "group": "Framerate"
+    },
+    {
+      "key": "framerate.slomoScalar",
+      "kind": "number",
+      "label": "Slomo scalar",
+      "default": 0.5,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Framerate",
+            "SlomoScalar"
+          ]
+        }
+      },
+      "group": "Framerate"
+    },
+    {
+      "key": "emuCoreGs.syncToHostRefreshRate",
+      "kind": "toggle",
+      "label": "Sync to host refresh rate",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "SyncToHostRefreshRate"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "emuCoreGs.useVSyncForTiming",
+      "kind": "toggle",
+      "label": "Use v sync for timing",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore/GS",
+            "UseVSyncForTiming"
+          ]
+        }
+      },
+      "group": "Emu core, GS"
+    },
+    {
+      "key": "pad.multitapPort1",
+      "kind": "toggle",
+      "label": "Multitap port 1",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Pad",
+            "MultitapPort1"
+          ]
+        }
+      },
+      "group": "Pad"
+    },
+    {
+      "key": "pad.multitapPort2",
+      "kind": "toggle",
+      "label": "Multitap port 2",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Pad",
+            "MultitapPort2"
+          ]
+        }
+      },
+      "group": "Pad"
+    },
+    {
+      "key": "achievements.enabled",
+      "kind": "toggle",
+      "label": "Enabled",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "Enabled"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.challengeMode",
+      "kind": "toggle",
+      "label": "Challenge mode",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "ChallengeMode"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.encoreMode",
+      "kind": "toggle",
+      "label": "Encore mode",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "EncoreMode"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.spectatorMode",
+      "kind": "toggle",
+      "label": "Spectator mode",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "SpectatorMode"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.unofficialTestMode",
+      "kind": "toggle",
+      "label": "Unofficial test mode",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "UnofficialTestMode"
+          ]
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "achievements.notifications",
+      "kind": "toggle",
+      "label": "Notifications",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "Notifications"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.leaderboardNotifications",
+      "kind": "toggle",
+      "label": "Leaderboard notifications",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "LeaderboardNotifications"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.soundEffects",
+      "kind": "toggle",
+      "label": "Sound effects",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "SoundEffects"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.infoSound",
+      "kind": "toggle",
+      "label": "Info sound",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "InfoSound"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.unlockSound",
+      "kind": "toggle",
+      "label": "Unlock sound",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "UnlockSound"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.lbSubmitSound",
+      "kind": "toggle",
+      "label": "LB submit sound",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "LBSubmitSound"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.overlays",
+      "kind": "toggle",
+      "label": "Overlays",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "Overlays"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.lbOverlays",
+      "kind": "toggle",
+      "label": "LB overlays",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "LBOverlays"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.notificationsDuration",
+      "kind": "number",
+      "label": "Notifications duration",
+      "default": 5,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "NotificationsDuration"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.leaderboardsDuration",
+      "kind": "number",
+      "label": "Leaderboards duration",
+      "default": 10,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "LeaderboardsDuration"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.overlayPosition",
+      "kind": "choice",
+      "label": "Overlay position",
+      "default": "8",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Top left"
+        },
+        {
+          "value": "1",
+          "label": "Top center"
+        },
+        {
+          "value": "2",
+          "label": "Top right"
+        },
+        {
+          "value": "3",
+          "label": "Center left"
+        },
+        {
+          "value": "4",
+          "label": "Center"
+        },
+        {
+          "value": "5",
+          "label": "Center right"
+        },
+        {
+          "value": "6",
+          "label": "Bottom left"
+        },
+        {
+          "value": "7",
+          "label": "Bottom center"
+        },
+        {
+          "value": "8",
+          "label": "Bottom right"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "OverlayPosition"
+          ]
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "achievements.notificationPosition",
+      "kind": "choice",
+      "label": "Notification position",
+      "default": "1",
+      "choices": [
+        {
+          "value": "0",
+          "label": "None"
+        },
+        {
+          "value": "1",
+          "label": "Top left"
+        },
+        {
+          "value": "2",
+          "label": "Top center"
+        },
+        {
+          "value": "3",
+          "label": "Top right"
+        },
+        {
+          "value": "4",
+          "label": "Center left"
+        },
+        {
+          "value": "5",
+          "label": "Center"
+        },
+        {
+          "value": "6",
+          "label": "Center right"
+        },
+        {
+          "value": "7",
+          "label": "Bottom left"
+        },
+        {
+          "value": "8",
+          "label": "Bottom center"
+        },
+        {
+          "value": "9",
+          "label": "Bottom right"
+        }
+      ],
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "NotificationPosition"
+          ]
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "achievements.infoSoundName",
+      "kind": "text",
+      "label": "Info sound name",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "InfoSoundName"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.unlockSoundName",
+      "kind": "text",
+      "label": "Unlock sound name",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "UnlockSoundName"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.lbSubmitSoundName",
+      "kind": "text",
+      "label": "LB submit sound name",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "LBSubmitSoundName"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "emuCore.cdvdVerboseReads",
+      "kind": "toggle",
+      "label": "Cdvd verbose reads",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "CdvdVerboseReads"
+          ]
+        }
+      },
+      "group": "Emu core",
+      "advanced": true
+    },
+    {
+      "key": "emuCore.cdvdDumpBlocks",
+      "kind": "toggle",
+      "label": "Cdvd dump blocks",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "CdvdDumpBlocks"
+          ]
+        }
+      },
+      "group": "Emu core",
+      "advanced": true
+    },
+    {
+      "key": "emuCore.cdvdPrecache",
+      "kind": "toggle",
+      "label": "Cdvd precache",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "CdvdPrecache"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.enablePatches",
+      "kind": "toggle",
+      "label": "Enable patches",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnablePatches"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.enableCheats",
+      "kind": "toggle",
+      "label": "Enable cheats",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnableCheats"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.enablePine",
+      "kind": "toggle",
+      "label": "Enable PINE",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnablePINE"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.enableWideScreenPatches",
+      "kind": "toggle",
+      "label": "Enable wide screen patches",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnableWideScreenPatches"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.enableNoInterlacingPatches",
+      "kind": "toggle",
+      "label": "Enable no interlacing patches",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnableNoInterlacingPatches"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.enableFastBoot",
+      "kind": "toggle",
+      "label": "Enable fast boot",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnableFastBoot"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.enableFastBootFastForward",
+      "kind": "toggle",
+      "label": "Enable fast boot fast forward",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnableFastBootFastForward"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.enableThreadPinning",
+      "kind": "toggle",
+      "label": "Enable thread pinning",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnableThreadPinning"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.enableRecordingTools",
+      "kind": "toggle",
+      "label": "Enable recording tools",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnableRecordingTools"
+          ]
+        }
+      },
+      "group": "Emu core",
+      "advanced": true
+    },
+    {
+      "key": "emuCore.enableGameFixes",
+      "kind": "toggle",
+      "label": "Enable game fixes",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnableGameFixes"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.saveStateOnShutdown",
+      "kind": "toggle",
+      "label": "Save state on shutdown",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "SaveStateOnShutdown"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.useSavestateSelector",
+      "kind": "toggle",
+      "label": "Use savestate selector",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "UseSavestateSelector"
+          ]
+        }
+      },
+      "group": "Emu core",
+      "advanced": true
+    },
+    {
+      "key": "emuCore.enableDiscordPresence",
+      "kind": "toggle",
+      "label": "Enable discord presence",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "EnableDiscordPresence"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.inhibitScreensaver",
+      "kind": "toggle",
+      "label": "Inhibit screensaver",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "InhibitScreensaver"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.hostFs",
+      "kind": "toggle",
+      "label": "Host fs",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "HostFs"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.backupSavestate",
+      "kind": "toggle",
+      "label": "Backup savestate",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "BackupSavestate"
+          ]
+        }
+      },
+      "group": "Emu core",
+      "advanced": true
+    },
+    {
+      "key": "emuCore.warnAboutUnsafeSettings",
+      "kind": "toggle",
+      "label": "Warn about unsafe settings",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "WarnAboutUnsafeSettings"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.manuallySetRealTimeClock",
+      "kind": "toggle",
+      "label": "Manually set real time clock",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "ManuallySetRealTimeClock"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.useSystemLocaleFormat",
+      "kind": "toggle",
+      "label": "Use system locale format",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "UseSystemLocaleFormat"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.gzipIsoIndexTemplate",
+      "kind": "text",
+      "label": "Gzip iso index template",
+      "default": "$(f).pindex.tmp",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "GzipIsoIndexTemplate"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.pineSlot",
+      "kind": "number",
+      "label": "PINE slot",
+      "default": 28011,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "PINESlot"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.rtcYear",
+      "kind": "number",
+      "label": "Rtc year",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "RtcYear"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.rtcMonth",
+      "kind": "number",
+      "label": "Rtc month",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "RtcMonth"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.rtcDay",
+      "kind": "number",
+      "label": "Rtc day",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "RtcDay"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.rtcHour",
+      "kind": "number",
+      "label": "Rtc hour",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "RtcHour"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.rtcMinute",
+      "kind": "number",
+      "label": "Rtc minute",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "RtcMinute"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.rtcSecond",
+      "kind": "number",
+      "label": "Rtc second",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "RtcSecond"
+          ]
+        }
+      },
+      "group": "Emu core"
+    },
+    {
+      "key": "emuCore.blockDumpSaveDirectory",
+      "kind": "text",
+      "label": "Block dump save directory",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PCSX2/inis/PCSX2.ini",
+          "format": "ini",
+          "path": [
+            "EmuCore",
+            "BlockDumpSaveDirectory"
+          ]
+        }
+      },
+      "group": "Emu core",
+      "advanced": true
+    }
+  ]
+}

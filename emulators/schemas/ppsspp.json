@@ -1,0 +1,6901 @@
+{
+  "emulator": "ppsspp",
+  "version": "v1.20.4",
+  "source": "https://github.com/hrydgard/ppsspp/tree/v1.20.4",
+  "settings": [
+    {
+      "key": "general.firstRun",
+      "kind": "toggle",
+      "label": "First run",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "FirstRun"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.runCount",
+      "kind": "number",
+      "label": "Run count",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RunCount"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.enableLogging",
+      "kind": "toggle",
+      "label": "Enable logging",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "Enable Logging"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.fileLogging",
+      "kind": "toggle",
+      "label": "File logging",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "FileLogging"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.autoRun",
+      "kind": "toggle",
+      "label": "Auto run",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "AutoRun"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.ignoreBadMemAccess",
+      "kind": "toggle",
+      "label": "Ignore bad mem access",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "IgnoreBadMemAccess"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.showDebuggerOnLoad",
+      "kind": "toggle",
+      "label": "Show debugger on load",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ShowDebuggerOnLoad"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.checkForNewVersion",
+      "kind": "toggle",
+      "label": "Check for new version",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "CheckForNewVersion"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.language",
+      "kind": "text",
+      "label": "Language",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "Language"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.forceLagSync2",
+      "kind": "toggle",
+      "label": "Force lag sync 2",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ForceLagSync2"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.discordRichPresence",
+      "kind": "toggle",
+      "label": "Discord rich presence",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "DiscordRichPresence"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.uiSound",
+      "kind": "toggle",
+      "label": "UI sound",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "UISound"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.autoLoadSaveState",
+      "kind": "number",
+      "label": "Auto load save state",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "AutoLoadSaveState"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.enableCheats",
+      "kind": "toggle",
+      "label": "Enable cheats",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "EnableCheats"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.enablePlugins",
+      "kind": "toggle",
+      "label": "Enable plugins",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "EnablePlugins"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.cwCheatRefreshRate",
+      "kind": "number",
+      "label": "Cw cheat refresh rate",
+      "default": 77,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "CwCheatRefreshRate"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.cwCheatScrollPosition",
+      "kind": "number",
+      "label": "Cw cheat scroll position",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "CwCheatScrollPosition"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.gameListScrollPosition",
+      "kind": "number",
+      "label": "Game list scroll position",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "GameListScrollPosition"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.homebrewScrollPosition",
+      "kind": "number",
+      "label": "Homebrew scroll position",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "HomebrewScrollPosition"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.remoteScrollPosition",
+      "kind": "number",
+      "label": "Remote scroll position",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteScrollPosition"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.defaultTab",
+      "kind": "number",
+      "label": "Default tab",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "DefaultTab"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.disableHleFlags",
+      "kind": "number",
+      "label": "Disable HLE flags",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "DisableHLEFlags"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.forceEnableHleFlags",
+      "kind": "number",
+      "label": "Force enable HLE flags",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ForceEnableHLEFlags"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.screenshotMode",
+      "kind": "number",
+      "label": "Screenshot mode",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ScreenshotMode"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.screenshotsAsPng",
+      "kind": "toggle",
+      "label": "Screenshots as PNG",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ScreenshotsAsPNG"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.useFfv1",
+      "kind": "toggle",
+      "label": "Use FFV 1",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "UseFFV1"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.dumpFrames",
+      "kind": "toggle",
+      "label": "Dump frames",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "DumpFrames"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.dumpVideoOutput",
+      "kind": "toggle",
+      "label": "Dump video output",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "DumpVideoOutput"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.dumpAudio",
+      "kind": "toggle",
+      "label": "Dump audio",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "DumpAudio"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.showSaveLoadIndicator",
+      "kind": "toggle",
+      "label": "Show save load indicator",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ShowSaveLoadIndicator"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.saveLoadResetsAVdumping",
+      "kind": "toggle",
+      "label": "Save load resets a vdumping",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "SaveLoadResetsAVdumping"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.stateSlot",
+      "kind": "number",
+      "label": "State slot",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "StateSlot"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.enableStateUndo",
+      "kind": "toggle",
+      "label": "Enable state undo",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "EnableStateUndo"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.stateLoadUndoGame",
+      "kind": "text",
+      "label": "State load undo game",
+      "default": "NA",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "StateLoadUndoGame"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.stateUndoLastSaveGame",
+      "kind": "text",
+      "label": "State undo last save game",
+      "default": "NA",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "StateUndoLastSaveGame"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.stateUndoLastSaveSlot",
+      "kind": "number",
+      "label": "State undo last save slot",
+      "default": -5,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "StateUndoLastSaveSlot"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.rewindSnapshotInterval",
+      "kind": "number",
+      "label": "Rewind snapshot interval",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RewindSnapshotInterval"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.saveStateSlotCount",
+      "kind": "number",
+      "label": "Save state slot count",
+      "default": 5,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "SaveStateSlotCount"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.showRegionOnGameIcon",
+      "kind": "toggle",
+      "label": "Show region on game icon",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ShowRegionOnGameIcon"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.showIdOnGameIcon",
+      "kind": "toggle",
+      "label": "Show ID on game icon",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ShowIDOnGameIcon"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.gameGridScale",
+      "kind": "number",
+      "label": "Game grid scale",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "GameGridScale"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.gridView1",
+      "kind": "toggle",
+      "label": "Grid view 1",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "GridView1"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.gridView2",
+      "kind": "toggle",
+      "label": "Grid view 2",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "GridView2"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.gridView3",
+      "kind": "toggle",
+      "label": "Grid view 3",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "GridView3"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.gridView4",
+      "kind": "toggle",
+      "label": "Grid view 4",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "GridView4"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.rightAnalogUp",
+      "kind": "number",
+      "label": "Right analog up",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RightAnalogUp"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.rightAnalogDown",
+      "kind": "number",
+      "label": "Right analog down",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RightAnalogDown"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.rightAnalogLeft",
+      "kind": "number",
+      "label": "Right analog left",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RightAnalogLeft"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.rightAnalogRight",
+      "kind": "number",
+      "label": "Right analog right",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RightAnalogRight"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.rightAnalogPress",
+      "kind": "number",
+      "label": "Right analog press",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RightAnalogPress"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.rightAnalogCustom",
+      "kind": "toggle",
+      "label": "Right analog custom",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RightAnalogCustom"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.rightAnalogDisableDiagonal",
+      "kind": "toggle",
+      "label": "Right analog disable diagonal",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RightAnalogDisableDiagonal"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.touchGliding",
+      "kind": "toggle",
+      "label": "Touch gliding",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "TouchGliding"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.reportingHost",
+      "kind": "text",
+      "label": "Reporting host",
+      "default": "default",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ReportingHost"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.autoSaveSymbolMap",
+      "kind": "toggle",
+      "label": "Auto save symbol map",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "AutoSaveSymbolMap"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.compressSymbols",
+      "kind": "toggle",
+      "label": "Compress symbols",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "CompressSymbols"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.cacheFullIsoInRam",
+      "kind": "toggle",
+      "label": "Cache full iso in ram",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "CacheFullIsoInRam"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.remoteIsoPort",
+      "kind": "number",
+      "label": "Remote ISO port",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteISOPort"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.lastRemoteIsoServer",
+      "kind": "text",
+      "label": "Last remote ISO server",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "LastRemoteISOServer"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.lastRemoteIsoPort",
+      "kind": "number",
+      "label": "Last remote ISO port",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "LastRemoteISOPort"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.remoteIsoManualConfig",
+      "kind": "toggle",
+      "label": "Remote ISO manual config",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteISOManualConfig"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.remoteShareOnStartup",
+      "kind": "toggle",
+      "label": "Remote share on startup",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteShareOnStartup"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.remoteIsoSubdir",
+      "kind": "text",
+      "label": "Remote ISO subdir",
+      "default": "/",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteISOSubdir"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.remoteDebuggerOnStartup",
+      "kind": "toggle",
+      "label": "Remote debugger on startup",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteDebuggerOnStartup"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.remoteDebuggerLocal",
+      "kind": "toggle",
+      "label": "Remote debugger local",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteDebuggerLocal"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.remoteTab",
+      "kind": "toggle",
+      "label": "Remote tab",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteTab"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.remoteIsoSharedDir",
+      "kind": "text",
+      "label": "Remote ISO shared dir",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteISOSharedDir"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.remoteIsoShareType",
+      "kind": "number",
+      "label": "Remote ISO share type",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RemoteISOShareType"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.askForExitConfirmationAfterSeconds",
+      "kind": "number",
+      "label": "Ask for exit confirmation after seconds",
+      "default": 300,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "AskForExitConfirmationAfterSeconds"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.backgroundAnimation",
+      "kind": "number",
+      "label": "Background animation",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "BackgroundAnimation"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.transparentBackground",
+      "kind": "toggle",
+      "label": "Transparent background",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "TransparentBackground"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.uiTint",
+      "kind": "number",
+      "label": "UI tint",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "UITint"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.topMost",
+      "kind": "toggle",
+      "label": "Top most",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "TopMost"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.pauseOnLostFocus",
+      "kind": "toggle",
+      "label": "Pause on lost focus",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "PauseOnLostFocus"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.windowX",
+      "kind": "number",
+      "label": "Window x",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "WindowX"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.windowY",
+      "kind": "number",
+      "label": "Window y",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "WindowY"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.windowWidth",
+      "kind": "number",
+      "label": "Window width",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "WindowWidth"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.windowHeight",
+      "kind": "number",
+      "label": "Window height",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "WindowHeight"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.windowSizeState",
+      "kind": "number",
+      "label": "Window size state",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "WindowSizeState"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.shrinkIfWindowSmall",
+      "kind": "toggle",
+      "label": "Shrink if window small",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ShrinkIfWindowSmall"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.pauseWhenMinimized",
+      "kind": "toggle",
+      "label": "Pause when minimized",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "PauseWhenMinimized"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.dumpFileTypes",
+      "kind": "number",
+      "label": "Dump file types",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "DumpFileTypes"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.showMenuBar",
+      "kind": "toggle",
+      "label": "Show menu bar",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ShowMenuBar"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.memStickInserted",
+      "kind": "toggle",
+      "label": "Mem stick inserted",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "MemStickInserted"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.loadPlugins",
+      "kind": "toggle",
+      "label": "Load plugins",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "LoadPlugins"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.notificationPos",
+      "kind": "number",
+      "label": "Notification pos",
+      "default": 4,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "NotificationPos"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.ignoreCompatSettings",
+      "kind": "text",
+      "label": "Ignore compat settings",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "IgnoreCompatSettings"
+          ]
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.runBehindPauseMenu",
+      "kind": "toggle",
+      "label": "Run behind pause menu",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "RunBehindPauseMenu"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.showGpoleDs",
+      "kind": "toggle",
+      "label": "Show GPOLE ds",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "ShowGPOLEDs"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "general.uiScaleFactor",
+      "kind": "number",
+      "label": "UI scale factor",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "UIScaleFactor"
+          ]
+        }
+      },
+      "group": "General",
+      "advanced": true
+    },
+    {
+      "key": "general.vulkanDisableImplicitLayers",
+      "kind": "toggle",
+      "label": "Vulkan disable implicit layers",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "General",
+            "VulkanDisableImplicitLayers"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "General"
+    },
+    {
+      "key": "cpu.cpuCore",
+      "kind": "number",
+      "label": "CPU core",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "CPU",
+            "CPUCore"
+          ]
+        }
+      },
+      "group": "CPU"
+    },
+    {
+      "key": "cpu.separateSasThread",
+      "kind": "toggle",
+      "label": "Separate SAS thread",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "CPU",
+            "SeparateSASThread"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "CPU"
+    },
+    {
+      "key": "cpu.ioTimingMethod",
+      "kind": "number",
+      "label": "IO timing method",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "CPU",
+            "IOTimingMethod"
+          ]
+        }
+      },
+      "group": "CPU"
+    },
+    {
+      "key": "cpu.fastMemoryAccess",
+      "kind": "toggle",
+      "label": "Fast memory access",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "CPU",
+            "FastMemoryAccess"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "CPU"
+    },
+    {
+      "key": "cpu.functionReplacements",
+      "kind": "toggle",
+      "label": "Function replacements",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "CPU",
+            "FunctionReplacements"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "CPU"
+    },
+    {
+      "key": "cpu.hideSlowWarnings",
+      "kind": "toggle",
+      "label": "Hide slow warnings",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "CPU",
+            "HideSlowWarnings"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "CPU"
+    },
+    {
+      "key": "cpu.hideStateWarnings",
+      "kind": "toggle",
+      "label": "Hide state warnings",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "CPU",
+            "HideStateWarnings"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "CPU"
+    },
+    {
+      "key": "cpu.jitDisableFlags",
+      "kind": "number",
+      "label": "Jit disable flags",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "CPU",
+            "JitDisableFlags"
+          ]
+        }
+      },
+      "group": "CPU"
+    },
+    {
+      "key": "cpu.cpuSpeed",
+      "kind": "number",
+      "label": "CPU speed",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "CPU",
+            "CPUSpeed"
+          ]
+        }
+      },
+      "group": "CPU"
+    },
+    {
+      "key": "graphics.iShowStatusFlags",
+      "kind": "number",
+      "label": "I show status flags",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "iShowStatusFlags"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.disabledGraphicsBackends",
+      "kind": "text",
+      "label": "Disabled graphics backends",
+      "default": "",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "DisabledGraphicsBackends"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.vulkanDevice",
+      "kind": "text",
+      "label": "Vulkan device",
+      "default": "",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "VulkanDevice"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.cameraDevice",
+      "kind": "text",
+      "label": "Camera device",
+      "default": "",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "CameraDevice"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.cameraMirrorHorizontal",
+      "kind": "toggle",
+      "label": "Camera mirror horizontal",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "CameraMirrorHorizontal"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.androidFramerateMode",
+      "kind": "number",
+      "label": "Android framerate mode",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "AndroidFramerateMode"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.useGeometryShader",
+      "kind": "toggle",
+      "label": "Use geometry shader",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "UseGeometryShader"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics",
+      "advanced": true
+    },
+    {
+      "key": "graphics.skipBufferEffects",
+      "kind": "toggle",
+      "label": "Skip buffer effects",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "SkipBufferEffects"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.disableRangeCulling",
+      "kind": "toggle",
+      "label": "Disable range culling",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "DisableRangeCulling"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.softwareRenderer",
+      "kind": "toggle",
+      "label": "Software renderer",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "SoftwareRenderer"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.softwareRendererJit",
+      "kind": "toggle",
+      "label": "Software renderer jit",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "SoftwareRendererJit"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.hardwareTransform",
+      "kind": "toggle",
+      "label": "Hardware transform",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "HardwareTransform"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.softwareSkinning",
+      "kind": "toggle",
+      "label": "Software skinning",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "SoftwareSkinning"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.textureFiltering",
+      "kind": "number",
+      "label": "Texture filtering",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "TextureFiltering"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.smart2dTexFiltering",
+      "kind": "toggle",
+      "label": "Smart 2D tex filtering",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "Smart2DTexFiltering"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.internalResolution",
+      "kind": "number",
+      "label": "Internal resolution",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "InternalResolution"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.androidHwScale",
+      "kind": "number",
+      "label": "Android hw scale",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "AndroidHwScale"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.highQualityDepth",
+      "kind": "toggle",
+      "label": "High quality depth",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "HighQualityDepth"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.frameSkip",
+      "kind": "number",
+      "label": "Frame skip",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "FrameSkip"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.autoFrameSkip",
+      "kind": "toggle",
+      "label": "Auto frame skip",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "AutoFrameSkip"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.stereoRendering",
+      "kind": "toggle",
+      "label": "Stereo rendering",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "StereoRendering"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.stereoToMonoShader",
+      "kind": "text",
+      "label": "Stereo to mono shader",
+      "default": "RedBlue",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "StereoToMonoShader"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.frameRate",
+      "kind": "number",
+      "label": "Frame rate",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "FrameRate"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.frameRate2",
+      "kind": "number",
+      "label": "Frame rate 2",
+      "default": -1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "FrameRate2"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.analogFrameRate",
+      "kind": "number",
+      "label": "Analog frame rate",
+      "default": 240,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "AnalogFrameRate"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.anisotropyLevel",
+      "kind": "number",
+      "label": "Anisotropy level",
+      "default": 4,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "AnisotropyLevel"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.multiSampleLevel",
+      "kind": "number",
+      "label": "Multi sample level",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "MultiSampleLevel"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.textureBackoffCache",
+      "kind": "toggle",
+      "label": "Texture backoff cache",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "TextureBackoffCache"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.fullScreen",
+      "kind": "toggle",
+      "label": "Full screen",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "FullScreen"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.fullScreenMulti",
+      "kind": "toggle",
+      "label": "Full screen multi",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "FullScreenMulti"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.displayCropTo16x9",
+      "kind": "toggle",
+      "label": "Display crop to 16x 9",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "DisplayCropTo16x9"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.sustainedPerformanceMode",
+      "kind": "toggle",
+      "label": "Sustained performance mode",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "SustainedPerformanceMode"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.replaceTextures",
+      "kind": "toggle",
+      "label": "Replace textures",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "ReplaceTextures"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.saveNewTextures",
+      "kind": "toggle",
+      "label": "Save new textures",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "SaveNewTextures"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.ignoreTextureFilenames",
+      "kind": "toggle",
+      "label": "Ignore texture filenames",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "IgnoreTextureFilenames"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.replacementTextureLoadSpeed",
+      "kind": "number",
+      "label": "Replacement texture load speed",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "ReplacementTextureLoadSpeed"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.texScalingLevel",
+      "kind": "number",
+      "label": "Tex scaling level",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "TexScalingLevel"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.texScalingType",
+      "kind": "number",
+      "label": "Tex scaling type",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "TexScalingType"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.texDeposterize",
+      "kind": "toggle",
+      "label": "Tex deposterize",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "TexDeposterize"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.texHardwareScaling",
+      "kind": "toggle",
+      "label": "Tex hardware scaling",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "TexHardwareScaling"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.verticalSync",
+      "kind": "toggle",
+      "label": "Vertical sync",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "VerticalSync"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.lowLatencyPresent",
+      "kind": "toggle",
+      "label": "Low latency present",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "LowLatencyPresent"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.bloomHack",
+      "kind": "number",
+      "label": "Bloom hack",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "BloomHack"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.splineBezierQuality",
+      "kind": "number",
+      "label": "Spline bezier quality",
+      "default": 2,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "SplineBezierQuality"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.hardwareTessellation",
+      "kind": "toggle",
+      "label": "Hardware tessellation",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "HardwareTessellation"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.textureShader",
+      "kind": "text",
+      "label": "Texture shader",
+      "default": "Off",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "TextureShader"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.shaderChainRequires60fps",
+      "kind": "toggle",
+      "label": "Shader chain requires 60FPS",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "ShaderChainRequires60FPS"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.skipGpuReadbackMode",
+      "kind": "number",
+      "label": "Skip GPU readback mode",
+      "default": 0,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "SkipGPUReadbackMode"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.logFrameDrops",
+      "kind": "toggle",
+      "label": "Log frame drops",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "LogFrameDrops"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics",
+      "advanced": true
+    },
+    {
+      "key": "graphics.inflightFrames",
+      "kind": "number",
+      "label": "Inflight frames",
+      "default": 3,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "InflightFrames"
+          ]
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.renderDuplicateFrames",
+      "kind": "toggle",
+      "label": "Render duplicate frames",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "RenderDuplicateFrames"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.multiThreading",
+      "kind": "toggle",
+      "label": "Multi threading",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "MultiThreading"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.shaderCache",
+      "kind": "toggle",
+      "label": "Shader cache",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "ShaderCache"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.gpuLogProfiler",
+      "kind": "toggle",
+      "label": "Gpu log profiler",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "GpuLogProfiler"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics",
+      "advanced": true
+    },
+    {
+      "key": "graphics.uberShaderVertex",
+      "kind": "toggle",
+      "label": "Uber shader vertex",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "UberShaderVertex"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "graphics.uberShaderFragment",
+      "kind": "toggle",
+      "label": "Uber shader fragment",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Graphics",
+            "UberShaderFragment"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Graphics"
+    },
+    {
+      "key": "sound.enable",
+      "kind": "toggle",
+      "label": "Enable",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "Enable"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.extraAudioBuffering",
+      "kind": "toggle",
+      "label": "Extra audio buffering",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "ExtraAudioBuffering"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.audioBufferSize",
+      "kind": "number",
+      "label": "Audio buffer size",
+      "default": 256,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "AudioBufferSize"
+          ]
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.fillAudioGaps",
+      "kind": "toggle",
+      "label": "Fill audio gaps",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "FillAudioGaps"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.audioSyncMode",
+      "kind": "number",
+      "label": "Audio sync mode",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "AudioSyncMode"
+          ]
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.altSpeedRelativeVolume",
+      "kind": "number",
+      "label": "Alt speed relative volume",
+      "default": 100,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "AltSpeedRelativeVolume"
+          ]
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.uiVolume",
+      "kind": "number",
+      "label": "UI volume",
+      "default": 75,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "UIVolume"
+          ]
+        }
+      },
+      "group": "Sound",
+      "advanced": true
+    },
+    {
+      "key": "sound.audioDevice",
+      "kind": "text",
+      "label": "Audio device",
+      "default": "",
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "AudioDevice"
+          ]
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.autoAudioDevice",
+      "kind": "toggle",
+      "label": "Auto audio device",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "AutoAudioDevice"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.audioMixWithOthers",
+      "kind": "toggle",
+      "label": "Audio mix with others",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "AudioMixWithOthers"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.audioRespectSilentMode",
+      "kind": "toggle",
+      "label": "Audio respect silent mode",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "AudioRespectSilentMode"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "sound.useOldAtrac",
+      "kind": "toggle",
+      "label": "Use old atrac",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Sound",
+            "UseOldAtrac"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Sound"
+    },
+    {
+      "key": "control.hapticFeedback",
+      "kind": "toggle",
+      "label": "Haptic feedback",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "HapticFeedback"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.ignoreWindowsKey",
+      "kind": "toggle",
+      "label": "Ignore windows key",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "IgnoreWindowsKey"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltBaseAngleY",
+      "kind": "number",
+      "label": "Tilt base angle y",
+      "default": 0.9,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltBaseAngleY"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltInvertX",
+      "kind": "toggle",
+      "label": "Tilt invert x",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltInvertX"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltInvertY",
+      "kind": "toggle",
+      "label": "Tilt invert y",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltInvertY"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltSensitivityX",
+      "kind": "number",
+      "label": "Tilt sensitivity x",
+      "default": 60,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltSensitivityX"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltSensitivityY",
+      "kind": "number",
+      "label": "Tilt sensitivity y",
+      "default": 60,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltSensitivityY"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltAnalogDeadzoneRadius",
+      "kind": "number",
+      "label": "Tilt analog deadzone radius",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltAnalogDeadzoneRadius"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltInverseDeadzone",
+      "kind": "number",
+      "label": "Tilt inverse deadzone",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltInverseDeadzone"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltCircularDeadzone",
+      "kind": "toggle",
+      "label": "Tilt circular deadzone",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltCircularDeadzone"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltInputType",
+      "kind": "number",
+      "label": "Tilt input type",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltInputType"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.tiltInputEnabled",
+      "kind": "toggle",
+      "label": "Tilt input enabled",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TiltInputEnabled"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.disableDpadDiagonals",
+      "kind": "toggle",
+      "label": "Disable dpad diagonals",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "DisableDpadDiagonals"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.gamepadOnlyFocused",
+      "kind": "toggle",
+      "label": "Gamepad only focused",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "GamepadOnlyFocused"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.touchButtonStyle",
+      "kind": "number",
+      "label": "Touch button style",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TouchButtonStyle"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.touchButtonOpacity",
+      "kind": "number",
+      "label": "Touch button opacity",
+      "default": 65,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TouchButtonOpacity"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.touchButtonHideSeconds",
+      "kind": "number",
+      "label": "Touch button hide seconds",
+      "default": 8,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TouchButtonHideSeconds"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.autoCenterTouchAnalog",
+      "kind": "toggle",
+      "label": "Auto center touch analog",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AutoCenterTouchAnalog"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.stickyTouchDPad",
+      "kind": "toggle",
+      "label": "Sticky touch d pad",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "StickyTouchDPad"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.touchSnapToGrid",
+      "kind": "toggle",
+      "label": "Touch snap to grid",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TouchSnapToGrid"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.touchSnapGridSize",
+      "kind": "number",
+      "label": "Touch snap grid size",
+      "default": 64,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "TouchSnapGridSize"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.analogDeadzone",
+      "kind": "number",
+      "label": "Analog deadzone",
+      "default": 0.15,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AnalogDeadzone"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.analogInverseDeadzone",
+      "kind": "number",
+      "label": "Analog inverse deadzone",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AnalogInverseDeadzone"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.analogSensitivity",
+      "kind": "number",
+      "label": "Analog sensitivity",
+      "default": 1.1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AnalogSensitivity"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.analogIsCircular",
+      "kind": "toggle",
+      "label": "Analog is circular",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AnalogIsCircular"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.analogAutoRotSpeed",
+      "kind": "number",
+      "label": "Analog auto rot speed",
+      "default": 8,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AnalogAutoRotSpeed"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.analogLimiterDeadzone",
+      "kind": "number",
+      "label": "Analog limiter deadzone",
+      "default": 0.6,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AnalogLimiterDeadzone"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.analogTriggerThreshold",
+      "kind": "number",
+      "label": "Analog trigger threshold",
+      "default": 0.75,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AnalogTriggerThreshold"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.analogStickThreshold",
+      "kind": "number",
+      "label": "Analog stick threshold",
+      "default": 0.75,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AnalogStickThreshold"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.allowMappingCombos",
+      "kind": "toggle",
+      "label": "Allow mapping combos",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "AllowMappingCombos"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.strictComboOrder",
+      "kind": "toggle",
+      "label": "Strict combo order",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "StrictComboOrder"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.useMouse",
+      "kind": "toggle",
+      "label": "Use mouse",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "UseMouse"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.confineMap",
+      "kind": "toggle",
+      "label": "Confine map",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "ConfineMap"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.mouseSensitivity",
+      "kind": "number",
+      "label": "Mouse sensitivity",
+      "default": 0.1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "MouseSensitivity"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.mouseSmoothing",
+      "kind": "number",
+      "label": "Mouse smoothing",
+      "default": 0.9,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "MouseSmoothing"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.mouseWheelUpDelayMs",
+      "kind": "number",
+      "label": "Mouse wheel up delay ms",
+      "default": 80,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "MouseWheelUpDelayMs"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.systemControls",
+      "kind": "toggle",
+      "label": "System controls",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "SystemControls"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "control.rapidFileInterval",
+      "kind": "number",
+      "label": "Rapid file interval",
+      "default": 5,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Control",
+            "RapidFileInterval"
+          ]
+        }
+      },
+      "group": "Control"
+    },
+    {
+      "key": "systemParam.pspModel",
+      "kind": "number",
+      "label": "PSP model",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "PSPModel"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.pspFirmwareVersion",
+      "kind": "number",
+      "label": "PSP firmware version",
+      "default": 660,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "PSPFirmwareVersion"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.nickName",
+      "kind": "text",
+      "label": "Nick name",
+      "default": "PPSSPP",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "NickName"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.macAddress",
+      "kind": "text",
+      "label": "Mac address",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "MacAddress"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.gameLanguage",
+      "kind": "number",
+      "label": "Game language",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "GameLanguage"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.paramTimeFormat",
+      "kind": "number",
+      "label": "Param time format",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "ParamTimeFormat"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.paramDateFormat",
+      "kind": "number",
+      "label": "Param date format",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "ParamDateFormat"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.timeZone",
+      "kind": "number",
+      "label": "Time zone",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "TimeZone"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.dayLightSavings",
+      "kind": "toggle",
+      "label": "Day light savings",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "DayLightSavings"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.buttonPreference",
+      "kind": "number",
+      "label": "Button preference",
+      "default": 1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "ButtonPreference"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.lockParentalLevel",
+      "kind": "number",
+      "label": "Lock parental level",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "LockParentalLevel"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.wlanAdhocChannel",
+      "kind": "number",
+      "label": "Wlan adhoc channel",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "WlanAdhocChannel"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.bypassOskWithKeyboard",
+      "kind": "toggle",
+      "label": "Bypass OSK with keyboard",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "BypassOSKWithKeyboard"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.wlanPowerSave",
+      "kind": "toggle",
+      "label": "Wlan power save",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "WlanPowerSave"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.encryptSave",
+      "kind": "toggle",
+      "label": "Encrypt save",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "EncryptSave"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "systemParam.memStickSize",
+      "kind": "number",
+      "label": "Mem stick size",
+      "default": 16,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "SystemParam",
+            "MemStickSize"
+          ]
+        }
+      },
+      "group": "System param"
+    },
+    {
+      "key": "network.enableWlan",
+      "kind": "toggle",
+      "label": "Enable wlan",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "EnableWlan"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.enableAdhocServer",
+      "kind": "toggle",
+      "label": "Enable adhoc server",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "EnableAdhocServer"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.proAdhocServer",
+      "kind": "text",
+      "label": "Pro adhoc server",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "proAdhocServer"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.adhocServerRelayMode",
+      "kind": "number",
+      "label": "Adhoc server relay mode",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "AdhocServerRelayMode"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.adhocServerShowPlayerPorts",
+      "kind": "toggle",
+      "label": "Adhoc server show player ports",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "AdhocServerShowPlayerPorts"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.portOffset",
+      "kind": "number",
+      "label": "Port offset",
+      "default": 10000,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "PortOffset"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.primaryDnsServer",
+      "kind": "text",
+      "label": "Primary DNS server",
+      "default": "67.222.156.250",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "PrimaryDNSServer"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.minTimeout",
+      "kind": "number",
+      "label": "Min timeout",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "MinTimeout"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.forcedFirstConnect",
+      "kind": "toggle",
+      "label": "Forced first connect",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "ForcedFirstConnect"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.enableUPnP",
+      "kind": "toggle",
+      "label": "Enable u pn p",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "EnableUPnP"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.uPnPUseOriginalPort",
+      "kind": "toggle",
+      "label": "U pn p use original port",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "UPnPUseOriginalPort"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.infrastructureAutoDns",
+      "kind": "toggle",
+      "label": "Infrastructure auto DNS",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "InfrastructureAutoDNS"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.allowSpeedControlWhileConnected",
+      "kind": "toggle",
+      "label": "Allow speed control while connected",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "AllowSpeedControlWhileConnected"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.adhocServerListUrl",
+      "kind": "text",
+      "label": "Adhoc server list url",
+      "default": "http://metadata.ppsspp.org/adhoc-servers.json",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "AdhocServerListUrl"
+          ]
+        }
+      },
+      "group": "Network",
+      "advanced": true
+    },
+    {
+      "key": "network.enableNetworkChat",
+      "kind": "toggle",
+      "label": "Enable network chat",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "EnableNetworkChat"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.chatButtonPosition",
+      "kind": "number",
+      "label": "Chat button position",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "ChatButtonPosition"
+          ]
+        }
+      },
+      "group": "Network",
+      "advanced": true
+    },
+    {
+      "key": "network.chatScreenPosition",
+      "kind": "number",
+      "label": "Chat screen position",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "ChatScreenPosition"
+          ]
+        }
+      },
+      "group": "Network",
+      "advanced": true
+    },
+    {
+      "key": "network.enableQuickChat",
+      "kind": "toggle",
+      "label": "Enable quick chat",
+      "default": true,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "EnableQuickChat"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.quickChat1",
+      "kind": "text",
+      "label": "Quick chat 1",
+      "default": "Quick Chat 1",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "QuickChat1"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.quickChat2",
+      "kind": "text",
+      "label": "Quick chat 2",
+      "default": "Quick Chat 2",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "QuickChat2"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.quickChat3",
+      "kind": "text",
+      "label": "Quick chat 3",
+      "default": "Quick Chat 3",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "QuickChat3"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.quickChat4",
+      "kind": "text",
+      "label": "Quick chat 4",
+      "default": "Quick Chat 4",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "QuickChat4"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "network.quickChat5",
+      "kind": "text",
+      "label": "Quick chat 5",
+      "default": "Quick Chat 5",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Network",
+            "QuickChat5"
+          ]
+        }
+      },
+      "group": "Network"
+    },
+    {
+      "key": "debugger.disasmWindowX",
+      "kind": "number",
+      "label": "Disasm window x",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "DisasmWindowX"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.disasmWindowY",
+      "kind": "number",
+      "label": "Disasm window y",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "DisasmWindowY"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.disasmWindowW",
+      "kind": "number",
+      "label": "Disasm window w",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "DisasmWindowW"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.disasmWindowH",
+      "kind": "number",
+      "label": "Disasm window h",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "DisasmWindowH"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.geWindowX",
+      "kind": "number",
+      "label": "GE window x",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "GEWindowX"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.geWindowY",
+      "kind": "number",
+      "label": "GE window y",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "GEWindowY"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.geWindowW",
+      "kind": "number",
+      "label": "GE window w",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "GEWindowW"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.geWindowH",
+      "kind": "number",
+      "label": "GE window h",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "GEWindowH"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.geWindowTabsBl",
+      "kind": "number",
+      "label": "GE window tabs BL",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "GEWindowTabsBL"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.geWindowTabsBr",
+      "kind": "number",
+      "label": "GE window tabs BR",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "GEWindowTabsBR"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.geWindowTabsTr",
+      "kind": "number",
+      "label": "GE window tabs TR",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "GEWindowTabsTR"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.consoleWindowX",
+      "kind": "number",
+      "label": "Console window x",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "ConsoleWindowX"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.consoleWindowY",
+      "kind": "number",
+      "label": "Console window y",
+      "default": -1,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "ConsoleWindowY"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.fontWidth",
+      "kind": "number",
+      "label": "Font width",
+      "default": 8,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "FontWidth"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.fontHeight",
+      "kind": "number",
+      "label": "Font height",
+      "default": 12,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "FontHeight"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.showBottomTabTitles",
+      "kind": "toggle",
+      "label": "Show bottom tab titles",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "ShowBottomTabTitles"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.showDeveloperMenu",
+      "kind": "toggle",
+      "label": "Show developer menu",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "ShowDeveloperMenu"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.skipDeadbeefFilling",
+      "kind": "toggle",
+      "label": "Skip deadbeef filling",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "SkipDeadbeefFilling"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.funcHashMap",
+      "kind": "toggle",
+      "label": "Func hash map",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "FuncHashMap"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.skipFuncHashMap",
+      "kind": "text",
+      "label": "Skip func hash map",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "SkipFuncHashMap"
+          ]
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "debugger.memInfoDetailed",
+      "kind": "toggle",
+      "label": "Mem info detailed",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Debugger",
+            "MemInfoDetailed"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Debugger",
+      "advanced": true
+    },
+    {
+      "key": "theme.themeName",
+      "kind": "text",
+      "label": "Theme name",
+      "default": "Default",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Theme",
+            "ThemeName"
+          ]
+        }
+      },
+      "group": "Theme",
+      "advanced": true
+    },
+    {
+      "key": "vr.vrEnable",
+      "kind": "toggle",
+      "label": "VR enable",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VREnable"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrEnable6doF",
+      "kind": "toggle",
+      "label": "VR enable 6do f",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VREnable6DoF"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrEnableStereo",
+      "kind": "toggle",
+      "label": "VR enable stereo",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VREnableStereo"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrForce72hz",
+      "kind": "toggle",
+      "label": "VR force 72hz",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRForce72Hz"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrForce",
+      "kind": "toggle",
+      "label": "VR force",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRForce"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrImmersiveMode",
+      "kind": "toggle",
+      "label": "VR immersive mode",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRImmersiveMode"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrManualForceVr",
+      "kind": "toggle",
+      "label": "VR manual force VR",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRManualForceVR"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrPassthrough",
+      "kind": "toggle",
+      "label": "VR passthrough",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRPassthrough"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrRescaleHud",
+      "kind": "toggle",
+      "label": "VR rescale HUD",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRRescaleHUD"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrCameraDistance",
+      "kind": "number",
+      "label": "VR camera distance",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRCameraDistance"
+          ]
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrCameraHeight",
+      "kind": "number",
+      "label": "VR camera height",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRCameraHeight"
+          ]
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrCameraSide",
+      "kind": "number",
+      "label": "VR camera side",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRCameraSide"
+          ]
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrCameraPitch",
+      "kind": "number",
+      "label": "VR camera pitch",
+      "default": 0,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRCameraPitch"
+          ]
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrCanvasDistance",
+      "kind": "number",
+      "label": "VR canvas distance",
+      "default": 12,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRCanvasDistance"
+          ]
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrCanvas3dDistance",
+      "kind": "number",
+      "label": "VR canvas 3D distance",
+      "default": 3,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRCanvas3DDistance"
+          ]
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrFieldOfView",
+      "kind": "number",
+      "label": "VR field of view",
+      "default": 100,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRFieldOfView"
+          ]
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "vr.vrHeadUpDisplayScale",
+      "kind": "number",
+      "label": "VR head up display scale",
+      "default": 0.3,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "VR",
+            "VRHeadUpDisplayScale"
+          ]
+        }
+      },
+      "group": "VR"
+    },
+    {
+      "key": "achievements.achievementsEnable",
+      "kind": "toggle",
+      "label": "Achievements enable",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsEnable"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsEnableRaIntegration",
+      "kind": "toggle",
+      "label": "Achievements enable RA integration",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsEnableRAIntegration"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsChallengeMode",
+      "kind": "toggle",
+      "label": "Achievements challenge mode",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsChallengeMode"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsEncoreMode",
+      "kind": "toggle",
+      "label": "Achievements encore mode",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsEncoreMode"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsUnofficial",
+      "kind": "toggle",
+      "label": "Achievements unofficial",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsUnofficial"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsLogBadMemReads",
+      "kind": "toggle",
+      "label": "Achievements log bad mem reads",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsLogBadMemReads"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "achievements.achievementsSaveStateInHardcoreMode",
+      "kind": "toggle",
+      "label": "Achievements save state in hardcore mode",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsSaveStateInHardcoreMode"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsUserName",
+      "kind": "text",
+      "label": "Achievements user name",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsUserName"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsHost",
+      "kind": "text",
+      "label": "Achievements host",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsHost"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsSoundEffects",
+      "kind": "toggle",
+      "label": "Achievements sound effects",
+      "default": false,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsSoundEffects"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsUnlockAudioFile",
+      "kind": "text",
+      "label": "Achievements unlock audio file",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsUnlockAudioFile"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsLeaderboardSub.6b84c92",
+      "kind": "text",
+      "label": "Achievements leaderboard submit audio file",
+      "default": "",
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsLeaderboardSubmitAudioFile"
+          ]
+        }
+      },
+      "group": "Achievements"
+    },
+    {
+      "key": "achievements.achievementsLeaderboardTrackerPos",
+      "kind": "number",
+      "label": "Achievements leaderboard tracker pos",
+      "default": 3,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsLeaderboardTrackerPos"
+          ]
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "achievements.achievementsLeaderboardSta.36a88b6",
+      "kind": "number",
+      "label": "Achievements leaderboard started or failed pos",
+      "default": 3,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsLeaderboardStartedOrFailedPos"
+          ]
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "achievements.achievementsLeaderboardSubmittedPos",
+      "kind": "number",
+      "label": "Achievements leaderboard submitted pos",
+      "default": 3,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsLeaderboardSubmittedPos"
+          ]
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "achievements.achievementsProgressPos",
+      "kind": "number",
+      "label": "Achievements progress pos",
+      "default": 3,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsProgressPos"
+          ]
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "achievements.achievementsChallengePos",
+      "kind": "number",
+      "label": "Achievements challenge pos",
+      "default": 3,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsChallengePos"
+          ]
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "achievements.achievementsUnlockedPos",
+      "kind": "number",
+      "label": "Achievements unlocked pos",
+      "default": 4,
+      "step": 1,
+      "scope": "admin",
+      "fixed": true,
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Achievements",
+            "AchievementsUnlockedPos"
+          ]
+        }
+      },
+      "group": "Achievements",
+      "advanced": true
+    },
+    {
+      "key": "upgrade.upgradeMessage",
+      "kind": "text",
+      "label": "Upgrade message",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Upgrade",
+            "UpgradeMessage"
+          ]
+        }
+      },
+      "group": "Upgrade"
+    },
+    {
+      "key": "upgrade.upgradeVersion",
+      "kind": "text",
+      "label": "Upgrade version",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Upgrade",
+            "UpgradeVersion"
+          ]
+        }
+      },
+      "group": "Upgrade"
+    },
+    {
+      "key": "upgrade.dismissedVersion",
+      "kind": "text",
+      "label": "Dismissed version",
+      "default": "",
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "Upgrade",
+            "DismissedVersion"
+          ]
+        }
+      },
+      "group": "Upgrade"
+    },
+    {
+      "key": "displayLayoutLandscape.bufferFiltering",
+      "kind": "number",
+      "label": "Buffer filtering",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "BufferFiltering"
+          ]
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.displayStretch",
+      "kind": "toggle",
+      "label": "Display stretch",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "DisplayStretch"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.displayOffsetX",
+      "kind": "number",
+      "label": "Display offset x",
+      "default": 0.5,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "DisplayOffsetX"
+          ]
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.displayOffsetY",
+      "kind": "number",
+      "label": "Display offset y",
+      "default": 0.5,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "DisplayOffsetY"
+          ]
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.displayScale",
+      "kind": "number",
+      "label": "Display scale",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "DisplayScale"
+          ]
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.displayIntegerScale",
+      "kind": "toggle",
+      "label": "Display integer scale",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "DisplayIntegerScale"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.displayAspectRatio",
+      "kind": "number",
+      "label": "Display aspect ratio",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "DisplayAspectRatio"
+          ]
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.ignoreScreenInsets",
+      "kind": "toggle",
+      "label": "Ignore screen insets",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "IgnoreScreenInsets"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.internalScreenRotation",
+      "kind": "number",
+      "label": "Internal screen rotation",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "InternalScreenRotation"
+          ]
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.rotateControlsWithScreen",
+      "kind": "toggle",
+      "label": "Rotate controls with screen",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "RotateControlsWithScreen"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.enableCardboardVr",
+      "kind": "toggle",
+      "label": "Enable cardboard VR",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "EnableCardboardVR"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.cardboardScreenSize",
+      "kind": "number",
+      "label": "Cardboard screen size",
+      "default": 50,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "CardboardScreenSize"
+          ]
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.cardboardXShift",
+      "kind": "number",
+      "label": "Cardboard x shift",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "CardboardXShift"
+          ]
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.cardboardYShift",
+      "kind": "number",
+      "label": "Cardboard y shift",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "CardboardYShift"
+          ]
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutLandscape.immersiveMode",
+      "kind": "toggle",
+      "label": "Immersive mode",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Landscape",
+            "ImmersiveMode"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Landscape"
+    },
+    {
+      "key": "displayLayoutPortrait.bufferFiltering",
+      "kind": "number",
+      "label": "Buffer filtering",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "BufferFiltering"
+          ]
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.displayStretch",
+      "kind": "toggle",
+      "label": "Display stretch",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "DisplayStretch"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.displayOffsetX",
+      "kind": "number",
+      "label": "Display offset x",
+      "default": 0.5,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "DisplayOffsetX"
+          ]
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.displayOffsetY",
+      "kind": "number",
+      "label": "Display offset y",
+      "default": 0.5,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "DisplayOffsetY"
+          ]
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.displayScale",
+      "kind": "number",
+      "label": "Display scale",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "DisplayScale"
+          ]
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.displayIntegerScale",
+      "kind": "toggle",
+      "label": "Display integer scale",
+      "default": false,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "DisplayIntegerScale"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.displayAspectRatio",
+      "kind": "number",
+      "label": "Display aspect ratio",
+      "default": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "DisplayAspectRatio"
+          ]
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.ignoreScreenInsets",
+      "kind": "toggle",
+      "label": "Ignore screen insets",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "IgnoreScreenInsets"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.internalScreenRotation",
+      "kind": "number",
+      "label": "Internal screen rotation",
+      "default": 1,
+      "step": 1,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "InternalScreenRotation"
+          ]
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.rotateControlsWithScreen",
+      "kind": "toggle",
+      "label": "Rotate controls with screen",
+      "default": true,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "RotateControlsWithScreen"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.enableCardboardVr",
+      "kind": "toggle",
+      "label": "Enable cardboard VR",
+      "default": false,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "EnableCardboardVR"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.cardboardScreenSize",
+      "kind": "number",
+      "label": "Cardboard screen size",
+      "default": 50,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "CardboardScreenSize"
+          ]
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.cardboardXShift",
+      "kind": "number",
+      "label": "Cardboard x shift",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "CardboardXShift"
+          ]
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.cardboardYShift",
+      "kind": "number",
+      "label": "Cardboard y shift",
+      "default": 0,
+      "step": 1,
+      "scope": "admin",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "CardboardYShift"
+          ]
+        }
+      },
+      "group": "Display layout, Portrait"
+    },
+    {
+      "key": "displayLayoutPortrait.immersiveMode",
+      "kind": "toggle",
+      "label": "Immersive mode",
+      "default": true,
+      "scope": "user",
+      "apply": {
+        "file": {
+          "file": "PSP/SYSTEM/ppsspp.ini",
+          "format": "ini",
+          "path": [
+            "DisplayLayout.Portrait",
+            "ImmersiveMode"
+          ],
+          "values": {
+            "false": "False",
+            "true": "True"
+          }
+        }
+      },
+      "group": "Display layout, Portrait"
+    }
+  ]
+}
