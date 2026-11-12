@@ -46,7 +46,11 @@ type Console struct {
 	// punctuation (see normalise).
 	Aliases []string `json:"-"`
 	Cores   []Core   `json:"cores"`
-	BIOS    []BIOS   `json:"bios,omitempty"`
+	// Emulators are the standalone emulators in the emulator list (package emulators) that
+	// play this console, by id. A console with no core is played only by one of these, or by an
+	// administrator's own emulator program.
+	Emulators []string `json:"emulators,omitempty"`
+	BIOS      []BIOS   `json:"bios,omitempty"`
 	// Unavailable, when set, says why games for this console can be listed but
 	// not played yet.
 	Unavailable string `json:"unavailable,omitempty"`
@@ -134,6 +138,37 @@ var Consoles = []Console{
 		Aliases: []string{"dc", "dreamcast", "segadreamcast"},
 		Cores:   []Core{{"flycast", "Flycast", "GPL-2.0"}},
 		BIOS:    []BIOS{{"dc/dc_boot.bin", "better compatibility; most games run without it", false}, {"dc/dc_flash.bin", "the console's settings", false}}},
+	// The consoles below are played by Dolphin's libretro core where libretro publishes one, and
+	// otherwise by a standalone emulator (docs/STANDALONE-EMULATORS.md): Emulators names those
+	// in the emulator list that play it. A disc's own header says which of GameCube and Wii it
+	// is, so the containers both use are Shared.
+	{ID: "gc", Name: "Nintendo GameCube", Short: "GameCube", Extensions: []string{".gcm", ".tgc"}, Shared: []string{".iso", ".gcz", ".rvz", ".wia", ".ciso", ".dol", ".elf", ".m3u"},
+		Aliases:   []string{"gc", "gcn", "ngc", "gamecube", "nintendogamecube"},
+		Cores:     []Core{{"dolphin", "Dolphin", "GPL-2.0-or-later"}},
+		Emulators: []string{"dolphin"},
+		BIOS:      []BIOS{{"dolphin-emu/Sys/GC/USA/IPL.bin", "the GameCube's own start-up animation; games run without it", false}}},
+	{ID: "wii", Name: "Nintendo Wii", Short: "Wii", Extensions: []string{".wbfs"}, Shared: []string{".iso", ".gcz", ".rvz", ".wia", ".ciso", ".dol", ".elf", ".wad", ".m3u"},
+		Aliases:   []string{"wii", "nintendowii"},
+		Cores:     []Core{{"dolphin", "Dolphin", "GPL-2.0-or-later"}},
+		Emulators: []string{"dolphin"}},
+	// Folder dumps are listed by their one file every dump has: a Wii U game's code/*.rpx, a
+	// PlayStation 3 disc's PS3_DISC.SFB.
+	{ID: "wiiu", Name: "Nintendo Wii U", Short: "Wii U", Extensions: []string{".wux", ".wud", ".wua", ".rpx"},
+		Aliases:   []string{"wiiu", "nintendowiiu"},
+		Emulators: []string{"cemu"},
+		BIOS:      []BIOS{{"keys.txt", "Cemu: the disc keys of games you own, to read .wud and .wux images", false}}},
+	{ID: "ps3", Name: "Sony PlayStation 3", Short: "PS3", Extensions: []string{".sfb"}, Shared: []string{".iso", ".pkg"},
+		Aliases:   []string{"ps3", "playstation3", "sonyplaystation3"},
+		Emulators: []string{"rpcs3"},
+		BIOS:      []BIOS{{"PS3UPDAT.PUP", "RPCS3: the PlayStation 3's system software, which RPCS3 installs before any game starts", true}}},
+	{ID: "xbox", Name: "Microsoft Xbox", Short: "Xbox", Extensions: []string{".xiso", ".xbe"}, Shared: []string{".iso"},
+		Aliases:   []string{"xbox", "microsoftxbox", "originalxbox", "xboxoriginal"},
+		Emulators: []string{"xemu"},
+		BIOS: []BIOS{{"mcpx_1.0.bin", "xemu: the boot ROM from an Xbox you own", true}, {"Complex_4627.bin", "xemu: the Xbox's BIOS, from an Xbox you own", true},
+			{"xbox_hdd.qcow2", "xemu: the Xbox's hard disk image", true}}},
+	{ID: "switch", Name: "Nintendo Switch", Short: "Switch", Extensions: []string{".nsp", ".xci", ".nsz", ".xcz", ".nro"},
+		Aliases: []string{"switch", "nintendoswitch", "ns", "nx"},
+		BIOS:    []BIOS{{"prod.keys", "a Switch emulator: the keys from a Switch you own; WittyPlay offers no Switch emulator itself", true}}},
 	{ID: TestConsole, Name: "WittyPlay test console", Short: "Test", Extensions: []string{".wittytest"},
 		Aliases: []string{"wittytest"}, Hidden: true},
 }

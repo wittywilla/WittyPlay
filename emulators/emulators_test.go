@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"slices"
 	"testing"
 )
 
@@ -25,7 +26,7 @@ func TestBuiltinManifestIsValid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"pcsx2", "dolphin", "duckstation", "ppsspp", "xemu", "cemu", "rpcs3", "melonds", "flycast", "lichii"}
+	want := []string{"pcsx2", "dolphin", "duckstation", "ppsspp", "xemu", "cemu", "rpcs3", "melonds", "flycast"}
 	for _, id := range want {
 		if Find(id) == nil {
 			t.Errorf("%s is missing from the built-in list", id)
@@ -45,10 +46,21 @@ func TestBuiltinManifestIsValid(t *testing.T) {
 	if len(m.Placeholders()) == 0 {
 		t.Log("no placeholders left")
 	}
-	// Lichii's downloads were hashed by hand against GitHub's own digests; they stay pinned.
-	l := Find("lichii")
-	if a := l.For("linux", "amd64"); a == nil || a.Placeholder() || !l.Experimental {
-		t.Errorf("lichii should be pinned and marked experimental: %+v", l)
+	// No Switch emulator is ever offered for download: docs/STANDALONE-EMULATORS.md, "The Switch".
+	for _, e := range m.Emulators {
+		if slices.Contains(e.Systems, "switch") || slices.Contains(e.Systems, "switch2") {
+			t.Errorf("%s plays the Switch, and the list must offer none", e.ID)
+		}
+	}
+	// Every platform with a download that runs natively plays here: a Mac and Windows have
+	// downloads of every emulator whose project publishes one.
+	for _, id := range []string{"pcsx2", "dolphin", "ppsspp", "xemu", "cemu", "rpcs3", "melonds", "flycast"} {
+		e := Find(id)
+		for _, p := range [][2]string{{"darwin", "arm64"}, {"windows", "amd64"}} {
+			if e.For(p[0], p[1]) == nil {
+				t.Errorf("%s has no download for %s/%s", id, p[0], p[1])
+			}
+		}
 	}
 }
 
@@ -227,8 +239,9 @@ func TestInstallRefusals(t *testing.T) {
 	if _, err := in.Install(ctx, nc); !errors.Is(err, ErrNonCommercial) {
 		t.Errorf("non-commercial: %v", err)
 	}
-	if _, err := in.Install(ctx, emu(url+"/e.txz", hash(body), ArchiveTarXz, "emu")); !errors.Is(err, ErrXZ) {
-		t.Errorf("xz: %v", err)
+	// A .tar.xz is opened now; one that isn't really xz is refused, and nothing is installed.
+	if _, err := in.Install(ctx, emu(url+"/e.txz", hash(body), ArchiveTarXz, "emu")); err == nil || !strings.Contains(err.Error(), "xz") {
+		t.Errorf("not really xz: %v", err)
 	}
 	if _, err := in.Install(ctx, emu(url+"/e.zip", hash(body), ArchiveZip, "missing")); err == nil {
 		t.Error("an archive without its program was accepted")

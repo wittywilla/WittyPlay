@@ -16,11 +16,20 @@ Third-party components:
 - ebitengine/purego (Apache-2.0), linked into wittyplay-game-runner only.
 - pion/webrtc and its dependencies (MIT), linked into the stream package.
 - coder/websocket (ISC), linked into the stream package.
+- ebitengine/purego is also linked into wittyplay-module on macOS, to capture a
+  standalone emulator's window (ScreenCaptureKit) and send it key presses.
+- moby/moby client and api (Apache-2.0), for the optional Docker backend.
+- bodgit/sevenzip, bodgit/plumbing, bodgit/windows (BSD-3-Clause),
+  ulikunitz/xz (BSD-3-Clause), klauspost/compress (BSD-3-Clause and Apache-2.0),
+  pierrec/lz4 (BSD-3-Clause), andybalholm/brotli (MIT), go4.org (Apache-2.0),
+  hashicorp/golang-lru, hashicorp/go-multierror and hashicorp/errwrap
+  (MPL-2.0, unmodified): opening emulators' .7z and .tar.xz downloads.
 - The libretro API (MIT): constants and struct layouts are written from the
   public API definition. No libretro code is included.
 
-Libretro cores, RetroArch, WittyRetroArch, ROMs and BIOS files are not part of
-WittyPlay. Cores and RetroArch programs are separate files with their own
+Libretro cores, RetroArch, WittyRetroArch, standalone emulators (PCSX2, Dolphin,
+PPSSPP, melonDS, Flycast, xemu, Cemu, RPCS3), ROMs, BIOS files, firmware and keys
+are not part of WittyPlay. Cores and RetroArch programs are separate files with their own
 licences, and run only as separate processes.
 
 Console names belong to their owners and only describe which games a core can run.

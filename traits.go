@@ -139,6 +139,14 @@ var traits = map[string]CoreTraits{
 	"azahar": {GPU: true, Options: map[string]string{"citra_enable_touch_touchscreen": "enabled", "citra_enable_mouse_touchscreen": "disabled", "citra_enable_touch_pointer_timeout": "disabled", "citra_layout_option": "default"},
 		Resolution: pick("citra_resolution_factor", "1", "2", "3", "4")},
 	"panda3ds": {GPU: true},
+	// Dolphin, for GameCube and Wii, needs its Sys folder (fonts, the Wii's shared files) from
+	// the same build server. Its fast memory, like melonDS's, works by faulting on purpose, which
+	// this runner's process can't recover from, so it's off; its JIT reserves a large address
+	// space either way. Saves (memory cards, the Wii's NAND) live under its User folder, which
+	// a running core can't write in the shared system folder.
+	"dolphin": {GPU: true, Assets: "Dolphin", LargeAddressSpace: true, SharedMemory: true, SavesIn: "dolphin-emu/User", CacheIn: "dolphin-emu/User/Cache",
+		Options:    map[string]string{"dolphin_renderer": "Hardware", "dolphin_fastmem": "disabled", "dolphin_fastmem_arena": "disabled"},
+		Resolution: pick("dolphin_efb_scale", "x1 (640 x 528)", "x2 (1280 x 1056)", "x3 (1920 x 1584)", "x4 (2560 x 2112)")},
 }
 
 // Traits says how to run a core. A core we don't know gets GPU room, as it may

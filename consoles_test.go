@@ -29,6 +29,20 @@ func TestDetect(t *testing.T) {
 		{"Movies/game.iso", ""},
 		{"SNES/readme.txt", ""},
 		{"game.wittytest", TestConsole},
+		{"game.gcm", "gc"},
+		{"GameCube/game.iso", "gc"},
+		{"Nintendo GameCube/game.rvz", "gc"},
+		{"game.wbfs", "wii"},
+		{"Wii/game.rvz", "wii"},
+		{"Wii U/Some Game/code/game.rpx", "wiiu"},
+		{"game.wux", "wiiu"},
+		{"PS3/Some Game/PS3_DISC.SFB", "ps3"},
+		{"PlayStation 3/game.iso", "ps3"},
+		{"Xbox/game.iso", "xbox"},
+		{"game.xiso", "xbox"},
+		{"game.nsp", "switch"},
+		{"Nintendo Switch/game.xci", "switch"},
+		{"game.rvz", ""}, // GameCube or Wii: the disc's header says which
 	} {
 		if got := Detect(c.path); got != c.want {
 			t.Errorf("Detect(%q) = %q, want %q", c.path, got, c.want)

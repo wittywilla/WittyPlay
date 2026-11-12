@@ -98,6 +98,9 @@ type Spec struct {
 	// Local: this is for the sandbox without Docker (sandbox/local), which has no images and
 	// no network at all. Docker's engine refuses such a spec.
 	Local bool
+	// Host: an emulator on this machine's own desktop (sandbox/host). Docker's engine and the
+	// local sandbox refuse such a spec.
+	Host bool
 
 	Network    string // a network name; "isolated" for Local
 	Publish    []Publish

@@ -39,7 +39,11 @@ func unpack(kind, file string, size int64, dir, entry string, limit int64) error
 		defer gz.Close()
 		return unpackTar(tar.NewReader(gz), dir, entry, limit)
 	case ArchiveTarXz:
-		return ErrXZ
+		return unpackTarXz(file, dir, entry, limit)
+	case Archive7z:
+		return unpack7z(file, dir, entry, limit)
+	case ArchiveDMG:
+		return unpackDMG(file, dir, entry, limit)
 	}
 	return fmt.Errorf("archive %q isn't one this reads", kind)
 }

@@ -78,6 +78,10 @@ type Request struct {
 	Local bool
 	// IODir is that socket's folder on the host, for Local only.
 	IODir string
+	// Host asks for the emulator to run on this machine's own desktop, in the system's own
+	// sandbox (sandbox/host: sandbox-exec on a Mac, a job object at low integrity on Windows),
+	// captured there and sent as RTP to RTPHost, which must be loopback. No image, no ports.
+	Host bool
 
 	// The stream's size, rate and starting bitrate; zero means 1280x720, 60 and 6000 kbit/s.
 	Width, Height, FPS, Kbps int
@@ -95,6 +99,11 @@ const ContainerIO = "/run/wittyplay/io"
 
 // LocalNetwork is the network a Local spec names: none at all but its own loopback.
 const LocalNetwork = "isolated"
+
+// HostNetwork is the network a Host spec names: the system's own sandbox decides what the
+// emulator may reach (on a Mac and in a FreeBSD jail, nothing), and only the encoder beside it
+// sends anything, to WittyPlay on loopback.
+const HostNetwork = "this-machine"
 
 // The ports a Local sandbox's FFmpeg sends RTP to on its own loopback, where the agent picks
 // it up. Nothing outside the sandbox can reach them.
@@ -146,7 +155,18 @@ func Build(r Request) (Spec, error) {
 	if !validEmuID.MatchString(r.Emulator) {
 		return Spec{}, errors.New("bad emulator id")
 	}
-	if r.Local {
+	if r.Local && r.Host {
+		return Spec{}, errors.New("a game runs in the local sandbox or on this machine, not both")
+	}
+	if r.Host {
+		if r.Image != "" || r.Stream != "pipe" || r.PublishLoopback || r.GPU.DRI || r.GPU.Nvidia {
+			return Spec{}, errors.New("an emulator on this machine has no images, no desktop stream, no ports and no devices passed through")
+		}
+		if r.RTPHost != "127.0.0.1" {
+			return Spec{}, errors.New("an emulator on this machine sends its picture to loopback only")
+		}
+		r.Network = HostNetwork
+	} else if r.Local {
 		if r.Image != "" || r.Stream != "pipe" || r.PublishLoopback {
 			return Spec{}, errors.New("the local sandbox has no images, no desktop stream and no ports")
 		}
@@ -303,6 +323,7 @@ func Build(r Request) (Spec, error) {
 		},
 		Mounts:      mounts,
 		Local:       r.Local,
+		Host:        r.Host,
 		Network:     r.Network,
 		StopTimeout: DefaultStop,
 	}
@@ -405,9 +426,13 @@ func Check(s Spec) error {
 		return errors.New("only the local sandbox, and always the local sandbox, has no network")
 	case s.Local && (s.Image != "" || len(s.Publish) > 0 || len(s.ExtraHosts) > 0 || s.NvidiaGPUs):
 		return errors.New("the local sandbox has no images, ports or hosts")
+	case s.Host != (s.Network == HostNetwork) || (s.Host && s.Local):
+		return errors.New("only an emulator on this machine, and always one, names this machine's network")
+	case s.Host && (s.Image != "" || len(s.Publish) > 0 || len(s.ExtraHosts) > 0 || s.NvidiaGPUs || len(s.Devices) > 0):
+		return errors.New("an emulator on this machine has no images, ports, hosts or devices")
 	case s.Labels[LabelManaged] != "true" || s.Labels[LabelSession] == "":
 		return errors.New("a container must carry WittyPlay's labels")
-	case !s.Local && !Pinned(s.Image):
+	case !s.Local && !s.Host && !Pinned(s.Image):
 		return ErrNotPinned
 	}
 	if !s.Init {

@@ -49,8 +49,12 @@ const (
 const (
 	ArchiveZip      = "zip"
 	ArchiveTarGz    = "tar.gz"
-	ArchiveTarXz    = "tar.xz" // listed so an entry can say it; the standard library can't open one
+	ArchiveTarXz    = "tar.xz"
 	ArchiveAppImage = "appimage"
+	Archive7z       = "7z"
+	// ArchiveDMG is a Mac disk image, opened read-only with the Mac's own hdiutil and copied out
+	// under the same rules as any archive. Only a Mac has one.
+	ArchiveDMG = "dmg"
 )
 
 // Artifact is one download of an emulator, for one platform.
@@ -65,6 +69,31 @@ type Artifact struct {
 	Archive string `json:"archive"`
 	// Entry is the program to run, inside what the archive unpacks to.
 	Entry string `json:"entry"`
+	// Args is the command line on this platform, without the program, when it differs from the
+	// emulator's own Args: {game} is the game's file, {config} the folder its settings files are
+	// in (ConfigDir), {bios} the BIOS folder and {settings} where the settings' own arguments go.
+	// Without {game} the game goes last.
+	Args []string `json:"args,omitempty"`
+	// ConfigDir is where, inside the person's own folder for this emulator, this build keeps the
+	// files its settings name: "config" when empty. Some builds take a folder on their command
+	// line ({config}); others follow HOME or XDG_CONFIG_HOME, which point inside that folder.
+	ConfigDir string `json:"configDir,omitempty"`
+	// Portable: this build keeps its settings and data beside its own program, whatever it's
+	// told, so each person gets a copy of it in their own folder to run (RPCS3 on Windows).
+	Portable bool `json:"portable,omitempty"`
+	// Rosetta: an Intel-only Mac build, which an Apple silicon Mac runs through Rosetta 2.
+	Rosetta bool `json:"rosetta,omitempty"`
+}
+
+// ArchUniversal is a Mac build that runs natively on both kinds of processor.
+const ArchUniversal = "universal"
+
+// SettingsDir is where this build's settings files are, inside the person's own folder.
+func (a *Artifact) SettingsDir() string {
+	if a == nil || a.ConfigDir == "" {
+		return "config"
+	}
+	return a.ConfigDir
 }
 
 // Placeholder says nobody has checked this file's hash.
@@ -137,10 +166,22 @@ type BiosFile struct {
 }
 
 // For returns the artifact for a platform, or nil.
+// A Mac build for both processors fits either; an Intel-only one fits Apple silicon through
+// Rosetta 2, when there's nothing native.
 func (e *Emulator) For(goos, goarch string) *Artifact {
 	for i := range e.Artifacts {
 		if e.Artifacts[i].OS == goos && e.Artifacts[i].Arch == goarch {
 			return &e.Artifacts[i]
+		}
+	}
+	for i := range e.Artifacts {
+		if a := &e.Artifacts[i]; a.OS == goos && goos == "darwin" && a.Arch == ArchUniversal {
+			return a
+		}
+	}
+	for i := range e.Artifacts {
+		if a := &e.Artifacts[i]; goos == "darwin" && goarch == "arm64" && a.OS == "darwin" && a.Arch == "amd64" && a.Rosetta {
+			return a
 		}
 	}
 	return nil
@@ -315,11 +356,22 @@ func (m *Manifest) Validate() error {
 			if a.Size < 0 {
 				return bad("a negative size for %s/%s", a.OS, a.Arch)
 			}
-			if !slices.Contains([]string{ArchiveZip, ArchiveTarGz, ArchiveTarXz, ArchiveAppImage}, a.Archive) {
+			if !slices.Contains([]string{ArchiveZip, ArchiveTarGz, ArchiveTarXz, ArchiveAppImage, Archive7z, ArchiveDMG}, a.Archive) {
 				return bad("archive %q isn't one this reads", a.Archive)
 			}
 			if !filepath.IsLocal(filepath.FromSlash(a.Entry)) {
 				return bad("the entry %q isn't inside what it unpacks to", a.Entry)
+			}
+			if a.ConfigDir != "" && !filepath.IsLocal(filepath.FromSlash(a.ConfigDir)) {
+				return bad("the settings folder %q isn't inside the person's own", a.ConfigDir)
+			}
+			if a.Archive == ArchiveDMG && a.OS != "darwin" {
+				return bad("a disk image is only for a Mac")
+			}
+			for _, arg := range a.Args {
+				if strings.ContainsAny(arg, "\x00\n") {
+					return bad("an argument with a line break")
+				}
 			}
 		}
 	}

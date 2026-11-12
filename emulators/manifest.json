@@ -1,774 +1,1009 @@
 {
-  "schema": 1,
-  "note": "Every sha256 here was checked by downloading the file and hashing it, or against GitHub's own digest for the asset; sizes are the assets' sizes. An image digest marked TODO is a placeholder: no image has been published under that name yet, and such an emulator runs only once an administrator pins an image of their own (docker.images). Install refuses a placeholder hash. Never fill one in without downloading the file and hashing it yourself. The settings' keys in each emulator's own files were written from its documentation.",
-  "emulators": [
+ "schema": 1,
+ "note": "Every sha256 here was checked (on 2026-11-11, for the versions below) by downloading the file and hashing it, or against GitHub's own digest for the asset; sizes are the assets' sizes. An image digest marked TODO is a placeholder: no image has been published under that name yet, and such an emulator runs only once an administrator pins an image of their own (docker.images). Install refuses a placeholder hash. Never fill one in without downloading the file and hashing it yourself. The settings' keys in each emulator's own files were written from its documentation.",
+ "emulators": [
+  {
+   "id": "pcsx2",
+   "name": "PCSX2",
+   "systems": [
+    "ps2"
+   ],
+   "license": "GPL-3.0-or-later",
+   "upstream": "https://github.com/PCSX2/pcsx2",
+   "version": "2.8.2",
+   "artifacts": [
     {
-      "id": "pcsx2",
-      "name": "PCSX2",
-      "systems": [
-        "ps2"
-      ],
-      "license": "GPL-3.0-or-later",
-      "upstream": "https://github.com/PCSX2/pcsx2",
-      "version": "2.2.0",
-      "artifacts": [
-        {
-          "os": "linux",
-          "arch": "amd64",
-          "url": "https://github.com/PCSX2/pcsx2/releases/download/v2.2.0/pcsx2-v2.2.0-linux-appimage-x64-Qt.AppImage",
-          "sha256": "188cd6a7db7dab8dd509b744f5f02f7dc5746f9d637303b08063f46a779967ab",
-          "archive": "appimage",
-          "entry": "pcsx2-v2.2.0-linux-appimage-x64-Qt.AppImage",
-          "size": 54546776
-        }
-      ],
-      "display": "x11",
-      "stream": "pipe",
-      "args": [
-        "-nogui",
-        "-fullscreen",
-        "--"
-      ],
-      "needsBios": true,
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-pcsx2:2.2.0",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://www.gnu.org/licenses/gpl-3.0.html",
-      "requires": {
-        "memoryMB": 4096,
-        "cpus": 4
-      },
-      "players": 4,
-      "bios": [
-        {
-          "name": "ps2-*.bin",
-          "note": "A PlayStation 2 BIOS dumped from your own console, any region."
-        }
-      ],
-      "settings": [
-        {
-          "key": "renderer",
-          "kind": "choice",
-          "label": "Graphics backend",
-          "default": "opengl",
-          "scope": "admin",
-          "choices": [
-            {
-              "value": "opengl",
-              "label": "OpenGL"
-            },
-            {
-              "value": "vulkan",
-              "label": "Vulkan"
-            },
-            {
-              "value": "software",
-              "label": "Software (slow, exact)"
-            }
-          ],
-          "apply": {
-            "ini": {
-              "file": "PCSX2/inis/PCSX2.ini",
-              "section": "EmuCore/GS",
-              "key": "Renderer",
-              "values": {
-                "opengl": "12",
-                "vulkan": "14",
-                "software": "13"
-              }
-            }
-          }
-        },
-        {
-          "key": "scale",
-          "kind": "choice",
-          "label": "Resolution scale",
-          "default": "1",
-          "scope": "user",
-          "choices": [
-            {
-              "value": "1",
-              "label": "Native"
-            },
-            {
-              "value": "2",
-              "label": "2x"
-            },
-            {
-              "value": "3",
-              "label": "3x"
-            },
-            {
-              "value": "4",
-              "label": "4x"
-            }
-          ],
-          "apply": {
-            "ini": {
-              "file": "PCSX2/inis/PCSX2.ini",
-              "section": "EmuCore/GS",
-              "key": "upscale_multiplier"
-            }
-          }
-        },
-        {
-          "key": "widescreen",
-          "kind": "toggle",
-          "label": "Widescreen (16:9)",
-          "default": false,
-          "scope": "user",
-          "apply": {
-            "ini": {
-              "file": "PCSX2/inis/PCSX2.ini",
-              "section": "EmuCore/GS",
-              "key": "AspectRatio",
-              "values": {
-                "true": "16:9",
-                "false": "Auto 4:3/3:2"
-              }
-            }
-          }
-        },
-        {
-          "key": "biosFolder",
-          "kind": "text",
-          "label": "BIOS folder inside the sandbox",
-          "default": "/bios",
-          "scope": "admin",
-          "fixed": true,
-          "apply": {
-            "ini": {
-              "file": "PCSX2/inis/PCSX2.ini",
-              "section": "Folders",
-              "key": "Bios"
-            }
-          }
-        }
-      ]
+     "os": "linux",
+     "arch": "amd64",
+     "url": "https://github.com/PCSX2/pcsx2/releases/download/v2.8.2/pcsx2-v2.8.2-linux-appimage-x64-Qt.AppImage",
+     "sha256": "0c46bb6a88aa2782b10853a7b07cf3387ba99cbef2b966372cd2315b8571abea",
+     "size": 60119544,
+     "archive": "appimage",
+     "entry": "pcsx2-v2.8.2-linux-appimage-x64-Qt.AppImage"
     },
     {
-      "id": "dolphin",
-      "name": "Dolphin",
-      "systems": [
-        "gamecube",
-        "wii"
-      ],
-      "license": "GPL-2.0-or-later",
-      "upstream": "https://github.com/dolphin-emu/dolphin",
-      "version": "2412",
-      "artifacts": [],
-      "display": "x11",
-      "stream": "pipe",
-      "args": [
-        "--batch",
-        "--exec"
-      ],
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-dolphin:2412",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-      "requires": {
-        "memoryMB": 4096,
-        "cpus": 2
-      },
-      "players": 4,
-      "settings": [
-        {
-          "key": "renderer",
-          "kind": "choice",
-          "label": "Graphics backend",
-          "default": "opengl",
-          "scope": "admin",
-          "choices": [
-            {
-              "value": "opengl",
-              "label": "OpenGL"
-            },
-            {
-              "value": "vulkan",
-              "label": "Vulkan"
-            },
-            {
-              "value": "software",
-              "label": "Software (slow)"
-            }
-          ],
-          "apply": {
-            "ini": {
-              "file": "dolphin-emu/Dolphin.ini",
-              "section": "Core",
-              "key": "GFXBackend",
-              "values": {
-                "opengl": "OGL",
-                "vulkan": "Vulkan",
-                "software": "Software Renderer"
-              }
-            }
-          }
-        },
-        {
-          "key": "scale",
-          "kind": "choice",
-          "label": "Resolution scale",
-          "default": "1",
-          "scope": "user",
-          "choices": [
-            {
-              "value": "1",
-              "label": "Native"
-            },
-            {
-              "value": "2",
-              "label": "2x"
-            },
-            {
-              "value": "3",
-              "label": "3x"
-            },
-            {
-              "value": "4",
-              "label": "4x"
-            }
-          ],
-          "apply": {
-            "ini": {
-              "file": "dolphin-emu/GFX.ini",
-              "section": "Settings",
-              "key": "InternalResolution"
-            }
-          }
-        },
-        {
-          "key": "widescreen",
-          "kind": "toggle",
-          "label": "Widescreen (16:9)",
-          "default": false,
-          "scope": "user",
-          "apply": {
-            "ini": {
-              "file": "dolphin-emu/GFX.ini",
-              "section": "Settings",
-              "key": "AspectRatio",
-              "values": {
-                "true": "1",
-                "false": "0"
-              }
-            }
-          }
-        }
-      ]
+     "os": "darwin",
+     "arch": "amd64",
+     "url": "https://github.com/PCSX2/pcsx2/releases/download/v2.8.2/pcsx2-v2.8.2-macos-Qt.tar.xz",
+     "sha256": "3ed9eb40a33eae67134142c24255a079be444f0616ca29575a04a37981f7d426",
+     "size": 24377200,
+     "archive": "tar.xz",
+     "entry": "PCSX2-v2.8.2.app/Contents/MacOS/PCSX2",
+     "rosetta": true
     },
     {
-      "id": "duckstation",
-      "name": "DuckStation",
-      "systems": [
-        "ps1"
-      ],
-      "license": "CC-BY-NC-ND-4.0",
-      "nonCommercial": true,
-      "upstream": "https://github.com/stenzek/duckstation",
-      "version": "0.1-12442",
-      "artifacts": [
-        {
-          "os": "linux",
-          "arch": "amd64",
-          "url": "https://github.com/stenzek/duckstation/releases/download/v0.1-12442/DuckStation-x64.AppImage",
-          "sha256": "4d5c3dcfd9937dc9e77b8fcd5f879b8ec0c69551d5ed13462592073608542fca",
-          "archive": "appimage",
-          "entry": "DuckStation-x64.AppImage",
-          "size": 94519584
-        }
-      ],
-      "display": "x11",
-      "stream": "pipe",
-      "args": [
-        "-batch",
-        "-fullscreen",
-        "--"
-      ],
-      "needsBios": true,
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-duckstation:0.1-12442",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
-      "requires": {
-        "memoryMB": 1024,
-        "cpus": 2
-      },
-      "players": 4,
-      "bios": [
-        {
-          "name": "scph*.bin",
-          "note": "A PlayStation BIOS dumped from your own console."
-        }
-      ]
-    },
-    {
-      "id": "ppsspp",
-      "name": "PPSSPP",
-      "systems": [
-        "psp"
-      ],
-      "license": "GPL-2.0-or-later",
-      "upstream": "https://github.com/hrydgard/ppsspp",
-      "version": "1.20.4",
-      "artifacts": [
-        {
-          "os": "linux",
-          "arch": "amd64",
-          "url": "https://github.com/hrydgard/ppsspp/releases/download/v1.20.4/PPSSPP-v1.20.4-anylinux-x86_64.AppImage",
-          "sha256": "661c098e6b7f7610171a57b7c533ce8bba6f2312b71e76d61e850461973eba21",
-          "size": 50689748,
-          "archive": "appimage",
-          "entry": "PPSSPP-v1.20.4-anylinux-x86_64.AppImage"
-        },
-        {
-          "os": "linux",
-          "arch": "arm64",
-          "url": "https://github.com/hrydgard/ppsspp/releases/download/v1.20.4/PPSSPP-v1.20.4-anylinux-aarch64.AppImage",
-          "sha256": "18c1d515fd99b0b10ca5fa8cbab192f6d4c9d8a10381e16f5de8fb8f9d39bbe1",
-          "size": 48581283,
-          "archive": "appimage",
-          "entry": "PPSSPP-v1.20.4-anylinux-aarch64.AppImage"
-        }
-      ],
-      "display": "x11",
-      "stream": "pipe",
-      "args": [
-        "--fullscreen"
-      ],
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-ppsspp:1.20.4",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-      "requires": {
-        "memoryMB": 1024,
-        "cpus": 2
-      },
-      "players": 1,
-      "settings": [
-        {
-          "key": "renderer",
-          "kind": "choice",
-          "label": "Graphics backend",
-          "default": "opengl",
-          "scope": "admin",
-          "choices": [
-            {
-              "value": "opengl",
-              "label": "OpenGL"
-            },
-            {
-              "value": "vulkan",
-              "label": "Vulkan"
-            }
-          ],
-          "apply": {
-            "ini": {
-              "file": "ppsspp/PSP/SYSTEM/ppsspp.ini",
-              "section": "Graphics",
-              "key": "GraphicsBackend",
-              "values": {
-                "opengl": "0 (OPENGL)",
-                "vulkan": "3 (VULKAN)"
-              }
-            }
-          }
-        },
-        {
-          "key": "scale",
-          "kind": "choice",
-          "label": "Resolution scale",
-          "default": "2",
-          "scope": "user",
-          "choices": [
-            {
-              "value": "1",
-              "label": "Native"
-            },
-            {
-              "value": "2",
-              "label": "2x"
-            },
-            {
-              "value": "3",
-              "label": "3x"
-            },
-            {
-              "value": "4",
-              "label": "4x"
-            }
-          ],
-          "apply": {
-            "ini": {
-              "file": "ppsspp/PSP/SYSTEM/ppsspp.ini",
-              "section": "Graphics",
-              "key": "InternalResolution"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "xemu",
-      "name": "xemu",
-      "systems": [
-        "xbox"
-      ],
-      "license": "GPL-2.0-or-later",
-      "upstream": "https://github.com/xemu-project/xemu",
-      "version": "0.8.5",
-      "artifacts": [
-        {
-          "os": "linux",
-          "arch": "amd64",
-          "url": "https://github.com/xemu-project/xemu/releases/download/v0.8.5/xemu-v0.8.5-x86_64.AppImage",
-          "sha256": "fd282e299dbc3207b8afb84059da99feffc65a86eb29d96c9108fde368d4c99e",
-          "archive": "appimage",
-          "entry": "xemu-v0.8.5-x86_64.AppImage",
-          "size": 21796032
-        }
-      ],
-      "display": "x11",
-      "stream": "kasmvnc",
-      "args": [
-        "-full-screen",
-        "-dvd_path"
-      ],
-      "needsBios": true,
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-xemu:0.8.5",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-      "requires": {
-        "memoryMB": 4096,
-        "cpus": 4
-      },
-      "players": 4,
-      "bios": [
-        {
-          "name": "mcpx_1.0.bin",
-          "note": "The Xbox boot ROM."
-        },
-        {
-          "name": "xbox_hdd.qcow2",
-          "note": "An Xbox hard disk image."
-        },
-        {
-          "name": "*.bin",
-          "note": "An Xbox BIOS (kernel) image."
-        }
-      ]
-    },
-    {
-      "id": "cemu",
-      "name": "Cemu",
-      "systems": [
-        "wiiu"
-      ],
-      "license": "MPL-2.0",
-      "upstream": "https://github.com/cemu-project/Cemu",
-      "version": "2.6",
-      "artifacts": [
-        {
-          "os": "linux",
-          "arch": "amd64",
-          "url": "https://github.com/cemu-project/Cemu/releases/download/v2.6/Cemu-2.6-x86_64.AppImage",
-          "sha256": "0c20c4aeb800bb13d9bab9474ef45a6f8fcde6402cad9b32ac2a1bbd03186313",
-          "archive": "appimage",
-          "entry": "Cemu-2.6-x86_64.AppImage",
-          "size": 61423960
-        }
-      ],
-      "display": "x11",
-      "stream": "kasmvnc",
-      "args": [
-        "-f",
-        "-g"
-      ],
-      "needsBios": true,
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-cemu:2.6",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://www.mozilla.org/MPL/2.0/",
-      "requires": {
-        "memoryMB": 8192,
-        "cpus": 4,
-        "gpu": true
-      },
-      "players": 1,
-      "bios": [
-        {
-          "name": "keys.txt",
-          "note": "Your Wii U console and game keys."
-        }
-      ]
-    },
-    {
-      "id": "rpcs3",
-      "name": "RPCS3",
-      "systems": [
-        "ps3"
-      ],
-      "license": "GPL-2.0-only",
-      "upstream": "https://github.com/RPCS3/rpcs3",
-      "version": "0.0.43-20581",
-      "artifacts": [
-        {
-          "os": "linux",
-          "arch": "amd64",
-          "url": "https://github.com/RPCS3/rpcs3-binaries-linux/releases/download/build-fd027c99b8824e9a9b6f5b2d5ae33f9202e29da3/rpcs3-v0.0.43-20581-fd027c99_linux64.AppImage",
-          "sha256": "82433a3bf4a0ac2236a0884989db3901cb6e7981d7cfdf071b195047ac1ec157",
-          "size": 83116763,
-          "archive": "appimage",
-          "entry": "rpcs3-v0.0.43-20581-fd027c99_linux64.AppImage"
-        }
-      ],
-      "display": "x11",
-      "stream": "kasmvnc",
-      "args": [
-        "--no-gui"
-      ],
-      "needsBios": true,
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-rpcs3:0.0.43-20581",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-      "requires": {
-        "memoryMB": 8192,
-        "cpus": 6,
-        "gpu": true
-      },
-      "players": 1,
-      "bios": [
-        {
-          "name": "PS3UPDAT.PUP",
-          "note": "Sony's PlayStation 3 system software, installed from RPCS3's own menu the first time."
-        }
-      ]
-    },
-    {
-      "id": "melonds",
-      "name": "melonDS",
-      "systems": [
-        "nds"
-      ],
-      "license": "GPL-3.0-or-later",
-      "upstream": "https://github.com/melonDS-emu/melonDS",
-      "version": "1.0",
-      "artifacts": [
-        {
-          "os": "linux",
-          "arch": "amd64",
-          "url": "https://github.com/melonDS-emu/melonDS/releases/download/1.0/melonDS-appimage-x86_64.zip",
-          "sha256": "a26557d3aca8695d1cf93108ce12be7f3a46943e8c1b5e645f81f2585132ce6a",
-          "archive": "zip",
-          "entry": "melonDS-x86_64.AppImage",
-          "size": 34072717
-        },
-        {
-          "os": "linux",
-          "arch": "arm64",
-          "url": "https://github.com/melonDS-emu/melonDS/releases/download/1.0/melonDS-appimage-aarch64.zip",
-          "sha256": "e39abe0739c320ca4459ef9ae312580436efaa7aff1146602eb8f1641314fe96",
-          "size": 33181296,
-          "archive": "zip",
-          "entry": "melonDS-aarch64.AppImage"
-        }
-      ],
-      "display": "x11",
-      "stream": "pipe",
-      "args": [
-        "-f"
-      ],
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-melonds:1.0",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://www.gnu.org/licenses/gpl-3.0.html",
-      "requires": {
-        "memoryMB": 1024,
-        "cpus": 2
-      },
-      "players": 1
-    },
-    {
-      "id": "flycast",
-      "name": "Flycast",
-      "systems": [
-        "dc",
-        "naomi"
-      ],
-      "license": "GPL-2.0-only",
-      "upstream": "https://github.com/flyinghead/flycast",
-      "version": "2.4",
-      "artifacts": [
-        {
-          "os": "linux",
-          "arch": "amd64",
-          "url": "https://github.com/flyinghead/flycast/releases/download/v2.4/flycast-x86_64.AppImage",
-          "sha256": "35be06ecbdea633a6985ebd9a05926a31974036e3a14d78c3b7810639e81db5f",
-          "archive": "appimage",
-          "entry": "flycast-x86_64.AppImage",
-          "size": 17220800
-        }
-      ],
-      "display": "x11",
-      "stream": "pipe",
-      "args": [],
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-flycast:2.4",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-      "requires": {
-        "memoryMB": 1024,
-        "cpus": 2
-      },
-      "players": 4,
-      "settings": [
-        {
-          "key": "renderer",
-          "kind": "choice",
-          "label": "Graphics backend",
-          "default": "opengl",
-          "scope": "admin",
-          "choices": [
-            {
-              "value": "opengl",
-              "label": "OpenGL"
-            },
-            {
-              "value": "vulkan",
-              "label": "Vulkan"
-            }
-          ],
-          "apply": {
-            "ini": {
-              "file": "flycast/emu.cfg",
-              "section": "config",
-              "key": "pvr.rend",
-              "values": {
-                "opengl": "0",
-                "vulkan": "4"
-              }
-            }
-          }
-        },
-        {
-          "key": "scale",
-          "kind": "choice",
-          "label": "Resolution",
-          "default": "480",
-          "scope": "user",
-          "choices": [
-            {
-              "value": "480",
-              "label": "Native (480p)"
-            },
-            {
-              "value": "960",
-              "label": "2x (960p)"
-            },
-            {
-              "value": "1440",
-              "label": "3x (1440p)"
-            },
-            {
-              "value": "1920",
-              "label": "4x (1920p)"
-            }
-          ],
-          "apply": {
-            "ini": {
-              "file": "flycast/emu.cfg",
-              "section": "config",
-              "key": "rend.Resolution"
-            }
-          }
-        },
-        {
-          "key": "widescreen",
-          "kind": "toggle",
-          "label": "Widescreen",
-          "default": false,
-          "scope": "user",
-          "apply": {
-            "ini": {
-              "file": "flycast/emu.cfg",
-              "section": "config",
-              "key": "rend.WideScreen",
-              "values": {
-                "true": "yes",
-                "false": "no"
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "lichii",
-      "name": "Lichii",
-      "systems": [
-        "switch",
-        "switch2"
-      ],
-      "license": "GPL-3.0-or-later",
-      "upstream": "https://github.com/zortos293/Lichii",
-      "version": "build-130",
-      "experimental": true,
-      "artifacts": [
-        {
-          "os": "linux",
-          "arch": "amd64",
-          "url": "https://github.com/zortos293/Lichii/releases/download/build-130/lichii-linux-x86_64.AppImage",
-          "sha256": "25b94803565f645a5bbc3cca7b5ae89aa1e03091d014f44f37cef0f5a2ab4c90",
-          "archive": "appimage",
-          "entry": "lichii-linux-x86_64.AppImage",
-          "size": 114104824
-        },
-        {
-          "os": "linux",
-          "arch": "arm64",
-          "url": "https://github.com/zortos293/Lichii/releases/download/build-130/lichii-linux-aarch64.AppImage",
-          "sha256": "a7b07483e774c6893bb6c348db11077fb1966160607e2f08232d0e63c66026e9",
-          "archive": "appimage",
-          "entry": "lichii-linux-aarch64.AppImage",
-          "size": 106121736
-        }
-      ],
-      "display": "x11",
-      "stream": "kasmvnc",
-      "args": [
-        "-f",
-        "-g"
-      ],
-      "needsBios": true,
-      "image": {
-        "ref": "ghcr.io/wittywilla/wittyplay-emu-lichii:build-130",
-        "digest": "TODO"
-      },
-      "licenseUrl": "https://www.gnu.org/licenses/gpl-3.0.html",
-      "requires": {
-        "memoryMB": 8192,
-        "cpus": 4,
-        "gpu": true
-      },
-      "players": 1,
-      "bios": [
-        {
-          "name": "prod.keys",
-          "note": "Keys dumped from your own console."
-        }
-      ]
+     "os": "windows",
+     "arch": "amd64",
+     "url": "https://github.com/PCSX2/pcsx2/releases/download/v2.8.2/pcsx2-v2.8.2-windows-x64-Qt.7z",
+     "sha256": "7dfc829ca1994cc1045ac49f05e39b6cf968b72e6a374c40e05c2a2b4ac200b4",
+     "size": 25670075,
+     "archive": "7z",
+     "entry": "pcsx2-qt.exe"
     }
-  ]
+   ],
+   "display": "x11",
+   "stream": "pipe",
+   "args": [
+    "-datapath",
+    "{config}/PCSX2",
+    "-batch",
+    "-nogui",
+    "-fullscreen",
+    "{settings}",
+    "--",
+    "{game}"
+   ],
+   "needsBios": true,
+   "image": {
+    "ref": "ghcr.io/wittywilla/wittyplay-emu-pcsx2:2.8.2",
+    "digest": "TODO"
+   },
+   "licenseUrl": "https://www.gnu.org/licenses/gpl-3.0.html",
+   "requires": {
+    "memoryMB": 4096,
+    "cpus": 4
+   },
+   "players": 4,
+   "bios": [
+    {
+     "name": "ps2-*.bin",
+     "note": "A PlayStation 2 BIOS dumped from your own console, any region."
+    }
+   ],
+   "settings": [
+    {
+     "key": "renderer",
+     "kind": "choice",
+     "label": "Graphics backend",
+     "default": "opengl",
+     "scope": "admin",
+     "choices": [
+      {
+       "value": "opengl",
+       "label": "OpenGL"
+      },
+      {
+       "value": "vulkan",
+       "label": "Vulkan"
+      },
+      {
+       "value": "software",
+       "label": "Software (slow, exact)"
+      }
+     ],
+     "apply": {
+      "ini": {
+       "file": "PCSX2/inis/PCSX2.ini",
+       "section": "EmuCore/GS",
+       "key": "Renderer",
+       "values": {
+        "opengl": "12",
+        "vulkan": "14",
+        "software": "13"
+       }
+      }
+     }
+    },
+    {
+     "key": "scale",
+     "kind": "choice",
+     "label": "Resolution scale",
+     "default": "1",
+     "scope": "user",
+     "choices": [
+      {
+       "value": "1",
+       "label": "Native"
+      },
+      {
+       "value": "2",
+       "label": "2x"
+      },
+      {
+       "value": "3",
+       "label": "3x"
+      },
+      {
+       "value": "4",
+       "label": "4x"
+      }
+     ],
+     "apply": {
+      "ini": {
+       "file": "PCSX2/inis/PCSX2.ini",
+       "section": "EmuCore/GS",
+       "key": "upscale_multiplier"
+      }
+     }
+    },
+    {
+     "key": "widescreen",
+     "kind": "toggle",
+     "label": "Widescreen (16:9)",
+     "default": false,
+     "scope": "user",
+     "apply": {
+      "ini": {
+       "file": "PCSX2/inis/PCSX2.ini",
+       "section": "EmuCore/GS",
+       "key": "AspectRatio",
+       "values": {
+        "true": "16:9",
+        "false": "Auto 4:3/3:2"
+       }
+      }
+     }
+    },
+    {
+     "key": "biosFolder",
+     "kind": "text",
+     "label": "BIOS folder inside the sandbox",
+     "default": "/bios",
+     "scope": "admin",
+     "fixed": true,
+     "apply": {
+      "ini": {
+       "file": "PCSX2/inis/PCSX2.ini",
+       "section": "Folders",
+       "key": "Bios"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "dolphin",
+   "name": "Dolphin",
+   "systems": [
+    "gc",
+    "wii"
+   ],
+   "license": "GPL-2.0-or-later",
+   "upstream": "https://github.com/dolphin-emu/dolphin",
+   "version": "2609b",
+   "artifacts": [
+    {
+     "os": "darwin",
+     "arch": "universal",
+     "url": "https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-universal.dmg",
+     "sha256": "d7a3464ae2b71106e9bce9f53dfdbf5a6a3df2637ee8f3f78234f77653eb0a64",
+     "size": 43433850,
+     "archive": "dmg",
+     "entry": "Dolphin.app/Contents/MacOS/Dolphin"
+    },
+    {
+     "os": "windows",
+     "arch": "amd64",
+     "url": "https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-x64.7z",
+     "sha256": "926eb7594d885b4fba8fd9807058d90618efab4b3d75d1ef297022ba14925133",
+     "size": 20028240,
+     "archive": "7z",
+     "entry": "Dolphin-x64/Dolphin.exe"
+    },
+    {
+     "os": "windows",
+     "arch": "arm64",
+     "url": "https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-arm64.7z",
+     "sha256": "a4f3020719542abd0fb1d763072ecaeb65351dd3306834d7f3ad3b547a74314e",
+     "size": 16838368,
+     "archive": "7z",
+     "entry": "Dolphin-arm64/Dolphin.exe"
+    }
+   ],
+   "display": "x11",
+   "stream": "pipe",
+   "args": [
+    "-u",
+    "{config}",
+    "-b",
+    "-C",
+    "Dolphin.Display.Fullscreen=True",
+    "{settings}",
+    "-e",
+    "{game}"
+   ],
+   "image": {
+    "ref": "ghcr.io/wittywilla/wittyplay-emu-dolphin:2609b",
+    "digest": "TODO"
+   },
+   "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+   "requires": {
+    "memoryMB": 4096,
+    "cpus": 2
+   },
+   "players": 4,
+   "settings": [
+    {
+     "key": "renderer",
+     "kind": "choice",
+     "label": "Graphics backend",
+     "default": "opengl",
+     "scope": "admin",
+     "choices": [
+      {
+       "value": "opengl",
+       "label": "OpenGL"
+      },
+      {
+       "value": "vulkan",
+       "label": "Vulkan"
+      },
+      {
+       "value": "software",
+       "label": "Software (slow)"
+      }
+     ],
+     "apply": {
+      "ini": {
+       "file": "Config/Dolphin.ini",
+       "section": "Core",
+       "key": "GFXBackend",
+       "values": {
+        "opengl": "OGL",
+        "vulkan": "Vulkan",
+        "software": "Software Renderer"
+       }
+      }
+     }
+    },
+    {
+     "key": "scale",
+     "kind": "choice",
+     "label": "Resolution scale",
+     "default": "1",
+     "scope": "user",
+     "choices": [
+      {
+       "value": "1",
+       "label": "Native"
+      },
+      {
+       "value": "2",
+       "label": "2x"
+      },
+      {
+       "value": "3",
+       "label": "3x"
+      },
+      {
+       "value": "4",
+       "label": "4x"
+      }
+     ],
+     "apply": {
+      "ini": {
+       "file": "Config/GFX.ini",
+       "section": "Settings",
+       "key": "InternalResolution"
+      }
+     }
+    },
+    {
+     "key": "widescreen",
+     "kind": "toggle",
+     "label": "Widescreen (16:9)",
+     "default": false,
+     "scope": "user",
+     "apply": {
+      "ini": {
+       "file": "Config/GFX.ini",
+       "section": "Settings",
+       "key": "AspectRatio",
+       "values": {
+        "true": "1",
+        "false": "0"
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "duckstation",
+   "name": "DuckStation",
+   "systems": [
+    "ps1"
+   ],
+   "license": "CC-BY-NC-ND-4.0",
+   "nonCommercial": true,
+   "upstream": "https://github.com/stenzek/duckstation",
+   "version": "0.1-12442",
+   "artifacts": [
+    {
+     "os": "linux",
+     "arch": "amd64",
+     "url": "https://github.com/stenzek/duckstation/releases/download/v0.1-12442/DuckStation-x64.AppImage",
+     "sha256": "4d5c3dcfd9937dc9e77b8fcd5f879b8ec0c69551d5ed13462592073608542fca",
+     "archive": "appimage",
+     "entry": "DuckStation-x64.AppImage",
+     "size": 94519584
+    }
+   ],
+   "display": "x11",
+   "stream": "pipe",
+   "args": [
+    "-batch",
+    "-fullscreen",
+    "--"
+   ],
+   "needsBios": true,
+   "image": {
+    "ref": "ghcr.io/wittywilla/wittyplay-emu-duckstation:0.1-12442",
+    "digest": "TODO"
+   },
+   "licenseUrl": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+   "requires": {
+    "memoryMB": 1024,
+    "cpus": 2
+   },
+   "players": 4,
+   "bios": [
+    {
+     "name": "scph*.bin",
+     "note": "A PlayStation BIOS dumped from your own console."
+    }
+   ]
+  },
+  {
+   "id": "ppsspp",
+   "name": "PPSSPP",
+   "systems": [
+    "psp"
+   ],
+   "license": "GPL-2.0-or-later",
+   "upstream": "https://github.com/hrydgard/ppsspp",
+   "version": "1.20.4",
+   "artifacts": [
+    {
+     "os": "linux",
+     "arch": "amd64",
+     "url": "https://github.com/hrydgard/ppsspp/releases/download/v1.20.4/PPSSPP-v1.20.4-anylinux-x86_64.AppImage",
+     "sha256": "661c098e6b7f7610171a57b7c533ce8bba6f2312b71e76d61e850461973eba21",
+     "size": 50689748,
+     "archive": "appimage",
+     "entry": "PPSSPP-v1.20.4-anylinux-x86_64.AppImage",
+     "configDir": "config/ppsspp"
+    },
+    {
+     "os": "linux",
+     "arch": "arm64",
+     "url": "https://github.com/hrydgard/ppsspp/releases/download/v1.20.4/PPSSPP-v1.20.4-anylinux-aarch64.AppImage",
+     "sha256": "18c1d515fd99b0b10ca5fa8cbab192f6d4c9d8a10381e16f5de8fb8f9d39bbe1",
+     "size": 48581283,
+     "archive": "appimage",
+     "entry": "PPSSPP-v1.20.4-anylinux-aarch64.AppImage",
+     "configDir": "config/ppsspp"
+    },
+    {
+     "os": "darwin",
+     "arch": "universal",
+     "url": "https://github.com/hrydgard/ppsspp/releases/download/v1.20.4/PPSSPPSDL-macOS-v1.20.4.zip",
+     "sha256": "fb32a215861a293c28f641bf47f3164766ba512214025f4457796c8d14242665",
+     "size": 37389023,
+     "archive": "zip",
+     "entry": "PPSSPPSDL.app/Contents/MacOS/PPSSPPSDL",
+     "configDir": "home/Library/Application Support/PPSSPP"
+    },
+    {
+     "os": "windows",
+     "arch": "amd64",
+     "url": "https://github.com/hrydgard/ppsspp/releases/download/v1.20.4/PPSSPP-v1.20.4-Windows-x64.zip",
+     "sha256": "fbc9cd2f5131b159a92424e5c458c35ce43ba603cdded64dfc98e4bd4f17ff93",
+     "size": 20390334,
+     "archive": "zip",
+     "entry": "PPSSPPWindows64.exe",
+     "args": [
+      "--fullscreen",
+      "--config={config}/PSP/SYSTEM/ppsspp.ini",
+      "--controlconfig={config}/PSP/SYSTEM/controls.ini",
+      "{settings}",
+      "{game}"
+     ]
+    },
+    {
+     "os": "windows",
+     "arch": "arm64",
+     "url": "https://github.com/hrydgard/ppsspp/releases/download/v1.20.4/PPSSPP-v1.20.4-Windows-ARM64.zip",
+     "sha256": "ba73fe968f06086286174539c4e127e2bd1ec602c2fbd0bc173c5193ded0960c",
+     "size": 20322129,
+     "archive": "zip",
+     "entry": "PPSSPPWindowsARM64.exe",
+     "args": [
+      "--fullscreen",
+      "--config={config}/PSP/SYSTEM/ppsspp.ini",
+      "--controlconfig={config}/PSP/SYSTEM/controls.ini",
+      "{settings}",
+      "{game}"
+     ]
+    }
+   ],
+   "display": "x11",
+   "stream": "pipe",
+   "args": [
+    "--fullscreen",
+    "{settings}",
+    "{game}"
+   ],
+   "image": {
+    "ref": "ghcr.io/wittywilla/wittyplay-emu-ppsspp:1.20.4",
+    "digest": "TODO"
+   },
+   "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+   "requires": {
+    "memoryMB": 1024,
+    "cpus": 2
+   },
+   "players": 1,
+   "settings": [
+    {
+     "key": "renderer",
+     "kind": "choice",
+     "label": "Graphics backend",
+     "default": "opengl",
+     "scope": "admin",
+     "choices": [
+      {
+       "value": "opengl",
+       "label": "OpenGL"
+      },
+      {
+       "value": "vulkan",
+       "label": "Vulkan"
+      }
+     ],
+     "apply": {
+      "ini": {
+       "file": "PSP/SYSTEM/ppsspp.ini",
+       "section": "Graphics",
+       "key": "GraphicsBackend",
+       "values": {
+        "opengl": "0 (OPENGL)",
+        "vulkan": "3 (VULKAN)"
+       }
+      }
+     }
+    },
+    {
+     "key": "scale",
+     "kind": "choice",
+     "label": "Resolution scale",
+     "default": "2",
+     "scope": "user",
+     "choices": [
+      {
+       "value": "1",
+       "label": "Native"
+      },
+      {
+       "value": "2",
+       "label": "2x"
+      },
+      {
+       "value": "3",
+       "label": "3x"
+      },
+      {
+       "value": "4",
+       "label": "4x"
+      }
+     ],
+     "apply": {
+      "ini": {
+       "file": "PSP/SYSTEM/ppsspp.ini",
+       "section": "Graphics",
+       "key": "InternalResolution"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "xemu",
+   "name": "xemu",
+   "systems": [
+    "xbox"
+   ],
+   "license": "GPL-2.0-or-later",
+   "upstream": "https://github.com/xemu-project/xemu",
+   "version": "0.8.139",
+   "artifacts": [
+    {
+     "os": "linux",
+     "arch": "amd64",
+     "url": "https://github.com/xemu-project/xemu/releases/download/v0.8.139/xemu-0.8.139-x86_64.AppImage",
+     "sha256": "220282aacf09b30b35c55ba900a774fb6940c70deca1408bc70a4c9cc67c322f",
+     "size": 17971704,
+     "archive": "appimage",
+     "entry": "xemu-0.8.139-x86_64.AppImage"
+    },
+    {
+     "os": "linux",
+     "arch": "arm64",
+     "url": "https://github.com/xemu-project/xemu/releases/download/v0.8.139/xemu-0.8.139-aarch64.AppImage",
+     "sha256": "5f132b3a97c365bf22e8dc286954586ee0cf2202d63958dfcebc8fe9d742ecd4",
+     "size": 16706056,
+     "archive": "appimage",
+     "entry": "xemu-0.8.139-aarch64.AppImage"
+    },
+    {
+     "os": "darwin",
+     "arch": "universal",
+     "url": "https://github.com/xemu-project/xemu/releases/download/v0.8.139/xemu-0.8.139-macos-universal.zip",
+     "sha256": "9817aaa5e187a698416271a6ddc083a40d7ff5e09c3231cff32a692638c7427d",
+     "size": 21479533,
+     "archive": "zip",
+     "entry": "xemu.app/Contents/MacOS/xemu"
+    },
+    {
+     "os": "windows",
+     "arch": "amd64",
+     "url": "https://github.com/xemu-project/xemu/releases/download/v0.8.139/xemu-0.8.139-windows-x86_64.zip",
+     "sha256": "fbb14dd7ea08120ca9ec99c955758786645af16a5058250553b3b7d7592e8701",
+     "size": 11420991,
+     "archive": "zip",
+     "entry": "xemu.exe"
+    },
+    {
+     "os": "windows",
+     "arch": "arm64",
+     "url": "https://github.com/xemu-project/xemu/releases/download/v0.8.139/xemu-0.8.139-windows-arm64.zip",
+     "sha256": "869509a5544f75bf2eda4043c931869c6a04bc8f2421236137ae89ad94c86324",
+     "size": 10026353,
+     "archive": "zip",
+     "entry": "xemu.exe"
+    }
+   ],
+   "display": "x11",
+   "stream": "kasmvnc",
+   "args": [
+    "-config_path",
+    "{config}/xemu.toml",
+    "-full-screen",
+    "{settings}",
+    "-dvd_path",
+    "{game}"
+   ],
+   "needsBios": true,
+   "image": {
+    "ref": "ghcr.io/wittywilla/wittyplay-emu-xemu:0.8.139",
+    "digest": "TODO"
+   },
+   "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+   "requires": {
+    "memoryMB": 4096,
+    "cpus": 4
+   },
+   "players": 4,
+   "bios": [
+    {
+     "name": "mcpx_1.0.bin",
+     "note": "The Xbox boot ROM."
+    },
+    {
+     "name": "xbox_hdd.qcow2",
+     "note": "An Xbox hard disk image."
+    },
+    {
+     "name": "*.bin",
+     "note": "An Xbox BIOS (kernel) image."
+    }
+   ]
+  },
+  {
+   "id": "cemu",
+   "name": "Cemu",
+   "systems": [
+    "wiiu"
+   ],
+   "license": "MPL-2.0",
+   "upstream": "https://github.com/cemu-project/Cemu",
+   "version": "2.6",
+   "artifacts": [
+    {
+     "os": "linux",
+     "arch": "amd64",
+     "url": "https://github.com/cemu-project/Cemu/releases/download/v2.6/Cemu-2.6-x86_64.AppImage",
+     "sha256": "0c20c4aeb800bb13d9bab9474ef45a6f8fcde6402cad9b32ac2a1bbd03186313",
+     "size": 61423960,
+     "archive": "appimage",
+     "entry": "Cemu-2.6-x86_64.AppImage",
+     "configDir": "config/Cemu"
+    },
+    {
+     "os": "darwin",
+     "arch": "amd64",
+     "url": "https://github.com/cemu-project/Cemu/releases/download/v2.6/cemu-2.6-macos-12-x64.dmg",
+     "sha256": "698c4b298f94983e4d6c30e9687ba8ff05094dd3930837c5104cddc0b0a49e4e",
+     "size": 36588188,
+     "archive": "dmg",
+     "entry": "Cemu.app/Contents/MacOS/Cemu",
+     "rosetta": true,
+     "configDir": "home/Library/Application Support/Cemu"
+    },
+    {
+     "os": "windows",
+     "arch": "amd64",
+     "url": "https://github.com/cemu-project/Cemu/releases/download/v2.6/cemu-2.6-windows-x64.zip",
+     "sha256": "a6bcc2bc42a362d10213819948f3152fae7d47f70067f25939b51d3ddcfb0896",
+     "size": 26374093,
+     "archive": "zip",
+     "entry": "Cemu_2.6/Cemu.exe",
+     "portable": true
+    }
+   ],
+   "display": "x11",
+   "stream": "kasmvnc",
+   "args": [
+    "-f",
+    "{settings}",
+    "-g",
+    "{game}"
+   ],
+   "needsBios": true,
+   "image": {
+    "ref": "ghcr.io/wittywilla/wittyplay-emu-cemu:2.6",
+    "digest": "TODO"
+   },
+   "licenseUrl": "https://www.mozilla.org/MPL/2.0/",
+   "requires": {
+    "memoryMB": 8192,
+    "cpus": 4,
+    "gpu": true
+   },
+   "players": 1,
+   "bios": [
+    {
+     "name": "keys.txt",
+     "note": "Your Wii U console and game keys."
+    }
+   ]
+  },
+  {
+   "id": "rpcs3",
+   "name": "RPCS3",
+   "systems": [
+    "ps3"
+   ],
+   "license": "GPL-2.0-only",
+   "upstream": "https://github.com/RPCS3/rpcs3",
+   "version": "0.0.43-20582",
+   "artifacts": [
+    {
+     "os": "linux",
+     "arch": "amd64",
+     "url": "https://github.com/RPCS3/rpcs3-binaries-linux/releases/download/build-a90588e7ee8dc10aeaaa9441df674edd48d0d271/rpcs3-v0.0.43-20582-a90588e7_linux64.AppImage",
+     "sha256": "855ecc1f56375190858ece0031dfd7fc17fad927b0c188f8e1ace3ecb2472c8e",
+     "size": 83110833,
+     "archive": "appimage",
+     "entry": "rpcs3-v0.0.43-20582-a90588e7_linux64.AppImage",
+     "configDir": "config/rpcs3"
+    },
+    {
+     "os": "linux",
+     "arch": "arm64",
+     "url": "https://github.com/RPCS3/rpcs3-binaries-linux-arm64/releases/download/build-a90588e7ee8dc10aeaaa9441df674edd48d0d271/rpcs3-v0.0.43-20582-a90588e7_linux_aarch64.AppImage",
+     "sha256": "bbeb1b82c6c8bbb557161c69ea91730fc303c2f65f7f4f97223a20fa4306f97b",
+     "size": 79067340,
+     "archive": "appimage",
+     "entry": "rpcs3-v0.0.43-20582-a90588e7_linux_aarch64.AppImage",
+     "configDir": "config/rpcs3"
+    },
+    {
+     "os": "darwin",
+     "arch": "amd64",
+     "url": "https://github.com/RPCS3/rpcs3-binaries-mac/releases/download/build-a90588e7ee8dc10aeaaa9441df674edd48d0d271/rpcs3-v0.0.43-20582-a90588e7_macos.7z",
+     "sha256": "0051ceb5bf49f31cb4dbba7333aa6355fc503de92495cb080b5ca8a7a8081efa",
+     "size": 39856623,
+     "archive": "7z",
+     "entry": "RPCS3.app/Contents/MacOS/rpcs3",
+     "configDir": "home/Library/Application Support/rpcs3"
+    },
+    {
+     "os": "darwin",
+     "arch": "arm64",
+     "url": "https://github.com/RPCS3/rpcs3-binaries-mac-arm64/releases/download/build-a90588e7ee8dc10aeaaa9441df674edd48d0d271/rpcs3-v0.0.43-20582-a90588e7_macos_aarch64.7z",
+     "sha256": "7cb16269cf0e6917e3fafe6a3cce19ac37f4c73853470d0e8edd321c4ff795a1",
+     "size": 35596390,
+     "archive": "7z",
+     "entry": "RPCS3.app/Contents/MacOS/rpcs3",
+     "configDir": "home/Library/Application Support/rpcs3"
+    },
+    {
+     "os": "windows",
+     "arch": "amd64",
+     "url": "https://github.com/RPCS3/rpcs3-binaries-win/releases/download/build-a90588e7ee8dc10aeaaa9441df674edd48d0d271/rpcs3-v0.0.43-20582-a90588e7_win64_msvc.7z",
+     "sha256": "0c044111bfaca4e20c4b782d15c329071f520e03777ee90fd57436288f451002",
+     "size": 37213339,
+     "archive": "7z",
+     "entry": "rpcs3.exe",
+     "portable": true
+    },
+    {
+     "os": "windows",
+     "arch": "arm64",
+     "url": "https://github.com/RPCS3/rpcs3-binaries-win-arm64/releases/download/build-a90588e7ee8dc10aeaaa9441df674edd48d0d271/rpcs3-v0.0.43-20582-a90588e7_win64_aarch64_clang.7z",
+     "sha256": "f4a8a1bae362f4e0b299cf5ba622c2cfca9a9de79da4d4f1cf09fa8d38b10cec",
+     "size": 72469064,
+     "archive": "7z",
+     "entry": "rpcs3.exe",
+     "portable": true
+    }
+   ],
+   "display": "x11",
+   "stream": "kasmvnc",
+   "args": [
+    "--no-gui",
+    "--fullscreen",
+    "{settings}",
+    "{game}"
+   ],
+   "needsBios": true,
+   "image": {
+    "ref": "ghcr.io/wittywilla/wittyplay-emu-rpcs3:0.0.43-20582",
+    "digest": "TODO"
+   },
+   "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+   "requires": {
+    "memoryMB": 8192,
+    "cpus": 6,
+    "gpu": true
+   },
+   "players": 1,
+   "bios": [
+    {
+     "name": "PS3UPDAT.PUP",
+     "note": "Sony's PlayStation 3 system software, installed from RPCS3's own menu the first time."
+    }
+   ]
+  },
+  {
+   "id": "melonds",
+   "name": "melonDS",
+   "systems": [
+    "nds"
+   ],
+   "license": "GPL-3.0-or-later",
+   "upstream": "https://github.com/melonDS-emu/melonDS",
+   "version": "1.1",
+   "artifacts": [
+    {
+     "os": "linux",
+     "arch": "amd64",
+     "url": "https://github.com/melonDS-emu/melonDS/releases/download/1.1/melonDS-1.1-appimage-x86_64.zip",
+     "sha256": "bf377420a2e95f2cd2cdda17d5372b51c2534f858b038db9ec6d129554875124",
+     "size": 34289284,
+     "archive": "zip",
+     "entry": "melonDS-x86_64.AppImage",
+     "configDir": "config/melonDS"
+    },
+    {
+     "os": "linux",
+     "arch": "arm64",
+     "url": "https://github.com/melonDS-emu/melonDS/releases/download/1.1/melonDS-1.1-appimage-aarch64.zip",
+     "sha256": "c537ae018d6dcedfe9da0317a1d5c0163e69201e23abfa163fa2a63e437ace09",
+     "size": 33391635,
+     "archive": "zip",
+     "entry": "melonDS-aarch64.AppImage",
+     "configDir": "config/melonDS"
+    },
+    {
+     "os": "darwin",
+     "arch": "universal",
+     "url": "https://github.com/melonDS-emu/melonDS/releases/download/1.1/melonDS-1.1-macOS-universal.zip",
+     "sha256": "79843a5e5cab93188bd11942bff5440b9505ee91c6f526f7e90c22e3cff6718d",
+     "size": 24378474,
+     "archive": "zip",
+     "entry": "melonDS.app/Contents/MacOS/melonDS",
+     "configDir": "home/Library/Preferences/melonDS"
+    },
+    {
+     "os": "windows",
+     "arch": "amd64",
+     "url": "https://github.com/melonDS-emu/melonDS/releases/download/1.1/melonDS-1.1-windows-x86_64.zip",
+     "sha256": "9f3f8a244103be20b5b657af5b0ed1b2a66bb20a7181476a6d294c9a53d4f8c8",
+     "size": 19484283,
+     "archive": "zip",
+     "entry": "melonDS.exe",
+     "portable": true
+    },
+    {
+     "os": "windows",
+     "arch": "arm64",
+     "url": "https://github.com/melonDS-emu/melonDS/releases/download/1.1/melonDS-1.1-windows-aarch64.zip",
+     "sha256": "9bd4c3efb529540f7577e905439ca6acd372d16b5fbbff31cca8ae3fd60026ce",
+     "size": 12552465,
+     "archive": "zip",
+     "entry": "melonDS.exe",
+     "portable": true
+    },
+    {
+     "os": "freebsd",
+     "arch": "amd64",
+     "url": "https://github.com/melonDS-emu/melonDS/releases/download/1.1/melonDS-1.1-freebsd-x86_64.zip",
+     "sha256": "35a5c597c67df2beddffa102373038920862faf761d77e84d98c44ca5e2a7d3c",
+     "size": 1704213,
+     "archive": "zip",
+     "entry": "melonDS",
+     "configDir": "config/melonDS"
+    }
+   ],
+   "display": "x11",
+   "stream": "pipe",
+   "args": [
+    "-f",
+    "{settings}",
+    "{game}"
+   ],
+   "image": {
+    "ref": "ghcr.io/wittywilla/wittyplay-emu-melonds:1.1",
+    "digest": "TODO"
+   },
+   "licenseUrl": "https://www.gnu.org/licenses/gpl-3.0.html",
+   "requires": {
+    "memoryMB": 1024,
+    "cpus": 2
+   },
+   "players": 1
+  },
+  {
+   "id": "flycast",
+   "name": "Flycast",
+   "systems": [
+    "dc"
+   ],
+   "license": "GPL-2.0-only",
+   "upstream": "https://github.com/flyinghead/flycast",
+   "version": "2.7",
+   "artifacts": [
+    {
+     "os": "linux",
+     "arch": "amd64",
+     "url": "https://github.com/flyinghead/flycast/releases/download/v2.7/flycast-x86_64-2.7.AppImage",
+     "sha256": "5b9f8a636a6acb8446bc78fe96650d8cb8233ac9f8ce69665dab3f39a1cbaae1",
+     "size": 20396536,
+     "archive": "appimage",
+     "entry": "flycast-x86_64-2.7.AppImage",
+     "configDir": "config/flycast"
+    },
+    {
+     "os": "darwin",
+     "arch": "universal",
+     "url": "https://github.com/flyinghead/flycast/releases/download/v2.7/flycast-macOS-2.7.zip",
+     "sha256": "dbd59cb88f52a95ea4de90693bb4ac156530452d5457f2cc4f656fdfd242fc26",
+     "size": 19424997,
+     "archive": "zip",
+     "entry": "Flycast.app/Contents/MacOS/Flycast",
+     "configDir": "home/Library/Application Support/Flycast"
+    },
+    {
+     "os": "windows",
+     "arch": "amd64",
+     "url": "https://github.com/flyinghead/flycast/releases/download/v2.7/flycast-win64-2.7.zip",
+     "sha256": "7edf489ba6b3053703a18ce8233767eb71a2d89e4bda0421b312c2167a739161",
+     "size": 9885102,
+     "archive": "zip",
+     "entry": "flycast.exe",
+     "portable": true
+    }
+   ],
+   "display": "x11",
+   "stream": "pipe",
+   "args": [
+    "-config",
+    "window:fullscreen=yes",
+    "{settings}",
+    "{game}"
+   ],
+   "image": {
+    "ref": "ghcr.io/wittywilla/wittyplay-emu-flycast:2.7",
+    "digest": "TODO"
+   },
+   "licenseUrl": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+   "requires": {
+    "memoryMB": 1024,
+    "cpus": 2
+   },
+   "players": 4,
+   "settings": [
+    {
+     "key": "renderer",
+     "kind": "choice",
+     "label": "Graphics backend",
+     "default": "opengl",
+     "scope": "admin",
+     "choices": [
+      {
+       "value": "opengl",
+       "label": "OpenGL"
+      },
+      {
+       "value": "vulkan",
+       "label": "Vulkan"
+      }
+     ],
+     "apply": {
+      "ini": {
+       "file": "emu.cfg",
+       "section": "config",
+       "key": "pvr.rend",
+       "values": {
+        "opengl": "0",
+        "vulkan": "4"
+       }
+      }
+     }
+    },
+    {
+     "key": "scale",
+     "kind": "choice",
+     "label": "Resolution",
+     "default": "480",
+     "scope": "user",
+     "choices": [
+      {
+       "value": "480",
+       "label": "Native (480p)"
+      },
+      {
+       "value": "960",
+       "label": "2x (960p)"
+      },
+      {
+       "value": "1440",
+       "label": "3x (1440p)"
+      },
+      {
+       "value": "1920",
+       "label": "4x (1920p)"
+      }
+     ],
+     "apply": {
+      "ini": {
+       "file": "emu.cfg",
+       "section": "config",
+       "key": "rend.Resolution"
+      }
+     }
+    },
+    {
+     "key": "widescreen",
+     "kind": "toggle",
+     "label": "Widescreen",
+     "default": false,
+     "scope": "user",
+     "apply": {
+      "ini": {
+       "file": "emu.cfg",
+       "section": "config",
+       "key": "rend.WideScreen",
+       "values": {
+        "true": "yes",
+        "false": "no"
+       }
+      }
+     }
+    }
+   ]
+  }
+ ]
 }

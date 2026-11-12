@@ -121,7 +121,22 @@ var pads = map[string]PadLayout{
 		Shoulder: []PadButton{{RetroL, "L1"}, {RetroR, "R1"}, {RetroL2, "L2"}, {RetroR2, "R2"}}, Meta: selectStart, Sticks: true, Extra: stickClicks, Right: rightStick},
 	"psp": {Art: "dual", Face: []PadButton{{RetroY, "□"}, {RetroX, "△"}, {RetroB, "✕"}, {RetroA, "○"}}, Shoulder: []PadButton{{RetroL, "L"}, {RetroR, "R"}}, Meta: selectStart, Sticks: true},
 	// A is RetroPad B and X is Y, by position, and the triggers are analog on L2 and R2.
-	"dc":        {Art: "dual", Face: []PadButton{{RetroY, "X"}, {RetroX, "Y"}, {RetroB, "A"}, {RetroA, "B"}}, Shoulder: []PadButton{{RetroL2, "L"}, {RetroR2, "R"}}, Meta: startOnly, Sticks: true},
+	"dc": {Art: "dual", Face: []PadButton{{RetroY, "X"}, {RetroX, "Y"}, {RetroB, "A"}, {RetroA, "B"}}, Shoulder: []PadButton{{RetroL2, "L"}, {RetroR2, "R"}}, Meta: startOnly, Sticks: true},
+	// By position, as Dolphin's libretro core numbers them: A is the big button (RetroPad B).
+	"gc": {Art: "dual", Face: []PadButton{{RetroY, "B"}, {RetroX, "Y"}, {RetroB, "A"}, {RetroA, "X"}}, Shoulder: []PadButton{{RetroL2, "L"}, {RetroR2, "R"}, {RetroR, "Z"}},
+		Meta: startOnly, Sticks: true, Right: []PadButton{{StickLeftR, "C left"}, {StickRightR, "C right"}, {StickUpR, "C up"}, {StickDownR, "C down"}}},
+	// A Wii Remote held sideways, with the Nunchuk's stick: the way most Wii games play from a pad.
+	"wii": {Art: "dual", Face: []PadButton{{RetroY, "1"}, {RetroX, "2"}, {RetroB, "A"}, {RetroA, "B"}}, Shoulder: []PadButton{{RetroL, "C"}, {RetroR, "Z"}},
+		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Pointer: true},
+	"wiiu": {Art: "dual", Face: diamond, Shoulder: []PadButton{{RetroL, "L"}, {RetroR, "R"}, {RetroL2, "ZL"}, {RetroR2, "ZR"}},
+		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Extra: stickClicks, Right: rightStick, Pointer: true},
+	"ps3": {Art: "dual", Face: []PadButton{{RetroY, "□"}, {RetroX, "△"}, {RetroB, "✕"}, {RetroA, "○"}},
+		Shoulder: []PadButton{{RetroL, "L1"}, {RetroR, "R1"}, {RetroL2, "L2"}, {RetroR2, "R2"}}, Meta: selectStart, Sticks: true, Extra: stickClicks, Right: rightStick},
+	"xbox": {Art: "dual", Face: []PadButton{{RetroY, "X"}, {RetroX, "Y"}, {RetroB, "A"}, {RetroA, "B"}},
+		Shoulder: []PadButton{{RetroL, "White"}, {RetroR, "Black"}, {RetroL2, "LT"}, {RetroR2, "RT"}}, Meta: []PadButton{{RetroSelect, "Back"}, {RetroStart, "Start"}},
+		Sticks: true, Extra: stickClicks, Right: rightStick},
+	"switch": {Art: "dual", Face: diamond, Shoulder: []PadButton{{RetroL, "L"}, {RetroR, "R"}, {RetroL2, "ZL"}, {RetroR2, "ZR"}},
+		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Extra: stickClicks, Right: rightStick, Pointer: true},
 	TestConsole: {Art: "four", Face: diamond, Shoulder: []PadButton{{RetroL, "L"}, {RetroR, "R"}}, Meta: selectStart, Pointer: true},
 }
 

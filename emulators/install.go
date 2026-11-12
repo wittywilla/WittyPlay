@@ -208,9 +208,6 @@ func (in *Installer) Install(ctx context.Context, e *Emulator) (*Installed, erro
 	if err := CheckURL(art.URL, in.hosts()); err != nil {
 		return nil, err
 	}
-	if art.Archive == ArchiveTarXz {
-		return nil, ErrXZ
-	}
 	if !in.claim(e.ID) {
 		return nil, ErrBusy
 	}

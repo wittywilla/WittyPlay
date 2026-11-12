@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -38,11 +39,15 @@ func TestBuiltinDownloadsArePinned(t *testing.T) {
 			if a.Size <= 0 || a.Size > DefaultMaxDownload {
 				t.Errorf("%s %s/%s: size %d", e.ID, a.OS, a.Arch, a.Size)
 			}
-			if a.OS != "linux" || (a.Arch != "amd64" && a.Arch != "arm64") {
+			if !slices.Contains([]string{"linux", "darwin", "windows", "freebsd"}, a.OS) || !slices.Contains([]string{"amd64", "arm64", ArchUniversal}, a.Arch) ||
+				(a.Arch == ArchUniversal && a.OS != "darwin") {
 				t.Errorf("%s: a download for %s/%s, where nothing runs an emulator", e.ID, a.OS, a.Arch)
 			}
-			// Pinned to a release by its tag, never "latest": a moving address would only ever fail its hash.
-			if !strings.HasPrefix(a.URL, "https://github.com/") || !strings.Contains(a.URL, "/releases/download/") || strings.Contains(a.URL, "/latest/") {
+			// Pinned to a release by its tag (or Dolphin's numbered builds), never "latest": a
+			// moving address would only ever fail its hash.
+			tagged := strings.HasPrefix(a.URL, "https://github.com/") && strings.Contains(a.URL, "/releases/download/")
+			dolphin := strings.HasPrefix(a.URL, "https://dl.dolphin-emu.org/releases/")
+			if !(tagged || dolphin) || strings.Contains(a.URL, "/latest/") {
 				t.Errorf("%s: %s isn't a tagged release asset", e.ID, a.URL)
 			}
 		}
