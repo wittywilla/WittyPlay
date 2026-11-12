@@ -291,3 +291,28 @@ func TestSettingKey(t *testing.T) {
 		t.Errorf("a long key: %q", long)
 	}
 }
+
+// PCSX2's multitap is how players 3 and 4 plug in. Its setting is named for a port, which the
+// network filter once took for a network port and hid, so four players could never play.
+func TestPCSX2MultitapIsOffered(t *testing.T) {
+	for _, key := range []string{"pad.multitapPort1", "pad.multitapPort2"} {
+		found := false
+		for _, s := range Offered(GeneratedSettings("pcsx2")) {
+			if s.Key == key {
+				found = true
+				if s.Default != false || s.Help == "" {
+					t.Errorf("%s: %+v", key, s)
+				}
+			}
+		}
+		if !found {
+			t.Errorf("%s isn't offered", key)
+		}
+	}
+	if Sensitive("Pad", "MultitapPort1") {
+		t.Error("a multitap's port taken for a network port")
+	}
+	if !Sensitive("Net", "Port") || !Sensitive("ServerPort") {
+		t.Error("a network port let through")
+	}
+}

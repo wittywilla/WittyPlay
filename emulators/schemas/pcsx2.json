@@ -6091,10 +6091,10 @@
     {
       "key": "pad.multitapPort1",
       "kind": "toggle",
-      "label": "Multitap port 1",
+      "label": "Multitap on port 1 (players 3 and 4)",
+      "help": "Plugs a multitap into the first controller port, so players 3 and 4 can join. Only games that support one use it, and a few misbehave with it plugged in: turn it on for those games that want it.",
       "default": false,
       "scope": "admin",
-      "fixed": true,
       "apply": {
         "file": {
           "file": "PCSX2/inis/PCSX2.ini",
@@ -6110,10 +6110,10 @@
     {
       "key": "pad.multitapPort2",
       "kind": "toggle",
-      "label": "Multitap port 2",
+      "label": "Multitap on port 2",
+      "help": "Plugs a multitap into the second controller port, for games that take more players there.",
       "default": false,
       "scope": "admin",
-      "fixed": true,
       "apply": {
         "file": {
           "file": "PCSX2/inis/PCSX2.ini",

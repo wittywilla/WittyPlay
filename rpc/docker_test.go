@@ -880,6 +880,23 @@ func TestManualEmulatorRoutes(t *testing.T) {
 		if c.ID == "ryujinx" && (c.Installable || c.Manual == nil || c.Installed == nil) {
 			t.Errorf("in the list: %+v", c)
 		}
+		// Its version couldn't be read, and there's nothing to update it to: no update offered.
+		if c.ID == "ryujinx" && c.UpdateAvailable {
+			t.Errorf("an update offered for a program added by hand: %+v", c)
+		}
+	}
+	// Offered to its console with its own version, which this one doesn't say: not the list's.
+	offered := false
+	for _, o := range r.b.Offers(context.Background(), "switch", "") {
+		if o.ID == "ryujinx" {
+			offered = true
+			if o.Version != "" {
+				t.Errorf("offered as version %q", o.Version)
+			}
+		}
+	}
+	if !offered {
+		t.Error("not offered to the Switch once added")
 	}
 	if w := r.as(t, 1, true, "DELETE", "/docker/emulators/ryujinx", ""); w.Code >= 400 {
 		t.Errorf("forgetting it: %d %s", w.Code, w.Body)

@@ -75,7 +75,7 @@ Two emulators play them: **Ryujinx** (the Switch) and **Lichii** (the Switch 2, 
 
 ### Adding one
 
-In **Settings, Standalone emulators**, on Ryujinx or Lichii, press **Add it**. WittyPlay shows what it found where people install it (Applications on a Mac, your Downloads and local programs folder on Windows, `~/Applications` and `/opt` on Linux) and in its drop folder, `<the module's folder>/manual/<id>/`. Leave the path empty to take that, or give the program's full path. It checks the program really is that emulator: a Mac app by its bundle identifier (`org.ryujinx.Ryujinx`; Lichii keeps yuzu's, `com.yuzu-emu.yuzu`, so also by `nx2_switches.txt` or `eden-cli` inside it), anything else by its program's name on the system it will run on and, for Lichii, the same files beside it. It notes the version: a Mac app's, a Windows program's own, or an AppImage's name's. **Forget** stops using it and leaves it where it is.
+In **Settings, Standalone emulators**, on Ryujinx or Lichii, press **Add it**. WittyPlay shows what it found where people install it (Applications on a Mac, your Downloads and local programs folder on Windows, `~/Applications` and `/opt` on Linux) and in its drop folder, `<the module's folder>/manual/<id>/`. Leave the path empty to take that, or give the program's full path. It checks the program really is that emulator: a Mac app by its bundle identifier (`org.ryujinx.Ryujinx`; Lichii keeps yuzu's, `com.yuzu-emu.yuzu`, so also by `nx2_switches.txt` or `eden-cli` inside it), anything else by its program's name on the system it will run on and, for Lichii, the same files beside it. It notes the version: a Mac app's, a Windows program's own, or an AppImage's name's. Lichii's Mac app carries none, so it shows as "version unknown"; no update is ever offered for a program added by hand. **Forget** stops using it and leaves it where it is.
 
 Without the page, for a server with no screen or in a container: name them in `<the module's folder>/emulators/manual.json`, `{"ryujinx": "/opt/ryujinx/publish/Ryujinx", "lichii": "/opt/lichii/lichii-x86_64.AppImage"}`, and start the server again; the log says what wasn't added and why. In WittyMediaServer's Docker release the module's folder is `/config/modules/wittyplay/data`, and the build to put there is the **Linux** one: see [When WittyMediaServer itself runs in Docker](#when-wittymediaserver-itself-runs-in-docker).
 
@@ -85,11 +85,11 @@ Put them in the server's BIOS folder (the same one PS2 BIOS files go in), from y
 
 | In the BIOS folder | What it is | Where WittyPlay copies it, in each person's own folder for the emulator |
 |---|---|---|
-| `prod.keys` | Your console's keys. Required | Ryujinx: `config/system/prod.keys` (its data folder is `config`). Lichii: its `keys` folder |
+| `prod.keys` | Your console's keys. Required by Ryujinx; optional for Lichii, which plays Switch 2 games without keys or firmware (Switch games need them) | Ryujinx: `config/system/prod.keys` (its data folder is `config`). Lichii: its `keys` folder |
 | `title.keys` | Your games' title keys. Some games need them | Beside `prod.keys` |
 | `switch-firmware/` | Your console's firmware, as the emulator installs it: the contents of its `registered` folder | Ryujinx: `config/bis/system/Contents/registered`. Lichii: its `nand/system/Contents/registered` |
 
-Lichii's folders, by system: Windows `app/user/` (it keeps everything beside its program, so each person runs a copy of their own in `app/`), Linux `config/eden` and `data/eden` (from `XDG_CONFIG_HOME` and `XDG_DATA_HOME`), macOS `home/Library/Application Support/eden`. The game's page and the emulator's card list which of these are found. Firmware can also be installed from the emulator's own menu (Ryujinx: Tools, Install Firmware), reachable through its captured window; it lands in that person's folder.
+Lichii's folders, by system: Windows `app/user/` (it keeps everything beside its program, so each person runs a copy of their own in `app/`), Linux and macOS `config/lichii` and `data/lichii` (it follows `XDG_CONFIG_HOME` and `XDG_DATA_HOME` on a Mac too, which WittyPlay sets to these). Builds from before November 2026 used `eden` in place of `lichii`; WittyPlay writes for the newer builds. The game's page and the emulator's card list which of these are found. Firmware can also be installed from the emulator's own menu (Ryujinx: Tools, Install Firmware), reachable through its captured window; it lands in that person's folder.
 
 ### Your responsibility
 

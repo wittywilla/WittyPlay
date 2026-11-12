@@ -4,6 +4,7 @@
 package host
 
 import (
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -62,6 +63,28 @@ func TestProfileOnThisMac(t *testing.T) {
 	if err := try(elsewhere); err == nil {
 		t.Error("it wrote outside its save folder")
 	}
+	// Network: a port bound on loopback, which Lichii needs to start; no connection anywhere,
+	// on this machine or off it.
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	netTry := func(mode string) bool {
+		cmd := exec.Command("/usr/bin/sandbox-exec", "-p", Profile(app, saves, userCacheDir()), helper, "-test.run=TestProfileHelper")
+		cmd.Env = append(os.Environ(), "WP_PROFILE_NET="+mode)
+		out, _ := cmd.CombinedOutput()
+		return strings.Contains(string(out), "net ok")
+	}
+	if !netTry("bind") {
+		t.Error("binding a UDP port on loopback was refused")
+	}
+	if netTry("dial " + l.Addr().String()) {
+		t.Error("it connected to a service on this machine")
+	}
+	if netTry("dial 1.1.1.1:443") {
+		t.Error("it reached the internet")
+	}
 	if !strings.Contains(Profile(app, saves, userCacheDir()), `\"`) {
 		t.Error("a quote in a folder's name wasn't escaped")
 	}
@@ -69,6 +92,22 @@ func TestProfileOnThisMac(t *testing.T) {
 
 // TestProfileHelper is the program run inside the sandbox above.
 func TestProfileHelper(t *testing.T) {
+	if mode := os.Getenv("WP_PROFILE_NET"); mode != "" {
+		if mode == "bind" {
+			c, err := net.ListenPacket("udp", "127.0.0.1:0")
+			if err == nil {
+				c.Close()
+				println("net ok")
+			}
+			return
+		}
+		c, err := net.DialTimeout("tcp", strings.TrimPrefix(mode, "dial "), 2e9)
+		if err == nil {
+			c.Close()
+			println("net ok")
+		}
+		return
+	}
 	path := os.Getenv("WP_PROFILE_WRITE")
 	if path == "" {
 		t.Skip("run by TestProfileOnThisMac")
