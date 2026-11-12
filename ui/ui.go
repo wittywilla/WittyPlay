@@ -229,6 +229,9 @@ func addOnlinePages(m *sdui.Module) {
 	// then its players.
 	m.AddPage(page(PageRoom, "Your room", "users",
 		list("room", "Room", sdui.Src(SourceRoom), "focusable", true, "empty", "message", "emptyText", "You're not in a game with others. Start a game, then open your room from here."),
+		// The join link as a QR code, for the host only: the room's link is the host's alone, so for
+		// anyone else this section isn't drawn.
+		sdui.Sec("join-code", "QR", sdui.Props("label", "Scan to join as the next player", "size", "m"), sdui.Src(SourceRoom, "limit", 1)),
 		sdui.Notice("join", "info", "A phone joins a seat from your room's join link and becomes a controller."),
 		legend))
 
@@ -247,16 +250,22 @@ func addOnlinePages(m *sdui.Module) {
 		sdui.Shelf("memories", "In Memories", sdui.Src(SourceMemories, "limit", 8)),
 		legend))
 
-	// Friends and what you play (gamesprivacy): the profile's two choices, saved together.
-	m.AddPage(page(PagePrivacy, "Friends and what you play", "users",
+	// Friends and what you play (gamesprivacy): the profile's two choices, saved together. It's also
+	// in You, Games.
+	privacy := page(PagePrivacy, "Friends and what you play", "users",
 		sdui.Sec("privacy", "Form", sdui.Props("title", "Privacy", "op", "wittyplay.online.set", "submitLabel", "Save"), nil,
 			sdui.Sec("rows", "List", sdui.Props("title", ""), sdui.Src(SourcePrivacy)),
-			sdui.Notice("kids", "info", "Friends are other profiles on this server. A Kids profile only sees friends an administrator has approved, and is only seen by them."))))
+			sdui.Notice("kids", "info", "Friends are other profiles on this server. A Kids profile only sees friends an administrator has approved, and is only seen by them.")))
+	privacy.Slot = "you.games"
+	m.AddPage(privacy)
 
-	// A Kids profile's friends (gameskids), for administrators: opened about the profile (item).
-	m.AddPage(page(PageKids, "Friends", "kids",
+	// A Kids profile's friends (gameskids), for administrators: in Settings, People, opened about the
+	// profile (item).
+	kids := page(PageKids, "Friends", "kids",
 		sdui.Sec("approved", "List", sdui.Props("title", "Approved"), sdui.Src(SourceKidsFriends, "user", "$item")),
-		sdui.Notice("rooms", "info", "A Kids profile gets no rooms. Friends here are the only people it sees in WittyPlay Online.")))
+		sdui.Notice("rooms", "info", "A Kids profile gets no rooms. Friends here are the only people it sees in WittyPlay Online."))
+	kids.Slot = "people.profile"
+	m.AddPage(kids)
 
 	m.AddNav(sdui.NavItem{ID: PageOnline, Type: "page", Page: PageOnline, Label: "WittyPlay Online", Icon: "game",
 		Placement: map[string]string{"phone": "more", "tablet": "more", "desktop": "more", "web": "more", "headset": "more"}})
