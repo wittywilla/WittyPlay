@@ -16,9 +16,13 @@ func TestManifestFitsThisServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, server := range []string{"0.6.0-alpha", "0.8.0-alpha"} {
+	for _, server := range []string{"0.8.0-alpha", "0.8.3"} {
 		if err := m.Supports(server, wittymodule.MinAPI, wittymodule.API); err != nil {
 			t.Errorf("%s: %v", server, err)
 		}
+	}
+	// Module API 4 carries its own SDUI, which a server before 0.8.0-alpha can't read.
+	if err := m.Supports("0.6.5", wittymodule.MinAPI, wittymodule.API); err == nil {
+		t.Error("a 0.6 server would take this version")
 	}
 }

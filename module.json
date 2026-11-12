@@ -7,7 +7,7 @@
   "delivery": "helper",
   "entry": "wittyplay-module",
   "api": 4,
-  "minServer": "0.6.0-alpha",
+  "minServer": "0.8.0-alpha",
   "maxServer": "0.8.x",
   "capabilities": {
     "ipc": [
