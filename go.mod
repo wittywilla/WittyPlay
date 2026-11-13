@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/bodgit/sevenzip v1.6.0
 	github.com/coder/websocket v1.8.15
-	github.com/ebitengine/purego v0.11.2
+	github.com/ebitengine/purego v0.11.3
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
 	github.com/pion/ice/v4 v4.4.8
