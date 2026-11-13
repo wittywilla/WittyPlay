@@ -15,7 +15,7 @@ require (
 	github.com/pion/webrtc/v4 v4.2.26
 	github.com/ulikunitz/xz v0.5.12
 	github.com/wittywilla/wittymodule v0.4.0
-	golang.org/x/sys v0.49.0
+	golang.org/x/sys v0.50.0
 )
 
 require (
