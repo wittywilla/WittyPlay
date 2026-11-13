@@ -164,8 +164,10 @@ func TestArgsLimitsOnly(t *testing.T) {
 	if !strings.Contains(line, "DISPLAY=:123 ") || !strings.Contains(line, "PULSE_SERVER=unix:"+filepath.Join(work, "tmp", "runtime")) {
 		t.Errorf("the display or the sound server is shared:\n%s", line)
 	}
+	// The session's own folder is left out first: on Linux a test's folder is itself under /tmp.
+	bare := strings.ReplaceAll(line, work, "<work>")
 	for _, c := range []string{"=" + docker.ContainerROM + "/", "=" + docker.ContainerSaves + "/", " " + docker.ContainerProgram + "/", "HOME=/home", "RUNTIME_DIR=/tmp/", ":/tmp/"} {
-		if strings.Contains(line, c) {
+		if strings.Contains(bare, c) {
 			t.Errorf("a container path %q is left in\n%s", c, line)
 		}
 	}
