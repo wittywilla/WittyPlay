@@ -2,6 +2,7 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyboardEvent } from 'react'
 import { reducedMotion } from './display'
+import { ago } from './words'
 import { downloadBlob, fileName, layerDocument, levelName, LEVEL_RANK, pickFile, type Choice, type CoreOptionsView, type CustomControl, type Issue, type Level, type OptionInfo, type Preset, type Report, type Schema, type SettingDef, type SettingsApi, type SettingsHost, type SettingsView } from './settings'
 
 // The panels of the game menu and of the settings page. They're drawn from what the
@@ -697,19 +698,29 @@ export function SlotsPanel({ host, schema, itemId, kind, confirm, act, say, onDo
         {nums.map((n) => {
           const s = slots?.find((x) => x.slot === n)
           const name = slotName(n, schema)
-          const when = s ? new Date(s.updatedAt * 1000).toLocaleString() : 'Empty'
+          const when = s ? ago(s.updatedAt) : 'Empty'
+          const exact = s ? new Date(s.updatedAt * 1000).toLocaleString() : undefined
           const other = s?.core && core && s.core !== core
+          const numbered = n >= 1 && n <= max
+          const cue = arming === n ? 'Replace it?' : kind === 'load' ? 'Load' : s ? 'Save over' : 'Save here'
           return (
-            <div key={n} className="wp-slot-wrap">
+            <div key={n} className={'wp-slot-wrap' + (arming === n ? ' arming' : '')}>
               <button type="button" className="wp-slot" disabled={busy} onClick={() => void go(n)} aria-label={`${name}: ${when}${arming === n ? '. Press again to replace it.' : ''}`}>
-                {s?.hasThumb ? <img src={withQuery(host.mediaUrl(`/api/games/${itemId}/saves/${n}/thumb`), `v=${s.updatedAt}`)} alt="" /> : <span className="wp-slot-empty" />}
-                <b>{arming === n ? 'Replace it?' : name}</b><small className="wp-muted">{when}</small>
-                {other && <small className="wp-caution">Made by {s!.core}</small>}
+                <span className="wp-slot-pic">
+                  {s?.hasThumb ? <img src={withQuery(host.mediaUrl(`/api/games/${itemId}/saves/${n}/thumb`), `v=${s.updatedAt}`)} alt="" /> : <span className={'wp-slot-empty' + (s ? '' : ' none')} />}
+                  {numbered && <span className="wp-slot-num" aria-hidden="true">{n}</span>}
+                </span>
+                <span className="wp-slot-text">
+                  <b>{name}</b>
+                  {s ? <time dateTime={new Date(s.updatedAt * 1000).toISOString()} title={exact}>{when}</time> : <small className="wp-muted">Empty</small>}
+                  {other && <small className="wp-caution">Made by {s!.core}</small>}
+                  <span className="wp-slot-cue" aria-hidden="true">{cue}</span>
+                </span>
               </button>
               {manage && s && (
                 <span className="wp-slot-tools">
-                  <a className="wp-link" href={host.mediaUrl(`/api/games/${itemId}/saves/${n}/file`)} download aria-label={`Download ${name}`}>Download</a>
-                  <button type="button" className="wp-link" onClick={() => void remove(n)} aria-label={`Delete ${name}`}>Delete</button>
+                  <a className="wp-mini" href={host.mediaUrl(`/api/games/${itemId}/saves/${n}/file`)} download aria-label={`Download ${name}`} title="Download"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M11 4h2v8.2l3.6-3.6L18 10l-6 6-6-6 1.4-1.4L11 12.2zM5 18h14v2H5z" /></svg></a>
+                  <button type="button" className="wp-mini danger" onClick={() => void remove(n)} aria-label={`Delete ${name}`} title="Delete"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4zM6 9h12l-1 12H7zm4 2v8h1.6v-8zm2.4 0v8H14v-8z" /></svg></button>
                 </span>
               )}
             </div>
@@ -717,7 +728,7 @@ export function SlotsPanel({ host, schema, itemId, kind, confirm, act, say, onDo
         })}
         {kind === 'load' && slots && slots.length === 0 && <p className="wp-muted">No saved states yet.</p>}
       </div>
-      <div className="wp-row wp-wrap">
+      <div className="wp-row wp-wrap wp-slots-foot">
         <button type="button" className="wp-btn" onClick={() => setManage((m) => !m)} aria-pressed={manage}>{manage ? 'Done' : 'Download or delete…'}</button>
         {nextFree > 0 && <button type="button" className="wp-btn" onClick={() => void importTo(nextFree)}>Import a state file…</button>}
         <span className="wp-grow" />

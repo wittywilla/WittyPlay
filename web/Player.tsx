@@ -89,7 +89,7 @@ function mayRestart(): boolean {
 }
 
 // The screens that want the game in view, so that a change can be seen as it's made.
-const SIDE_PANELS: Panel[] = ['display', 'osd', 'audio', 'core']
+const SIDE_PANELS: Panel[] = ['display', 'osd', 'audio', 'core', 'save', 'load']
 const GROUP_TITLES: Record<SettingsGroup, string> = { display: 'Picture', osd: 'On-screen numbers', emulation: 'Speed and rewind', audio: 'Sound', states: 'Saves', hotkeys: 'Shortcuts' }
 
 // prepared waits for a game that has to be unpacked before it can start, saying how
@@ -815,7 +815,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
               <MenuFrame title={host.title} sub={[host.consoleName, info?.core].filter(Boolean).join(' · ')} cover={host.cover}
                 foot={!padName && padSupport() === 'insecure' ? <p className="wp-muted wp-small">Using a gamepad? Most browsers only show them to secure pages. Open this server over https, or at localhost on this computer.</p> : undefined}>
                 <TileGrid label="Game menu">
-                  <Tile id="resume" icon="play" label="Resume" primary wide onClick={() => setPanel(null)} />
+                  <Tile id="resume" icon="play" label="Resume" primary wide glyph="back" onClick={() => setPanel(null)} />
                   <Tile id="save" icon="save" label="Save" sub="Choose a slot" onClick={() => setPanel('save')} />
                   <Tile id="load" icon="load" label="Load" sub="Choose a save" onClick={() => setPanel('load')} />
                   <Tile id="qsave" icon="quickSave" label="Quick save" sub={`Slot ${quickSlot()}`} onClick={() => { fire('quickSave', true); setPanel(null) }} />
@@ -874,7 +874,8 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
             )}
             {(panel === 'save' || panel === 'load') && (
               <>
-                <h2>{panel === 'save' ? 'Save state' : 'Load state'}</h2>
+                <h2>Save states</h2>
+                <p className="wp-muted wp-sheet-sub">{panel === 'save' ? 'Choose a slot to save to' : 'Choose a save to load'}</p>
                 <SlotsPanel host={host} schema={schema} itemId={host.itemId} kind={panel} confirm={values['states.confirm'] !== false} core={info?.core} say={say}
                   act={async (n) => { const s = sessionRef.current; if (s) await host.action(s.id, panel, n) }} onDone={(closed) => setPanel(closed ? null : 'menu')} />
                 <Back onClick={up} />
@@ -1009,7 +1010,7 @@ export function ControllersPage({ profiles, controls, controllers, consoles, con
   )
 }
 
-const panelTitle = (p: Panel, title: string) => ({ menu: title, settings: 'Settings', more: 'More', save: 'Save state', load: 'Load state', controllers: 'Controllers', connection: 'Connection', touch: 'Touch controls', discs: 'Change disc', core: 'Core options', cheats: 'Cheats', patches: 'Patches', json: 'Custom settings file', ...GROUP_TITLES } as Record<string, string>)[p as string]
+const panelTitle = (p: Panel, title: string) => ({ menu: title, settings: 'Settings', more: 'More', save: 'Save states', load: 'Save states', controllers: 'Controllers', connection: 'Connection', touch: 'Touch controls', discs: 'Change disc', core: 'Core options', cheats: 'Cheats', patches: 'Patches', json: 'Custom settings file', ...GROUP_TITLES } as Record<string, string>)[p as string]
 
 // Every sheet over the game keeps its ways out in view, however far it scrolls: Back a level, and
 // × straight back to the game. Esc, a controller's B, Back and a tap outside do the same.

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 WittyWilla and contributors
 import type { ReactNode } from 'react'
-import { PromptBar } from './prompts'
+import { PadGlyph, PromptBar, useInputKind, type PromptButton } from './prompts'
 
 // The game menu: everything someone might want while playing, as large tiles that work the
 // same under a thumb, a mouse, a keyboard, a remote or a controller. The game stays paused
@@ -44,13 +44,25 @@ const P: Record<string, string> = {
 
 export const MenuIcon = ({ name }: { name: keyof typeof P | string }) => <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d={P[name] || P.more} /></svg>
 
-export type TileProps = { icon: string; label: string; sub?: string; onClick?: () => void; primary?: boolean; danger?: boolean; pressed?: boolean; disabled?: boolean; id: string; wide?: boolean }
+export type TileProps = { icon: string; label: string; sub?: string; onClick?: () => void; primary?: boolean; danger?: boolean; pressed?: boolean; disabled?: boolean; id: string; wide?: boolean; glyph?: PromptButton }
 
-export function Tile({ icon, label, sub, onClick, primary, danger, pressed, disabled, id, wide }: TileProps) {
+// The button that does the same as a tile, as what's in someone's hands prints it. Nothing for a mouse or a finger.
+const KEY: Partial<Record<PromptButton, string>> = { back: 'Esc', confirm: 'Enter' }
+const REMOTE_KEY: Partial<Record<PromptButton, string>> = { back: 'Back', confirm: 'OK' }
+function TileGlyph({ button }: { button: PromptButton }) {
+  const input = useInputKind()
+  if (input.kind === 'pointer') return null
+  const cap = (input.kind === 'remote' ? REMOTE_KEY : KEY)[button]
+  if (input.kind !== 'pad' && !cap) return null
+  return <span className="wp-tile-glyph" aria-hidden="true">{input.kind === 'pad' ? <PadGlyph button={button} family={input.family} /> : <kbd className="wp-glyph key">{cap}</kbd>}</span>
+}
+
+export function Tile({ icon, label, sub, onClick, primary, danger, pressed, disabled, id, wide, glyph }: TileProps) {
   return (
     <button type="button" className={'wp-tile' + (primary ? ' primary' : '') + (danger ? ' danger' : '') + (wide ? ' wide' : '')} data-tile={id} aria-pressed={pressed} disabled={disabled} onClick={onClick}>
-      <MenuIcon name={icon} />
+      <span className="wp-tile-ic"><MenuIcon name={icon} /></span>
       <span className="wp-tile-text"><b>{label}</b>{sub && <small>{sub}</small>}</span>
+      {glyph && <TileGlyph button={glyph} />}
     </button>
   )
 }
@@ -60,7 +72,7 @@ export function MenuFrame({ title, sub, cover, children, foot }: { title: string
     <>
       <header className="wp-qm-head">
         {cover && <img src={cover} alt="" className="wp-qm-cover" />}
-        <div className="wp-qm-title"><h2>{title}</h2>{sub && <p className="wp-muted">{sub}</p>}</div>
+        <div className="wp-qm-title">{sub && <p className="wp-qm-eyebrow">{sub}</p>}<h2>{title}</h2></div>
       </header>
       {children}
       {foot}

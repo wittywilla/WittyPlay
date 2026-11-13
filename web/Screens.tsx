@@ -37,7 +37,12 @@ export function LoadingScreen({ title, consoleName, cover, stage, status, percen
             </li>
           ))}
         </ol>
-        {percent != null && <div className="wp-load-bar" role="progressbar" aria-label="Unpacking" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><i style={{ transform: `scaleX(${percent / 100})` }} /></div>}
+        {percent != null && (
+          <div className="wp-load-progress">
+            <div className="wp-load-bar" role="progressbar" aria-label="Unpacking" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><i style={{ transform: `scaleX(${percent / 100})` }} /></div>
+            <span className="wp-load-pct" aria-hidden="true">{Math.round(percent)}%</span>
+          </div>
+        )}
         {hint && <p className="wp-muted wp-small">{hint}</p>}
         <div className="wp-load-foot">
           <button type="button" className="wp-btn" onClick={onCancel}>Cancel</button>

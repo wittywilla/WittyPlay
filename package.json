@@ -1,6 +1,6 @@
 {
   "name": "@wittywilla/wittyplay",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "The browser half of WittyPlay: a game player for streamed libretro games, with gamepad, keyboard and touch controls, a remap screen and a touch layout editor.",
   "license": "AGPL-3.0-or-later",
   "author": "WittyWilla (https://github.com/wittywilla)",

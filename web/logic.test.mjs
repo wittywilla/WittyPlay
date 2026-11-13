@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { computeLayout } from './layout.ts'
 import { Hotkeys } from './hotkeys.ts'
-import { explain, familyOf } from './words.ts'
+import { ago, explain, familyOf } from './words.ts'
 import { rateOf } from './refresh.ts'
 import { ArrivalDelay } from './arrival.ts'
 import { BackEntry } from './exits.ts'
@@ -302,4 +302,14 @@ test('a sheet the page opens over the menu, with its own entry, closes first; th
   assert.equal(entry.open, true)
   h.userBack(entry)
   assert.equal(open.level, 1, 'the next Back is the menu’s')
+})
+
+test('save times read as words', () => {
+  const now = Date.UTC(2026, 10, 13, 12, 0, 0)
+  const at = (sec) => now / 1000 - sec
+  assert.equal(ago(at(10), now, 'en'), 'just now')
+  assert.equal(ago(at(12 * 60), now, 'en'), '12 minutes ago')
+  assert.equal(ago(at(3 * 3600), now, 'en'), '3 hours ago')
+  assert.equal(ago(at(86400), now, 'en'), 'yesterday')
+  assert.match(ago(at(90 * 86400), now, 'en'), /2026/)
 })

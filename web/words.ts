@@ -38,3 +38,16 @@ export function explain(message: string, d: ProblemData | null | undefined, isAd
   if (d?.status === 0 || m.includes('can’t reach') || m.includes("can't reach")) return { title: 'Can’t reach the server', body: message, retry: true }
   return { title: 'This game didn’t start', body: message || 'The server didn’t say why.', retry: true, defaults: true }
 }
+
+// How long ago something happened, in words ("12 minutes ago", "yesterday"), the way the game
+// page says it. Past a month, the date. `now` is for tests.
+export function ago(unixSeconds: number, now = Date.now(), locale?: string): string {
+  const d = Math.round(unixSeconds - now / 1000)
+  const a = Math.abs(d)
+  if (a < 45) return 'just now'
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+  if (a < 3600) return rtf.format(Math.round(d / 60), 'minute')
+  if (a < 86400) return rtf.format(Math.round(d / 3600), 'hour')
+  if (a < 86400 * 30) return rtf.format(Math.round(d / 86400), 'day')
+  return new Date(unixSeconds * 1000).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+}
