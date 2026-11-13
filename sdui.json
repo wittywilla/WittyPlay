@@ -357,8 +357,7 @@
             "id": "settings",
             "label": "Settings",
             "icon": "settings",
-            "route": "/page/wittyplay-privacy",
-            "as": "layer"
+            "route": "/wittyplay/settings"
           }
         ]
       }

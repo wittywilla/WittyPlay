@@ -164,7 +164,7 @@ func onlineRegions() *sdui.PageRegions {
 			{ID: "together", Label: "Together", Icon: "users", Route: "/page/" + PageOnline + "?tab=together"},
 			{ID: "controllers", Label: "Controllers", Icon: "devices", Route: "/page/" + PageControllers, As: "layer"},
 			{ID: "memories", Label: "Memories", Icon: "photo", Route: "/page/" + PageOnline + "?tab=memories"},
-			{ID: "settings", Label: "Settings", Icon: "settings", Route: "/page/" + PagePrivacy, As: "layer"},
+			{ID: "settings", Label: "Settings", Icon: "settings", Route: "/wittyplay/settings"}, // WittyPlay's whole Settings, in the app
 		},
 	}
 }
@@ -270,6 +270,6 @@ func addOnlinePages(m *sdui.Module) {
 	kids.Slot = "people.profile"
 	m.AddPage(kids)
 
-	m.AddNav(sdui.NavItem{ID: PageOnline, Type: "page", Page: PageOnline, Label: "WittyPlay Online", Icon: "game",
+	m.AddNav(sdui.NavItem{ID: PageOnline, Type: "page", Page: PageOnline, Label: "Games", Icon: "game",
 		Placement: map[string]string{"phone": "more", "tablet": "more", "desktop": "more", "web": "more", "headset": "more"}})
 }
