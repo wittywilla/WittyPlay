@@ -115,6 +115,9 @@ type archiveIndex struct {
 	sent   map[string]bool
 	hidden map[string]map[string]bool // by root: what a sheet names, in lower case
 	dumps  map[string]string          // a folder's dumpGame, once asked
+
+	// onFile, when set, is told how many files of the batch add is taking in are done.
+	onFile func(done int)
 }
 
 func newArchiveIndex(db *sql.DB, libraryID int64) *archiveIndex {
@@ -252,10 +255,13 @@ func hiddenKey(p string) string { return strings.ToLower(filepath.Clean(p)) }
 func (ix *archiveIndex) add(ctx context.Context, console string, files []wittymodule.ScanFile) error {
 	ix.verdictOnce.Do(ix.loadVerdicts)
 	ix.lastLibrary = console
-	for _, f := range files {
+	for i, f := range files {
 		if ctx.Err() != nil {
 			ix.saveVerdicts(context.Background())
 			return ctx.Err()
+		}
+		if ix.onFile != nil && i > 0 {
+			ix.onFile(i) // the files before this one are judged
 		}
 		if ix.sent[f.Path] {
 			continue
@@ -309,10 +315,19 @@ func (ix *archiveIndex) judgeScanned(s *scanned, console string) {
 // as a .cue hides the tracks it names and an .m3u the discs it names, whatever the case of the
 // names in it; then copies and discs (mergeGames).
 func (ix *archiveIndex) games(root, console string) []candidate {
+	return ix.mergeGames(ix.gameFiles(root, console, nil), nil)
+}
+
+// gameFiles is the first half of games: the files under one root that are games, each on its
+// own. step, when set, is told about each file of the root looked at.
+func (ix *archiveIndex) gameFiles(root, console string, step func()) []*gameFile {
 	var found []*gameFile
 	for _, f := range ix.files {
 		if f.root != root {
 			continue
+		}
+		if step != nil {
+			step()
 		}
 		if ix.hidden[root][hiddenKey(f.path)] {
 			// A sheet that came later names it: it was never a file of its own.
@@ -356,7 +371,7 @@ func (ix *archiveIndex) games(root, console string) []candidate {
 			ix.noteFile(f.path, f.size, reviewBlocked, problemText(v)+" "+v.Proof, v.Console, nil)
 		}
 	}
-	return ix.mergeGames(found)
+	return found
 }
 
 // DecryptedCopyPlays is what a person with an encrypted game can do: nothing here decrypts one,
@@ -573,6 +588,12 @@ type Scan struct {
 	Library wittymodule.ScanLibrary
 	Started time.Time
 
+	// Report, when set, is told how far the scan has got whenever that moves: the files of
+	// a batch judged, of the scan's total, and then Finish's work, also counted in files. It's
+	// called often, from the call's goroutine, and has to be quick (it's for the server's
+	// progress and its watch for a stuck scan: see api/scan_progress.go).
+	Report func(done, total int)
+
 	mu       sync.Mutex
 	ix       *archiveIndex
 	db       *sql.DB
@@ -608,10 +629,37 @@ func (s *Scan) Add(ctx context.Context, files []wittymodule.ScanFile, total int)
 	if total > 0 {
 		s.total.Store(int64(total))
 	}
+	base := int(s.received.Load())
+	all := max(int(s.total.Load()), base+len(files))
+	if s.Report != nil {
+		s.ix.onFile = func(done int) { s.Report(base+done, all) }
+		defer func() { s.ix.onFile = nil }()
+	}
 	err := s.ix.add(ctx, s.libraryConsole(), files)
 	s.received.Add(int64(len(files)))
+	if s.Report != nil && err == nil {
+		s.Report(base+len(files), all)
+	}
 	return err
 }
+
+// finishing counts Finish's work in files, for Report: each file looked at as games are put
+// together, then each file read for its checksum, which a big library of loose discs can take
+// a while over. The second count is only known once the first is done, and is added to the
+// total then.
+type finishing struct {
+	report      func(done, total int)
+	done, total int
+}
+
+func (f *finishing) step() {
+	f.done++
+	if f.report != nil {
+		f.report(f.done, f.total)
+	}
+}
+
+func (f *finishing) more(n int) { f.total += n }
 
 // Progress says how far the scan has got: the files received, of how many, and the archive
 // being read.
@@ -665,9 +713,24 @@ func (s *Scan) Finish(ctx context.Context, offline []string) (wittymodule.ScanId
 			roots = append(roots, f.root)
 		}
 	}
+	prog := &finishing{report: s.Report, total: len(ix.files)}
+	found := make([][]*gameFile, len(roots))
+	for i, root := range roots {
+		if ctx.Err() != nil {
+			break
+		}
+		found[i] = ix.gameFiles(root, console, prog.step)
+	}
+	prog.done = len(ix.files) // files under no root count as looked at
+	for _, f := range found {
+		prog.more(ix.checksumsWanted(f))
+	}
 	var games []*listedGame
-	for _, root := range roots {
-		for _, c := range ix.games(root, console) {
+	for i := range roots {
+		if ctx.Err() != nil {
+			break
+		}
+		for _, c := range ix.mergeGames(found[i], prog.step) {
 			games = append(games, &listedGame{c: c})
 		}
 	}
@@ -696,6 +759,9 @@ func (s *Scan) Finish(ctx context.Context, offline []string) (wittymodule.ScanId
 		return wittymodule.ScanIdentified{}, err
 	}
 	out.Result = s.result(ctx, games)
+	if s.Report != nil {
+		s.Report(prog.total, prog.total)
+	}
 	return out, nil
 }
 

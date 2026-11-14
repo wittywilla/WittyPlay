@@ -44,9 +44,13 @@ func describeGames(ctx context.Context, a *App, args wittymodule.ScanDescribeArg
 	var x gamemeta.Identifier
 	defer x.Close()
 	until := time.Now().Add(describeBudget)
-	for _, it := range args.Items {
+	report := a.reportScan(args.Library.ID)
+	for i, it := range args.Items {
 		if err := ctx.Err(); err != nil {
 			return out, err
+		}
+		if report != nil && i > 0 {
+			report(i, len(args.Items))
 		}
 		if it.Kind != "game" || len(it.Files) == 0 {
 			continue

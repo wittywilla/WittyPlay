@@ -374,6 +374,15 @@ func RegionsChanged(ctx context.Context, db *sql.DB, library int64) error {
 	return err
 }
 
+// RereadAll makes a library's next scan work out every file again from the start, as a full
+// rescan asks: what's kept about each file is set aside (as an older version's would be) and
+// replaced as each is judged again, so a full rescan that's stopped carries on from where it got
+// to. What people said about files stays.
+func RereadAll(ctx context.Context, db *sql.DB, library int64) error {
+	_, err := db.ExecContext(ctx, `UPDATE game_files SET version = 0 WHERE library = ?`, library)
+	return err
+}
+
 // ListedItem is the game the last scan answered that the server knows by this id.
 func ListedItem(ctx context.Context, db *sql.DB, item int64) (*Listed, error) {
 	rows, err := db.QueryContext(ctx, `SELECT `+listedCols+` FROM game_items WHERE item = ? LIMIT 1`, item)

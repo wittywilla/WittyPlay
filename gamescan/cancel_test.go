@@ -75,3 +75,41 @@ func TestCancellingAScanDoesNotChangeWhatTheNextOneFinds(t *testing.T) {
 		t.Fatalf("after a stopped scan: %d items", len(got.Items))
 	}
 }
+
+// A scan reports its progress as it moves: each batch's files, then Finish's work, ending at
+// its total.
+func TestScanReportsAsItMoves(t *testing.T) {
+	root := t.TempDir()
+	writeFiles(t, root, "a.sfc", "b.sfc", "c.gba", "d/e.nes", "readme.txt")
+	lib := wittymodule.ScanLibrary{ID: 1, Kind: "games", Facet: "auto", Paths: []string{root}}
+	s := Begin(testDB(t), "report", lib)
+	var got [][2]int
+	s.Report = func(done, total int) { got = append(got, [2]int{done, total}) }
+	files := walk(root)
+	ctx := context.Background()
+	if err := s.Add(ctx, files[:2], len(files)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Add(ctx, files[2:], len(files)); err != nil {
+		t.Fatal(err)
+	}
+	adding := len(got)
+	if adding == 0 || got[adding-1] != [2]int{len(files), len(files)} {
+		t.Fatalf("adding reported %v", got)
+	}
+	if _, err := s.Finish(ctx, nil); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) == adding {
+		t.Fatal("finishing reported nothing")
+	}
+	last := got[len(got)-1]
+	if last[0] != last[1] || last[1] == 0 {
+		t.Fatalf("finishing ended at %v", last)
+	}
+	for i := 1; i < len(got); i++ {
+		if got[i][0] < got[i-1][0] && i != adding {
+			t.Fatalf("progress went back: %v", got)
+		}
+	}
+}

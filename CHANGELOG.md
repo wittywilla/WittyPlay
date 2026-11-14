@@ -5,6 +5,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
+- **Scans say how far they've got, and a full rescan reads every file again.** While WittyPlay works on a scan call (a batch of files, the last call that puts them together into games, a batch to describe) it reports its progress as the host task `scan-<library>`, which the server shows on the scan and takes as a sign the scan isn't stuck: only when the work moves, at most once a second, one report at a time. When the server's host libraries say a library's scan is a full rescan (`scan: {mode: "full", since}`), every file is worked out again from the start, once for each run, so a full rescan stopped by a restart carries on from where it got to; what people said about files stays.
 - **The first-run step on every app.** An administrator's Home says "Finish setting up WittyPlay" until the step is done: the page `wittyplay-setup` (Cores & emulators, What this server plays, WittyPlay options, then Done or Do this later, the commands `wittyplay.setup.done` and `.later`, `POST /setup/games`). The browser's setup wizard keeps its own step for game titles, pictures and metadata keys.
 - **All games on a games library's page lists its games**, with genre, "score at least" and order (title, added, rating, oldest release): `wittyplay.library` with `every` and `filterable`.
 
