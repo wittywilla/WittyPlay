@@ -95,7 +95,18 @@ func Routes(mux *http.ServeMux) {
 	controlRoutes(mux, with)
 	profileRoutes(mux, with)
 	backgroundRoutes(mux, with)
+	for _, g := range routeGroups {
+		g(mux, with)
+	}
 }
+
+// with gives a route WittyPlay's App, once its database and the server can be reached.
+type with = func(func(*App, http.ResponseWriter, *http.Request)) http.Handler
+
+// routeGroups are the route groups that add themselves (addRoutes, in an init in their own file).
+var routeGroups []func(*http.ServeMux, with)
+
+func addRoutes(g func(*http.ServeMux, with)) { routeGroups = append(routeGroups, g) }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

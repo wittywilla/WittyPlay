@@ -44,6 +44,18 @@ func Lifecycle(ctx context.Context, call string, args wittymodule.LifecycleArgs)
 
 var watchOnce sync.Once
 
+// eventHandlers are what a route group does with the server's events (onEvent, in an init).
+var eventHandlers = map[string][]func(*App, json.RawMessage){}
+
+func onEvent(typ string, f func(*App, json.RawMessage)) {
+	eventHandlers[typ] = append(eventHandlers[typ], f)
+}
+
+// forgetters are what a route group removes of an account that has gone, beyond perUser's rows.
+var forgetters []func(*App, int64)
+
+func onForget(f func(*App, int64)) { forgetters = append(forgetters, f) }
+
 // Watch follows the server's events while the service runs: an account that goes takes its
 // layouts, profiles and picture with it, as the server's own tables did.
 func Watch() {
@@ -63,14 +75,16 @@ func Watch() {
 				}
 				after = next
 				for _, e := range evs {
-					if e.Type != "user.deleted" {
-						continue
+					if e.Type == "user.deleted" {
+						var d struct {
+							User int64 `json:"user"`
+						}
+						if json.Unmarshal(e.Data, &d) == nil && d.User > 0 {
+							a.forget(d.User)
+						}
 					}
-					var d struct {
-						User int64 `json:"user"`
-					}
-					if json.Unmarshal(e.Data, &d) == nil && d.User > 0 {
-						a.forget(d.User)
+					for _, f := range eventHandlers[e.Type] {
+						f(a, e.Data)
 					}
 				}
 			}
@@ -83,6 +97,10 @@ func (a *App) forget(userID int64) {
 	for _, t := range perUser {
 		_, _ = a.DB.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %q WHERE user_id = ?`, t), userID)
 	}
+	_, _ = a.DB.ExecContext(ctx, `DELETE FROM wittyplay_kids_friends WHERE kid_id = ? OR friend_id = ?`, userID, userID)
 	_ = os.Remove(a.backgroundPath(userID))
-	a.Log.Info("wittyplay: an account's controller data went with it", "cat", "games", "user", strconv.FormatInt(userID, 10))
+	for _, f := range forgetters {
+		f(a, userID)
+	}
+	a.Log.Info("wittyplay: an account's game data went with it", "cat", "games", "user", strconv.FormatInt(userID, 10))
 }

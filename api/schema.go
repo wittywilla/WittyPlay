@@ -62,5 +62,38 @@ CREATE TABLE IF NOT EXISTS game_core_plays (
   last_error TEXT NOT NULL DEFAULT '', last_at INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(core_id, item_id));`})
 }
 
+// Each person's game settings and what they keep about each game, the cores' options, their own
+// bezels and patches, and what they show friends (the person and home group).
+func init() {
+	store.Register(store.Migration{Version: 3, SQL: `
+CREATE TABLE IF NOT EXISTS wittyplay_settings (
+  user_id INTEGER NOT NULL, console TEXT NOT NULL, item_id INTEGER NOT NULL,
+  data TEXT NOT NULL, updated_at INTEGER NOT NULL,
+  PRIMARY KEY(user_id, console, item_id));
+CREATE TABLE IF NOT EXISTS wittyplay_game_meta (
+  user_id INTEGER NOT NULL, item_id INTEGER NOT NULL,
+  favourite INTEGER NOT NULL DEFAULT 0, note TEXT NOT NULL DEFAULT '',
+  plays INTEGER NOT NULL DEFAULT 0, last_played INTEGER NOT NULL DEFAULT 0,
+  cheats TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY(user_id, item_id));
+CREATE INDEX IF NOT EXISTS idx_wittyplay_meta_recent ON wittyplay_game_meta(user_id, last_played);
+CREATE TABLE IF NOT EXISTS wittyplay_core_options (
+  core TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS wittyplay_bezels (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
+  name TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, size INTEGER NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_wittyplay_bezels_user ON wittyplay_bezels(user_id);
+CREATE TABLE IF NOT EXISTS wittyplay_patches (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, item_id INTEGER NOT NULL,
+  name TEXT NOT NULL, kind TEXT NOT NULL, size INTEGER NOT NULL, enabled INTEGER NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_wittyplay_patches_game ON wittyplay_patches(user_id, item_id);
+CREATE TABLE IF NOT EXISTS wittyplay_presence (
+  user_id INTEGER PRIMARY KEY, share INTEGER NOT NULL, online INTEGER NOT NULL DEFAULT 1);
+CREATE TABLE IF NOT EXISTS wittyplay_kids_friends (
+  kid_id INTEGER NOT NULL, friend_id INTEGER NOT NULL,
+  PRIMARY KEY(kid_id, friend_id)) WITHOUT ROWID;`})
+}
+
 // perUser are the tables with a person's own rows, which go when the account goes.
-var perUser = []string{"wittyplay_controls", "wittyplay_profiles", "wittyplay_backgrounds"}
+var perUser = []string{"wittyplay_controls", "wittyplay_profiles", "wittyplay_backgrounds",
+	"wittyplay_settings", "wittyplay_game_meta", "wittyplay_bezels", "wittyplay_patches", "wittyplay_presence"}
