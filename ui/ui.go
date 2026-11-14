@@ -63,10 +63,12 @@ const (
 func tvSources() []sdui.SourceSpec {
 	return []sdui.SourceSpec{
 		{Type: SourceLibrary, Label: "Games by console", Icon: "game", Title: "Games",
-			Description: "With a console, that console's games by title, in one games library ($library) or every one. Without, the consoles that have games there, each with how many, opening the library that holds them.",
+			Description: "With a console, that console's games by title, in one games library ($library) or every one; with every, all of its games, following the page's filters when filterable. Otherwise, the consoles that have games there, each with how many, opening the library that holds them.",
 			Params: []sdui.PropSpec{
 				{Name: "library", Type: "library", Label: "Library", Help: "$library on a games library's page; empty for every games library."},
 				{Name: "console", Type: "string", Label: "Console", Help: "A console's ID, such as snes. Empty: the consoles themselves.", MaxLength: 40},
+				{Name: "every", Type: "bool", Label: "Every game", Help: "Without a console: every game there rather than the consoles, by title."},
+				{Name: "filterable", Type: "bool", Label: "Follows the page's filters", Help: "With every: the page's FilterBar (genre, score at least, order) narrows and sorts it."},
 				{Name: "limit", Type: "int", Label: "At most", Default: 40, Min: sdui.Int(1), Max: sdui.Int(500)},
 			},
 			Yields: []string{"game", "view"}, CardStyle: "game", Paged: true},
@@ -377,9 +379,9 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 			sdui.Sec("views", "Tabs", sdui.Props("style", "segments", "default", "consoles"), nil,
 				tab("consoles", "By console", "game", shelves...),
 				tab("all", "All games", "grid",
-					sdui.Sec("filters", "FilterBar", sdui.Props("target", "all-games", "fields", []string{"genre", "decade"}, "sorts", []string{"title", "added", "newest", "rating"}), nil),
+					sdui.Sec("filters", "FilterBar", sdui.Props("target", "all-games", "fields", []string{"genre", "minRating"}, "sorts", []string{"title", "added", "rating", "oldest"}), nil),
 					sdui.Sec("all-games", "Grid", sdui.Props("cardStyle", "game", "empty", "message", "emptyText", "No games match.",
-						"emptyHint", "Change the filters, or add games to the library's folders; they appear after a scan."), sdui.Src("browse", "library", "$library", "filterable", true)))),
+						"emptyHint", "Change the filters, or add games to the library's folders; they appear after a scan."), sdui.Src(SourceLibrary, "library", "$library", "every", true, "filterable", true)))),
 			sdui.Sec("dock", "Dock", sdui.Props("legend", true, "target", "all-games", "controls", []string{"sort", "filter"}), nil),
 		}, Regions: onlineRegions()}
 	m.AddPage(lib)

@@ -607,3 +607,24 @@ func TestTVPages(t *testing.T) {
 		}
 	}
 }
+
+func TestFilteredQuery(t *testing.T) {
+	for _, c := range []struct {
+		filter map[string]string
+		sort   string
+		desc   bool
+		genre  string
+		min    float64
+	}{
+		{nil, "title", false, "", 0},
+		{map[string]string{"sort": "added"}, "added", true, "", 0},
+		{map[string]string{"sort": "rating", "genre": "Platform", "minRating": "7"}, "rating", true, "Platform", 7},
+		{map[string]string{"sort": "oldest", "minRating": "11"}, "oldest", false, "", 0},
+		{map[string]string{"sort": "newest"}, "title", false, "", 0},
+	} {
+		q := filteredQuery(3, c.filter)
+		if q.Library != 3 || q.Sort != c.sort || q.Desc != c.desc || q.Genre != c.genre || q.MinRating != c.min || q.Facets != nil {
+			t.Errorf("%v: got %+v", c.filter, q)
+		}
+	}
+}

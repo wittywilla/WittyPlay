@@ -82,7 +82,11 @@ func tvItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, bool, error) {
 	switch typ {
 	case srcPlayLibrary:
 		if console := srcStr(req.Source, "console"); console != "" {
-			ans, err := a.libraryGames(ctx, on, int64(srcInt(req.Source, "library")), console, req.Offset, limit)
+			ans, err := a.libraryGames(ctx, on, host.Query{Library: int64(srcInt(req.Source, "library")), Facets: map[string]string{"console": console}}, req.Offset, limit)
+			return ans, true, err
+		}
+		if srcStr(req.Source, "every") == "true" || req.Source["every"] == true {
+			ans, err := a.libraryGames(ctx, on, filteredQuery(int64(srcInt(req.Source, "library")), req.Filter), req.Offset, limit)
 			return ans, true, err
 		}
 		all, err = a.libraryConsoles(ctx, on, int64(srcInt(req.Source, "library")))
@@ -108,16 +112,16 @@ func tvItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, bool, error) {
 
 // libraryGames is one page of a console's games, by title: in one library, or in every games
 // library the person may open. The server pages them, and says what the person may see.
-func (a *App) libraryGames(ctx context.Context, on host.On, library int64, console string, offset, limit int) (sdui.ItemsAnswer, error) {
-	if wittyplay.ByID(console) == nil {
+func (a *App) libraryGames(ctx context.Context, on host.On, hq host.Query, offset, limit int) (sdui.ItemsAnswer, error) {
+	if console := hq.Facets["console"]; console != "" && wittyplay.ByID(console) == nil {
 		return sdui.ItemsAnswer{}, nil
 	}
 	if limit <= 0 || limit > 500 {
 		limit = 500
 	}
 	q := &sduiAsk{a: a, ctx: ctx, on: on}
-	hq := host.Query{Library: library, Facets: map[string]string{"console": console}, Offset: max(offset, 0), Limit: min(limit+1, 500)}
-	if library <= 0 {
+	hq.Offset, hq.Limit = max(offset, 0), min(limit+1, 500)
+	if hq.Library <= 0 {
 		hq.LibraryKind = "games"
 	}
 	games, err := q.games(hq)
@@ -138,6 +142,25 @@ func (a *App) libraryGames(ctx context.Context, on host.On, library int64, conso
 		out = append(out, it)
 	}
 	return sdui.ItemsAnswer{Items: out, More: more}, nil
+}
+
+// filteredQuery is every game in a library (0: every games library) as the page's FilterBar
+// narrows and sorts it: a genre, a score at least, and title, added (newest first), rating
+// (best first) or oldest release. Filters the host can't apply are left out.
+func filteredQuery(library int64, filter map[string]string) host.Query {
+	hq := host.Query{Library: library, Genre: clip(filter["genre"], 100)}
+	if v, err := strconv.ParseFloat(filter["minRating"], 64); err == nil && v > 0 && v <= 10 {
+		hq.MinRating = v
+	}
+	switch filter["sort"] {
+	case "added", "rating":
+		hq.Sort, hq.Desc = filter["sort"], filter["desc"] != "0"
+	case "oldest":
+		hq.Sort, hq.Desc = "oldest", filter["desc"] == "1"
+	default:
+		hq.Sort, hq.Desc = "title", filter["desc"] == "1"
+	}
+	return hq
 }
 
 // libraryConsoles are the consoles a library (0: every games library) has games for, as tiles in
@@ -514,4 +537,12 @@ func upperFirst(s string) string {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+// clip is s cut to at most n bytes.
+func clip(s string, n int) string {
+	if len(s) > n {
+		return s[:n]
+	}
+	return s
 }
