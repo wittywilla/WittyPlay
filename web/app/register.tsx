@@ -5,7 +5,7 @@
 // it claims). The app calls register(host) once, when one of these is first needed, and draws
 // what it hands back in place of its own copy: the WittyPlay frame and pages, the game page,
 // game cards' art and links, its Settings sections, its first-run step and its TV screens.
-import { lazy, Suspense, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { PageRoutes } from '@wms/app/App'
 import { Spinner, PageSkeleton } from '@wms/app/components/common'
@@ -55,6 +55,30 @@ function Frame() {
   )
 }
 
+// Inside the Apple and Android apps (their web view marks <html data-app="wittymediaclient">), a game
+// is played by the app's own player: touch controls, gamepads and the stream are the app's. Play,
+// Resume and a save's slot all lead to /game/<id>?resume=1 (or slot=, safe=, emulator=), and the
+// app catches a page load of that address; a move inside this web app isn't one, so here it becomes
+// one, and the web player never starts.
+function InAppHandoff({ children }: { children: ReactNode }) {
+  // Once for each address: an app that didn't catch it gets the web player, not a page that loads forever.
+  const [handOff] = useState(() => {
+    if (typeof document === 'undefined' || document.documentElement.dataset.app !== 'wittymediaclient') return false
+    try {
+      const key = 'wittyplay.handoff'
+      if (sessionStorage.getItem(key) === window.location.href) return false
+      sessionStorage.setItem(key, window.location.href)
+    } catch {
+      return false
+    }
+    return true
+  })
+  useEffect(() => {
+    if (handOff) window.location.replace(window.location.href)
+  }, [handOff])
+  return handOff ? <Spinner /> : <>{children}</>
+}
+
 function Settings({ children }: { children: ReactNode }) {
   return <Suspense fallback={null}>{children}</Suspense>
 }
@@ -67,7 +91,7 @@ export function register(_host: unknown): any {
       '/page/wittyplay': Frame,
       '/page/wittyplay-*': Frame,
       '/games': Frame,
-      '/game/:id': () => <Suspense fallback={<Spinner />}><GamePage /></Suspense>,
+      '/game/:id': () => <InAppHandoff><Suspense fallback={<Spinner />}><GamePage /></Suspense></InAppHandoff>,
       '/controllers': () => <Suspense fallback={<Spinner />}><ControllersScreen /></Suspense>,
       '/games/library/:id': () => <Suspense fallback={<Spinner />}><TvGamesLibrary /></Suspense>,
       '/games/game/:id': () => <Suspense fallback={<Spinner />}><TvGame /></Suspense>,
