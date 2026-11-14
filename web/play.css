@@ -627,3 +627,14 @@ html.gm-couch .wp-screen .wps-prompts { display: none; }
   :is(.wp-menu-back, .wp-load) :is(.wp-btn, .wp-tile, .wp-mini, .wp-slot):focus-visible { outline: 3px solid Highlight; outline-offset: 3px; }
   .wp-tile, .wp-load-steps, .wp-slot-pic { border: 1px solid CanvasText; }
 }
+
+/* Batteries (BatteryChips.tsx): the controllers' and the device's, as an icon and their level in words. Low is
+   said in words as well as the warm colour, and charging with a bolt and in words for a screen reader. */
+.wp-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.wp-batts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0; padding: 0; list-style: none; font-size: clamp(.85rem, .95vw, 1.05rem); font-weight: 800; font-variant-numeric: tabular-nums; }
+.wp-batt { display: inline-flex; align-items: center; gap: 6px; color: inherit; --wp-batt-bolt: var(--wpx-sheet, #13163f); }
+.wp-batt-ic { flex: none; width: 1.5em; height: auto; }
+.wp-batt.low { color: #ffc069; }
+.wp-menu .wp-batts { color: var(--wpx-ink, #fff); opacity: .92; }
+.wp-batt-alert { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 7; pointer-events: none; padding: 6px 12px; border-radius: 999px; background: rgb(10 12 18 / .82); color: #ffc069; }
+.wp-batt-alert .wp-batt.low { color: #ffc069; }

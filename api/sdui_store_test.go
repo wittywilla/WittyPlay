@@ -221,7 +221,8 @@ var (
 )
 
 // Every command sdui.json declares runs one of WittyPlay's own routes, which integration.json
-// passes on to it for administrators, with nothing that needs a password.
+// passes on to it with nothing that needs a password: for administrators, but for WittyPlay
+// Online's invites, which are every profile's.
 func TestStoreCommandsAreWittyPlaysRoutes(t *testing.T) {
 	ui := readModuleUI(t)
 	want := []string{opCoreInstall, opCoreRemove, opConsoleCore, opEmuInstall, opEmuRemove, opEmuCancel}
@@ -241,7 +242,11 @@ func TestStoreCommandsAreWittyPlaysRoutes(t *testing.T) {
 			pat := "^" + regexp.MustCompile(`\\\{[a-z]+\\\}`).ReplaceAllString(regexp.QuoteMeta(strings.TrimPrefix(r.Path, "/")), `[^/]+`) + "$"
 			if regexp.MustCompile(pat).MatchString(strings.ReplaceAll(rest, "{item}", "x")) && slices.Contains(r.Methods, c.Method) {
 				found = true
-				if r.Auth != "admin" || r.Confirm {
+				auth := "admin"
+				if strings.HasPrefix(op, "wittyplay.friend.") || strings.HasPrefix(op, "wittyplay.invite.") {
+					auth = "user"
+				}
+				if r.Auth != auth || r.Confirm {
 					t.Errorf("%s: route %s is auth %q, confirm %v", op, r.Path, r.Auth, r.Confirm)
 				}
 			}

@@ -10,6 +10,7 @@ import { getConsoles, knownConsoles, useConsoles, useSettingsHost } from './game
 import type { Background, ControllerData, ControlsData, PlayHost, PrepareStatus, Profile, ProfileHost, SessionInfo } from '../../index'
 import { useGameRemote } from '@wms/app/remote/pageTargets'
 import { playGamePath } from '../shell/playPaths'
+import { joinedGame } from '../shell/invites'
 import './games.css'
 
 // Games: what the game pages share, and the page that holds the player. The library and a
@@ -76,25 +77,45 @@ export function GamePage() {
   const { user } = useApp()
   const settingsHost = useSettingsHost(!!user?.isAdmin)
   useEffect(() => { Promise.all([api.get<Item>(`/items/${id}`), getConsoles().then((l) => { for (const c of l) knownConsoles.set(c.id, c.short) }).catch(() => {})]).then(([i]) => setIt(i)).catch((e) => setErr(e.message)) }, [id])
+  // A seat in someone else's game (?join=, or ?invite= accepted first: shell/invites.ts): the player streams
+  // their session, and leaving gives up the seat rather than stopping their game.
+  const joined = useMemo(() => joinedGame(params), [params])
   const host = useMemo<HostWithCores | null>(() => {
     if (!it) return null
+    const seat = joined.join || joined.invite
+    let seatSid = joined.join // an invite, once accepted, is this seat: starting again doesn't accept it twice
     return {
       ...settingsHost,
       itemId: it.id, title: it.title, consoleId: it.console || '', consoleName: consoleName(it.console || ''), resume: params.get('resume') === '1', safeMode: params.get('safe') === '1',
       startSlot: Number(params.get('slot') || 0) || undefined, cover: it.poster ? `${posterUrl(it)}&w=480` : undefined,
       openSettings: () => nav('/settings/gaming'),
       chooseCore: user?.isAdmin ? () => new Promise<CoreChoiceAnswer>((answer) => setChoosing({ answer })) : undefined,
-      prepare: () => api.post<PrepareStatus>(`/modules/wittyplay/games/${it.id}/prepare`),
-      start: (resume, safeMode) => api.post<SessionInfo>(`/modules/wittyplay/games/${it.id}/play`, { resume, safeMode, client: 'browser' }).then((s) => { setLogSession(s.id); return s }),
+      joined: !!seat,
+      prepare: seat ? undefined : () => api.post<PrepareStatus>(`/modules/wittyplay/games/${it.id}/prepare`),
+      start: seat
+        ? async () => {
+          const sid = seatSid || (seatSid = (await api.post<{ sid: string }>(`/modules/wittyplay/games/online/invites/${encodeURIComponent(joined.invite!)}/accept`)).sid)
+          const s = await api.get<SessionInfo>(`/modules/wittyplay/play/${encodeURIComponent(sid)}?client=browser`)
+          // Accepted: the address becomes the seat's, so reloading plays it again rather than asking for a used invite.
+          if (joined.invite) window.history.replaceState(window.history.state, '', `${window.location.pathname}?join=${encodeURIComponent(sid)}`)
+          setLogSession(s.id)
+          return s
+        }
+        : (resume, safeMode) => api.post<SessionInfo>(`/modules/wittyplay/games/${it.id}/play`, { resume, safeMode, client: 'browser' }).then((s) => { setLogSession(s.id); return s }),
       report: (level, message) => reportClient({ level, kind: 'game', message, module: 'wittyplay' }),
       relaunch: ({ resume, safeMode }) => {
+        if (seat) { window.location.reload(); return }
         const q = [resume ? 'resume=1' : '', safeMode ? 'safe=1' : ''].filter(Boolean).join('&')
         window.location.assign(window.location.pathname + (q ? '?' + q : ''))
       },
       controls: (device) => api.get<any>(`/modules/wittyplay/consoles/${it.console}/controls?device=${encodeURIComponent(device)}&game=${it.id}`),
       controllers: getControllers, profiles: profileHost,
       saveControl: async (s) => { await api.put(`/modules/wittyplay/consoles/${it.console}/controls`, s) },
-      stop: async (sid) => { setLogSession(null); await api.del(`/modules/wittyplay/play/${sid}`) },
+      stop: async (sid) => {
+        setLogSession(null)
+        if (seat) await api.del(`/modules/wittyplay/play/${sid}/seats/${user?.id ?? 0}`).catch(() => {})
+        else await api.del(`/modules/wittyplay/play/${sid}`)
+      },
       // The stream, the same for every device: docs/GAMING-STREAM.md.
       stream: (sid, hello, sdp) => api.post(`/modules/wittyplay/play/${sid}/stream`, { hello, sdp }),
       // As for pictures and sound: over HTTPS in a browser the sign-in cookie comes along.
@@ -106,7 +127,7 @@ export function GamePage() {
       // A game always closes to its own page in WittyPlay (pages/PlayGame.tsx), wherever it was started.
       close: () => nav(playGamePath(it.id), { replace: true }),
     }
-  }, [it, settingsHost, user?.isAdmin])
+  }, [it, settingsHost, user?.isAdmin, user?.id, joined])
   // Another device can see that a game is on here, and stop it (docs/REMOTE-PROTOCOL.md).
   useGameRemote(it?.id || 0, () => host?.close())
   if (err) return <div className="wp-page-error" role="alert"><LoadError what="This game" onRetry={() => window.location.reload()} /><p className="muted">{err}</p></div>

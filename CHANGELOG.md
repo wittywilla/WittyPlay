@@ -3,6 +3,10 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## Unreleased
+
+- **Friends: invites, and batteries.** Someone playing a game invites a friend by name from Together (`POST /games/online/friends/{user}/invite`; Invite, then Invited with Cancel the invite, on the friend's card); the friend sees it under Invites, and in the status bar, with Accept (the game's page with `?invite=`, which joins as a seat) and Decline. An invite lasts ten minutes or until the game ends. A friend whose room is open has Join on their card, and someone who joined a room has Play (`/game/{id}?join={session}`, which the web player now plays as a seat). New commands `wittyplay.friend.invite`, `wittyplay.invite.accept`, `wittyplay.invite.decline`, `wittyplay.invite.cancel`, and source `wittyplay.invites`. The status bar and the game menu show each controller's battery where the browser gives one, and this device's (`navigator.getBattery`), as a level in words; one running low is shown over the game and said once, politely.
+
 ## 0.7.1
 
 - The first published release on module API 5, with the WittyModule 0.5.4 workflows. The tag v0.7.0 was made with workflows that couldn't build it and was never published.

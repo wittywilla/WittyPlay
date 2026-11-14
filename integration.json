@@ -654,6 +654,40 @@
       "auth": "user"
     },
     {
+      "path": "/games/online/invites",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/games/online/friends/{user}/invite",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/games/online/invites/{id}/accept",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/games/online/invites/{id}",
+      "methods": [
+        "DELETE"
+      ],
+      "auth": "user"
+    },
+    {
       "path": "/games/online/kids/{user}",
       "methods": [
         "GET",

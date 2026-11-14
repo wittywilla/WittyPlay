@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Brand } from '@wms/app/components/common'
-import { cornerName } from '@wms/app/api'
+import { api, cornerName } from '@wms/app/api'
 import { IconExpand, IconHelp, IconReturn } from '@wms/app/icons'
 import { useUserPref } from '@wms/app/ui/userPrefs'
 import { sduiIcon } from '@wms/app/sdui/render/icons'
 import { dockCurrent, usePageRegions, type DockEntry, type StatusPart } from '@wms/app/sdui/regions'
 import { setPlayMode } from '@wms/app/theme'
 import { isBackKey } from '@wms/app/ui/spatial'
-import { useApp } from '@wms/app/state'
+import { toast, useApp } from '@wms/app/state'
 import { focusFirst } from '@wms/app/tv'
 import { cardRoute, dockFor, PLAY_LIBRARY, exitWords, isPlayPath, isPlayTop, PLAY_CONSOLES, PLAY_CONTROLLERS, PLAY_EXIT, PLAY_PADS_TITLE, PLAY_STATUS, PLAY_TIP, PLAY_TIP_KEY, tipDue, type PlayLayout, type PlayPads } from './playPaths'
 import { usePlayTabs, LayoutChooser, LayoutSwitch, OpenChooser, PadsChooser, PadsSetting, PlayGlyph, usePlayLayout, usePlayOpen, usePlayPads } from './playPads'
@@ -18,16 +18,20 @@ import { CardRouteContext } from '@wms/app/sdui/render/cardRoute'
 import { PlayReviewNotice } from './PlayReviewNotice'
 import { GameArtContext, GlyphContext, RowLayoutContext, TabsContext, type GlyphKey } from '@wms/app/sdui/render/glyphs'
 import { TileSizeSwitch, useGameArtApi, useTileSize } from './GamePictureArt'
+import { useBatteries, useLowBatteryNotice } from '../../BatteryChips'
+import { batteryLabel, isLow, padName, percent, type BatteryReading } from '../../battery'
+import { PLAY_TOGETHER, newInvites, type InviteView } from './invites'
 import './playChrome.css'
 
 export { isPlayPath }
 
 // The two shell regions WittyPlay Online asks for (docs/plans/DESIGN-2-SDUI-GAPS.md, section 6): a status bar (who you are, the server's
 // name, the controllers, the time) and a circular system dock (where the console's home goes). An experience or module scope turns them
-// on with placements; the dock's buttons are shell.systemDock. The controllers are the browser's own pads: a web page is not told their battery.
+// on with placements; the dock's buttons are shell.systemDock. The controllers are the browser's own pads, each with its battery where
+// the browser gives one (battery.ts), and this device's battery beside them; a battery running low is said once.
 
 function usePads(): string[] {
-  const read = () => Array.from(navigator.getGamepads?.() || []).filter((p): p is Gamepad => !!p && p.connected).map((p) => p.id.replace(/\s*\(.*$/, '').trim() || 'Controller')
+  const read = () => Array.from(navigator.getGamepads?.() || []).filter((p): p is Gamepad => !!p && p.connected).map((p) => padName(p.id))
   const [pads, setPads] = useState<string[]>(read)
   useEffect(() => {
     const on = () => setPads(read())
@@ -57,12 +61,48 @@ function useFullscreen(): [boolean, (() => void) | null] {
   return [on, () => { if (document.fullscreenElement) void document.exitFullscreen().catch(() => {}); else void document.documentElement.requestFullscreen().catch(() => {}) }]
 }
 
+// Invites from friends to their games (api/invites.go), asked about every so often while the status bar shows: a chip that opens
+// Together, and each new one said once.
+const INVITES_POLL_MS = 20000
+
+function useInvites(on: boolean): InviteView[] {
+  const nav = useNavigate()
+  const [list, setList] = useState<InviteView[]>([])
+  const seen = useRef(new Set<string>())
+  useEffect(() => {
+    if (!on) return
+    let stop = false
+    const read = () => {
+      if (document.hidden) return
+      api.get<{ received: InviteView[] }>('/modules/wittyplay/games/online/invites').then((r) => {
+        if (stop) return
+        const got = r.received || []
+        setList(got)
+        for (const text of newInvites(got, seen.current)) toast(text, { tone: 'neutral', ms: 9000, action: { label: 'See invites', run: () => nav(PLAY_TOGETHER) } })
+      }).catch(() => {})
+    }
+    read()
+    const iv = window.setInterval(read, INVITES_POLL_MS)
+    return () => { stop = true; window.clearInterval(iv) }
+  }, [on, nav])
+  return list
+}
+
+function PadBattery({ reading }: { reading?: BatteryReading }) {
+  if (!reading) return <i aria-hidden="true" className="unknown" />
+  return <i aria-hidden="true" className={isLow(reading) ? 'low' : ''} style={{ ['--lvl' as string]: percent(reading.level) + '%' }} />
+}
+
 export function StatusBar({ parts, onExit, onHelp }: { parts: StatusPart[]; onExit?: () => void; onHelp?: () => void }) {
   const { user, brandName } = useApp()
   const pads = usePads()
   const time = useClock()
   const [full, toggleFull] = useFullscreen()
+  const batteries = useBatteries()
+  useLowBatteryNotice(batteries, (text) => toast(text, { tone: 'warn', ms: 8000 }))
+  const invites = useInvites(!!user && user.kind !== 'guest')
   if (!user) return null
+  const device = batteries.find((b) => b.kind === 'device')
   const name = cornerName(user)
   return (
     <header className="play-status" aria-label="Status">
@@ -72,7 +112,30 @@ export function StatusBar({ parts, onExit, onHelp }: { parts: StatusPart[]; onEx
       </div>
       <div className="play-right">
         {parts.some((p) => p.kind === 'server') && <span className="play-brand"><Brand name={brandName} /></span>}
-        {pads.length > 0 && <ul className="play-pads" aria-label="Controllers">{pads.slice(0, 4).map((p, i) => <li key={i} title={p}><i aria-hidden="true" />P{i + 1}<span className="sr-only"> {p}</span></li>)}</ul>}
+        {invites.length > 0 && (
+          <Link to={PLAY_TOGETHER} className="play-sys play-invites" aria-label={invites.length === 1 ? `1 invite from ${invites[0].fromName}` : `${invites.length} invites`}>
+            {sduiIcon('users')}<span aria-hidden="true">{invites.length === 1 ? '1 invite' : `${invites.length} invites`}</span>
+          </Link>
+        )}
+        {pads.length > 0 && (
+          <ul className="play-pads" aria-label="Controllers">
+            {pads.slice(0, 4).map((p, i) => {
+              const b = batteries.find((r) => r.kind === 'controller' && r.name === `P${i + 1}`)
+              return (
+                <li key={i} title={b ? batteryLabel(b) : p} className={b && isLow(b) ? 'low' : undefined}>
+                  <PadBattery reading={b} />P{i + 1}{b && <span aria-hidden="true"> {percent(b.level)}%{isLow(b) ? ' Low' : ''}</span>}
+                  <span className="sr-only">{b ? `: ${batteryLabel(b)}` : ` ${p}`}</span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        {device && (
+          <span className={'play-device-batt' + (isLow(device) ? ' low' : '')} title={batteryLabel(device)}>
+            <PadBattery reading={device} /><span aria-hidden="true">{percent(device.level)}%{device.charging ? ' Charging' : isLow(device) ? ' Low' : ''}</span>
+            <span className="sr-only">{batteryLabel(device)}</span>
+          </span>
+        )}
         <time className="play-clock">{time}</time>
         {onHelp && <button type="button" className="play-sys" onClick={onHelp} aria-label="How to get back to the app" title="How to get back to the app"><IconHelp /></button>}
         {toggleFull && <button type="button" className="play-sys" onClick={toggleFull} aria-pressed={full} aria-label="Full screen" title={full ? 'Leave full screen' : 'Full screen'}><IconExpand /></button>}

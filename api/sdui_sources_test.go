@@ -110,7 +110,7 @@ func onlineHost(t *testing.T) *host.Client {
 }
 
 // sourceYields is what WittyPlay's sdui.json says each source gives, and the commands the
-// server's catalogue knows.
+// server's catalogue knows with WittyPlay's own beside them.
 func sourceYields(t *testing.T) (map[string][]string, map[string]bool) {
 	t.Helper()
 	b, err := os.ReadFile(filepath.Join("..", "sdui.json"))
@@ -122,6 +122,9 @@ func sourceYields(t *testing.T) (map[string][]string, map[string]bool) {
 			Type   string   `json:"type"`
 			Yields []string `json:"yields"`
 		} `json:"sources"`
+		Commands []struct {
+			Op string `json:"op"`
+		} `json:"commands"`
 	}
 	if err := json.Unmarshal(b, &file); err != nil {
 		t.Fatal(err)
@@ -139,7 +142,7 @@ func sourceYields(t *testing.T) (map[string][]string, map[string]bool) {
 		t.Fatal(err)
 	}
 	ops := map[string]bool{}
-	for _, c := range cat.Commands {
+	for _, c := range append(cat.Commands, file.Commands...) {
 		ops[c.Op] = true
 	}
 	return yields, ops
@@ -254,8 +257,9 @@ func TestPlayOnlineSources(t *testing.T) {
 		t.Fatal(err)
 	}
 	room = onlineItems(t, alex, srcPlayRoom)
-	if len(room) != 3 || room[0].Tagline != "" || room[0].Link != "" || room[2].Title != "alex" || len(room[0].Actions) != 1 ||
-		room[0].Actions[0].Action.Op != "wittyplay.room.leave" || room[0].Actions[0].Glyph != "b" || room[0].Actions[0].Action.Params["user"] != "2" {
+	if len(room) != 3 || room[0].Tagline != "" || room[0].Link != "" || room[2].Title != "alex" || len(room[0].Actions) != 2 ||
+		room[0].Actions[0].Action.Type != "navigate" || room[0].Actions[0].Action.To != "/game/99?join=s1" || room[0].Actions[0].Glyph != "a" ||
+		room[0].Actions[1].Action.Op != "wittyplay.room.leave" || room[0].Actions[1].Glyph != "b" || room[0].Actions[1].Action.Params["user"] != "2" {
 		t.Errorf("alex's view of the room, with no code: %+v", room)
 	}
 	pads := onlineItems(t, alex, srcPlayControllers)
