@@ -165,6 +165,7 @@
         "id": "gaming",
         "label": "Games & emulators",
         "admin": true,
+        "after": "channels",
         "launch": "/wittyplay/settings/store",
         "search": [
           "cores",
@@ -180,21 +181,9 @@
         ]
       },
       {
-        "id": "games-support",
-        "label": "What this server plays",
-        "hidden": true,
-        "launch": "/wittyplay/settings/store/support"
-      },
-      {
-        "id": "emulators",
-        "label": "Standalone emulators",
-        "admin": true,
-        "hidden": true,
-        "launch": "/wittyplay/settings/store/emulators"
-      },
-      {
         "id": "games",
-        "label": "My game settings"
+        "label": "My game settings",
+        "after": "appearance"
       }
     ],
     "setup": [
