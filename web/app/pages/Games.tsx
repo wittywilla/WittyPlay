@@ -84,8 +84,8 @@ export function GamePage() {
       startSlot: Number(params.get('slot') || 0) || undefined, cover: it.poster ? `${posterUrl(it)}&w=480` : undefined,
       openSettings: () => nav('/settings/gaming'),
       chooseCore: user?.isAdmin ? () => new Promise<CoreChoiceAnswer>((answer) => setChoosing({ answer })) : undefined,
-      prepare: () => api.post<PrepareStatus>(`/games/${it.id}/prepare`),
-      start: (resume, safeMode) => api.post<SessionInfo>(`/games/${it.id}/play`, { resume, safeMode, client: 'browser' }).then((s) => { setLogSession(s.id); return s }),
+      prepare: () => api.post<PrepareStatus>(`/modules/wittyplay/games/${it.id}/prepare`),
+      start: (resume, safeMode) => api.post<SessionInfo>(`/modules/wittyplay/games/${it.id}/play`, { resume, safeMode, client: 'browser' }).then((s) => { setLogSession(s.id); return s }),
       report: (level, message) => reportClient({ level, kind: 'game', message, module: 'wittyplay' }),
       relaunch: ({ resume, safeMode }) => {
         const q = [resume ? 'resume=1' : '', safeMode ? 'safe=1' : ''].filter(Boolean).join('&')
@@ -94,15 +94,15 @@ export function GamePage() {
       controls: (device) => api.get<any>(`/modules/wittyplay/consoles/${it.console}/controls?device=${encodeURIComponent(device)}&game=${it.id}`),
       controllers: getControllers, profiles: profileHost,
       saveControl: async (s) => { await api.put(`/modules/wittyplay/consoles/${it.console}/controls`, s) },
-      stop: async (sid) => { setLogSession(null); await api.del(`/play/${sid}`) },
+      stop: async (sid) => { setLogSession(null); await api.del(`/modules/wittyplay/play/${sid}`) },
       // The stream, the same for every device: docs/GAMING-STREAM.md.
-      stream: (sid, hello, sdp) => api.post(`/play/${sid}/stream`, { hello, sdp }),
+      stream: (sid, hello, sdp) => api.post(`/modules/wittyplay/play/${sid}/stream`, { hello, sdp }),
       // As for pictures and sound: over HTTPS in a browser the sign-in cookie comes along.
       streamUrl: (sid) => {
-        const url = mediaUrl(`/api/play/${sid}/stream`)
+        const url = mediaUrl(`/api/modules/wittyplay/play/${sid}/stream`)
         return (url.startsWith('http') ? url : window.location.origin + url).replace(/^http/, 'ws')
       },
-      action: (sid, type, slot, on, extra) => api.post(`/play/${sid}/action`, { type, slot: slot ?? 0, on: !!on, ...extra }),
+      action: (sid, type, slot, on, extra) => api.post(`/modules/wittyplay/play/${sid}/action`, { type, slot: slot ?? 0, on: !!on, ...extra }),
       // A game always closes to its own page in WittyPlay (pages/PlayGame.tsx), wherever it was started.
       close: () => nav(playGamePath(it.id), { replace: true }),
     }

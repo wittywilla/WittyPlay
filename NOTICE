@@ -20,7 +20,7 @@ Third-party components:
   standalone emulator's window (ScreenCaptureKit) and send it key presses.
 - moby/moby client and api (Apache-2.0), for the optional Docker backend.
 - bodgit/sevenzip, bodgit/plumbing, bodgit/windows (BSD-3-Clause),
-  ulikunitz/xz (BSD-3-Clause), klauspost/compress (BSD-3-Clause and Apache-2.0),
+  ulikunitz/xz (BSD-3-Clause), klauspost/compress (BSD-3-Clause and Apache-2.0), nwaples/rardecode (BSD-2-Clause),
   pierrec/lz4 (BSD-3-Clause), andybalholm/brotli (MIT), go4.org (Apache-2.0),
   hashicorp/golang-lru, hashicorp/go-multierror and hashicorp/errwrap
   (MPL-2.0, unmodified): opening emulators' .7z and .tar.xz downloads.

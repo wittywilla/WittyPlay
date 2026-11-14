@@ -6,8 +6,10 @@ require (
 	github.com/bodgit/sevenzip v1.6.0
 	github.com/coder/websocket v1.8.15
 	github.com/ebitengine/purego v0.11.2
+	github.com/klauspost/compress v1.17.9
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
+	github.com/nwaples/rardecode/v2 v2.4.5
 	github.com/pion/ice/v4 v4.4.8
 	github.com/pion/interceptor v0.1.51
 	github.com/pion/rtcp v1.2.20
@@ -37,7 +39,6 @@ require (
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
-	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect

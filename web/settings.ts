@@ -52,7 +52,7 @@ export function levelName(level: string, consoleName?: string): string {
 
 let schemaCache: Promise<Schema> | null = null
 export function loadSchema(host: SettingsHost): Promise<Schema> {
-  if (!schemaCache) schemaCache = host.request<Schema>('GET', '/games/settings/schema').catch((e) => { schemaCache = null; throw e })
+  if (!schemaCache) schemaCache = host.request<Schema>('GET', '/modules/wittyplay/games/settings/schema').catch((e) => { schemaCache = null; throw e })
   return schemaCache
 }
 
@@ -76,7 +76,7 @@ export function useSettings(host: SettingsHost, scope: Scope, onError: (m: strin
   const scopeRef = useRef(scope)
   scopeRef.current = scope
 
-  const reload = useCallback(() => host.request<SettingsView>('GET', '/games/settings' + query(scopeRef.current)).then((v) => { setView(v); return v }), [host])
+  const reload = useCallback(() => host.request<SettingsView>('GET', '/modules/wittyplay/games/settings' + query(scopeRef.current)).then((v) => { setView(v); return v }), [host])
   useEffect(() => { reload().catch((e) => onError(e?.message || 'Your settings could not be read')) }, [reload, scope.console, scope.item]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const flush = useCallback(async () => {
@@ -86,7 +86,7 @@ export function useSettings(host: SettingsHost, scope: Scope, onError: (m: strin
     pending.current.clear()
     for (const [level, patch] of batches) {
       try {
-        const v = await host.request<SettingsView>('PUT', '/games/settings', { level, ...scopeRef.current, settings: patch.settings, coreOptions: patch.coreOptions })
+        const v = await host.request<SettingsView>('PUT', '/modules/wittyplay/games/settings', { level, ...scopeRef.current, settings: patch.settings, coreOptions: patch.coreOptions })
         if (!pending.current.size) setView(v)
       } catch (e: any) {
         onError(e?.message || 'That setting could not be saved')
@@ -149,20 +149,20 @@ export function useSettings(host: SettingsHost, scope: Scope, onError: (m: strin
 
   const applyPreset = useCallback(async (level: Level, p: Preset) => {
     await flush()
-    const v = await host.request<SettingsView>('PUT', '/games/settings', { level, ...scopeRef.current, settings: p.settings || {}, coreOptions: p.coreOptions || {} })
+    const v = await host.request<SettingsView>('PUT', '/modules/wittyplay/games/settings', { level, ...scopeRef.current, settings: p.settings || {}, coreOptions: p.coreOptions || {} })
     setView(v)
     return v
   }, [flush, host])
 
   const reset = useCallback(async (level: Level) => {
     await flush()
-    const v = await host.request<SettingsView>('PUT', '/games/settings', { level, ...scopeRef.current, reset: true })
+    const v = await host.request<SettingsView>('PUT', '/modules/wittyplay/games/settings', { level, ...scopeRef.current, reset: true })
     setView(v)
   }, [flush, host])
 
   const saveDocument = useCallback(async (level: Level, document: string) => {
     await flush()
-    const v = await host.request<SettingsView>('PUT', '/games/settings', { level, ...scopeRef.current, document })
+    const v = await host.request<SettingsView>('PUT', '/modules/wittyplay/games/settings', { level, ...scopeRef.current, document })
     setView(v)
     return v
   }, [flush, host])

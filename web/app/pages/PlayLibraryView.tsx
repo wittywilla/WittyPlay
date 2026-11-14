@@ -102,7 +102,7 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
   const [scanning, setScanning] = useState(false)
   useEffect(() => { setDraft(q) }, [q])
   useEffect(() => {
-    api.get<GameConsole[]>(`/games/consoles?library=${lib.id}`).then((cs) => setConsoles(cs.filter((c) => (c.count || 0) > 0).sort((a, b) => (b.count || 0) - (a.count || 0)))).catch(() => setConsoles([]))
+    api.get<GameConsole[]>(`/modules/wittyplay/games/consoles?library=${lib.id}`).then((cs) => setConsoles(cs.filter((c) => (c.count || 0) > 0).sort((a, b) => (b.count || 0) - (a.count || 0)))).catch(() => setConsoles([]))
   }, [lib.id, version])
   // Searching as someone types, a moment after they stop.
   useEffect(() => {

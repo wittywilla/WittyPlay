@@ -305,26 +305,15 @@ func openUpload(st *cores.CustomStore, path string) (*os.File, error) {
 	return os.Open(path)
 }
 
-// Routes are what isn't a call: a browser's connection to a game, passed straight through, and
-// the Docker backend's routes (docker.go). Containers a crash left behind are removed here, in
-// the background, only when Docker is on and reachable; nothing about Docker can stop the
-// service starting.
-func Routes(mux *http.ServeMux) {
-	Docker.Routes(mux)
+// Start is what the service does as it starts, beside its routes (package api): containers a crash
+// left behind are removed, in the background, only when Docker is on and reachable; nothing about
+// Docker can stop the service starting.
+func Start() {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
 		Docker.Startup(ctx)
 	}()
-	// The stream's WebSocket. Only the server reaches this, and it says where the device is.
-	mux.HandleFunc("GET /stream/{sid}", func(w http.ResponseWriter, r *http.Request) {
-		s := Mgr.Get(r.PathValue("sid"))
-		if s == nil {
-			http.NotFound(w, r)
-			return
-		}
-		s.ServeStream(w, r, r.URL.Query().Get("away") == "1")
-	})
 }
 
 // Busy says a game is being played, by a core or in a container.

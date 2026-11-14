@@ -66,12 +66,12 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
   const [picker, setPicker] = useState<CorePickerScope | null>(null)
   const [settings, setSettings] = useState<Record<string, string> | null>(null)
   const [failed, setFailed] = useState(false)
-  const load = () => api.get<Status>('/gaming').then(setSt).catch(() => setFailed(true))
+  const load = () => api.get<Status>('/modules/wittyplay/gaming').then(setSt).catch(() => setFailed(true))
   useEffect(() => { void load(); api.get<Record<string, string>>('/settings').then(setSettings).catch(() => {}) }, [])
   const emptyUnpacked = async () => {
     setBusy('unpacked')
     try {
-      const r = await api.del<{ unpackedBytes: number }>('/gaming/unpacked')
+      const r = await api.del<{ unpackedBytes: number }>('/modules/wittyplay/gaming/unpacked')
       setSt((cur) => (cur ? { ...cur, unpackedBytes: r.unpackedBytes } : cur))
       toast(r.unpackedBytes ? 'Emptied, apart from the games being played' : 'Emptied. Games unpack again when next played')
     } catch (e: any) { toast(e.message) } finally { setBusy('') }
@@ -92,7 +92,7 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
     for (const c of list) {
       setBusy(c.id)
       try {
-        await api.post(`/gaming/cores/${c.id}/install`)
+        await api.post(`/modules/wittyplay/gaming/cores/${c.id}/install`)
         toast(`${c.name} installed`)
       } catch (e: any) {
         // Not every core is built for every system (Beetle Supafaust has no build for a Mac with
@@ -121,7 +121,7 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
   }
   const remove = async (id: string, name: string) => {
     setBusy(id)
-    try { await api.del(`/gaming/cores/${id}`); toast(`${name} removed`); await refresh() } catch (e: any) { toast(e.message) } finally { setBusy('') }
+    try { await api.del(`/modules/wittyplay/gaming/cores/${id}`); toast(`${name} removed`); await refresh() } catch (e: any) { toast(e.message) } finally { setBusy('') }
   }
   const put = async (patch: Record<string, string>) => {
     try { setSettings(await api.put<Record<string, string>>('/settings', patch)); toast('Saved') } catch (e: any) { toast(e.message) }

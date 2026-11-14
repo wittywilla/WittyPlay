@@ -109,6 +109,800 @@
         "body": "10MB",
         "time": "2m"
       }
+    },
+    {
+      "path": "/games/{id}/prepare",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/games/{id}/play",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "item": "id",
+      "plays": true,
+      "limits": {
+        "body": "4KB",
+        "time": "3m"
+      }
+    },
+    {
+      "path": "/games/{id}/play/emulator",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "item": "id",
+      "plays": true,
+      "limits": {
+        "body": "4KB",
+        "time": "11m"
+      }
+    },
+    {
+      "path": "/games/{id}/saves",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id"
+    },
+    {
+      "path": "/games/{id}/saves/{slot}",
+      "methods": [
+        "DELETE"
+      ],
+      "auth": "user",
+      "item": "id"
+    },
+    {
+      "path": "/games/{id}/saves/{slot}/thumb",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id"
+    },
+    {
+      "path": "/games/{id}/saves/{slot}/file",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "body": "256MB",
+        "answer": "512MB",
+        "time": "10m"
+      }
+    },
+    {
+      "path": "/games/{id}/battery",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "body": "64MB",
+        "answer": "64MB",
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/games/{id}/shots/{name}",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "auth": "user",
+      "item": "id"
+    },
+    {
+      "path": "/games/playing",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/play/join",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "plays": true,
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/play/{sid}",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "auth": "user",
+      "plays": true,
+      "limits": {
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/play/{sid}/stream",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "user",
+      "plays": true,
+      "upgrade": "websocket",
+      "stream": true,
+      "limits": {
+        "body": "128KB"
+      }
+    },
+    {
+      "path": "/play/{sid}/action",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "plays": true,
+      "limits": {
+        "body": "16KB",
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/play/{sid}/stats",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/play/{sid}/screenshot",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/play/{sid}/invite",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/play/{sid}/room",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/play/{sid}/seats",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/play/{sid}/seats/{user}",
+      "methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/docker/status",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/diagnostics",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/settings",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "256KB",
+        "answer": "4MB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/emulators",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "answer": "4MB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/installed",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "answer": "4MB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/emulators/{id}/install",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "256KB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/emulators/{id}",
+      "methods": [
+        "DELETE"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/emulators/{id}/manual",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "256KB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/own",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "256KB",
+        "answer": "4MB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/emulators/{id}/settings",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "256KB",
+        "answer": "4MB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/sessions",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/sessions/{sid}/connect",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "plays": true,
+      "limits": {
+        "body": "256KB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/sessions/{sid}/pause",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "4KB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/sessions/{sid}/resume",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "plays": true,
+      "limits": {
+        "body": "4KB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/docker/sessions/{sid}",
+      "methods": [
+        "DELETE"
+      ],
+      "auth": "user",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/kasm/{sid}/{ticket}/{rest...}",
+      "methods": [
+        "GET"
+      ],
+      "auth": "ticket",
+      "csp": "sandboxed-page",
+      "upgrade": "websocket",
+      "stream": true
+    },
+    {
+      "path": "/games/settings/schema",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/games/settings",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "512KB"
+      }
+    },
+    {
+      "path": "/games/settings/validate",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "512KB"
+      }
+    },
+    {
+      "path": "/games/recent",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/games/{id}/core-options",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "time": "30s"
+      }
+    },
+    {
+      "path": "/games/{id}/meta",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "body": "32KB"
+      }
+    },
+    {
+      "path": "/games/{id}/cheats",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "body": "2MB"
+      }
+    },
+    {
+      "path": "/games/{id}/cheats/import",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "body": "2MB"
+      }
+    },
+    {
+      "path": "/games/{id}/patches",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "body": "64MB",
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/games/{id}/patches/{patch}",
+      "methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/game-bezels",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "16MB",
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/game-bezels/{bezel}",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/games/online/me",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/games/online/friends",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/games/online/kids/{user}",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "64KB"
+      }
+    },
+    {
+      "path": "/games/consoles",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/games/modes",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "limits": {
+        "time": "30s"
+      }
+    },
+    {
+      "path": "/games/{id}/emulators",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "time": "30s"
+      }
+    },
+    {
+      "path": "/gaming",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "30s"
+      }
+    },
+    {
+      "path": "/gaming/cores/{id}/install",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB",
+        "time": "6m"
+      }
+    },
+    {
+      "path": "/gaming/cores/{id}",
+      "methods": [
+        "DELETE"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/gaming/unpacked",
+      "methods": [
+        "DELETE"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/gaming/consoles/{console}/core",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/gaming/games/{id}/core",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "admin",
+      "item": "id",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/gaming/custom",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/gaming/custom/enabled",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "confirm": true,
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/gaming/custom/staged/upload",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "confirm": true,
+      "limits": {
+        "body": "1537MB",
+        "time": "30m"
+      }
+    },
+    {
+      "path": "/gaming/custom/staged/url",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "confirm": true,
+      "limits": {
+        "body": "8KB",
+        "time": "30m"
+      }
+    },
+    {
+      "path": "/gaming/custom/staged/placed",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "confirm": true,
+      "limits": {
+        "body": "8KB",
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/gaming/custom/staged/{token}/approve",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "64KB",
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/gaming/custom/staged/{token}",
+      "methods": [
+        "DELETE"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/gaming/custom/cores/{id}",
+      "methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "64KB"
+      }
+    },
+    {
+      "path": "/gaming/custom/cores/{id}/reapprove",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "confirm": true,
+      "limits": {
+        "body": "4KB",
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/gaming/custom/cores/{id}/rollback",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "confirm": true,
+      "limits": {
+        "body": "4KB",
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/gaming/custom/cores/{id}/files",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "confirm": true,
+      "limits": {
+        "body": "1537MB",
+        "time": "30m"
+      }
+    },
+    {
+      "path": "/gaming/custom/consoles",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "65KB"
+      }
+    },
+    {
+      "path": "/gaming/custom/consoles/{id}",
+      "methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "65KB"
+      }
+    },
+    {
+      "path": "/games/home",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "limits": {
+        "time": "30s"
+      }
+    },
+    {
+      "path": "/games/{id}/check",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "time": "30s"
+      }
     }
   ],
   "web": {

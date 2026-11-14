@@ -210,11 +210,11 @@ function AddCoreDialog({ status, replaces, onClose, onDone, onReload }: { status
         if (replaces) form.append('replaces', replaces.id)
         if (sha.trim()) form.append('sha256', sha.trim())
         form.append('file', file, file.name)
-        res = await upload<Staged>('/gaming/custom/staged/upload', form, (f) => setProgress(f >= 1 ? null : f))
+        res = await upload<Staged>('/modules/wittyplay/gaming/custom/staged/upload', form, (f) => setProgress(f >= 1 ? null : f))
       } else if (source === 'url') {
-        res = await api.post<Staged>('/gaming/custom/staged/url', { password, url: url.trim(), sha256: sha.trim(), replaces: replaces?.id })
+        res = await api.post<Staged>('/modules/wittyplay/gaming/custom/staged/url', { password, url: url.trim(), sha256: sha.trim(), replaces: replaces?.id })
       } else {
-        res = await api.post<Staged>('/gaming/custom/staged/placed', { password, key: picked, replaces: replaces?.id })
+        res = await api.post<Staged>('/modules/wittyplay/gaming/custom/staged/placed', { password, key: picked, replaces: replaces?.id })
       }
       setStaged(res)
       setName(res.report.name)
@@ -229,7 +229,7 @@ function AddCoreDialog({ status, replaces, onClose, onDone, onReload }: { status
     }
   }
   const cancel = async () => {
-    if (staged) await api.del(`/gaming/custom/staged/${staged.token}`).catch(() => {})
+    if (staged) await api.del(`/modules/wittyplay/gaming/custom/staged/${staged.token}`).catch(() => {})
     onClose()
   }
   const approve = async () => {
@@ -240,7 +240,7 @@ function AddCoreDialog({ status, replaces, onClose, onDone, onReload }: { status
       const body: Record<string, unknown> = { acknowledged: true, name, consoles: assigned, defaultFor: defaults }
       if (license.trim()) body.license = license.trim()
       if (!replaces) body.id = id
-      onDone(await api.post<CustomCore>(`/gaming/custom/staged/${staged.token}/approve`, body))
+      onDone(await api.post<CustomCore>(`/modules/wittyplay/gaming/custom/staged/${staged.token}/approve`, body))
     } catch (x: any) { setErr(x.message); setSaving(false) }
   }
   const verb = replaces ? 'Replace' : 'Add'
@@ -396,7 +396,7 @@ function CoreCard({ core, status, onReload, onReplace }: { core: CustomCore; sta
   }
   const save = async () => {
     try {
-      await api.put(`/gaming/custom/cores/${core.id}`, { consoles: assigned, defaultFor: defaults, license: license.trim(), note })
+      await api.put(`/modules/wittyplay/gaming/custom/cores/${core.id}`, { consoles: assigned, defaultFor: defaults, license: license.trim(), note })
       toast('Saved')
       setEditing(false)
       await onReload()
@@ -404,7 +404,7 @@ function CoreCard({ core, status, onReload, onReplace }: { core: CustomCore; sta
   }
   const remove = async () => {
     try {
-      await api.del(`/gaming/custom/cores/${core.id}`)
+      await api.del(`/modules/wittyplay/gaming/custom/cores/${core.id}`)
       toast(`${core.name} removed. Saves are untouched.`)
       setDialog(null)
       await onReload()
@@ -486,7 +486,7 @@ function CoreCard({ core, status, onReload, onReplace }: { core: CustomCore; sta
       )}
       {dialog === 'reapprove' && (
         <PasswordDialog title={`Approve ${core.name} again?`} action="Test and approve" onClose={() => setDialog(null)} onSubmit={async (password) => {
-          await api.post(`/gaming/custom/cores/${core.id}/reapprove`, { password })
+          await api.post(`/modules/wittyplay/gaming/custom/cores/${core.id}/reapprove`, { password })
           toast('Tested and approved')
           setDialog(null)
           await onReload()
@@ -496,7 +496,7 @@ function CoreCard({ core, status, onReload, onReplace }: { core: CustomCore; sta
       )}
       {dialog && typeof dialog === 'object' && 'rollback' in dialog && (
         <PasswordDialog title="Go back to this version?" action="Test and go back" onClose={() => setDialog(null)} onSubmit={async (password) => {
-          await api.post(`/gaming/custom/cores/${core.id}/rollback`, { password, sha256: dialog.rollback.sha256 })
+          await api.post(`/modules/wittyplay/gaming/custom/cores/${core.id}/rollback`, { password, sha256: dialog.rollback.sha256 })
           toast('Back on that version')
           setDialog(null)
           await onReload()
@@ -509,7 +509,7 @@ function CoreCard({ core, status, onReload, onReplace }: { core: CustomCore; sta
           const form = new FormData()
           form.append('password', password)
           form.append('file', dialog.files, dialog.files.name)
-          const res = await upload<{ kept: string[] }>(`/gaming/custom/cores/${core.id}/files`, form, () => {})
+          const res = await upload<{ kept: string[] }>(`/modules/wittyplay/gaming/custom/cores/${core.id}/files`, form, () => {})
           toast(res.kept?.length ? `Added. ${res.kept.length} already in the BIOS folder and left alone.` : 'Added')
           setDialog(null)
           await onReload()
@@ -561,7 +561,7 @@ function ConsoleDialog({ status, existing, onClose, onDone }: { status: CustomSt
     try { body = tab === 'json' ? JSON.parse(json) : fromForm() } catch (x: any) { setErr('That JSON can’t be read: ' + x.message); return }
     setBusy(true)
     try {
-      const out = existing ? await api.put<ConsoleInput>(`/gaming/custom/consoles/${existing.id}`, body) : await api.post<ConsoleInput>('/gaming/custom/consoles', body)
+      const out = existing ? await api.put<ConsoleInput>(`/modules/wittyplay/gaming/custom/consoles/${existing.id}`, body) : await api.post<ConsoleInput>('/modules/wittyplay/gaming/custom/consoles', body)
       toast(existing ? 'Saved' : `${body.name} added`)
       onDone(out)
     } catch (x: any) { setErr(x.message); setBusy(false) }
@@ -628,7 +628,7 @@ function ConsolesPart({ status, onReload }: { status: CustomStatus; onReload: ()
   const [editing, setEditing] = useState<ConsoleView | 'new' | null>(null)
   const remove = async (c: ConsoleView) => {
     if (c.games > 0 && !await ask({ title: `Remove ${c.name}?`, body: `${c.games} games are sorted under it. They’ll drop out of their library at the next scan unless another console takes them.`, confirm: 'Remove', danger: true })) return
-    try { await api.del(`/gaming/custom/consoles/${c.id}`); toast(`${c.name} removed`); await onReload() } catch (e: any) { toast(e.message) }
+    try { await api.del(`/modules/wittyplay/gaming/custom/consoles/${c.id}`); toast(`${c.name} removed`); await onReload() } catch (e: any) { toast(e.message) }
   }
   return (
     <Section title="Custom consoles" desc="For a system our list doesn’t have, so a custom core has a console to belong to." actions={<button className="btn sm" onClick={() => setEditing('new')}>Add a console</button>}>
@@ -668,13 +668,13 @@ export default function CustomCoresSection({ onChanged }: { onChanged: () => voi
   const [adding, setAdding] = useState<{ replaces?: CustomCore } | null>(null)
   const [enabling, setEnabling] = useState(false)
   const load = async () => {
-    try { setSt(await api.get<CustomStatus>('/gaming/custom')) } catch (e: any) { toast(e.message) }
+    try { setSt(await api.get<CustomStatus>('/modules/wittyplay/gaming/custom')) } catch (e: any) { toast(e.message) }
   }
   const reload = async () => { await load(); onChanged() }
   useEffect(() => { load() }, [])
   if (!st) return null
   const turnOff = async () => {
-    try { await api.put('/gaming/custom/enabled', { enabled: false }); toast('Custom cores turned off'); await reload() } catch (e: any) { toast(e.message) }
+    try { await api.put('/modules/wittyplay/gaming/custom/enabled', { enabled: false }); toast('Custom cores turned off'); await reload() } catch (e: any) { toast(e.message) }
   }
   return (
     <>
@@ -716,7 +716,7 @@ export default function CustomCoresSection({ onChanged }: { onChanged: () => voi
       )}
       {enabling && (
         <PasswordDialog title="Allow custom cores?" action="Turn on" onClose={() => setEnabling(false)} onSubmit={async (password) => {
-          await api.put('/gaming/custom/enabled', { enabled: true, password })
+          await api.put('/modules/wittyplay/gaming/custom/enabled', { enabled: true, password })
           toast('Custom cores turned on')
           setEnabling(false)
           await reload()

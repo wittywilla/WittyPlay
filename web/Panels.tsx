@@ -117,19 +117,19 @@ function KeyCapture({ def, value, onChange }: { def: SettingDef; value: string; 
 function BezelPicker({ host, value, onChange, say }: { host: SettingsHost; value: number; onChange: (id: number) => void; say: (t: string) => void }) {
   type Bezel = { id: number; name: string; width: number; height: number }
   const [list, setList] = useState<Bezel[]>([])
-  useEffect(() => { host.request<Bezel[]>('GET', '/game-bezels').then(setList).catch(() => {}) }, [host])
+  useEffect(() => { host.request<Bezel[]>('GET', '/modules/wittyplay/game-bezels').then(setList).catch(() => {}) }, [host])
   const add = async () => {
     const f = await pickFile('image/png,image/jpeg,image/webp')
     if (!f) return
     try {
-      const r = await host.upload<{ id: number; bezels: Bezel[] }>(`/game-bezels?name=${encodeURIComponent(f.name)}`, f)
+      const r = await host.upload<{ id: number; bezels: Bezel[] }>(`/modules/wittyplay/game-bezels?name=${encodeURIComponent(f.name)}`, f)
       setList(r.bezels)
       onChange(r.id)
     } catch (e: any) { say(e?.message || 'That image couldn’t be used') }
   }
   const remove = async (id: number) => {
     try {
-      await host.request('DELETE', `/game-bezels/${id}`)
+      await host.request('DELETE', `/modules/wittyplay/game-bezels/${id}`)
       setList((l) => l.filter((b) => b.id !== id))
       if (value === id) onChange(0)
     } catch (e: any) { say(e?.message || 'That didn’t work') }
@@ -138,7 +138,7 @@ function BezelPicker({ host, value, onChange, say }: { host: SettingsHost; value
     <div className="wp-bezels">
       {list.map((b) => (
         <span key={b.id} className={'wp-bezel-pick' + (b.id === value ? ' on' : '')}>
-          <button type="button" onClick={() => onChange(b.id)} aria-pressed={b.id === value} aria-label={`Use ${b.name}`}><img src={host.mediaUrl(`/api/game-bezels/${b.id}`)} alt="" loading="lazy" /></button>
+          <button type="button" onClick={() => onChange(b.id)} aria-pressed={b.id === value} aria-label={`Use ${b.name}`}><img src={host.mediaUrl(`/api/modules/wittyplay/game-bezels/${b.id}`)} alt="" loading="lazy" /></button>
           <button type="button" className="wp-link" onClick={() => void remove(b.id)} aria-label={`Remove ${b.name}`}>Remove</button>
         </span>
       ))}
@@ -275,7 +275,7 @@ export function CorePanel({ host, itemId, api, view, level, levels, onLevel, con
 }) {
   const [core, setCore] = useState<CoreOptionsView | null>(null)
   const [filter, setFilter] = useState('')
-  const load = useCallback(() => host.request<CoreOptionsView>('GET', `/games/${itemId}/core-options`).then(setCore).catch((e) => say(e?.message || 'The core’s options couldn’t be read')), [host, itemId, say])
+  const load = useCallback(() => host.request<CoreOptionsView>('GET', `/modules/wittyplay/games/${itemId}/core-options`).then(setCore).catch((e) => say(e?.message || 'The core’s options couldn’t be read')), [host, itemId, say])
   useEffect(() => { void load() }, [load])
   // Changing one option can make a core hide or show others.
   const refreshTimer = useRef(0)
@@ -403,12 +403,12 @@ export function JsonEditor({ host, api, view, scope, level, levels, onLevel, con
 
   // Moving to another level shows that level's file.
   useEffect(() => { setText(layerDocument(view.layers[level])); setDirty(false); setReport(null); setConfirmReset(false) }, [level]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (itemId) host.request<CoreOptionsView>('GET', `/games/${itemId}/core-options`).then(setCore).catch(() => {}) }, [host, itemId])
+  useEffect(() => { if (itemId) host.request<CoreOptionsView>('GET', `/modules/wittyplay/games/${itemId}/core-options`).then(setCore).catch(() => {}) }, [host, itemId])
 
   const check = useCallback(async (src: string) => {
     const n = ++seq.current
     try {
-      const r = await host.request<{ report: Report }>('POST', '/games/settings/validate', { document: src, ...scope })
+      const r = await host.request<{ report: Report }>('POST', '/modules/wittyplay/games/settings/validate', { document: src, ...scope })
       if (n === seq.current) setReport(r.report)
     } catch { /* it's checked again on saving */ }
   }, [host, scope])
@@ -527,13 +527,13 @@ export function CheatsPanel({ host, itemId, title, say }: { host: SettingsHost; 
   const [list, setList] = useState<Cheat[] | null>(null)
   const [label, setLabel] = useState('')
   const [code, setCode] = useState('')
-  useEffect(() => { host.request<Cheat[]>('GET', `/games/${itemId}/cheats`).then(setList).catch(() => setList([])) }, [host, itemId])
+  useEffect(() => { host.request<Cheat[]>('GET', `/modules/wittyplay/games/${itemId}/cheats`).then(setList).catch(() => setList([])) }, [host, itemId])
   // What the server refuses comes back off the list, so the list says what's really kept.
   const put = async (next: Cheat[]) => {
     const before = list
     setList(next)
     try {
-      setList(await host.request<Cheat[]>('PUT', `/games/${itemId}/cheats`, { cheats: next }))
+      setList(await host.request<Cheat[]>('PUT', `/modules/wittyplay/games/${itemId}/cheats`, { cheats: next }))
       return true
     } catch (e: any) {
       setList(before)
@@ -551,7 +551,7 @@ export function CheatsPanel({ host, itemId, title, say }: { host: SettingsHost; 
     const f = await pickFile('.cht,.txt,text/plain')
     if (!f || !list) return
     try {
-      const r = await host.upload<{ cheats: Cheat[]; skipped: number }>(`/games/${itemId}/cheats/import`, f)
+      const r = await host.upload<{ cheats: Cheat[]; skipped: number }>(`/modules/wittyplay/games/${itemId}/cheats/import`, f)
       if (await put([...list, ...r.cheats])) say(`${r.cheats.length} added${r.skipped ? `, ${r.skipped} couldn’t be read` : ''}`)
     } catch (e: any) { say(e?.message || 'That file couldn’t be read') }
   }
@@ -589,25 +589,25 @@ type Patch = { id: number; name: string; kind: string; size: number; enabled: bo
 export function PatchesPanel({ host, itemId, say, onRestart }: { host: SettingsHost; itemId: number; say: (t: string) => void; onRestart?: () => void }) {
   const [list, setList] = useState<Patch[] | null>(null)
   const [changed, setChanged] = useState(false)
-  useEffect(() => { host.request<Patch[]>('GET', `/games/${itemId}/patches`).then(setList).catch(() => setList([])) }, [host, itemId])
+  useEffect(() => { host.request<Patch[]>('GET', `/modules/wittyplay/games/${itemId}/patches`).then(setList).catch(() => setList([])) }, [host, itemId])
   const add = async () => {
     const f = await pickFile('.ips,.bps')
     if (!f) return
     try {
-      setList(await host.upload<Patch[]>(`/games/${itemId}/patches?name=${encodeURIComponent(f.name)}`, f))
+      setList(await host.upload<Patch[]>(`/modules/wittyplay/games/${itemId}/patches?name=${encodeURIComponent(f.name)}`, f))
       setChanged(true)
     } catch (e: any) { say(e?.message || 'That patch couldn’t be used') }
   }
   const toggle = async (p: Patch, on: boolean) => {
     try {
-      await host.request('PUT', `/games/${itemId}/patches/${p.id}`, { enabled: on })
+      await host.request('PUT', `/modules/wittyplay/games/${itemId}/patches/${p.id}`, { enabled: on })
       setList((l) => l!.map((x) => (x.id === p.id ? { ...x, enabled: on } : x)))
       setChanged(true)
     } catch (e: any) { say(e?.message || 'That didn’t work') }
   }
   const remove = async (p: Patch) => {
     try {
-      await host.request('DELETE', `/games/${itemId}/patches/${p.id}`)
+      await host.request('DELETE', `/modules/wittyplay/games/${itemId}/patches/${p.id}`)
       setList((l) => l!.filter((x) => x.id !== p.id))
       setChanged(true)
     } catch (e: any) { say(e?.message || 'That didn’t work') }
@@ -649,7 +649,7 @@ export function SlotsPanel({ host, schema, itemId, kind, confirm, act, say, onDo
   const [busy, setBusy] = useState(false)
   const [arming, setArming] = useState(-1)
   const [manage, setManage] = useState(false)
-  const load = useCallback(() => host.request<SaveSlot[]>('GET', `/games/${itemId}/saves`).then(setSlots).catch(() => setSlots([])), [host, itemId])
+  const load = useCallback(() => host.request<SaveSlot[]>('GET', `/modules/wittyplay/games/${itemId}/saves`).then(setSlots).catch(() => setSlots([])), [host, itemId])
   useEffect(() => { void load() }, [load])
   // The list arrives after the screen opens, and that's where a remote should start.
   const list = useRef<HTMLDivElement>(null)
@@ -683,13 +683,13 @@ export function SlotsPanel({ host, schema, itemId, kind, confirm, act, say, onDo
     const f = await pickFile('.wpstate,.state,.state1,.state2,.state3,.bin')
     if (!f) return
     try {
-      const r = await host.upload<{ warning?: string }>(`/games/${itemId}/saves/${n}/file`, f)
+      const r = await host.upload<{ warning?: string }>(`/modules/wittyplay/games/${itemId}/saves/${n}/file`, f)
       say(r.warning || `Imported into ${slotName(n, schema).toLowerCase()}`)
       void load()
     } catch (e: any) { say(e?.message || 'That file couldn’t be used') }
   }
   const remove = async (n: number) => {
-    try { await host.request('DELETE', `/games/${itemId}/saves/${n}`); void load() } catch (e: any) { say(e?.message || 'That didn’t work') }
+    try { await host.request('DELETE', `/modules/wittyplay/games/${itemId}/saves/${n}`); void load() } catch (e: any) { say(e?.message || 'That didn’t work') }
   }
   const nextFree = (() => { for (let n = 1; n <= max; n++) if (!used.has(n)) return n; return 0 })()
   return (
@@ -707,7 +707,7 @@ export function SlotsPanel({ host, schema, itemId, kind, confirm, act, say, onDo
             <div key={n} className={'wp-slot-wrap' + (arming === n ? ' arming' : '')}>
               <button type="button" className="wp-slot" disabled={busy} onClick={() => void go(n)} aria-label={`${name}: ${when}${arming === n ? '. Press again to replace it.' : ''}`}>
                 <span className="wp-slot-pic">
-                  {s?.hasThumb ? <img src={withQuery(host.mediaUrl(`/api/games/${itemId}/saves/${n}/thumb`), `v=${s.updatedAt}`)} alt="" /> : <span className={'wp-slot-empty' + (s ? '' : ' none')} />}
+                  {s?.hasThumb ? <img src={withQuery(host.mediaUrl(`/api/modules/wittyplay/games/${itemId}/saves/${n}/thumb`), `v=${s.updatedAt}`)} alt="" /> : <span className={'wp-slot-empty' + (s ? '' : ' none')} />}
                   {numbered && <span className="wp-slot-num" aria-hidden="true">{n}</span>}
                 </span>
                 <span className="wp-slot-text">
@@ -719,7 +719,7 @@ export function SlotsPanel({ host, schema, itemId, kind, confirm, act, say, onDo
               </button>
               {manage && s && (
                 <span className="wp-slot-tools">
-                  <a className="wp-mini" href={host.mediaUrl(`/api/games/${itemId}/saves/${n}/file`)} download aria-label={`Download ${name}`} title="Download"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M11 4h2v8.2l3.6-3.6L18 10l-6 6-6-6 1.4-1.4L11 12.2zM5 18h14v2H5z" /></svg></a>
+                  <a className="wp-mini" href={host.mediaUrl(`/api/modules/wittyplay/games/${itemId}/saves/${n}/file`)} download aria-label={`Download ${name}`} title="Download"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M11 4h2v8.2l3.6-3.6L18 10l-6 6-6-6 1.4-1.4L11 12.2zM5 18h14v2H5z" /></svg></a>
                   <button type="button" className="wp-mini danger" onClick={() => void remove(n)} aria-label={`Delete ${name}`} title="Delete"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4zM6 9h12l-1 12H7zm4 2v8h1.6v-8zm2.4 0v8H14v-8z" /></svg></button>
                 </span>
               )}

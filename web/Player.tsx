@@ -284,7 +284,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
           void host.action(s.id, 'load', host.startSlot).then(() => say(`Loaded slot ${host.startSlot}`), (e) => say(e?.message || 'That save couldn’t be loaded'))
         }
         // A picture has arrived, so the real size of the game's pixels is known now.
-        host.request<SessionInfo>('GET', `/play/${s.id}?client=browser`).then((now) => setInfo((i) => i && ({ ...i, width: now.width, height: now.height }))).catch(() => {})
+        host.request<SessionInfo>('GET', `/modules/wittyplay/play/${s.id}?client=browser`).then((now) => setInfo((i) => i && ({ ...i, width: now.width, height: now.height }))).catch(() => {})
         return
       } catch (e: any) {
         t.close()
@@ -516,7 +516,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       const s = session()
       if (!s) return
       const a = document.createElement('a')
-      a.href = host.mediaUrl(`/api/play/${s.id}/screenshot`)
+      a.href = host.mediaUrl(`/api/modules/wittyplay/play/${s.id}/screenshot`)
       a.download = name
       a.click()
     }
@@ -732,7 +732,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   return (
     <div ref={root} tabIndex={-1} className={`wp-root wp-${orientation}${touchShown ? ' wp-with-touch' : ''}${paused || noGame ? '' : ' wp-playing'}`}>
       <div ref={areaRef} className="wp-video-area" style={bezel === 'color' ? { background: String(values['display.bezelColor'] || '#000') } : undefined}>
-        {bezel === 'image' && !!values['display.bezelImage'] && <img className="wp-bezel-img" src={host.mediaUrl(`/api/game-bezels/${values['display.bezelImage']}`)} alt="" />}
+        {bezel === 'image' && !!values['display.bezelImage'] && <img className="wp-bezel-img" src={host.mediaUrl(`/api/modules/wittyplay/game-bezels/${values['display.bezelImage']}`)} alt="" />}
         <div className={'wp-stage' + (hasPointer ? ' wp-has-pointer' : '')} style={{ width: layout.boxW, height: layout.boxH }}
           onPointerDown={stageDown} onPointerMove={stageMove} onPointerUp={stageUp} onPointerCancel={stageUp}>
           <div ref={pic} className="wp-pic" style={{ width: layout.picW, height: layout.picH, transform: `translate(-50%, -50%) rotate(${turns * 90}deg)` }} />

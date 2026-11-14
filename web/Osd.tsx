@@ -33,7 +33,7 @@ export function Osd({ host, session, transport, values, stampInput }: { host: Se
     let stop = false
     const tick = () => {
       transport?.stats().then((s) => { if (!stop) setClient(s) }).catch(() => {})
-      host.request<ServerStats>('GET', `/play/${session.id}/stats`).then((s) => { if (!stop) setServer(s) }).catch(() => {})
+      host.request<ServerStats>('GET', `/modules/wittyplay/play/${session.id}/stats`).then((s) => { if (!stop) setServer(s) }).catch(() => {})
       setPath(meter.summary())
     }
     tick()

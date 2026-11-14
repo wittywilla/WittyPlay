@@ -35,7 +35,7 @@ function Shelf({ lib }: { lib: Library }) {
   const [consoles, setConsoles] = useState<Map<string, GameConsole>>(new Map())
   useEffect(() => {
     api.get<{ items: Item[] }>(`/items?library=${lib.id}&kind=game&sort=popular&desc=0&limit=20`).then((r) => setGames(r.items || [])).catch(() => setGames([]))
-    api.get<GameConsole[]>(`/games/consoles?library=${lib.id}`).then((c) => setConsoles(consoleMap(c))).catch(() => {})
+    api.get<GameConsole[]>(`/modules/wittyplay/games/consoles?library=${lib.id}`).then((c) => setConsoles(consoleMap(c))).catch(() => {})
   }, [lib.id])
   return (
     <section className="hub tvm-shelf" aria-label={lib.name}>

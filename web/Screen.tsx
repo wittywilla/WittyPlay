@@ -57,7 +57,7 @@ function Preview({ values, onMode, host }: { values: Record<string, unknown>; on
   const mediaVars = { '--wp-media-w': `${layout.scaleX * 100}%`, '--wp-media-h': `${layout.scaleY * 100}%`, '--wp-media-x': `${(100 - layout.scaleX * 100) / 2}%`, '--wp-media-y': `${(100 - layout.scaleY * 100) / 2}%` } as React.CSSProperties
   return (
     <div ref={stage} className="wp-preview-stage" aria-label="Preview, with a test picture" role="img"
-      style={{ ...mediaVars, background: bezel === 'color' ? String(values['display.bezelColor'] || '#000') : '#000', backgroundImage: bezel === 'image' && values['display.bezelImage'] ? `url(${JSON.stringify(host.mediaUrl(`/api/game-bezels/${values['display.bezelImage']}`))})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      style={{ ...mediaVars, background: bezel === 'color' ? String(values['display.bezelColor'] || '#000') : '#000', backgroundImage: bezel === 'image' && values['display.bezelImage'] ? `url(${JSON.stringify(host.mediaUrl(`/api/modules/wittyplay/game-bezels/${values['display.bezelImage']}`))})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="wp-preview-box" style={{ width: layout.boxW, height: layout.boxH }}>
         <div ref={pic} className="wp-pic" style={picStyle} />
       </div>
