@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 WittyWilla and contributors
 import { useEffect, useState } from 'react'
-import { api, type GameSource, type Library } from '@wms/app/api'
-import { GameKeyFields } from '../GameMeta'
+import { api, type Library } from '@wms/app/api'
+import type { GameSource } from '../../gameTypes'
+import { GameKeyFields, saveGameKeys } from '../GameMeta'
 import { IconCheck } from '@wms/app/icons'
 import { Button } from '@wms/app/ui/index'
 import { ChoiceCards, LaterNote, StepActions, StepHead, type StepProps } from '@wms/app/pages/setup/parts'
@@ -20,17 +21,17 @@ export function Games({ info, next, back, added, goTo }: StepProps & { added: Li
   const [open, setOpen] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [titles, setTitles] = useGameTitlePref()
-  useEffect(() => { api.get<{ sources: GameSource[] }>('/gamemeta/sources').then((r) => setSources(r.sources.filter((s) => s.fields.length > 0))).catch(() => {}) }, [])
+  useEffect(() => { api.get<{ sources: GameSource[] }>('/modules/wittyplay/gamemeta/sources').then((r) => setSources(r.sources.filter((s) => s.fields.length > 0))).catch(() => {}) }, [])
   const libs = added.filter((l) => l.type === 'games')
   // How games are pictured in WittyPlay, for everyone on the server (each person can choose their own later).
   const [look, setLook] = useState<Look>({ picture: 'case' })
   const save = async () => {
     setBusy(true)
     const body = Object.fromEntries(Object.entries(keys).filter(([, v]) => v.trim()).map(([k, v]) => [k, v.trim()]))
-    try { if (Object.keys(body).length) await api.put('/settings', body) } catch { /* keys can be added later */ }
+    try { await saveGameKeys(body) } catch { /* keys can be added later */ }
     try {
-      const now = await api.get<{ server?: Record<string, unknown> }>('/games/pictures')
-      await api.put('/games/pictures', { ...(now.server || {}), wittyplay: 1, default: cleanLook(look) })
+      const now = await api.get<{ server?: Record<string, unknown> }>('/modules/wittyplay/games/pictures')
+      await api.put('/modules/wittyplay/games/pictures', { ...(now.server || {}), wittyplay: 1, default: cleanLook(look) })
     } catch { /* it can be chosen later, in WittyPlay's Settings */ }
     setBusy(false)
     next()

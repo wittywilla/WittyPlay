@@ -3,7 +3,7 @@
 // How WittyPlay pictures each game (gamePictures.test.mjs): the box art fitted into its tile over a blurred copy of itself, the box art
 // filling the tile, or the game drawn in a cartridge or case like the ones its console used (GameCase.tsx). Chosen for every game, per
 // console and per game, by the person (their /me/ui, key PLAY_PICTURES_KEY) and by the server (an administrator's choices and .wittyplay
-// files beside games, GET /api/games/pictures). The words are the .wittyplay format's (docs/specs/wittyplay-file.md), so the person's
+// files beside games, GET /api/modules/wittyplay/games/pictures). The words are the .wittyplay format's (docs/specs/wittyplay-file.md), so the person's
 // choices export as a .wittyplay file and import from one.
 
 export type PicturePick = 'fitted' | 'filled' | 'case'
@@ -361,7 +361,7 @@ export function readDoc(text: string): { doc: WittyplayDoc } | { error: string }
 }
 
 // A file's choices added to the person's own: its default and consoles replace theirs where it sets them, and each of its games goes to
-// the games here it matched (matches: for each game in the file, this server's ids, from POST /api/games/pictures/check).
+// the games here it matched (matches: for each game in the file, this server's ids, from POST /api/modules/wittyplay/games/pictures/check).
 export function importDoc(pref: PicturesPref, doc: WittyplayDoc, matches: number[][]): { pref: PicturesPref; games: number; unmatched: number } {
   let next: PicturesPref = { ...pref }
   if (!emptyLook(doc.default)) next = withLook(next, {}, { ...cleanLook(pref.default), ...cleanLook(doc.default) })

@@ -2,11 +2,12 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import SpecPage from '@wms/app/spec/SpecPage'
 import { handledIds, withIds } from '@wms/app/spec/model'
-import { gameFiltersSpec, letterSpec, splitFilterId } from '@wms/app/spec/specs/gameLibrary'
+import { gameFiltersSpec, letterSpec, splitFilterId } from '../../spec/specs/gameLibrary'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PromptBar, type Prompt } from './prompts'
-import { api, type GameConsole, type GameFacets, type Item, type Library } from '@wms/app/api'
+import { api, type Item, type Library } from '@wms/app/api'
+import type { GameConsole, GameFacets } from '../../gameTypes'
 import { EmptyState, LoadError, Placeholder, ScanButton } from '@wms/app/components/common'
 import LegalNote from '@wms/app/components/LegalNote'
 import LibraryHeader from '@wms/app/components/LibraryHeader'
@@ -17,7 +18,7 @@ import { GameMetaNotice } from '../GameMeta'
 import { GameImportBar, GameReviewBanner } from '../GameReview'
 import { CoverFlow } from './CoverFlow'
 import { cachedHome, cardCover, consoleMap, forgetHome, getHome, heroCover, setCouchOn, useCoverTint, useGameLinks, type GameHome } from './data'
-import { VirtualGames, type VirtualHandle } from '@wms/app/pages/games/VirtualGames'
+import { VirtualGames, type VirtualHandle } from './VirtualGames'
 import { useConsoleLogos } from './ConsoleMark'
 import { CollectionBand, GamesDock, OnTheGo, ResumeCard, Shelf, useShelfView, ViewSwitch, YoursOn } from './Shelves'
 import { ConsoleCores } from './ConsoleCores'
@@ -204,7 +205,7 @@ export default function GamesLibrary({ lib }: { lib: Library }) {
   const loadConsoles = useCallback(() => api.get<GameConsole[]>(`/modules/wittyplay/games/consoles?library=${lib.id}`).then(setConsoles).catch(() => {}), [lib.id])
   const loadHome = useCallback(() => getHome(lib.id).then((h) => { setHome(h); setFavs(new Set(h.favouriteIds)); setHomeFailed(false) }).catch(() => setHomeFailed(true)), [lib.id])
   useEffect(() => { void loadHome() }, [loadHome])
-  useEffect(() => { api.get<GameFacets>(`/games/facets?library=${lib.id}&console=${encodeURIComponent(consoleId)}`).then(setFacets).catch(() => {}) }, [lib.id, consoleId, version])
+  useEffect(() => { api.get<GameFacets>(`/modules/wittyplay/games/facets?library=${lib.id}&console=${encodeURIComponent(consoleId)}`).then(setFacets).catch(() => {}) }, [lib.id, consoleId, version])
   useEffect(() => { const t = typed.trim(); if (t === q) return; const id = setTimeout(() => set('q', t), 300); return () => clearTimeout(id) }, [typed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // A scan may be running, or just started. Follow it, so games appear as they're found.

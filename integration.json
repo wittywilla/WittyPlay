@@ -948,6 +948,10 @@
       {
         "path": "/games/game/:id",
         "frame": "tv"
+      },
+      {
+        "path": "/big/*",
+        "frame": "fullscreen"
       }
     ],
     "takeover": [
@@ -985,6 +989,23 @@
         ]
       },
       {
+        "id": "game-metadata",
+        "label": "Game metadata",
+        "admin": true,
+        "after": "metadata",
+        "search": [
+          "IGDB",
+          "ScreenScraper",
+          "RAWG",
+          "TheGamesDB",
+          "RetroAchievements",
+          "libretro",
+          "game keys",
+          "box art",
+          "age ratings"
+        ]
+      },
+      {
         "id": "games",
         "label": "My game settings",
         "after": "appearance"
@@ -998,8 +1019,8 @@
         "page": "wittyplay-setup",
         "version": 1,
         "later": {
-          "where": "Settings, Metadata agents",
-          "to": "/settings/metadata"
+          "where": "Settings, Game metadata",
+          "to": "/settings/game-metadata"
         }
       }
     ],

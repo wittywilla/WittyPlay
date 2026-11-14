@@ -2,7 +2,8 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { api, type GameConsole, type Item, type Library } from '@wms/app/api'
+import { api, type Item, type Library } from '@wms/app/api'
+import type { GameConsole } from '../gameTypes'
 import { CardRow, EmptyState, LoadError, Spinner } from '@wms/app/components/common'
 import { IconGamepad, IconRight } from '@wms/app/icons'
 import GameDetails from '../pages/games/Details'

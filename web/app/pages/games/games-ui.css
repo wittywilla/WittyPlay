@@ -291,3 +291,7 @@ html.gm-couch, html.gm-couch body { background: var(--bg); }
   .gm-game-info .crumbs a, .gm-facts dd a { display: inline-block; padding-block: var(--sp-3); }
   .gm-facts dd { margin-top: 0; }
 }
+
+/* A sample of the game-title choice, in Settings and setup (GameName.tsx). */
+.game-title-sample { display: inline-flex; flex-direction: column; align-items: flex-start; gap: .1em; line-height: 1.25; }
+.game-title-sample.big { font-size: var(--text-lg); font-weight: 600; margin-top: var(--sp-2); }

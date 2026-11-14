@@ -2,7 +2,7 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { GameConsole } from '@wms/app/api'
+import type { GameConsole } from '../../gameTypes'
 import { LoadError, Spinner } from '@wms/app/components/common'
 import { IconCheck, IconInfo, IconRefresh } from '@wms/app/icons'
 import { useApp } from '@wms/app/state'

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 WittyWilla and contributors
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
-import type { GameConsole, Item } from '@wms/app/api'
+import type { Item } from '@wms/app/api'
+import type { GameConsole } from '../../gameTypes'
 import { Placeholder } from '@wms/app/components/common'
 import { heroCover } from './data'
 import { gameTitle, gameTitleLabel } from './titles'

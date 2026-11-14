@@ -86,7 +86,7 @@ export default function PlayPictures() {
     setErr('')
     const doc: WittyplayDoc = { ...(server.server as WittyplayDoc | undefined), wittyplay: 1, default: cleanLook(next.default), consoles: next.consoles || {} }
     delete doc.games
-    try { await api.put('/games/pictures', doc); serverPicturesChanged() } catch (e: any) { setErr(e.message) }
+    try { await api.put('/modules/wittyplay/games/pictures', doc); serverPicturesChanged() } catch (e: any) { setErr(e.message) }
   }
   const change = (level: { console?: string }, l: Look) => {
     const next = withLook(mine, level, emptyLook(l) ? null : l)
@@ -146,7 +146,7 @@ export default function PlayPictures() {
             {gamesShown.map((id) => <GameRow key={id} id={id} look={(scope === 'me' ? pref.games : server.games)?.[id]} canRemove={scope === 'me' || admin}
               onEdit={(g) => setEditingGame(g)} onRemove={async () => {
                 if (scope === 'me') setPref(withLook(pref, { game: id }, null))
-                else { try { await api.put(`/games/${id}/picture`, {}); serverPicturesChanged() } catch (e: any) { setErr(e.message) } }
+                else { try { await api.put(`/modules/wittyplay/games/${id}/picture`, {}); serverPicturesChanged() } catch (e: any) { setErr(e.message) } }
               }} />)}
           </ul>
         ) : <p className="muted">None yet.</p>}
@@ -201,7 +201,7 @@ function Share({ scope, pref, setPref, onSaid, onErr }: { scope: Scope; pref: Pi
   const exportMine = async () => {
     onErr(''); setBusy(true)
     try {
-      if (scope === 'server') { await downloadFile('/games/pictures/file', 'server-game-pictures' + WITTYPLAY_EXT); onSaid('Saved this server’s choices as a .wittyplay file.'); return }
+      if (scope === 'server') { await downloadFile('/modules/wittyplay/games/pictures/file', 'server-game-pictures' + WITTYPLAY_EXT); onSaid('Saved this server’s choices as a .wittyplay file.'); return }
       // Each game's name and console go with it, so another server can find it.
       const games: Record<string, { title?: string; console?: string; file?: string }> = {}
       await Promise.all(Object.keys(pref.games || {}).map((g) => api.get<Item>(`/items/${encodeURIComponent(g)}`).then((it) => { games[g] = { title: it.title, console: it.console || undefined, file: it.path ? it.path.split(/[/\\]/).pop() : undefined } }).catch(() => {})))
@@ -218,12 +218,12 @@ function Share({ scope, pref, setPref, onSaid, onErr }: { scope: Scope; pref: Pi
     setBusy(true)
     try {
       if (scope === 'server') {
-        const r = await api.put<{ applied: number; unmatched: number }>('/games/pictures', read.doc)
+        const r = await api.put<{ applied: number; unmatched: number }>('/modules/wittyplay/games/pictures', read.doc)
         serverPicturesChanged(); void loadServerPictures(true)
         onSaid(`Imported for everyone. ${r.applied} ${r.applied === 1 ? 'game' : 'games'} matched${r.unmatched ? `, ${r.unmatched} not found here` : ''}.`)
         return
       }
-      const r = await api.post<{ doc: WittyplayDoc; matches: number[][] }>('/games/pictures/check', read.doc)
+      const r = await api.post<{ doc: WittyplayDoc; matches: number[][] }>('/modules/wittyplay/games/pictures/check', read.doc)
       const out = importDoc(pref, r.doc, r.matches)
       setPref(out.pref)
       onSaid(`Imported. ${out.games} ${out.games === 1 ? 'game' : 'games'} matched${out.unmatched ? `, ${out.unmatched} not found here` : ''}.`)
@@ -257,12 +257,12 @@ function BrandLogos() {
   const warning = s.warning?.length ? s.warning : BRAND_LOGO_WARNING
   const put = async (enabled: boolean) => {
     setBusy(true); setErr(''); setSaid('')
-    try { brandLogosChanged(await api.put<BrandLogosState>('/games/brand-logos', { enabled, accepted: enabled })); setSaid(enabled ? 'Brand logos are on. The server is fetching them now.' : 'Brand logos are off.') } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
+    try { brandLogosChanged(await api.put<BrandLogosState>('/modules/wittyplay/games/brand-logos', { enabled, accepted: enabled })); setSaid(enabled ? 'Brand logos are on. The server is fetching them now.' : 'Brand logos are off.') } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
   }
   const remove = async () => {
     if (!await ask({ title: 'Remove downloaded logos?', body: 'Every console and game studio logo downloaded to this server is deleted, and brand logos are turned off. Logos you uploaded yourself stay. You can turn them on again later.', confirm: 'Remove', danger: true })) return
     setBusy(true); setErr(''); setSaid('')
-    try { const r = await api.del<{ removed: number }>('/games/brand-logos'); brandLogosChanged(); setSaid(`Removed ${r.removed} ${r.removed === 1 ? 'logo' : 'logos'}.`) } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
+    try { const r = await api.del<{ removed: number }>('/modules/wittyplay/games/brand-logos'); brandLogosChanged(); setSaid(`Removed ${r.removed} ${r.removed === 1 ? 'logo' : 'logos'}.`) } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
   }
   const credits = Object.entries(s.logos).sort(([a], [b]) => (consoles.find(a)?.name || a).localeCompare(consoles.find(b)?.name || b))
   return (

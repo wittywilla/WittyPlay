@@ -2,7 +2,7 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import SpecPage from '@wms/app/spec/SpecPage'
-import { emulatorChoicesSpec } from '@wms/app/spec/specs/emulatorChoices'
+import { emulatorChoicesSpec } from '../../spec/specs/emulatorChoices'
 import type { Item } from '@wms/app/api'
 import { useGameLinks } from './data'
 import { emulatorsApi } from './emulatorsApi'

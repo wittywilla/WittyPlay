@@ -4,7 +4,8 @@
 // from the game and its RetroAchievements (greyed: what can be earned, not what has been). Loaded for the focused card only, a moment
 // after focus settles, so running along a row doesn't ask the server about every game it passes.
 import { useEffect, useState, type ReactNode } from 'react'
-import { api, mediaUrl, type GameDetailsInfo, type Item } from '@wms/app/api'
+import { api, mediaUrl, type Item } from '@wms/app/api'
+import type { GameDetailsInfo } from '../../gameTypes'
 import { IconLeft, IconRight } from '@wms/app/icons'
 import { Dialog } from '@wms/app/ui/Overlay'
 
@@ -27,8 +28,8 @@ function useBio(itemId: string): Bio {
     const t = window.setTimeout(() => {
       const keep = (part: Partial<Bio>) => !ctl.signal.aborted && setBio((b) => ({ ...b, ...part }))
       api.get<Item>(`/items/${itemId}`, ctl.signal).then((item) => keep({ item }), () => {})
-      api.get<GameDetailsInfo>(`/games/${itemId}/metadata`, ctl.signal).then((meta) => keep({ meta }), () => {})
-      api.get<Cheevos>(`/items/${itemId}/achievements`, ctl.signal).then((cheevos) => keep({ cheevos }), () => keep({ cheevos: null }))
+      api.get<GameDetailsInfo>(`/modules/wittyplay/games/${itemId}/metadata`, ctl.signal).then((meta) => keep({ meta }), () => {})
+      api.get<Cheevos>(`/modules/wittyplay/items/${itemId}/achievements`, ctl.signal).then((cheevos) => keep({ cheevos }), () => keep({ cheevos: null }))
     }, SETTLE_MS)
     return () => { window.clearTimeout(t); ctl.abort() }
   }, [itemId])
@@ -95,7 +96,7 @@ export function useCheevos(itemId: string | number): Cheevos | null | undefined 
     setC(undefined)
     if (!itemId) return
     const ctl = new AbortController()
-    api.get<Cheevos>(`/items/${itemId}/achievements`, ctl.signal).then((x) => !ctl.signal.aborted && setC(x), () => !ctl.signal.aborted && setC(null))
+    api.get<Cheevos>(`/modules/wittyplay/items/${itemId}/achievements`, ctl.signal).then((x) => !ctl.signal.aborted && setC(x), () => !ctl.signal.aborted && setC(null))
     return () => ctl.abort()
   }, [itemId])
   return c

@@ -4,7 +4,8 @@
 // has some, leading to that library in WittyPlay where they are looked at. Nothing when there is nothing to say.
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, type GameReview } from '@wms/app/api'
+import { api } from '@wms/app/api'
+import type { GameReview } from '../gameTypes'
 import { IconInfo } from '@wms/app/icons'
 import { useApp } from '@wms/app/state'
 import { PLAY_LIBRARY } from './playPaths'
@@ -17,7 +18,7 @@ export function PlayReviewNotice() {
   useEffect(() => {
     if (!user?.isAdmin || !games.length) return
     let on = true
-    Promise.all(games.map((l) => api.get<GameReview>(`/libraries/${l.id}/games/review?kind=needs&limit=1`)
+    Promise.all(games.map((l) => api.get<GameReview>(`/modules/wittyplay/libraries/${l.id}/games/review?kind=needs&limit=1`)
       .then((r) => ({ id: l.id, name: l.name, n: r.counts?.needs || 0, blocked: r.counts?.blocked || 0 })).catch(() => ({ id: l.id, name: l.name, n: 0, blocked: 0 }))))
       .then((all) => { if (on) setNeeds(all.filter((x) => x.n + x.blocked > 0)) })
     return () => { on = false }

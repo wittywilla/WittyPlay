@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 WittyWilla and contributors
-import type { GameConsole } from '@wms/app/api'
+import type { GameConsole } from '../../gameTypes'
 import { useMemo } from 'react'
 import SpecPage from '@wms/app/spec/SpecPage'
-import { coresSpec } from '@wms/app/spec/specs/consoleCores'
+import { coresSpec } from '../../spec/specs/consoleCores'
 import { drawsWords, platformName, type CoreSupport, type Draws, type PlatformSupport } from './platforms'
 
 // A console's cores on its collection page: how each draws on this server, and which other server platforms it
