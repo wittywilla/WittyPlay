@@ -45,7 +45,7 @@ RUN apt-get update \
       xvfb x11-utils xdotool \
       pulseaudio pulseaudio-utils \
       ffmpeg \
-      libgl1 libegl1 libgles2 libvulkan1 mesa-vulkan-drivers libgl1-mesa-dri \
+      libgl1 libopengl0 libegl1 libgles2 libvulkan1 mesa-vulkan-drivers libgl1-mesa-dri \
       libfuse2 fonts-dejavu-core tini \
  && case "${TARGETARCH}" in \
       amd64) kasm_sha="${KASMVNC_SHA256_AMD64}" ;; \
