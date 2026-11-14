@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 WittyWilla and contributors
 // WittyPlay Online's Settings: everything games-related, inside WittyPlay's own frame, so nothing is built twice: the store for cores
-// and emulators (CoresStore: consoles and cores, what this server plays, standalone emulators), Game PCs, WittyRigs, my game settings (every game, a console or
+// and emulators (CoresStore: consoles and cores, what this server plays, standalone emulators), my game settings (every game, a console or
 // one game), controllers and their mapping, friends and privacy, and the WittyPlay module's own settings.
 import { lazy, Suspense, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { IconDevices, IconDisc, IconGamepad, IconImage, IconLibrary, IconPlug, IconRemote, IconServer, IconSidebar, IconTune, IconUsers, IconRight } from '@wms/app/icons'
+import { IconDisc, IconGamepad, IconImage, IconLibrary, IconPlug, IconRemote, IconSidebar, IconTune, IconUsers, IconRight } from '@wms/app/icons'
 import { useApp } from '@wms/app/state'
 import { Spinner } from '@wms/app/ui/Surface'
 import { PageHead } from '@wms/app/pages/settings/ui'
@@ -14,8 +14,6 @@ import CoresStore, { type StoreTab } from './CoresStore'
 import { LookSetting } from '../shell/playPads'
 import './settings/settings.css'
 
-const CouchSettings = lazy(() => import('@wms/app/pages/settings/Couch'))
-const WittyRigsSettings = lazy(() => import('@wms/app/pages/settings/WittyRigs'))
 const ModuleSettingsPage = lazy(() => import('@wms/app/pages/settings/ModuleSettings').then((m) => ({ default: m.ModuleSettingsPage })))
 const LibrariesSettings = lazy(() => import('@wms/app/pages/SettingsPage').then((m) => ({ default: m.Libraries })))
 const PlayPictures = lazy(() => import('./PlayPictures'))
@@ -37,8 +35,6 @@ const ENTRIES: { title: string; entries: Entry[] }[] = [
   { title: 'This server', entries: [
     { id: 'store', icon: IconDisc, label: 'Cores & emulators', hint: 'Consoles and their cores, standalone emulators, BIOS files and what each console plays here: install, update, choose and remove', page: () => <CoresStore tab="consoles" /> },
     { id: 'libraries', icon: IconLibrary, label: 'Libraries', hint: 'The folders games come from, each library’s console and naming, and scans', admin: true, page: () => <LibrariesSettings /> },
-    { id: 'pcs', icon: IconDevices, label: 'Game PCs', hint: 'Who can play on PCs running Sunshine, and which ones', admin: true, page: () => <CouchSettings /> },
-    { id: 'rigs', icon: IconServer, label: 'WittyRigs', hint: 'Hosting demanding games on this server’s own hardware', admin: true, page: () => <WittyRigsSettings /> },
   ] },
 ]
 
