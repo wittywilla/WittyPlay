@@ -1,22 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 WittyWilla and contributors
-// WittyPlay Online's Settings: everything games-related, inside WittyPlay's own frame. Each page is the app's own (the same component
-// as under Settings, which keeps them too), so nothing is built twice: consoles and cores, what this server plays, standalone
-// emulators (installs, firmware, controllers, the manual notes), Game PCs, WittyRigs, my game settings (every game, a console or
+// WittyPlay Online's Settings: everything games-related, inside WittyPlay's own frame, so nothing is built twice: the store for cores
+// and emulators (CoresStore: consoles and cores, what this server plays, standalone emulators), Game PCs, WittyRigs, my game settings (every game, a console or
 // one game), controllers and their mapping, friends and privacy, and the WittyPlay module's own settings.
 import { lazy, Suspense, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { IconCheck, IconDevices, IconDisc, IconGamepad, IconImage, IconLibrary, IconPlug, IconRemote, IconServer, IconSidebar, IconTune, IconUsers, IconWrench, IconRight } from '@wms/app/icons'
+import { IconDevices, IconDisc, IconGamepad, IconImage, IconLibrary, IconPlug, IconRemote, IconServer, IconSidebar, IconTune, IconUsers, IconRight } from '@wms/app/icons'
 import { useApp } from '@wms/app/state'
 import { Spinner } from '@wms/app/ui/Surface'
 import { PageHead } from '@wms/app/pages/settings/ui'
 import { GameSettingsPage } from './games/consoles'
-import GamingSettings from './settings/Gaming'
+import CoresStore, { type StoreTab } from './CoresStore'
 import { LookSetting } from '../shell/playPads'
 import './settings/settings.css'
 
-const EmulatorsSettings = lazy(() => import('./settings/Emulators'))
-const GamesSupport = lazy(() => import('./settings/GamesSupport'))
 const CouchSettings = lazy(() => import('@wms/app/pages/settings/Couch'))
 const WittyRigsSettings = lazy(() => import('@wms/app/pages/settings/WittyRigs'))
 const ModuleSettingsPage = lazy(() => import('@wms/app/pages/settings/ModuleSettings').then((m) => ({ default: m.ModuleSettingsPage })))
@@ -38,10 +35,8 @@ const ENTRIES: { title: string; entries: Entry[] }[] = [
     { id: 'module', icon: IconPlug, label: 'WittyPlay options', hint: 'What the WittyPlay module lets you set', page: () => <ModuleSettingsPage /> },
   ] },
   { title: 'This server', entries: [
-    { id: 'consoles', icon: IconDisc, label: 'Consoles and cores', hint: 'Which consoles play here, each one’s core and its options, BIOS files, and game streaming', admin: true, page: () => <GamingSettings /> },
-    { id: 'support', icon: IconCheck, label: 'What this server plays', hint: 'Each console, whether its games play here, and how', page: () => <GamesSupport /> },
+    { id: 'store', icon: IconDisc, label: 'Cores & emulators', hint: 'Consoles and their cores, standalone emulators, BIOS files and what each console plays here: install, update, choose and remove', page: () => <CoresStore tab="consoles" /> },
     { id: 'libraries', icon: IconLibrary, label: 'Libraries', hint: 'The folders games come from, each library’s console and naming, and scans', admin: true, page: () => <LibrariesSettings /> },
-    { id: 'emulators', icon: IconWrench, label: 'Standalone emulators', hint: 'PCSX2, Dolphin, RPCS3 and others: installs, firmware, controllers and every setting', admin: true, page: () => <EmulatorsSettings /> },
     { id: 'pcs', icon: IconDevices, label: 'Game PCs', hint: 'Who can play on PCs running Sunshine, and which ones', admin: true, page: () => <CouchSettings /> },
     { id: 'rigs', icon: IconServer, label: 'WittyRigs', hint: 'Hosting demanding games on this server’s own hardware', admin: true, page: () => <WittyRigsSettings /> },
   ] },
@@ -54,6 +49,16 @@ export default function PlaySettings() {
   const section = params.module ? 'module' : params.section || ''
   const { user } = useApp()
   const groups = playSettingsEntries(!!user?.isAdmin)
+  // The store, at a tab; and the addresses its tabs had as pages of their own, which links still use.
+  const storeTab = (section === 'store' ? (params['*'] || 'consoles') : ({ consoles: 'consoles', support: 'support', emulators: 'emulators' } as Record<string, string>)[section]) as StoreTab | undefined
+  if (storeTab) {
+    return (
+      <div className="wplay-settings-page">
+        <Link className="wplay-settings-back" to={PLAY_SETTINGS}>Settings</Link>
+        <CoresStore tab={storeTab} />
+      </div>
+    )
+  }
   const entry = groups.flatMap((g) => g.entries).find((e) => e.id === section)
   if (section && entry?.page) {
     return (

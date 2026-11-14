@@ -652,3 +652,7 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wpg .gm-pad-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .wpg .gm-pad-list .pill { display: inline-flex; align-items: center; min-block-size: 32px; padding: 0 12px; border-radius: 999px; background: rgb(255 255 255 / .1); border: 0; font-weight: 800; }
 .wpg .gm-core-change { justify-self: start; margin-block-start: 6px; }
+
+/* The store for cores and emulators (pages/CoresStore.tsx): its title, its tabs, then the screen of the tab. */
+.wplay-store { display: grid; gap: var(--sp-4); }
+.wplay-store > h1 { margin: 0; }
