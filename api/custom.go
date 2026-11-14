@@ -553,7 +553,8 @@ type CustomStatus struct {
 	Cores       []*CustomCore       `json:"cores"`
 	Consoles    []CustomConsoleView `json:"consoles"`
 	Placed      []cores.PlacedFile  `json:"placed"`
-	// The audit log is the server's now (host Audit), and shown with its own.
+	// Audit is WittyPlay's rows of the server's audit log (custom cores, refused passwords), newest first.
+	Audit      []host.AuditRow  `json:"audit"`
 	PadChoices []CorePickOption `json:"padChoices"`
 	OtherCores []CorePickOption `json:"otherCores"` // cores already here a custom console could use
 }
@@ -572,7 +573,7 @@ func handleCustomGet(a *App, w http.ResponseWriter, r *http.Request) {
 	out := CustomStatus{
 		Enabled: a.customCoresOn(ctx), Locked: customLocked(), NeedsSwitch: !allowed, CanEnable: sandboxed && !customLocked() && allowed, Sandbox: why, HaveRunner: ownRunner() != "",
 		Platform: cores.Binary{OS: runtime.GOOS, Arch: runtime.GOARCH}.Describe(), LibraryExt: cores.LibraryExt(), MaxUploadMB: cores.DefaultLimits.Package >> 20,
-		CoresDir: mgr.Dir, SystemDir: a.SystemDir(), Cores: []*CustomCore{}, Consoles: []CustomConsoleView{}, Placed: []cores.PlacedFile{},
+		CoresDir: mgr.Dir, SystemDir: a.SystemDir(), Cores: []*CustomCore{}, Consoles: []CustomConsoleView{}, Placed: []cores.PlacedFile{}, Audit: []host.AuditRow{},
 	}
 	if out.Enabled {
 		// The page says to put files here, so it has to exist on a new server.
@@ -607,6 +608,9 @@ func handleCustomGet(a *App, w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+	}
+	if rows, err := a.Host.AuditLog(ctx, 200); err == nil {
+		out.Audit = rows
 	}
 	writeJSON(w, 200, out)
 }
