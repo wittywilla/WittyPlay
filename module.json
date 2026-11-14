@@ -1,12 +1,12 @@
 {
   "id": "wittyplay",
   "name": "WittyPlay",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "repo": "wittywilla/WittyPlay",
   "license": "AGPL-3.0-or-later",
   "delivery": "helper",
   "entry": "wittyplay-module",
-  "api": 4,
+  "api": 5,
   "minServer": "0.8.0-alpha",
   "maxServer": "0.8.x",
   "capabilities": {
@@ -47,7 +47,7 @@
     "FFmpeg, which comes with the server",
     "Game cores, which you add in Settings, Consoles & cores"
   ],
-  "updates": "All of it: the console tables, the game runner, streaming, controllers and the player.",
+  "updates": "All of it: the console tables, the game runner, streaming, controllers, the player, and every WittyPlay screen in the web app (its frame, pages, game pictures and settings).",
   "stays": "The games library, its metadata and where saves are kept stay with the server.",
   "programs": [
     "wittyplay-game-runner"

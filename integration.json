@@ -1,0 +1,29 @@
+{
+  "format": "wittymodule-integration",
+  "formatVersion": 1,
+  "module": "wittyplay",
+  "host": { "web": ">=5", "sdui": ">=8" },
+  "feature": "games",
+  "web": {
+    "routes": [
+      { "path": "/wittyplay/*", "frame": "fullscreen" },
+      { "path": "/page/wittyplay", "frame": "fullscreen" },
+      { "path": "/page/wittyplay-*", "frame": "fullscreen" },
+      { "path": "/games", "frame": "fullscreen" },
+      { "path": "/game/:id", "frame": "fullscreen" },
+      { "path": "/controllers", "frame": "app" },
+      { "path": "/games/library/:id", "frame": "tv" },
+      { "path": "/games/game/:id", "frame": "tv" }
+    ],
+    "takeover": [ { "libraryKind": "games", "route": "/wittyplay/library/{library}" } ],
+    "cards": [ { "mediaKind": "game", "art": true, "detail": true, "link": true } ],
+    "settings": [
+      { "id": "gaming", "label": "Consoles & cores", "admin": true, "search": ["cores", "BIOS", "region order", "custom cores", "game streaming"] },
+      { "id": "games-support", "label": "What this server plays" },
+      { "id": "emulators", "label": "Standalone emulators", "admin": true, "search": ["PCSX2", "Dolphin", "RPCS3", "firmware"] },
+      { "id": "games", "label": "My game settings" }
+    ],
+    "setup": [ { "id": "games", "title": "Games", "after": "details", "later": { "where": "Settings, Metadata agents", "to": "/settings/metadata" } } ],
+    "navFold": [ { "libraryKind": "games", "into": "wittyplay-online" } ]
+  }
+}

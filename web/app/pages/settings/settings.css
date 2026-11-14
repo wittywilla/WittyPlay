@@ -1,0 +1,142 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Copyright (C) 2026 WittyWilla and contributors */
+/* What other pages share with Settings: its sections, rows, switches and page heads (settings/ui.tsx),
+   the Legal, game core and restore parts other pages open, and the menu's place on the page. What only
+   the Settings page uses is in settings-page.css, which loads with it, so the first page anyone opens
+   doesn't wait for it. */
+
+/* ---------------------------------------------------------------- menu */
+/* The menu scrolls by itself when it's longer than the window, and a scroll that
+   reaches its end stops there instead of moving the page beside it. */
+.set-nav { --set-nav-top: calc(var(--topbar-h) + var(--sp-4)); position: sticky; top: var(--set-nav-top); max-height: calc(100dvh - var(--set-nav-top) - var(--sp-4) - var(--dock-space)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; display: grid; align-content: start; gap: var(--sp-4); padding-bottom: var(--sp-6); }
+
+/* ---------------------------------------------------------------- page */
+.set-main { min-width: 0; padding-bottom: 96px; }
+.set-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin: 4px 0 22px; }
+.set-head h1 { margin: 0 0 6px; font-size: var(--page-title); letter-spacing: var(--tracking-display); }
+.set-head p { margin: 0; color: var(--fg-2); font-size: var(--text-md); max-width: 62ch; line-height: var(--leading-body); }
+.set-head-actions { flex: none; display: flex; gap: 8px; }
+
+/* Section cards. The older pages' panels look the same. */
+.set-card, .set-main .panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--r-lg); margin: 0 0 var(--sp-5); max-width: none; padding: 0; }
+.set-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-5) var(--sp-6) var(--sp-1); }
+.set-card-head h2, .set-main .panel > h2 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-heading); }
+.set-card-head p { margin: var(--sp-1) 0 0; color: var(--fg-2); font-size: var(--text-sm); line-height: 1.5; max-width: 62ch; }
+.set-card-actions { flex: none; }
+.set-card-body { padding: var(--sp-1) var(--sp-6) var(--sp-2); }
+.set-main .panel { padding: var(--sp-5) var(--sp-6) var(--sp-6); }
+.set-main .panel > h2 { margin-bottom: var(--sp-3); }
+.set-main .panel .form { max-width: none; }
+
+/* Rows: what a setting is on the left, its control on the right. */
+.set-row { display: flex; align-items: center; gap: var(--sp-6); padding: var(--sp-4) 0; border-top: 1px solid var(--border); }
+.set-card-body > .set-row:first-child { border-top: 0; }
+.set-row-text { flex: 1; min-width: 0; }
+.set-row-label { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); font-weight: 600; font-size: var(--text-md); color: var(--fg); }
+.set-row-desc { margin-top: 2px; color: var(--fg-2); font-size: var(--text-sm); line-height: 1.5; max-width: 62ch; }
+.set-row-ctl { flex: none; display: flex; align-items: center; gap: 8px; }
+.set-row-ctl .select { min-width: 220px; }
+.set-row.stack { flex-direction: column; align-items: stretch; gap: 12px; }
+.set-row.stack .set-row-ctl { display: block; }
+.set-row.dim .set-row-text { opacity: .5; }
+.set-badge { padding: 1px var(--sp-2); border-radius: var(--r-full); font-size: var(--text-2xs); font-weight: 700; color: color-mix(in srgb, var(--ok) 70%, var(--fg)); background: var(--ok-soft); }
+.set-pill { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: var(--r-full); font-size: var(--text-xs); font-weight: 600; color: var(--fg-2); background: var(--bg-3); white-space: nowrap; }
+.set-pill.live { color: var(--fg); background: var(--accent-soft); }
+.set-pill.live::before { content: ''; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: currentColor; animation: set-pulse 1.2s ease-in-out infinite; }
+@keyframes set-pulse { 50% { opacity: .3; } }
+
+/* Switches. */
+.set-switch { position: relative; width: 44px; height: 26px; border-radius: var(--r-lg); border: 0; padding: 0; background: var(--control-line); cursor: pointer; transition: background var(--dur-3); flex: none; }
+.set-switch i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--on-image); box-shadow: var(--e-1); transition: transform var(--dur-3) var(--ease-out); }
+.set-switch.on { background: var(--accent); }
+.set-switch.on i { transform: translateX(18px); }
+.set-switch:disabled { opacity: .4; cursor: default; }
+.set-note { margin-top: 8px; font-size: var(--text-sm); font-weight: 600; }
+.set-note.ok { color: var(--ok); }
+.set-note.bad { color: var(--danger); }
+.btn.danger-hover:hover { color: var(--danger); border-color: var(--danger); }
+
+.set-empty { display: grid; justify-items: center; gap: 6px; padding: 26px 16px 30px; text-align: center; color: var(--fg-2); }
+.set-empty svg { color: var(--fg-3); margin-bottom: 4px; }
+.set-empty b { color: var(--fg); font-size: var(--text-base); }
+.set-empty p { margin: 0 0 8px; max-width: 520px; font-size: var(--text-sm); line-height: 1.55; }
+.set-empty code { font-size: var(--text-xs); background: var(--bg-3); padding: 2px 6px; border-radius: var(--r-sm); word-break: break-all; }
+.set-empty.big { padding: 56px 24px; }
+.set-facts dd.mono, .mono { font-family: var(--font-mono); font-weight: 400; font-size: var(--text-sm); color: var(--fg-2); }
+.set-prose { padding: var(--sp-1) 0 var(--sp-3); color: var(--fg-2); font-size: var(--text-md); line-height: 1.6; max-width: 72ch; }
+.set-prose p { margin: 0 0 12px; }
+.set-prose b { color: var(--fg); }
+.set-prose code { font-size: var(--text-xs); background: var(--bg-3); padding: 1px 6px; border-radius: var(--r-sm); }
+
+/* Save bar: only while something has changed. */
+.set-savebar { position: sticky; bottom: calc(var(--sp-5) + var(--dock-space) + var(--tabbar-space)); z-index: var(--z-sticky); display: flex; align-items: center; gap: 10px; margin: 8px 0 0; padding: 12px 14px 12px 20px;
+  border-radius: var(--r-lg); background: var(--bg-3); border: 1px solid var(--border); box-shadow: var(--e-3); animation: set-rise var(--dur-3) var(--ease-out); }
+.set-savebar span { flex: 1; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: var(--text-md); }
+.set-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .2); }
+@keyframes set-rise { from { opacity: 0; transform: translateY(10px); } }
+
+/* Dialogs. */
+.set-modal { width: min(560px, calc(100vw - 32px)); }
+.set-modal.wide { width: min(720px, calc(100vw - 32px)); max-width: none; }
+.set-main:has(.st-page > .back-link) > .set-back { display: none; }
+@media (max-width: 600px) {
+  .set-main .list-item { flex-wrap: wrap; }
+  .set-main .list-item > .grow { flex: 1 1 calc(100% - 64px); min-width: 0; }
+
+}
+@media (max-width: 1280px) {
+  .set-nav { position: static; padding: 0; max-height: none; overflow: visible; }
+  .set-shell:not(.at-menu) .set-nav, .set-shell.at-menu .set-main { display: none; }
+
+}
+@media (max-width: 760px) {
+  .set-nav { gap: var(--sp-6); }
+}
+@media (max-width: 600px) {
+  .set-head { flex-direction: column; align-items: stretch; }
+  .set-card-head { padding: var(--sp-4) var(--sp-4) var(--sp-1); flex-direction: column; }
+  .set-card-body, .set-main .panel { padding-left: 16px; padding-right: 16px; }
+  .set-row { flex-direction: column; align-items: stretch; gap: 10px; }
+  .set-row-ctl .select { min-width: 0; width: 100%; }
+  .set-row-ctl { justify-content: flex-start; }
+
+}
+@media (prefers-reduced-motion: reduce) { .set-savebar, .set-pill.live::before { animation: none; } 
+}
+.upd-notes :is(h4, h5) { margin: var(--sp-4) 0 var(--sp-1); color: var(--fg); }
+/* Users */
+.set-row-inline { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); min-height: var(--control-h); font-size: var(--text-md); }
+.flush { margin: 0; }
+.limits-found { margin-top: var(--sp-2); }
+.limits-clear { margin-top: var(--sp-3); }
+
+/* ---------------------------------------------------------------- on this page */
+/* A long page's sections, in a strip that stays under the top bar. */
+.set-toc { position: sticky; top: var(--topbar-h); z-index: calc(var(--z-sticky) + 8); /* above the page's own raised controls */ display: flex; align-items: center; gap: var(--sp-3); margin: calc(-1 * var(--sp-2)) 0 var(--sp-4); padding: var(--sp-2) 0; background: var(--bg); border-bottom: 1px solid var(--border); }
+.set-toc-label { flex: none; font-size: var(--text-2xs); font-weight: 600; letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-3); }
+.set-toc ul { flex: 1; min-width: 0; display: flex; gap: var(--sp-1); margin: 0; padding: 2px; list-style: none; overflow-x: auto; scrollbar-width: none; }
+.set-toc a { display: inline-flex; align-items: center; min-height: var(--control-h-sm); padding: 0 var(--sp-3); border-radius: var(--r-full); color: var(--fg-2); font-size: var(--text-sm); font-weight: 500; white-space: nowrap; transition: background var(--dur-2), color var(--dur-2); }
+.set-toc a:hover { background: var(--hover); color: var(--fg); }
+.set-toc a[aria-current] { background: var(--accent-soft); color: var(--fg); font-weight: 600; }
+.set-toc a:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: -2px; }
+/* What a link jumps to lands below the contents strip as well as the top bar (the page already leaves room for that). */
+.set-main [id] { scroll-margin-top: 56px; }
+.set-main .set-card-head h2:focus, .set-main h3:focus { outline: none; }
+/* Where a jump landed glows for a moment. */
+.set-flash { animation: set-flash 1.6s var(--ease-out); }
+@keyframes set-flash { 0%, 30% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: 0 0 0 3px transparent; } }
+@media (prefers-reduced-motion: reduce) { .set-flash { animation: none; outline: 3px solid var(--accent); outline-offset: 2px; } 
+}
+@media (max-width: 1280px) { .set-toc-label { display: none; } 
+}
+
+/* Module settings (ModuleSettings.tsx): Settings' own rows, with a link per module. */
+.ms-link { display: inline-flex; align-items: center; gap: var(--sp-2); color: inherit; text-decoration: none; }
+.ms-link svg { width: 18px; height: 18px; }
+.ms-page-title { margin: var(--sp-6) 0 var(--sp-2); font-size: var(--text-lg); }
+.ms-value { color: var(--fg-2); }
+.ms-num, .ms-secret { display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.ms-num .input { width: 8rem; }
+/* A page with its sticky table of contents under the top bar: what gets focus is scrolled clear
+   of both (a remote or the keyboard never leaves it hidden under the contents row). */
+html:has(.set-toc) { scroll-padding-top: calc(var(--topbar-h) + var(--control-h-sm) + var(--sp-8)); }

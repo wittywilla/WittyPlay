@@ -30,3 +30,5 @@ export { GameSettingsScreen } from './Screen'
 export { EmulatorPlayer } from './EmulatorPlayer'
 export type { Connected, EmulatorBackend, EmulatorHost, EmulatorSession } from './emulator'
 export type { Hello, StreamInfo } from './transport'
+// Module API 5: WittyPlay's screens in WittyMediaServer's web app (integration.json, web/app/).
+export { register } from './app/register'
