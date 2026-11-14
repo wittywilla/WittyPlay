@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -130,6 +131,11 @@ type gamesHost struct {
 	lib     wittymodule.ScanLibrary
 	items   map[int64]service.Item
 	rescans atomic.Int32
+	// scan is the library's scan as the host's libraries say it ({mode, since}), when set.
+	scan atomic.Pointer[map[string]any]
+	// reports are the progress reports of the library's scan, "done/total".
+	reportsMu sync.Mutex
+	reports   []string
 }
 
 func (g *gamesHost) client(t *testing.T) *host.Client {
@@ -138,7 +144,18 @@ func (g *gamesHost) client(t *testing.T) *host.Client {
 		p := strings.TrimPrefix(r.URL.Path, host.Base)
 		switch {
 		case r.Method == "GET" && p == "/libraries":
-			_ = json.NewEncoder(w).Encode(map[string]any{"libraries": []host.Library{{ID: g.lib.ID, Name: "Games", Kind: "games", Console: g.lib.Facet, Paths: g.lib.Paths}}})
+			l := map[string]any{"id": g.lib.ID, "name": "Games", "kind": "games", "console": g.lib.Facet, "paths": g.lib.Paths}
+			if sc := g.scan.Load(); sc != nil {
+				l["scan"] = *sc
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{"libraries": []any{l}})
+		case r.Method == "POST" && p == "/tasks/scan-"+strconv.FormatInt(g.lib.ID, 10):
+			var in struct{ Done, Total int }
+			_ = json.NewDecoder(r.Body).Decode(&in)
+			g.reportsMu.Lock()
+			g.reports = append(g.reports, strconv.Itoa(in.Done)+"/"+strconv.Itoa(in.Total))
+			g.reportsMu.Unlock()
+			w.WriteHeader(204)
 		case r.Method == "POST" && p == "/libraries/"+strconv.FormatInt(g.lib.ID, 10)+"/scan":
 			g.rescans.Add(1)
 			w.WriteHeader(204)

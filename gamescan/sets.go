@@ -59,19 +59,39 @@ func gameKey(stem string) (key string, disc, total int) {
 
 // mergeGames applies what a scan knows about several files at once. It returns the
 // games to list, each knowing its discs.
-func (ix *archiveIndex) mergeGames(found []*gameFile) []candidate {
-	return ix.groupDiscs(ix.dropDuplicates(found))
+// step, when set, is told about each file whose checksum is wanted (checksumsWanted of them).
+func (ix *archiveIndex) mergeGames(found []*gameFile, step func()) []candidate {
+	return ix.groupDiscs(ix.dropDuplicates(found, step))
+}
+
+// sameSize groups games by console and the size of their main file: only games the same size
+// as another can be the same game.
+func sameSize(found []*gameFile) map[string][]*gameFile {
+	bySize := map[string][]*gameFile{}
+	for _, g := range found {
+		if g.verdict.Payload > 0 {
+			k := g.cand.console + "|" + itoa(g.verdict.Payload)
+			bySize[k] = append(bySize[k], g)
+		}
+	}
+	return bySize
+}
+
+// checksumsWanted is how many of these games dropDuplicates looks at the checksum of.
+func (ix *archiveIndex) checksumsWanted(found []*gameFile) int {
+	n := 0
+	for _, group := range sameSize(found) {
+		if len(group) > 1 {
+			n += len(group)
+		}
+	}
+	return n
 }
 
 // dropDuplicates finds files with the same contents. Only files the same size as
 // another are ever read for this, and a checksum an archive already holds costs nothing.
-func (ix *archiveIndex) dropDuplicates(found []*gameFile) []*gameFile {
-	bySize := map[string][]*gameFile{}
-	for _, g := range found {
-		if g.verdict.Payload > 0 {
-			bySize[g.cand.console+"|"+itoa(g.verdict.Payload)] = append(bySize[g.cand.console+"|"+itoa(g.verdict.Payload)], g)
-		}
-	}
+func (ix *archiveIndex) dropDuplicates(found []*gameFile, step func()) []*gameFile {
+	bySize := sameSize(found)
 	dup := map[*gameFile]*gameFile{}
 	for _, group := range bySize {
 		if len(group) < 2 {
@@ -79,7 +99,11 @@ func (ix *archiveIndex) dropDuplicates(found []*gameFile) []*gameFile {
 		}
 		byCRC := map[uint32][]*gameFile{}
 		for _, g := range group {
-			if crc := ix.payloadCRC(g); crc != 0 {
+			crc := ix.payloadCRC(g)
+			if step != nil {
+				step()
+			}
+			if crc != 0 {
 				byCRC[crc] = append(byCRC[crc], g)
 			}
 		}

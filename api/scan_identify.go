@@ -100,7 +100,9 @@ func (a *App) scanOf(ctx context.Context, args wittymodule.ScanIdentifyArgs) (*g
 		return s, false
 	}
 	a.useRegionOrder(ctx, args.Library.ID)
+	a.rereadIfFull(ctx, args.Library.ID)
 	s := gamescan.Begin(a.sqlDB(), args.Scan, args.Library)
+	s.Report = a.reportScan(args.Library.ID)
 	scans.m[args.Scan] = s
 	return s, true
 }
