@@ -19,8 +19,8 @@
 // Package api is WittyPlay's own HTTP API (module API 5): the routes WittyMediaServer passes
 // to it once it has checked who may call them, at /api/modules/wittyplay/... and at the
 // server's own paths it takes over (integration.json, alias). It keeps its data in WittyPlay's
-// own database (package store), took over once from the server's, and asks the server only
-// what only the server knows, through the host API.
+// own database (package store), and asks the server only what only the server knows, through the
+// host API.
 //
 // Moved from the server route group by route group (WittyMediaServer docs/plans/MODULAR-MODULES.md):
 // controller layouts, controller profiles and the controller screen's background first.

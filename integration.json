@@ -17,9 +17,6 @@
         "PUT"
       ],
       "auth": "user",
-      "alias": [
-        "/api/consoles/{console}/controls"
-      ],
       "limits": {
         "body": "32KB"
       }
@@ -29,10 +26,7 @@
       "methods": [
         "GET"
       ],
-      "auth": "user",
-      "alias": [
-        "/api/game-controllers"
-      ]
+      "auth": "user"
     },
     {
       "path": "/game-profiles",
@@ -41,9 +35,6 @@
         "POST"
       ],
       "auth": "user",
-      "alias": [
-        "/api/game-profiles"
-      ],
       "limits": {
         "body": "32KB"
       }
@@ -53,20 +44,14 @@
       "methods": [
         "GET"
       ],
-      "auth": "user",
-      "alias": [
-        "/api/game-profiles/resolve"
-      ]
+      "auth": "user"
     },
     {
       "path": "/game-profiles/export",
       "methods": [
         "GET"
       ],
-      "auth": "user",
-      "alias": [
-        "/api/game-profiles/export"
-      ]
+      "auth": "user"
     },
     {
       "path": "/game-profiles/import",
@@ -74,9 +59,6 @@
         "POST"
       ],
       "auth": "user",
-      "alias": [
-        "/api/game-profiles/import"
-      ],
       "limits": {
         "body": "256KB"
       }
@@ -89,9 +71,6 @@
         "DELETE"
       ],
       "auth": "user",
-      "alias": [
-        "/api/game-profiles/{id}"
-      ],
       "limits": {
         "body": "32KB"
       }
@@ -101,20 +80,14 @@
       "methods": [
         "POST"
       ],
-      "auth": "user",
-      "alias": [
-        "/api/game-profiles/{id}/copy"
-      ]
+      "auth": "user"
     },
     {
       "path": "/game-profiles/{id}/active",
       "methods": [
         "POST"
       ],
-      "auth": "user",
-      "alias": [
-        "/api/game-profiles/{id}/active"
-      ]
+      "auth": "user"
     },
     {
       "path": "/game-background",
@@ -123,10 +96,7 @@
         "PUT",
         "DELETE"
       ],
-      "auth": "user",
-      "alias": [
-        "/api/game-background"
-      ]
+      "auth": "user"
     },
     {
       "path": "/game-background/image",
@@ -135,9 +105,6 @@
         "PUT"
       ],
       "auth": "user",
-      "alias": [
-        "/api/game-background/image"
-      ],
       "limits": {
         "body": "10MB",
         "time": "2m"
@@ -250,12 +217,9 @@
   },
   "data": {
     "store": "sqlite",
-    "import": "server-games-v1",
     "backup": "saves"
   },
   "lifecycle": {
-    "install": true,
-    "upgrade": true,
     "uninstall": "ask-keep-data"
   }
 }

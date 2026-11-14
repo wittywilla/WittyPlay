@@ -20,8 +20,7 @@ package api
 
 import "github.com/wittywilla/wittyplay/store"
 
-// The tables these routes keep, as the server had them (its migrations 16 and 19), so its rows
-// come across as they are. A person's rows go when the server says the account has gone
+// The tables these routes keep. A person's rows go when the server says the account has gone
 // (user.deleted), as its own tables' foreign keys did there.
 func init() {
 	store.Register(store.Migration{Version: 1, SQL: `
@@ -62,10 +61,6 @@ CREATE TABLE IF NOT EXISTS game_core_plays (
   starts INTEGER NOT NULL DEFAULT 0, failures INTEGER NOT NULL DEFAULT 0, seconds REAL NOT NULL DEFAULT 0,
   last_error TEXT NOT NULL DEFAULT '', last_at INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(core_id, item_id));`})
 }
-
-// Imported are the server's tables WittyPlay took over (data.import "server-games-v1"), each once.
-var Imported = []string{"wittyplay_controls", "wittyplay_profiles", "wittyplay_backgrounds",
-	"custom_cores", "custom_core_versions", "custom_consoles", "game_core_choice", "game_core_plays"}
 
 // perUser are the tables with a person's own rows, which go when the account goes.
 var perUser = []string{"wittyplay_controls", "wittyplay_profiles", "wittyplay_backgrounds"}

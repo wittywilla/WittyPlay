@@ -5,13 +5,11 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -138,39 +136,19 @@ func TestControlsAndProfiles(t *testing.T) {
 	}
 }
 
-func TestTakeOverAndForget(t *testing.T) {
-	legacy := map[string][]string{
-		"wittyplay_controls":    {`{"user_id": 5, "console": "snes", "kind": "touch", "key": "phone/landscape", "data": "{}", "updated_at": 100}`},
-		"wittyplay_profiles":    {`{"id": 41, "user_id": 5, "name": "Kept", "kind": "gamepad", "controller": "x", "console": "snes", "game_id": 0, "raw": 0, "active": 1, "data": "{\"options\":{}}", "updated_at": 100}`},
-		"wittyplay_backgrounds": {`{"user_id": 5, "version": 9, "fit": "contain", "x": 10, "y": 20, "dim": 30}`},
+func TestForget(t *testing.T) {
+	a, h := testApp(t, fakeHost(t, nil, nil))
+	if w := call(t, h, "POST", "/game-profiles", 5, map[string]any{"name": "Mine", "kind": "gamepad", "console": "snes"}); w.Code != 201 {
+		t.Fatalf("create: %d %s", w.Code, w.Body)
 	}
-	a, h := testApp(t, fakeHost(t, legacy, map[string][]byte{"u5.jpg": []byte("jpeg"), "../evil": []byte("x")}))
-	if err := a.takeOver(context.Background()); err != nil {
+	if err := writeFileAtomic(a.backgroundPath(5), []byte("jpeg")); err != nil {
 		t.Fatal(err)
 	}
-	// Ids kept: the profile is 41, the person 5.
-	if w := call(t, h, "GET", "/game-profiles/41", 5, nil); w.Code != 200 || !strings.Contains(w.Body.String(), `"name":"Kept"`) {
-		t.Fatalf("an imported profile: %d %s", w.Code, w.Body)
-	}
-	if w := call(t, h, "GET", "/game-background", 5, nil); !strings.Contains(w.Body.String(), `"version":9`) {
-		t.Fatalf("an imported background: %s", w.Body)
-	}
-	if b, err := os.ReadFile(filepath.Join(a.Dir, "backgrounds", "u5.jpg")); err != nil || string(b) != "jpeg" {
-		t.Fatalf("the picture: %q %v", b, err)
-	}
-	if _, err := os.Stat(filepath.Join(a.Dir, "evil")); err == nil {
-		t.Fatal("a file outside the pictures was written")
-	}
-	// A new profile doesn't take an imported one's id.
-	w := call(t, h, "POST", "/game-profiles", 5, map[string]any{"name": "New", "kind": "gamepad", "console": "snes"})
-	if w.Code != 201 || strings.Contains(w.Body.String(), `"id":41`) {
-		t.Fatalf("a new profile: %d %s", w.Code, w.Body)
-	}
 	a.forget(5)
-	if w := call(t, h, "GET", "/game-profiles/41", 5, nil); w.Code != 404 {
-		t.Fatalf("after the account went: %d", w.Code)
+	if w := call(t, h, "GET", "/game-profiles", 5, nil); strings.TrimSpace(w.Body.String()) != "[]" {
+		t.Fatalf("after the account went: %s", w.Body)
 	}
-	if _, err := os.Stat(filepath.Join(a.Dir, "backgrounds", "u5.jpg")); err == nil {
+	if _, err := os.Stat(a.backgroundPath(5)); err == nil {
 		t.Fatal("the picture stayed")
 	}
 }

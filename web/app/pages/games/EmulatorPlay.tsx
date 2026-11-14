@@ -69,8 +69,8 @@ export default function EmulatorPlay({ it, emulator, onClose }: { it: Item; emul
 
   const host = useMemo<EmulatorHost | null>(() => session && sessionHost(session, {
     // The console's own controller, as for a core's game. The player has a usual one without it.
-    controls: (device) => api.get<ControlsData>(`/consoles/${encodeURIComponent(it.console || '')}/controls?device=${encodeURIComponent(device)}&game=${it.id}`),
-    controllers: () => api.get<ControllerData>('/game-controllers'),
+    controls: (device) => api.get<ControlsData>(`/modules/wittyplay/consoles/${encodeURIComponent(it.console || '')}/controls?device=${encodeURIComponent(device)}&game=${it.id}`),
+    controllers: () => api.get<ControllerData>('/modules/wittyplay/game-controllers'),
     report: (level, message) => reportClient({ level, kind: 'game', message, module: 'wittyplay' }),
   }), [session, it.id, it.console])
 

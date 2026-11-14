@@ -3,7 +3,7 @@
 import type { Binding, KeyMap, PadMap, Profile, ProfileOptions } from './mapping'
 
 // A console's controller comes from the server as data, so a TV app and this player
-// read the same thing (GET /api/consoles/{console}/controls, docs/GAMING-API.md). Only
+// read the same thing (GET /api/modules/wittyplay/consoles/{console}/controls, docs/GAMING-API.md). Only
 // the RetroPad's button numbers are written down here.
 
 export const SELECT = 2, START = 3, UP = 4, DOWN = 5, LEFT = 6, RIGHT = 7

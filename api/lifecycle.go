@@ -23,75 +23,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
-	"regexp"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/wittywilla/wittymodule"
-	"github.com/wittywilla/wittymodule/host"
 )
 
-// Lifecycle answers the server's lifecycle calls (module API 5). Installing or upgrading to a
-// version that keeps data of its own takes over what the server kept before, once: its tables'
-// rows, ids and all, and the pictures behind controller screens. Nothing of the server's is
-// changed; a version of WittyPlay before this one still finds it all there.
+// Lifecycle answers the server's lifecycle calls (module API 5): WittyPlay's data starts with it,
+// and goes when it is taken off unless the administrator keeps it.
 func Lifecycle(ctx context.Context, call string, args wittymodule.LifecycleArgs) error {
-	switch call {
-	case wittymodule.CallInstall, wittymodule.CallUpgrade:
-		a, err := Get()
-		if err != nil {
-			return err
-		}
-		return a.takeOver(ctx)
-	case wittymodule.CallUninstall:
-		if !args.KeepData {
-			if a, err := Get(); err == nil {
-				a.DB.Close()
-				return os.RemoveAll(a.Dir)
-			}
+	if call == wittymodule.CallUninstall && !args.KeepData {
+		if a, err := Get(); err == nil {
+			a.DB.Close()
+			return os.RemoveAll(a.Dir)
 		}
 	}
 	return nil
-}
-
-var backgroundName = regexp.MustCompile(`^u([0-9]+)\.jpg$`)
-
-func (a *App) takeOver(ctx context.Context) error {
-	for _, t := range Imported {
-		n, err := a.DB.Import(ctx, a.Host.Legacy, t)
-		if err != nil {
-			return err
-		}
-		if n > 0 {
-			a.Log.Info("wittyplay: took over the server's rows", "cat", "games", "table", t, "rows", n)
-		}
-	}
-	if a.DB.Meta(ctx, "import.backgrounds") == "done" {
-		return nil
-	}
-	names, err := a.Host.LegacyFiles(ctx, "gaming/backgrounds")
-	if err != nil && !host.IsNotFound(err) {
-		return fmt.Errorf("listing the server's controller backgrounds: %w", err)
-	}
-	for _, name := range names {
-		if !backgroundName.MatchString(name) {
-			continue
-		}
-		dst := filepath.Join(a.Dir, "backgrounds", name)
-		if _, err := os.Stat(dst); err == nil {
-			continue // one made here since wins
-		}
-		b, err := a.Host.LegacyFile(ctx, "gaming/backgrounds/"+name)
-		if err != nil {
-			return fmt.Errorf("reading the server's %s: %w", name, err)
-		}
-		if err := writeFileAtomic(dst, b); err != nil {
-			return err
-		}
-	}
-	return a.DB.SetMeta(ctx, "import.backgrounds", "done")
 }
 
 var watchOnce sync.Once

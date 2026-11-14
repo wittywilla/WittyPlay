@@ -33,18 +33,18 @@ const Controllers = lazy(() => import('../../Player').then((m) => ({ default: m.
 
 // Controller profiles and the background, through the same routes a TV app uses.
 const profileHost: ProfileHost = {
-  list: () => api.get<Profile[]>('/game-profiles'),
-  create: (p) => api.post<Profile>('/game-profiles', p),
-  update: (id, p) => api.put<Profile>(`/game-profiles/${id}`, p),
-  remove: async (id) => { await api.del(`/game-profiles/${id}`) },
-  copy: (id) => api.post<Profile>(`/game-profiles/${id}/copy`),
-  setActive: (id, active) => api.post<Profile>(`/game-profiles/${id}/active`, { active }),
-  exportFile: async (ids) => JSON.stringify(await api.get(`/game-profiles/export?${(ids || []).map((i) => `id=${i}`).join('&')}`), null, 2),
-  importFile: (text) => sendBytes('POST', '/game-profiles/import', text),
-  setBackground: (b) => api.put<Background>('/game-background', b),
-  uploadBackground: (f) => sendBytes('PUT', '/game-background/image', f),
-  removeBackground: () => api.del<Background>('/game-background'),
-  backgroundUrl: (v) => mediaUrl('/api/game-background/image') + (mediaUrl('/api/game-background/image').includes('?') ? '&' : '?') + `v=${v}`,
+  list: () => api.get<Profile[]>('/modules/wittyplay/game-profiles'),
+  create: (p) => api.post<Profile>('/modules/wittyplay/game-profiles', p),
+  update: (id, p) => api.put<Profile>(`/modules/wittyplay/game-profiles/${id}`, p),
+  remove: async (id) => { await api.del(`/modules/wittyplay/game-profiles/${id}`) },
+  copy: (id) => api.post<Profile>(`/modules/wittyplay/game-profiles/${id}/copy`),
+  setActive: (id, active) => api.post<Profile>(`/modules/wittyplay/game-profiles/${id}/active`, { active }),
+  exportFile: async (ids) => JSON.stringify(await api.get(`/modules/wittyplay/game-profiles/export?${(ids || []).map((i) => `id=${i}`).join('&')}`), null, 2),
+  importFile: (text) => sendBytes('POST', '/modules/wittyplay/game-profiles/import', text),
+  setBackground: (b) => api.put<Background>('/modules/wittyplay/game-background', b),
+  uploadBackground: (f) => sendBytes('PUT', '/modules/wittyplay/game-background/image', f),
+  removeBackground: () => api.del<Background>('/modules/wittyplay/game-background'),
+  backgroundUrl: (v) => mediaUrl('/api/modules/wittyplay/game-background/image') + (mediaUrl('/api/modules/wittyplay/game-background/image').includes('?') ? '&' : '?') + `v=${v}`,
 }
 
 // The body as it is, for a picture or a file. The server looks inside to see what it is.
@@ -60,7 +60,7 @@ async function sendBytes<T>(method: string, path: string, body: BodyInit): Promi
 
 let knownControllers: Promise<ControllerData> | null = null
 const getControllers = () => {
-  if (!knownControllers) knownControllers = api.get<ControllerData>('/game-controllers')
+  if (!knownControllers) knownControllers = api.get<ControllerData>('/modules/wittyplay/game-controllers')
   knownControllers.catch(() => { knownControllers = null })
   return knownControllers
 }
@@ -91,9 +91,9 @@ export function GamePage() {
         const q = [resume ? 'resume=1' : '', safeMode ? 'safe=1' : ''].filter(Boolean).join('&')
         window.location.assign(window.location.pathname + (q ? '?' + q : ''))
       },
-      controls: (device) => api.get<any>(`/consoles/${it.console}/controls?device=${encodeURIComponent(device)}&game=${it.id}`),
+      controls: (device) => api.get<any>(`/modules/wittyplay/consoles/${it.console}/controls?device=${encodeURIComponent(device)}&game=${it.id}`),
       controllers: getControllers, profiles: profileHost,
-      saveControl: async (s) => { await api.put(`/consoles/${it.console}/controls`, s) },
+      saveControl: async (s) => { await api.put(`/modules/wittyplay/consoles/${it.console}/controls`, s) },
       stop: async (sid) => { setLogSession(null); await api.del(`/play/${sid}`) },
       answer: async (sid, sdp, prefer) => (await api.post<{ sdp: string }>(`/play/${sid}/webrtc`, { sdp, prefer })).sdp,
       // As for pictures and sound: over HTTPS in a browser the sign-in cookie comes along.
@@ -139,13 +139,13 @@ export function ControllersScreen() {
   const [params, setParams] = useSearchParams()
   const consoles = useConsoles()
   const consoleId = params.get('console') || consoles.find((c) => c.ready)?.id || consoles[0]?.id || ''
-  const controls = useMemo(() => (id: string, device: string) => api.get<ControlsData>(`/consoles/${encodeURIComponent(id)}/controls?device=${encodeURIComponent(device)}`), [])
+  const controls = useMemo(() => (id: string, device: string) => api.get<ControlsData>(`/modules/wittyplay/consoles/${encodeURIComponent(id)}/controls?device=${encodeURIComponent(device)}`), [])
   if (!consoleId) return <><h1 className="sr-only">Controllers</h1><Spinner /></>
   return (
     <Suspense fallback={<Spinner />}>
       <h1 className="sr-only">Controllers</h1>
       <Controllers profiles={profileHost} controls={controls} controllers={getControllers} consoles={consoles} consoleId={consoleId}
-        onConsole={(id: string) => setParams({ console: id }, { replace: true })} saveControl={async (id: string, s: unknown) => { await api.put(`/consoles/${id}/controls`, s) }} onClose={() => nav(-1)} />
+        onConsole={(id: string) => setParams({ console: id }, { replace: true })} saveControl={async (id: string, s: unknown) => { await api.put(`/modules/wittyplay/consoles/${id}/controls`, s) }} onClose={() => nav(-1)} />
     </Suspense>
   )
 }

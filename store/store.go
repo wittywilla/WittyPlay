@@ -17,21 +17,18 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 // Package store is WittyPlay's own database (module API 5): a SQLite file in the module's own
-// folder (WITTYMODULE_DATA), with migrations WittyPlay owns, and the one-off import of what the
-// server kept for WittyPlay before (host.Client.Legacy). Every id is kept as it was, because the
-// apps keep item ids, user ids and save slots.
+// folder (WITTYMODULE_DATA), with migrations WittyPlay owns. It refers to the server's item and
+// user ids as they are.
 package store
 
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 
 	_ "modernc.org/sqlite"
@@ -136,93 +133,4 @@ func (d *DB) Meta(ctx context.Context, key string) string {
 func (d *DB) SetMeta(ctx context.Context, key, value string) error {
 	_, err := d.ExecContext(ctx, `INSERT INTO store_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`, key, value)
 	return err
-}
-
-// Legacy is where the server's own rows come from: host.Client.Legacy.
-type Legacy func(ctx context.Context, table string, after int64, limit int) ([]json.RawMessage, int64, error)
-
-// Import copies one of the server's tables into the table of the same name and columns here,
-// once: rows keep every value as it was, ids included, and a row already here is kept (a
-// second run, or one after a crash, changes nothing). It returns how many rows it read.
-func (d *DB) Import(ctx context.Context, from Legacy, table string) (int, error) {
-	key := "import." + table
-	if d.Meta(ctx, key) == "done" {
-		return 0, nil
-	}
-	cols, err := d.columns(ctx, table)
-	if err != nil {
-		return 0, err
-	}
-	after, n := int64(0), 0
-	for {
-		rows, next, err := from(ctx, table, after, 500)
-		if err != nil {
-			return n, fmt.Errorf("store: reading the server's %s: %w", table, err)
-		}
-		if len(rows) == 0 {
-			break
-		}
-		tx, err := d.BeginTx(ctx, nil)
-		if err != nil {
-			return n, err
-		}
-		for _, raw := range rows {
-			var row map[string]any
-			if err := json.Unmarshal(raw, &row); err != nil {
-				tx.Rollback()
-				return n, err
-			}
-			var names, marks []string
-			var args []any
-			for _, c := range cols {
-				if v, ok := row[c]; ok {
-					names = append(names, `"`+c+`"`)
-					marks = append(marks, "?")
-					if f, ok := v.(float64); ok && f == float64(int64(f)) {
-						v = int64(f) // JSON numbers come as floats; ids and times are whole
-					}
-					args = append(args, v)
-				}
-			}
-			if len(names) == 0 {
-				continue
-			}
-			q := fmt.Sprintf(`INSERT OR IGNORE INTO %q (%s) VALUES (%s)`, table, strings.Join(names, ", "), strings.Join(marks, ", "))
-			if _, err := tx.ExecContext(ctx, q, args...); err != nil {
-				tx.Rollback()
-				return n, fmt.Errorf("store: importing %s: %w", table, err)
-			}
-			n++
-		}
-		if err := tx.Commit(); err != nil {
-			return n, err
-		}
-		if next <= after {
-			break
-		}
-		after = next
-	}
-	return n, d.SetMeta(ctx, key, "done")
-}
-
-func (d *DB) columns(ctx context.Context, table string) ([]string, error) {
-	rs, err := d.QueryContext(ctx, fmt.Sprintf(`PRAGMA table_info(%q)`, table))
-	if err != nil {
-		return nil, err
-	}
-	defer rs.Close()
-	var out []string
-	for rs.Next() {
-		var cid, notnull, pk int
-		var name, typ string
-		var def any
-		if err := rs.Scan(&cid, &name, &typ, &notnull, &def, &pk); err != nil {
-			return nil, err
-		}
-		out = append(out, name)
-	}
-	if len(out) == 0 {
-		return nil, fmt.Errorf("store: no table %s here", table)
-	}
-	return out, rs.Err()
 }
