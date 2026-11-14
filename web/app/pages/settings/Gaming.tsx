@@ -68,7 +68,7 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
   const [settings, setSettings] = useState<Record<string, string> | null>(null)
   const [failed, setFailed] = useState(false)
   const load = () => api.get<Status>('/modules/wittyplay/gaming').then(setSt).catch(() => setFailed(true))
-  useEffect(() => { void load(); api.get<Record<string, string>>('/settings').then(setSettings).catch(() => {}) }, [])
+  useEffect(() => { void load(); api.get<Record<string, string>>('/modules/wittyplay/gaming/settings').then(setSettings).catch(() => {}) }, [])
   const emptyUnpacked = async () => {
     setBusy('unpacked')
     try {
@@ -125,7 +125,7 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
     try { await api.del(`/modules/wittyplay/gaming/cores/${id}`); toast(`${name} removed`); await refresh() } catch (e: any) { toast(e.message) } finally { setBusy('') }
   }
   const put = async (patch: Record<string, string>) => {
-    try { setSettings(await api.put<Record<string, string>>('/settings', patch)); toast('Saved') } catch (e: any) { toast(e.message) }
+    try { setSettings(await api.put<Record<string, string>>('/modules/wittyplay/gaming/settings', patch)); toast('Saved') } catch (e: any) { toast(e.message) }
   }
   const installed = useMemo(() => new Map((st?.cores || []).map((c) => [c.id, c])), [st])
   const offeredIds = useMemo(() => new Set((st?.consoles || []).filter((c) => !c.id.startsWith('custom-')).flatMap((c) => c.cores.map((x) => x.id))), [st])
