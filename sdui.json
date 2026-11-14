@@ -225,6 +225,17 @@
                       },
                       "children": [
                         {
+                          "id": "invites",
+                          "component": "List",
+                          "props": {
+                            "focusable": true,
+                            "title": "Invites"
+                          },
+                          "source": {
+                            "type": "wittyplay.invites"
+                          }
+                        },
+                        {
                           "id": "room",
                           "component": "List",
                           "props": {
@@ -2136,6 +2147,31 @@
       "since": 8
     },
     {
+      "type": "wittyplay.invites",
+      "label": "Invites",
+      "description": "The invites this profile was sent by friends to games being played now, newest first, each with Accept (into the game) and Decline. An invite lasts ten minutes, or until its game ends.",
+      "icon": "users",
+      "category": "",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "label": "At most",
+          "default": 8,
+          "min": 1,
+          "max": 16,
+          "since": 0
+        }
+      ],
+      "yields": [
+        "view"
+      ],
+      "cardStyle": "landscape",
+      "paged": false,
+      "title": "Invites",
+      "since": 8
+    },
+    {
       "type": "wittyplay.saveStates",
       "label": "Save states",
       "description": "One game's saves for this profile, its own first, newest first.",
@@ -2495,6 +2531,34 @@
       "method": "POST",
       "path": "/api/modules/wittyplay/setup/games",
       "body": "{\"skip\":false}"
+    },
+    {
+      "op": "wittyplay.friend.invite",
+      "label": "Invite to the game",
+      "description": "WittyPlay Online: invites a friend (item: their profile's ID) to the game this profile is playing as its host. The invite lasts ten minutes, or until the game ends.",
+      "method": "POST",
+      "path": "/api/modules/wittyplay/games/online/friends/{item}/invite"
+    },
+    {
+      "op": "wittyplay.invite.accept",
+      "label": "Accept",
+      "description": "WittyPlay Online: accepts an invite (item: its ID), taking a seat in its game. Answers {sid, seat, itemId, route}; route is the game's page with ?join=, where the app's player plays that seat.",
+      "method": "POST",
+      "path": "/api/modules/wittyplay/games/online/invites/{item}/accept"
+    },
+    {
+      "op": "wittyplay.invite.decline",
+      "label": "Decline",
+      "description": "WittyPlay Online: declines an invite (item: its ID).",
+      "method": "DELETE",
+      "path": "/api/modules/wittyplay/games/online/invites/{item}"
+    },
+    {
+      "op": "wittyplay.invite.cancel",
+      "label": "Cancel the invite",
+      "description": "WittyPlay Online: takes back an invite this profile sent (item: its ID).",
+      "method": "DELETE",
+      "path": "/api/modules/wittyplay/games/online/invites/{item}"
     },
     {
       "op": "wittyplay.setup.later",

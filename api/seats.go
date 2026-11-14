@@ -246,6 +246,19 @@ func (b *seatBook) joinOpen(sid string, user int64, name string) (seatJoin, erro
 	return b.seatLocked(sid, t, user, name), nil
 }
 
+// joinInvited gives someone a seat in a game a friend invited them to (invites.go), open or not.
+// Whether they may (the invite, the game's rating) is the caller's to say.
+func (b *seatBook) joinInvited(sid string, user int64, name string) (seatJoin, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.init()
+	t := b.tables[sid]
+	if t == nil {
+		return seatJoin{}, errRoomClosed
+	}
+	return b.seatLocked(sid, t, user, name), nil
+}
+
 // seatLocked seats someone at a table: the host as itself, someone already there where they are,
 // anyone else in the lowest seat free, or watching when every seat is taken.
 func (b *seatBook) seatLocked(sid string, t *seatTable, user int64, name string) seatJoin {
@@ -402,7 +415,7 @@ func init() {
 func noteGameStarted(sess *stream.Session, hostID int64, hostName, device string, game seatGame) {
 	seats.started(sess.ID(), hostID, hostName, device, game)
 	sid, done := sess.ID(), sess.Done()
-	go func() { <-done; seats.ended(sid) }()
+	go func() { <-done; seats.ended(sid); invites.ended(sid) }()
 }
 
 // personName is the name a profile goes by (the server's profileName), from the server's list

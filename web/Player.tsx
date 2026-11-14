@@ -8,6 +8,8 @@ import { deviceId, InputManager, load, onTV, padSupport, save } from './input'
 import { computeLayout } from './layout'
 import type { ControllerData } from './mapping'
 import { Osd } from './Osd'
+import { BatteryChips, useBatteries, useLowBatteryNotice } from './BatteryChips'
+import { isLow } from './battery'
 import { MenuFrame, Tile, TileGrid } from './QuickMenu'
 import { LoadingScreen, ProblemScreen, type LoadStage } from './Screens'
 import { explain, type ProblemData } from './words'
@@ -36,6 +38,7 @@ export interface PlayHost extends SettingsHost {
   consoleName: string
   resume: boolean
   safeMode: boolean
+  joined?: boolean // a seat in someone else's game: leaving gives the seat up, and their game goes on
   startSlot?: number // load this save state as soon as the game is running
   cover?: string // the game's cover, for the loading screen and the menu
   openSettings?(): void // where an administrator goes to install a core
@@ -193,6 +196,18 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     const t = setTimeout(() => setToast(''), 3500)
     return () => clearTimeout(t)
   }, [toast])
+  // The controllers' and this device's batteries: in the game menu, a low one over the game too, and
+  // said once when it runs low (BatteryChips.tsx).
+  // The notice has a live region of its own, so a toast that comes next can't cut it off.
+  const batteries = useBatteries()
+  const [batteryNote, setBatteryNote] = useState('')
+  useLowBatteryNotice(batteries, setBatteryNote)
+  useEffect(() => {
+    if (!batteryNote) return
+    const t = setTimeout(() => setBatteryNote(''), 10000)
+    return () => clearTimeout(t)
+  }, [batteryNote])
+  const lowBatteries = batteries.filter(isLow)
 
   // A person's settings, or defaults in safe mode: that's its point.
   const settings = useSettings(host, useMemo(() => ({ item: host.itemId }), [host.itemId]), say)
@@ -786,6 +801,9 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
         </div>
       )}
 
+      {!paused && lowBatteries.length > 0 && <div className="wp-batt-alert"><BatteryChips readings={lowBatteries} /></div>}
+      <div className="wp-sr" role="status" aria-live="polite">{batteryNote}</div>
+
       <div className="wp-toast" role="status" aria-live="polite">{toast}</div>
 
       {panel === 'touch' && <TouchEditor data={controls} orientation={orientation} onClose={() => setPanel('menu')}
@@ -806,7 +824,10 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
             <SheetBar onUp={panel === 'menu' ? undefined : () => { if (mayLeavePanel()) up() }} onClose={() => { if (mayLeavePanel()) setPanel(null) }} />
             {panel === 'menu' && (
               <MenuFrame title={host.title} sub={[host.consoleName, info?.core].filter(Boolean).join(' · ')} cover={host.cover}
-                foot={!padName && padSupport() === 'insecure' ? <p className="wp-muted wp-small">Using a gamepad? Most browsers only show them to secure pages. Open this server over https, or at localhost on this computer.</p> : undefined}>
+                foot={<>
+                  <BatteryChips readings={batteries} />
+                  {!padName && padSupport() === 'insecure' && <p className="wp-muted wp-small">Using a gamepad? Most browsers only show them to secure pages. Open this server over https, or at localhost on this computer.</p>}
+                </>}>
                 <TileGrid label="Game menu">
                   <Tile id="resume" icon="play" label="Resume" primary wide glyph="back" onClick={() => setPanel(null)} />
                   <Tile id="save" icon="save" label="Save" sub="Choose a slot" onClick={() => setPanel('save')} />
@@ -824,7 +845,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
                   {!tv && <Tile id="touch" icon="touch" label={touchShown ? 'Hide touch' : 'Show touch'} sub="Controls on screen" pressed={touchShown} onClick={() => { if (touchShown) { setTouchOverPad(false); if (touchOn) toggleTouch() } else { setTouchOverPad(true); if (!touchOn) toggleTouch() } }} />}
                   <Tile id="settings" icon="settings" label="Settings" sub="Picture, sound, cheats" onClick={() => setPanel('settings')} />
                   <Tile id="more" icon="more" label="More" onClick={() => setPanel('more')} />
-                  <Tile id="quit" icon="quit" label="Save and quit" danger onClick={leave} />
+                  <Tile id="quit" icon="quit" label={host.joined ? 'Leave the game' : 'Save and quit'} danger onClick={leave} />
                 </TileGrid>
               </MenuFrame>
             )}

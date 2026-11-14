@@ -111,8 +111,14 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .play-right { gap: clamp(10px, 1.3vw, 26px); flex-wrap: wrap; justify-content: flex-end; }
 .wplay .play-brand { font-size: clamp(1rem, 1.15vw, 1.35rem); font-weight: 900; }
 .wplay .play-pads { gap: clamp(8px, 1vw, 18px); color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1.1rem); font-weight: 700; letter-spacing: .06em; }
-.wplay .play-pads i { position: relative; inline-size: 1.6em; block-size: .85em; border-radius: 3px; background: linear-gradient(90deg, var(--ok) 0 82%, transparent 82%); box-shadow: 0 0 0 2px var(--ok); margin-inline-end: 4px; }
-.wplay .play-pads i::after { content: ""; position: absolute; inset-inline-end: -5px; inset-block: 25%; inline-size: 2px; border-radius: 1px; background: var(--ok); }
+/* A battery: its level is the fill (--lvl), in words beside it; low, it's the warning colour and says Low; unknown, an empty outline. */
+.wplay :is(.play-pads, .play-device-batt) i { --batt: var(--ok); position: relative; inline-size: 1.6em; block-size: .85em; border-radius: 3px; background: linear-gradient(90deg, var(--batt) 0 var(--lvl, 0%), transparent var(--lvl, 0%)); box-shadow: 0 0 0 2px var(--batt); margin-inline-end: 4px; }
+.wplay :is(.play-pads, .play-device-batt) i::after { content: ""; position: absolute; inset-inline-end: -5px; inset-block: 25%; inline-size: 2px; border-radius: 1px; background: var(--batt); }
+.wplay :is(.play-pads, .play-device-batt) i.unknown { --batt: var(--fg-2); }
+.wplay :is(.play-pads, .play-device-batt) i.low { --batt: var(--warn); }
+.wplay :is(.play-pads li, .play-device-batt).low { color: var(--warn); }
+.wplay .play-device-batt { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1.1rem); font-weight: 700; font-variant-numeric: tabular-nums; }
+.play-invites { text-decoration: none; }
 .wplay .play-clock { font-size: clamp(1.2rem, 1.6vw, 1.85rem); font-weight: 900; }
 .play-sys { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-inline-size: 44px; min-block-size: 44px; padding: 0 var(--sp-3); border: 0; border-radius: var(--r-full); background: var(--wp-chip); color: var(--fg); font: inherit; font-weight: 800; cursor: pointer; transition: background var(--dur-2); }
 .play-sys:hover { background: var(--wp-chip-hover); }

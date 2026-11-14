@@ -42,6 +42,7 @@ const (
 	SourceFriends     = Module + ".friends"
 	SourceRooms       = Module + ".rooms"
 	SourceRoom        = Module + ".room"
+	SourceInvites     = Module + ".invites"
 	SourceSaveStates  = Module + ".saveStates"
 	SourceMemories    = Module + ".memories"
 	SourceControllers = Module + ".controllers"
@@ -111,6 +112,9 @@ func onlineSources() []sdui.SourceSpec {
 		{Type: SourceRoom, Label: "Your room", Icon: "users", Title: "Your room",
 			Description: "The game this profile is playing with others: the room first (a view: its code for the host), then each player as a person, or Waiting… for a free seat.",
 			Params:      []sdui.PropSpec{limit(9, 9)}, Yields: []string{"view", "person"}, CardStyle: "person"},
+		{Type: SourceInvites, Label: "Invites", Icon: "users", Title: "Invites",
+			Description: "The invites this profile was sent by friends to games being played now, newest first, each with Accept (into the game) and Decline. An invite lasts ten minutes, or until its game ends.",
+			Params:      []sdui.PropSpec{limit(8, 16)}, Yields: []string{"view"}, CardStyle: "landscape"},
 		{Type: SourceSaveStates, Label: "Save states", Icon: "history", Title: "Save states",
 			Description: "One game's saves for this profile, its own first, newest first.", PageKinds: []string{"detail"},
 			Params: []sdui.PropSpec{{Name: "item", Type: "ref", Label: "Game", Required: true, Help: "$item on a game's page."}, limit(20, 110)},
@@ -272,6 +276,7 @@ func addOnlinePages(m *sdui.Module) {
 				sdui.Sec("lobby", "Split", sdui.Props("ratio", "1:2", "stackBelow", "expanded"), nil,
 					list("friends", "Friends", sdui.Src(SourceFriends), "focusable", true, "empty", "message", "emptyText", "No friends are online right now."),
 					sdui.Sec("rooms-side", "Stack", sdui.Props("gap", "l"), nil,
+						list("invites", "Invites", sdui.Src(SourceInvites), "focusable", true),
 						list("room", "Your room", sdui.Src(SourceRoom), "focusable", true, "empty", "message", "emptyText", "Start a game, then open your room to friends."),
 						sdui.Sec("rooms", "Grid", sdui.Props("title", "Open rooms", "focusable", true, "empty", "message",
 							"emptyText", "No friend has a room open."), sdui.Src(SourceRooms))))),
@@ -468,6 +473,11 @@ const (
 	CommandEmulatorRemove  = Module + ".emulator.remove"
 	CommandSetupDone       = Module + ".setup.done"
 	CommandSetupLater      = Module + ".setup.later"
+	// WittyPlay Online's invites (api/invites.go), for every profile with friends.
+	CommandFriendInvite  = Module + ".friend.invite"
+	CommandInviteAccept  = Module + ".invite.accept"
+	CommandInviteDecline = Module + ".invite.decline"
+	CommandInviteCancel  = Module + ".invite.cancel"
 )
 
 // Commands are WittyPlay's own commands, as sdui.json declares them.
@@ -490,6 +500,14 @@ func Commands() []core.CommandSpec {
 			Description: "Cores & emulators, administrators: uninstalls a standalone emulator (item: its ID). Saves stay."},
 		{Op: CommandSetupDone, Label: "Finish setting up", Method: "POST", Path: routes + "/setup/games", Body: `{"skip":false}`,
 			Description: "Administrators: WittyPlay's first-run step is done, so the server stops showing \"Finish setting up WittyPlay\"."},
+		{Op: CommandFriendInvite, Label: "Invite to the game", Method: "POST", Path: routes + "/games/online/friends/{item}/invite",
+			Description: "WittyPlay Online: invites a friend (item: their profile's ID) to the game this profile is playing as its host. The invite lasts ten minutes, or until the game ends."},
+		{Op: CommandInviteAccept, Label: "Accept", Method: "POST", Path: routes + "/games/online/invites/{item}/accept",
+			Description: "WittyPlay Online: accepts an invite (item: its ID), taking a seat in its game. Answers {sid, seat, itemId, route}; route is the game's page with ?join=, where the app's player plays that seat."},
+		{Op: CommandInviteDecline, Label: "Decline", Method: "DELETE", Path: routes + "/games/online/invites/{item}",
+			Description: "WittyPlay Online: declines an invite (item: its ID)."},
+		{Op: CommandInviteCancel, Label: "Cancel the invite", Method: "DELETE", Path: routes + "/games/online/invites/{item}",
+			Description: "WittyPlay Online: takes back an invite this profile sent (item: its ID)."},
 		{Op: CommandSetupLater, Label: "Do this later", Method: "POST", Path: routes + "/setup/games", Body: `{"skip":true}`,
 			Description: "Administrators: WittyPlay's first-run step is put off; everything in it is in WittyPlay's Settings."},
 	}

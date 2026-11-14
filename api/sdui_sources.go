@@ -23,6 +23,7 @@ import (
 	"github.com/wittywilla/wittyplay"
 	"github.com/wittywilla/wittyplay/rpc"
 	"github.com/wittywilla/wittyplay/stream"
+	"github.com/wittywilla/wittyplay/ui"
 )
 
 // WittyPlay Online's data sources (sdui.json): its home row, classics by era, friends, rooms, save
@@ -43,6 +44,7 @@ const (
 	srcPlayFriends     = "wittyplay.friends"
 	srcPlayRooms       = "wittyplay.rooms"
 	srcPlayRoom        = "wittyplay.room"
+	srcPlayInvites     = "wittyplay.invites"
 	srcPlaySaveStates  = "wittyplay.saveStates"
 	srcPlayMemories    = "wittyplay.memories"
 	srcPlayControllers = "wittyplay.controllers"
@@ -53,7 +55,7 @@ const (
 )
 
 // onlineSources are the sources answered here; wittyplay.consoles is package rpc's.
-var onlineSources = []string{srcPlayRecent, srcPlayCollections, srcPlayFriends, srcPlayRooms, srcPlayRoom, srcPlaySaveStates, srcPlayMemories, srcPlayControllers, srcPlayPrivacy, srcPlayKidsFriends}
+var onlineSources = []string{srcPlayRecent, srcPlayCollections, srcPlayFriends, srcPlayRooms, srcPlayRoom, srcPlayInvites, srcPlaySaveStates, srcPlayMemories, srcPlayControllers, srcPlayPrivacy, srcPlayKidsFriends}
 
 // maxVisibleGames is as many games as the classics are made from.
 const maxVisibleGames = 20000
@@ -121,6 +123,8 @@ func (a *App) onlineItems(ctx context.Context, req sdui.ItemsRequest) (sdui.Item
 		all, err = q.rooms()
 	case srcPlayRoom:
 		all = q.room()
+	case srcPlayInvites:
+		all = q.invites()
 	case srcPlaySaveStates:
 		all = q.saveStates()
 	case srcPlayMemories:
@@ -522,7 +526,9 @@ func (q *sduiAsk) collections() ([]sdui.Item, error) {
 	return out, nil
 }
 
-// friends: the profiles this one may see, each with what it's doing, playing first.
+// friends: the profiles this one may see, each with what it's doing, playing first. Each has the
+// buttons that fit: Join, when the friend's room is open to this profile; Invite, when this profile
+// is playing a game as its host and the friend isn't in it, or Cancel the invite once it's sent.
 func (q *sduiAsk) friends() ([]sdui.Item, error) {
 	friends, err := q.a.playFriends(q.ctx, q.id)
 	if err != nil {
@@ -531,6 +537,23 @@ func (q *sduiAsk) friends() ([]sdui.Item, error) {
 	pres := q.a.playPresence(q.ctx, friends)
 	rank := map[string]int{"playing": 0, "online": 1, "away": 2, "offline": 3}
 	sort.SliceStable(friends, func(i, j int) bool { return rank[pres[friends[i].ID].State] < rank[pres[friends[j].ID].State] })
+	mine, hosting := hostedTable(q.id.User)
+	sent := map[int64]gameInvite{}
+	if hosting {
+		for _, in := range invites.from(q.id.User) {
+			if in.Session == mine.Session {
+				if _, ok := sent[in.To]; !ok {
+					sent[in.To] = in
+				}
+			}
+		}
+	}
+	rooms := map[int64]seatTableView{}
+	for _, t := range q.joinableRooms(friends) {
+		if _, ok := rooms[t.Host]; !ok {
+			rooms[t.Host] = t
+		}
+	}
 	out := make([]sdui.Item, 0, len(friends))
 	for _, f := range friends {
 		p := pres[f.ID]
@@ -539,11 +562,68 @@ func (q *sduiAsk) friends() ([]sdui.Item, error) {
 		if p.State == "playing" && q.mayOpen(p.Item) {
 			sub = "Playing " + p.Game
 		}
-		// A person card that opens nothing: there's no profile page to open.
-		out = append(out, sdui.Item{ID: "profile-" + strconv.FormatInt(f.ID, 10), Kind: "person", Title: profileName(&f), Subtitle: sub,
-			Badges: []string{presenceWords[p.State]}, Icon: "user"})
+		id := strconv.FormatInt(f.ID, 10)
+		// A person card that opens nothing: there's no profile page to open. Its buttons are beside it.
+		it := sdui.Item{ID: "profile-" + id, Kind: "person", Title: profileName(&f), Subtitle: sub,
+			Badges: []string{presenceWords[p.State]}, Icon: "user"}
+		if t, ok := rooms[f.ID]; ok {
+			it.Actions = append(it.Actions, sdui.ItemAction{ID: "join", Label: "Join", Glyph: "a",
+				Action: &sdui.Action{Type: core.ActCommand, Op: "wittyplay.room.join", Item: t.Session}})
+		}
+		if hosting && f.ID != mine.Host && !slicesHas(mine.Holders, f.ID) {
+			if in, ok := sent[f.ID]; ok {
+				it.Badges = append(it.Badges, "Invited")
+				it.Actions = append(it.Actions, sdui.ItemAction{ID: "uninvite", Label: "Cancel the invite", Glyph: "y",
+					Action: &sdui.Action{Type: core.ActCommand, Op: ui.CommandInviteCancel, Item: in.ID}})
+			} else {
+				it.Actions = append(it.Actions, sdui.ItemAction{ID: "invite", Label: "Invite to " + mine.Game.Title, Glyph: "x",
+					Action: &sdui.Action{Type: core.ActCommand, Op: ui.CommandFriendInvite, Item: id}})
+			}
+		}
+		out = append(out, it)
 	}
 	return out, nil
+}
+
+// joinableRooms is each open room of a friend's that this profile may join now, oldest first: what
+// the rooms source lists.
+func (q *sduiAsk) joinableRooms(friends []host.User) []seatTableView {
+	var out []seatTableView
+	if q.id.Kind == "kids" || q.id.Kind == "guest" {
+		return out
+	}
+	for _, t := range seats.tablesNow() {
+		if !t.Open || t.Host == q.id.User || !slices.ContainsFunc(friends, func(u host.User) bool { return u.ID == t.Host }) {
+			continue
+		}
+		if slicesHas(t.Holders, q.id.User) {
+			continue // already in it: it's this profile's room
+		}
+		if seatsTaken(t) >= max(t.Game.Players, 1) || !q.mayOpen(t.Game.Item) {
+			continue
+		}
+		out = append(out, t)
+	}
+	return out
+}
+
+// invites: the invites this profile was sent and may still answer, newest first, each with Accept
+// (into the game: its page with the invite, which the app's player accepts) and Decline.
+func (q *sduiAsk) invites() []sdui.Item {
+	var out []sdui.Item
+	for _, in := range invites.to(q.id.User) {
+		if !liveInvite(in) || !q.mayOpen(in.Item) {
+			continue
+		}
+		accept := &sdui.Action{Type: core.ActNavigate, To: inviteRoute(in.Item, in.ID)}
+		out = append(out, sdui.Item{ID: "invite-" + in.ID, Kind: "view", Title: in.FromName + " invites you to play", Subtitle: in.Title,
+			Icon: "users", Badges: []string{"Invite"}, Action: accept,
+			Actions: []sdui.ItemAction{
+				{ID: "accept", Label: "Accept", Glyph: "a", Action: accept},
+				{ID: "decline", Label: "Decline", Glyph: "b", Action: &sdui.Action{Type: core.ActCommand, Op: ui.CommandInviteDecline, Item: in.ID}},
+			}})
+	}
+	return out
 }
 
 // roomWords is a room's line: "Shared · Sam".
@@ -563,11 +643,7 @@ func seatsTaken(t seatTableView) int {
 // rooms: the open rooms this profile may join: friends' games with a seat free, of games it may
 // play. None for a Kids profile or a guest.
 func (q *sduiAsk) rooms() ([]sdui.Item, error) {
-	if q.id.Kind == "kids" || q.id.Kind == "guest" {
-		return nil, nil
-	}
-	tables := seats.tablesNow()
-	if len(tables) == 0 {
+	if q.id.Kind == "kids" || q.id.Kind == "guest" || len(seats.tablesNow()) == 0 {
 		return nil, nil
 	}
 	friends, err := q.a.playFriends(q.ctx, q.id)
@@ -575,17 +651,8 @@ func (q *sduiAsk) rooms() ([]sdui.Item, error) {
 		return nil, err
 	}
 	var out []sdui.Item
-	for _, t := range tables {
-		if !t.Open || t.Host == q.id.User || !slices.ContainsFunc(friends, func(u host.User) bool { return u.ID == t.Host }) {
-			continue
-		}
-		if slicesHas(t.Holders, q.id.User) {
-			continue // already in it: it's this profile's room
-		}
+	for _, t := range q.joinableRooms(friends) {
 		taken, total := seatsTaken(t), max(t.Game.Players, 1)
-		if taken >= total || !q.mayOpen(t.Game.Item) {
-			continue
-		}
 		join := &sdui.Action{Type: core.ActCommand, Op: "wittyplay.room.join", Item: t.Session}
 		out = append(out, sdui.Item{ID: t.Session, Kind: "view", Title: fmt.Sprintf("%s · %d of %d", t.Game.Title, taken, total), Subtitle: roomWords(t.HostName),
 			Count: taken, Icon: "users", Badges: []string{"Shared"}, Action: join,
@@ -623,8 +690,9 @@ func (q *sduiAsk) room() []sdui.Item {
 		}
 		room.Actions = q.roomActions(t)
 	} else {
-		// Someone who joined may leave; getting back into the game is their player's own.
+		// Someone who joined plays it on the game's page as a seat in this game, or leaves.
 		room.Actions = []sdui.ItemAction{
+			{ID: "play", Label: "Play", Glyph: "a", Action: &sdui.Action{Type: core.ActNavigate, To: joinRoute(t.Game.Item, t.Session)}},
 			{ID: "leave", Label: "Leave", Glyph: "b", Action: &sdui.Action{Type: core.ActCommand, Op: "wittyplay.room.leave", Item: t.Session,
 				Params: map[string]any{"user": strconv.FormatInt(q.id.User, 10)}, Confirm: "Leave this game?"}},
 		}
