@@ -22,8 +22,11 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/wittywilla/wittymodule/service"
 	"github.com/wittywilla/wittyplay"
+	"github.com/wittywilla/wittyplay/api"
 	"github.com/wittywilla/wittyplay/rpc"
 	"github.com/wittywilla/wittyplay/sandbox/docker"
 	"github.com/wittywilla/wittyplay/sandbox/docker/engine"
@@ -41,5 +44,8 @@ func main() {
 		Busy:      rpc.Busy,
 		OnStop:    rpc.Stop,
 		UI:        rpc.UI,
+		// Module API 5: WittyPlay's own routes and data (package api).
+		HTTP:      func(mux *http.ServeMux) { api.Routes(mux); api.Watch() },
+		Lifecycle: api.Lifecycle,
 	})
 }

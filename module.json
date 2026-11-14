@@ -7,6 +7,8 @@
   "delivery": "helper",
   "entry": "wittyplay-module",
   "api": 5,
+  "dataFormat": 1,
+  "dataFrom": 1,
   "minServer": "0.8.0-alpha",
   "maxServer": "0.8.x",
   "capabilities": {

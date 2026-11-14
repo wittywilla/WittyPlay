@@ -4,9 +4,146 @@
   "module": "wittyplay",
   "host": {
     "web": ">=5",
-    "sdui": ">=8"
+    "sdui": ">=8",
+    "http": ">=1",
+    "host": ">=1"
   },
   "feature": "games",
+  "http": [
+    {
+      "path": "/consoles/{console}/controls",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/consoles/{console}/controls"
+      ],
+      "limits": {
+        "body": "32KB"
+      }
+    },
+    {
+      "path": "/game-controllers",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-controllers"
+      ]
+    },
+    {
+      "path": "/game-profiles",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-profiles"
+      ],
+      "limits": {
+        "body": "32KB"
+      }
+    },
+    {
+      "path": "/game-profiles/resolve",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-profiles/resolve"
+      ]
+    },
+    {
+      "path": "/game-profiles/export",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-profiles/export"
+      ]
+    },
+    {
+      "path": "/game-profiles/import",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-profiles/import"
+      ],
+      "limits": {
+        "body": "256KB"
+      }
+    },
+    {
+      "path": "/game-profiles/{id}",
+      "methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-profiles/{id}"
+      ],
+      "limits": {
+        "body": "32KB"
+      }
+    },
+    {
+      "path": "/game-profiles/{id}/copy",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-profiles/{id}/copy"
+      ]
+    },
+    {
+      "path": "/game-profiles/{id}/active",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-profiles/{id}/active"
+      ]
+    },
+    {
+      "path": "/game-background",
+      "methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-background"
+      ]
+    },
+    {
+      "path": "/game-background/image",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "user",
+      "alias": [
+        "/api/game-background/image"
+      ],
+      "limits": {
+        "body": "10MB",
+        "time": "2m"
+      }
+    }
+  ],
   "web": {
     "routes": [
       {
@@ -110,5 +247,15 @@
         "into": "wittyplay-online"
       }
     ]
+  },
+  "data": {
+    "store": "sqlite",
+    "import": "server-games-v1",
+    "backup": "saves"
+  },
+  "lifecycle": {
+    "install": true,
+    "upgrade": true,
+    "uninstall": "ask-keep-data"
   }
 }
