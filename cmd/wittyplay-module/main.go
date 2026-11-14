@@ -24,6 +24,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/wittywilla/wittymodule/sdui"
 	"github.com/wittywilla/wittymodule/service"
 	"github.com/wittywilla/wittyplay"
 	"github.com/wittywilla/wittyplay/api"
@@ -42,7 +43,7 @@ func main() {
 		ErrorCode: rpc.ErrorCode,
 		Busy:      rpc.Busy,
 		OnStop:    rpc.Stop,
-		UI:        rpc.UI,
+		UI:        sdui.Answers{Items: api.SDUIItems, SettingsChanged: rpc.SettingsChanged},
 		// Module API 5: WittyPlay's own routes and data (package api).
 		HTTP:      func(mux *http.ServeMux) { api.Routes(mux); api.Watch(); rpc.Start() },
 		Lifecycle: api.Lifecycle,

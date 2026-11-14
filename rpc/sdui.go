@@ -25,9 +25,6 @@ import (
 // makes; until then no core counts as installed.
 var lastCores atomic.Pointer[cores.Manager]
 
-// UI is what cmd/wittyplay-module hands the service for the server's SDUI calls.
-var UI = sdui.Answers{Items: consoleItems, SettingsChanged: settingsChanged}
-
 var (
 	settingsMu sync.Mutex
 	settings   = readSettings()
@@ -42,7 +39,8 @@ func readSettings() map[string]any {
 	return out
 }
 
-func settingsChanged(values map[string]any) {
+// SettingsChanged hears the module's server settings after an administrator saved them.
+func SettingsChanged(values map[string]any) {
 	settingsMu.Lock()
 	settings = values
 	settingsMu.Unlock()
@@ -83,9 +81,10 @@ func ConsoleStanding(c *wittyplay.Console, mgr *cores.Manager, offers []Offer) (
 	return false, "Needs a core"
 }
 
-// consoleItems answers wittyplay.consoles: every console, ready ones first, as tiles that open
-// Settings' page of what this server plays.
-func consoleItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, error) {
+// ConsoleItems answers wittyplay.consoles: every console, ready ones first, as tiles that open
+// Settings' page of what this server plays. Package api answers WittyPlay's other sources, and
+// asks this for the rest (api.SDUIItems).
+func ConsoleItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, error) {
 	only, _ := req.Source["only"].(string)
 	// The row on the Games page goes when an administrator turns it off; a profile can ask
 	// for only the consoles that play here.

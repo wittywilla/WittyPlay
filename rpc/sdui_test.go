@@ -25,7 +25,7 @@ func TestConsoleItems(t *testing.T) {
 	lastCores.Store(&cores.Manager{Dir: dir, Extra: []string{}})
 	t.Cleanup(func() { lastCores.Store(nil) })
 
-	all, err := consoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "all"}, Limit: 100})
+	all, err := ConsoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "all"}, Limit: 100})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,19 +37,19 @@ func TestConsoleItems(t *testing.T) {
 			t.Errorf("%s isn't marked as not playing here yet", it.ID)
 		}
 	}
-	ready, _ := consoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "ready"}, Limit: 100})
+	ready, _ := ConsoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "ready"}, Limit: 100})
 	if len(ready.Items) != 1 {
 		t.Errorf("ready: %+v", ready.Items)
 	}
-	off, _ := consoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "ready"}, Settings: map[string]any{"showConsoles": false}})
+	off, _ := ConsoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "ready"}, Settings: map[string]any{"showConsoles": false}})
 	if len(off.Items) != 0 {
 		t.Errorf("the row was turned off and still has %d", len(off.Items))
 	}
-	mine, _ := consoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "all"}, Settings: map[string]any{"onlyPlayable": true}})
+	mine, _ := ConsoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "all"}, Settings: map[string]any{"onlyPlayable": true}})
 	if len(mine.Items) != 1 {
 		t.Errorf("a profile asking for what plays got %d", len(mine.Items))
 	}
-	page, _ := consoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "all"}, Offset: 2, Limit: 3})
+	page, _ := ConsoleItems(sdui.ItemsRequest{Source: sdui.Source{"type": "wittyplay.consoles", "only": "all"}, Offset: 2, Limit: 3})
 	if len(page.Items) != 3 || !page.More || page.Total != len(all.Items) || page.Items[0].ID != all.Items[2].ID {
 		t.Errorf("paging: %+v more=%v total=%d", page.Items, page.More, page.Total)
 	}
