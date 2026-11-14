@@ -18,6 +18,10 @@ import (
 // A library that doesn't read other programs' NFOs gets nothing from one beside a game, and one
 // this server wrote is read either way.
 func TestDescribeKeepsToTheLibrarysNFOSetting(t *testing.T) {
+	// The libraries' settings are kept for a while: start without another test's.
+	nfoMu.Lock()
+	nfoLibs = nil
+	nfoMu.Unlock()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == host.Base+"/libraries" {
 			_, _ = w.Write([]byte(`{"libraries":[{"id":1,"kind":"games","foreignNfo":false},{"id":2,"kind":"games","foreignNfo":true}]}`))
