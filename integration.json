@@ -703,6 +703,14 @@
       }
     },
     {
+      "path": "/gaming/settings",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "admin"
+    },
+    {
       "path": "/gaming/cores/{id}/install",
       "methods": [
         "GET",
