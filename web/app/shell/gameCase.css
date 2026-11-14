@@ -62,7 +62,7 @@
 .gcase.tone-white { --gc-col: #ecebe6; } .gcase.tone-wood { --gc-col: #7d5231; }
 .gcase-disc-bare, .gcase-disc-mini, .gcase-disc-sleeve { --gc-base: #c9ccd4; }
 /* The colour each drawing has when nothing else decides. */
-.gcase-cart-nes { --gc-base: #8e9096; } .gcase-cart-atari { --gc-base: #1e1b19; } .gcase-cart-super { --gc-base: #b7b6bb; } .gcase-cart-64 { --gc-base: #3b3c40; }
+.gcase-cart-nes { --gc-base: #8e9096; } .gcase-cart-atari { --gc-base: #1e1b19; } .gcase-cart-super { --gc-base: #b7b6bb; } .gcase-cart-64 { --gc-base: #5b5d63; }
 .gcase-cart-mega { --gc-base: #17171a; } .gcase-cart-pocket { --gc-base: #c4c2bd; } .gcase-cart-advance { --gc-base: #4b4c55; } .gcase-card-slim { --gc-base: #4a4b51; } .gcase-card-hu { --gc-base: #e6e3dc; }
 .gcase-case-jewel { --gc-base: #2a2c33; } .gcase-case-keep { --gc-base: #15161b; } .gcase-case-mini { --gc-base: #1e1d24; } .gcase-case-umd { --gc-base: #16171b; } .gcase-case-card { --gc-base: #d8dadf; }
 .gcase-case-clamshell { --gc-base: #141417; } .gcase-case-blu { --gc-base: #1f3f86; } .gcase-case-tape { --gc-base: #cdd5e2; } .gcase-umd-bare { --gc-base: #16171b; }

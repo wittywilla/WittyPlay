@@ -192,20 +192,33 @@ export const SHAPES: Record<string, Shape> = {
       </>
     ),
   },
-  // 64-bit: wide and short, its top edge rounded into a ridged lip, one large label, a recessed foot.
+  // 64-bit: a wide grey body whose top corners slope away in broad shoulders, grooved for a grip, a raised plate across the top
+  // with room for a console's mark between the grooves, one big label sunk into the front, and below it the body stepping in to a
+  // narrower foot with the contact edge.
   'cart-64': {
-    w: 134, h: 110, label: [10, 26, 114, 68], r: 3, brand: [41, 7, 52, 10], thick: { d: 16, t: 4, b: 8 },
+    w: 140, h: 108, label: [15, 27, 110, 52], r: 3, brand: [50, 6.5, 40, 10], thick: { d: 16, t: 8, b: 14 },
     body: (k) => (
       <>
-        {part(k, 'M16 2 H118 Q134 2 134 18 V96 Q134 108 122 108 H12 Q0 108 0 96 V18 Q0 2 16 2 Z')}
-        {inner(14, 80, 106, 24)}
-        {part(k, 'M12 4 H122 Q130 4 131 18 H3 Q4 4 12 4 Z', 'gc-plate', 'bd', 1)}
-        {sheen('M16 3 H118 Q132 3 133.4 14 H0.6 Q2 3 16 3 Z', k)}
-        {ribs(5, 12, 32, 7, 15)}{ribs(5, 102, 122, 7, 15)}
-        {recess(k, [10, 26, 114, 68], 5, 6)}
-        <path d="M24 100 H110" stroke="rgb(0 0 0 / .45)" strokeWidth="2" strokeLinecap="round" />
-        <path d="M24 101.6 H110" stroke="rgb(255 255 255 / .25)" strokeWidth="1" strokeLinecap="round" />
-        {fingers(k, 16, 30, 104, 105, 3)}
+        {part(k, 'M26 0 H114 Q118 0 120.8 2.8 L137.2 19.2 Q140 22 140 26 V82 Q140 86 136 88 L130 91 V100 Q130 106 124 106 H16 Q10 106 10 100 V91 L4 88 Q0 86 0 82 V26 Q0 22 2.8 19.2 L19.2 2.8 Q22 0 26 0 Z')}
+        {inner(16, 84, 108, 16)}
+        {/* the grip plate across the top, following the shoulders */}
+        {part(k, 'M26 3.5 H114 Q116.5 3.5 118.3 5.3 L132 19 Q133.5 21 131 21 H9 Q6.5 21 8 19 L21.7 5.3 Q23.5 3.5 26 3.5 Z', 'gc-plate', 'bd', 1)}
+        {sheen('M26 1 H114 Q117.5 1 120 3.6 L136 19.6 Q138 22 139.2 24 H0.8 Q2 22 4 19.6 L20 3.6 Q22.5 1 26 1 Z', k)}
+        {[7, 10, 13, 16].map((y) => (
+          <g key={'g' + y}>
+            <line className="gc-groove" x1={30 - y + 3.5} x2="46" y1={y} y2={y} /><line className="gc-groove-hi" x1={30 - y + 3.5} x2="46" y1={y + 1} y2={y + 1} />
+            <line className="gc-groove" x1="94" x2={110 + y - 3.5} y1={y} y2={y} /><line className="gc-groove-hi" x1="94" x2={110 + y - 3.5} y1={y + 1} y2={y + 1} />
+          </g>
+        ))}
+        {/* finger grips down each side */}
+        {ribs(4, 2.4, 6.2, 30, 74)}{ribs(4, 133.8, 137.6, 30, 74)}
+        {recess(k, [15, 27, 110, 52], 6, 5)}
+        {/* the step where the body narrows to its foot, and the foot's own grooves */}
+        <path d="M6 87.5 H134" stroke="rgb(0 0 0 / .4)" strokeWidth="1.4" strokeLinecap="round" />
+        <path d="M6 89 H134" stroke="rgb(255 255 255 / .22)" strokeWidth=".8" strokeLinecap="round" />
+        {ridges(2, 16, 40, 93, 97)}{ridges(2, 100, 124, 93, 97)}
+        <rect x="34" y="100" width="72" height="8" rx="1.5" fill="#0b0c10" />
+        {fingers(k, 20, 36, 104, 101.5, 5)}
       </>
     ),
   },

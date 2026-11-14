@@ -12,7 +12,7 @@ import './gameCase.css'
 
 // Colours by console, where its cases or cartridges came in one: plain shades, never a maker's mark.
 const TINT: Record<string, string> = {
-  nes: '#8e9096', a2600: '#1e1b19', a5200: '#1e1b19', a7800: '#26282c', snes: '#b7b6bb', n64: '#3b3c40', jaguar: '#232428',
+  nes: '#8e9096', a2600: '#1e1b19', a5200: '#1e1b19', a7800: '#26282c', snes: '#b7b6bb', n64: '#5b5d63', jaguar: '#232428',
   md: '#17171a', '32x': '#17171a', sms: '#17171a', neogeo: '#141416', gb: '#c4c2bd', gbc: '#bdbcc2', gg: '#1b1b1e', ngp: '#202024', ws: '#2a2b30', vb: '#2b1013',
   gba: '#4b4c55', nds: '#56575c', '3ds': '#4a4b51', switch: '#3e4046', switch2: '#3e4046', pce: '#e6e3dc', lynx: '#cfcac0',
   ps1: '#222327', saturn: '#222327', segacd: '#222327', dc: '#e9e9ec', ps2: '#141519', xbox: '#16391e', wii: '#e8eaee', wiiu: '#e4e7ec', ps3: '#1c2a49',

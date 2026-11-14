@@ -55,7 +55,7 @@ const CARTS: [StyleDef, string[]][] = [
   [st('cart-nes', '8-bit cartridge', 'A grey front-loading cartridge with ridges and a label window'), ['gold', 'dark', 'clear']],
   [st('cart-atari', 'Early cartridge', 'A short first-generation cartridge with a ribbed top and wide label'), ['wood', 'gold', 'clear']],
   [st('cart-super', '16-bit cartridge', 'Rounded at the top, with grip dimples and a narrow foot'), ['gold', 'dark', 'clear']],
-  [st('cart-64', '64-bit cartridge', 'Wide and short, with a rounded, ridged top edge and a large label'), ['gold', 'red', 'blue', 'clear']],
+  [st('cart-64', '64-bit cartridge', 'Wide and grey, with rounded, ridged shoulders, a sunken label and a narrower contact edge'), ['gold', 'red', 'blue', 'clear']],
   [st('cart-mega', 'Black 16-bit cartridge', 'Black, with a slanted top over a recessed label'), ['gold', 'red', 'clear']],
   [st('cart-pocket', 'Handheld cartridge', 'Small, with a notched corner, top ridges and an arrow'), ['red', 'blue', 'green', 'gold', 'clear']],
   [st('cart-advance', 'Wide handheld cartridge', 'Wide and short, with sloped shoulders'), ['clear', 'gold', 'blue']],
