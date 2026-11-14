@@ -3,6 +3,10 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## Unreleased
+
+- **A virtual gamepad plays a game in the tests.** `web/tests/virtualpad.test.ts` stubs the browser's Gamepad API (`navigator.getGamepads`) with a standard pad, presses Start, Select, A and the left stick through the web player's input, and checks each state it sends; `host/virtualpad_test.go` plays those same states into the game runner with the test core and checks the game took them (Start counted, the LED and rumble, the square moving). Both read `testdata/virtual-pad.json`, whose NES controls are checked against the console table, so CI covers the way from a pad to a game with no server.
+
 ## 0.7.1
 
 - The first published release on module API 5, with the WittyModule 0.5.4 workflows. The tag v0.7.0 was made with workflows that couldn't build it and was never published.

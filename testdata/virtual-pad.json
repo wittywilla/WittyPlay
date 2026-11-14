@@ -1,0 +1,281 @@
+{
+  "_": "A virtual standard gamepad playing an NES game. web/tests/virtualpad.test.ts presses it through the browser's Gamepad API and checks the web player sends these states; host/virtualpad_test.go plays the same states into the game runner and checks the game took them. Change both sides together.",
+  "controls": {
+    "console": "nes",
+    "controls": [
+      {
+        "key": "dpad",
+        "id": -1,
+        "label": "D-pad",
+        "kind": "dpad"
+      },
+      {
+        "key": "b0",
+        "id": 0,
+        "label": "B",
+        "kind": "face"
+      },
+      {
+        "key": "b8",
+        "id": 8,
+        "label": "A",
+        "kind": "face"
+      },
+      {
+        "key": "b2",
+        "id": 2,
+        "label": "Select",
+        "kind": "meta"
+      },
+      {
+        "key": "b3",
+        "id": 3,
+        "label": "Start",
+        "kind": "meta"
+      }
+    ],
+    "defaults": {
+      "gamepad": {
+        "0": {
+          "b": 0
+        },
+        "2": {
+          "b": 8
+        },
+        "3": {
+          "b": 9
+        },
+        "4": {
+          "b": 12
+        },
+        "5": {
+          "b": 13
+        },
+        "6": {
+          "b": 14
+        },
+        "7": {
+          "b": 15
+        },
+        "8": {
+          "b": 1
+        }
+      },
+      "keyboard": {
+        "0": "KeyZ",
+        "2": "ShiftRight",
+        "3": "Enter",
+        "4": "ArrowUp",
+        "5": "ArrowDown",
+        "6": "ArrowLeft",
+        "7": "ArrowRight",
+        "8": "KeyX"
+      },
+      "options": {
+        "deadzone": 0.15,
+        "threshold": 0.5,
+        "stickDpad": true,
+        "turboHz": 12
+      },
+      "remote": {
+        "0": "MediaPlayPause",
+        "2": "MediaRewind",
+        "3": "MediaFastForward",
+        "4": "ArrowUp",
+        "5": "ArrowDown",
+        "6": "ArrowLeft",
+        "7": "ArrowRight",
+        "8": "Enter"
+      }
+    },
+    "pad": {
+      "face": [
+        {
+          "id": 0,
+          "label": "B"
+        },
+        {
+          "id": 8,
+          "label": "A"
+        }
+      ],
+      "meta": [
+        {
+          "id": 2,
+          "label": "Select"
+        },
+        {
+          "id": 3,
+          "label": "Start"
+        }
+      ],
+      "art": "two"
+    },
+    "targets": [
+      {
+        "id": 4,
+        "label": "D-pad up",
+        "group": "dpad"
+      },
+      {
+        "id": 5,
+        "label": "D-pad down",
+        "group": "dpad"
+      },
+      {
+        "id": 6,
+        "label": "D-pad left",
+        "group": "dpad"
+      },
+      {
+        "id": 7,
+        "label": "D-pad right",
+        "group": "dpad"
+      },
+      {
+        "id": 0,
+        "label": "B",
+        "group": "face"
+      },
+      {
+        "id": 8,
+        "label": "A",
+        "group": "face"
+      },
+      {
+        "id": 2,
+        "label": "Select",
+        "group": "meta"
+      },
+      {
+        "id": 3,
+        "label": "Start",
+        "group": "meta"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "say": "Nothing pressed",
+      "pad": {},
+      "sends": "00000000000000000000000000",
+      "buttons": [],
+      "frames": 6
+    },
+    {
+      "say": "Start, on the pad's right-hand middle button",
+      "pad": {
+        "buttons": [
+          9
+        ]
+      },
+      "sends": "00080000000000000000000000",
+      "buttons": [
+        "start"
+      ],
+      "frames": 6
+    },
+    {
+      "say": "Let go",
+      "pad": {},
+      "sends": "00000000000000000000000000",
+      "buttons": [],
+      "frames": 6
+    },
+    {
+      "say": "Start again",
+      "pad": {
+        "buttons": [
+          9
+        ]
+      },
+      "sends": "00080000000000000000000000",
+      "buttons": [
+        "start"
+      ],
+      "frames": 6
+    },
+    {
+      "say": "Let go",
+      "pad": {},
+      "sends": "00000000000000000000000000",
+      "buttons": [],
+      "frames": 6
+    },
+    {
+      "say": "Select, on the left-hand middle button",
+      "pad": {
+        "buttons": [
+          8
+        ]
+      },
+      "sends": "00040000000000000000000000",
+      "buttons": [
+        "select"
+      ],
+      "frames": 6
+    },
+    {
+      "say": "Let go",
+      "pad": {},
+      "sends": "00000000000000000000000000",
+      "buttons": [],
+      "frames": 6
+    },
+    {
+      "say": "The NES's A, on the pad's right face button",
+      "pad": {
+        "buttons": [
+          1
+        ]
+      },
+      "sends": "00000100000000000000000000",
+      "buttons": [
+        "a"
+      ],
+      "frames": 6
+    },
+    {
+      "say": "Let go",
+      "pad": {},
+      "sends": "00000000000000000000000000",
+      "buttons": [],
+      "frames": 6
+    },
+    {
+      "say": "The left stick pushed right, which steers the D-pad on a console with none",
+      "pad": {
+        "axes": [
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "sends": "00800000000000000000000000",
+      "buttons": [
+        "right"
+      ],
+      "frames": 20
+    },
+    {
+      "say": "Let go",
+      "pad": {},
+      "sends": "00000000000000000000000000",
+      "buttons": [],
+      "frames": 6
+    }
+  ],
+  "game": {
+    "startPresses": 2,
+    "led": [
+      1,
+      0
+    ],
+    "rumble": [
+      65535,
+      0
+    ],
+    "moves": "right"
+  }
+}
