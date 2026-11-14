@@ -49,8 +49,8 @@ export const emulatorsApi = {
   stop: (sid: string) => api.del<void>(`${M}/sessions/${id(sid)}`),
 
   // A game's page: which emulators could play it, and starting one.
-  forGame: (itemId: number) => api.get<{ emulators: GameEmulator[] }>(`/v1/games/${itemId}/emulators`).then((r) => r?.emulators || []),
-  play: (itemId: number, emulator: string, device?: string) => api.post<EmulatorSession>(`/v1/games/${itemId}/play/emulator`, { emulator, ...(device ? { device } : {}) }),
+  forGame: (itemId: number) => api.get<{ emulators: GameEmulator[] }>(`/modules/wittyplay/games/${itemId}/emulators`).then((r) => r?.emulators || []),
+  play: (itemId: number, emulator: string, device?: string) => api.post<EmulatorSession>(`/modules/wittyplay/games/${itemId}/play/emulator`, { emulator, ...(device ? { device } : {}) }),
 }
 
 // The server's code for a refusal ("in-use", "license", "no-session"), where it gave one.

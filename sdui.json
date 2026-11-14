@@ -1018,8 +1018,8 @@
       "placement": {
         "desktop": "more",
         "headset": "more",
-        "phone": "more",
-        "tablet": "more",
+        "phone": "primary",
+        "tablet": "primary",
         "web": "more"
       }
     }

@@ -12,7 +12,7 @@ import type { Explained } from './words'
 
 export type EmulatorBackend = 'docker+webrtc' | 'docker+kasmvnc' | 'local+webrtc' | 'host+webrtc'
 
-// What starting a game with an emulator answers (POST /api/v1/games/{id}/play/emulator).
+// What starting a game with an emulator answers (POST /api/v1/modules/wittyplay/games/{id}/play/emulator).
 export type EmulatorSession = {
   id: string; emulator: string; name: string; backend: EmulatorBackend | string
   connect?: string; kasmUrl?: string; stop: string; pause?: string; resume?: string

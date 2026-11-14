@@ -277,6 +277,11 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay-tabs-row .tabs { display: flex; gap: clamp(14px, 1.7vw, 34px); box-shadow: none; margin-block: clamp(4px, .8vw, 14px) clamp(6px, 1vw, 20px); padding-block-end: 6px; overflow-x: auto; scrollbar-width: none; }
 .wplay-tabs-row .tabs > a { position: relative; flex: none; padding: 4px 0; border-radius: 6px; color: var(--fg-2); font-size: clamp(1.15rem, 1.6vw, 1.9rem); font-weight: 800; text-decoration: none; white-space: nowrap; }
 .wplay-tabs-row .tabs > a:hover, .wplay-tabs-row .tabs > a.active { color: var(--fg); }
+/* On a phone the tabs take a line of their own, and the size and layout switches go under them. */
+@media (max-width: 640px) {
+  .wplay [data-sdui-tabs], .wplay-tabs-row { flex-wrap: wrap; row-gap: var(--sp-2); }
+  .wplay [data-sdui-tabs] > .tabs, .wplay-tabs-row > .tabs { flex-basis: 100%; }
+}
 .wplay-tabs-row .tabs > a.active::after { content: ""; position: absolute; inset-inline: 0; inset-block-end: -6px; block-size: 4px; border-radius: 2px; background: var(--accent); }
 .wplay-tabs-row .tabs > a:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 6px; }
 .wplay-layout-switch { flex: none; display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--r-full); background: var(--wp-chip); }
