@@ -2,7 +2,8 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { api, mediaUrl, uploadFile, type GameConsole } from '@wms/app/api'
+import { api, mediaUrl, uploadFile } from '@wms/app/api'
+import type { GameConsole } from '../../gameTypes'
 import { Spinner } from '@wms/app/components/common'
 import { toast, useApp } from '@wms/app/state'
 import type { SettingsHost } from '../../../index'

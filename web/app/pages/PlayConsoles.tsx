@@ -5,11 +5,12 @@
 // the core it plays on and whether it is ready (a BIOS file missing, an emulator to install), with Browse games and Settings. On a
 // phone the panel is a sheet from the bottom, opened by choosing a console. A console's Settings page hosts the app's own parts for
 // it: its core and BIOS files (Consoles and cores), its game settings, its controls, and the libraries. The data is the app's own
-// /api/games/consoles (pages/games/consoles.tsx getConsoles).
+// /api/modules/wittyplay/games/consoles (pages/games/consoles.tsx getConsoles).
 import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { api, mediaUrl, type GameConsole } from '@wms/app/api'
-import { ConsoleMark } from '@wms/app/components/ConsoleMark'
+import { api, mediaUrl } from '@wms/app/api'
+import type { GameConsole } from '../gameTypes'
+import { ConsoleMark } from './games/ConsoleMark'
 import { IconCheck, IconGamepad, IconInfo, IconSettings } from '@wms/app/icons'
 import { useApp } from '@wms/app/state'
 import { Spinner } from '@wms/app/ui/Surface'
@@ -29,7 +30,7 @@ import './games/games-ui.css'
 const ControllersScreen = lazy(() => import('./Games').then((m) => ({ default: m.ControllersScreen })))
 
 // A console's picture of its hardware, from Wikimedia Commons by way of the server, which fetches and keeps it (GET
-// /api/console-photos/{id}); none when Wikidata lookups are off, Wikimedia downloads weren't agreed to, or Commons has no free one.
+// /api/modules/wittyplay/console-photos/{id}); none when Wikidata lookups are off, Wikimedia downloads weren't agreed to, or Commons has no free one.
 type ConsolePhoto = { imageUrl: string; credit?: string; license?: string; licenseUrl?: string; pageUrl?: string; source?: string }
 const photos = new Map<string, Promise<ConsolePhoto | null>>()
 function useConsolePhoto(id: string): ConsolePhoto | null {
@@ -37,7 +38,7 @@ function useConsolePhoto(id: string): ConsolePhoto | null {
   useEffect(() => {
     let on = true
     setP(null)
-    if (!photos.has(id)) photos.set(id, api.get<ConsolePhoto>('/console-photos/' + encodeURIComponent(id)).catch(() => null))
+    if (!photos.has(id)) photos.set(id, api.get<ConsolePhoto>('/modules/wittyplay/console-photos/' + encodeURIComponent(id)).catch(() => null))
     photos.get(id)!.then((x) => { if (on) setP(x) })
     return () => { on = false }
   }, [id])

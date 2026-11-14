@@ -6,7 +6,8 @@
 // Built for a controller first: every row is a line a d-pad walks, entered at its first game.
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { api, posterUrl, type GameConsole, type Item, type Library } from '@wms/app/api'
+import { api, posterUrl, type Item, type Library } from '@wms/app/api'
+import type { GameConsole } from '../gameTypes'
 import { IconLeft, IconRefresh, IconSearch } from '@wms/app/icons'
 import { useApp } from '@wms/app/state'
 import { Spinner } from '@wms/app/ui/Surface'

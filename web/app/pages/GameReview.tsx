@@ -2,12 +2,13 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { HelpLink } from '@wms/app/components/HelpLink'
-import { api, type GameConsole, type GameDetailsInfo, type GameImport, type GameReview, type GameReviewItem, type GameVersions, type Item } from '@wms/app/api'
+import { api, type Item } from '@wms/app/api'
+import type { GameConsole, GameDetailsInfo, GameImport, GameReview, GameReviewItem, GameVersions } from '../gameTypes'
 import { Button, Dialog, EmptyState, Notice, Progress, Spinner, Tabs, toast } from '@wms/app/ui/index'
 import { isBackKey } from '@wms/app/ui/spatial'
 import SpecPage from '@wms/app/spec/SpecPage'
-import { fixGameSpec, versionLinksSpec } from '@wms/app/spec/specs/fixgame'
-import { reviewSpec } from '@wms/app/spec/specs/gameReview'
+import { fixGameSpec, versionLinksSpec } from '../spec/specs/fixgame'
+import { reviewSpec } from '../spec/specs/gameReview'
 import './gamereview.css'
 
 // Putting a games library right. A scan lists what it can prove and asks about the rest:
@@ -33,7 +34,7 @@ export function GameImportBar({ libraryId, onChanged }: { libraryId: number; onC
     let timer = 0
     let was = ''
     const tick = async () => {
-      const r = await api.get<GameImport>(`/libraries/${libraryId}/games/import`).catch(() => null)
+      const r = await api.get<GameImport>(`/modules/wittyplay/libraries/${libraryId}/games/import`).catch(() => null)
       if (stop || !r) return
       setSt(r)
       // Only what changes which files are listed: how a lookup is going is shown here, and
@@ -92,7 +93,7 @@ export function GameImportBar({ libraryId, onChanged }: { libraryId: number; onC
 export function GameReviewBanner({ libraryId, consoles, version, onChanged }: { libraryId: number; consoles: GameConsole[]; version: number; onChanged: () => void }) {
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [open, setOpen] = useState(false)
-  const load = () => api.get<GameReview>(`/libraries/${libraryId}/games/review?kind=needs&limit=1`).then((r) => setCounts(r.counts)).catch(() => {})
+  const load = () => api.get<GameReview>(`/modules/wittyplay/libraries/${libraryId}/games/review?kind=needs&limit=1`).then((r) => setCounts(r.counts)).catch(() => {})
   useEffect(() => { load() }, [libraryId, version]) // eslint-disable-line react-hooks/exhaustive-deps
   const needs = counts.needs || 0
   const blocked = counts.blocked || 0
@@ -132,12 +133,12 @@ function GameReviewDialog({ libraryId, consoles, first, onClose, onChanged }: { 
     ;(next || box.current?.querySelector<HTMLElement>('[role=tab][aria-selected=true]'))?.focus()
     setFocusRow(null)
   }, [focusRow, busy])
-  const load = () => api.get<GameReview>(`/libraries/${libraryId}/games/review?kind=${tab}&limit=500`).then(setData).catch((e) => toast(e.message))
+  const load = () => api.get<GameReview>(`/modules/wittyplay/libraries/${libraryId}/games/review?kind=${tab}&limit=500`).then(setData).catch((e) => toast(e.message))
   useEffect(() => { setData(null); load() }, [tab, libraryId]) // eslint-disable-line react-hooks/exhaustive-deps
   const act = async (ids: number[], action: 'add' | 'ignore' | 'forget', console_?: string, words?: string) => {
     setBusy(true)
     try {
-      await api.post(`/libraries/${libraryId}/games/review/apply`, { ids, action, console: console_ })
+      await api.post(`/modules/wittyplay/libraries/${libraryId}/games/review/apply`, { ids, action, console: console_ })
       setSaid(words || 'Done. The library is being scanned again.')
       setFocusRow({ at: Math.max(0, (data?.items || []).findIndex((i) => ids.includes(i.id))) })
       setData((d) => d && { ...d, items: d.items.filter((i) => !ids.includes(i.id)), total: d.total - ids.length, counts: { ...d.counts, [tab]: Math.max(0, (d.counts[tab] || 0) - ids.length) } })
@@ -238,7 +239,7 @@ export function GameFixPanel({ it, d, consoles, onChanged }: { it: Item; d: Game
     if (held.current?.isConnected && !(held.current as HTMLButtonElement).disabled) held.current.focus()
     else heading.current?.focus()
   }, [ran, busy])
-  const load = () => api.get<GameVersions>(`/games/${it.id}/versions`).then(setV).catch(() => setV({ versions: [] }))
+  const load = () => api.get<GameVersions>(`/modules/wittyplay/games/${it.id}/versions`).then(setV).catch(() => setV({ versions: [] }))
   useEffect(() => { load() }, [it.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const run = async (fn: () => Promise<unknown>, words: string) => {
     held.current = document.activeElement as HTMLElement | null
@@ -253,16 +254,16 @@ export function GameFixPanel({ it, d, consoles, onChanged }: { it: Item; d: Game
   })
   const act = (id: string) => {
     if (id === 'console') setChoosing(!choosing)
-    else if (id === 'notgame') void run(() => api.post(`/games/${it.id}/not-a-game`), 'It won’t be listed any more. You can bring it back from the library’s page.')
-    else if (id.startsWith('split.')) void run(() => api.post(`/games/${id.slice(6)}/split`), 'It’s a game of its own now.')
-    else if (id.startsWith('play.')) void run(() => api.put(`/games/${it.id}/version`, { entry: id.slice(5) }), 'This version plays from now on.')
+    else if (id === 'notgame') void run(() => api.post(`/modules/wittyplay/games/${it.id}/not-a-game`), 'It won’t be listed any more. You can bring it back from the library’s page.')
+    else if (id.startsWith('split.')) void run(() => api.post(`/modules/wittyplay/games/${id.slice(6)}/split`), 'It’s a game of its own now.')
+    else if (id.startsWith('play.')) void run(() => api.put(`/modules/wittyplay/games/${it.id}/version`, { entry: id.slice(5) }), 'This version plays from now on.')
   }
   const handled = new Set(['console', 'notgame', ...others.map((x) => `split.${x.id}`), ...(v?.inside || []).map((x) => `play.${x.entry}`)])
   return (
     <section className="gr-fix" aria-label="Fix this game">
       <h2 className="shelf-head" ref={heading} tabIndex={-1}>Fix this game</h2>
       <SpecPage bare page={page} handled={handled} onAction={act}
-        after={{ [page.sections.length - 1]: choosing ? <ConsolePicker consoles={consoles} disabled={busy} label="Which console this game is for" onClose={() => { setChoosing(false) }} onPick={(c, name) => run(() => api.put(`/games/${it.id}/console`, { console: c }), `It’s a ${name} game now.`)} /> : null }} />
+        after={{ [page.sections.length - 1]: choosing ? <ConsolePicker consoles={consoles} disabled={busy} label="Which console this game is for" onClose={() => { setChoosing(false) }} onPick={(c, name) => run(() => api.put(`/modules/wittyplay/games/${it.id}/console`, { console: c }), `It’s a ${name} game now.`)} /> : null }} />
     </section>
   )
 }
@@ -271,7 +272,7 @@ export function GameFixPanel({ it, d, consoles, onChanged }: { it: Item; d: Game
 // its own saves, so all there is to do is open it.
 export function GameVersionLinks({ it }: { it: Item }) {
   const [v, setV] = useState<GameVersions | null>(null)
-  useEffect(() => { api.get<GameVersions>(`/games/${it.id}/versions`).then(setV).catch(() => {}) }, [it.id])
+  useEffect(() => { api.get<GameVersions>(`/modules/wittyplay/games/${it.id}/versions`).then(setV).catch(() => {}) }, [it.id])
   const others = (v?.versions || []).filter((x) => !x.current)
   if (others.length === 0) return null
   return (

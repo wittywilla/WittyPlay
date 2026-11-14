@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 WittyWilla and contributors
-// WittyPlay's game pictures in use: the choices (the person's own in /me/ui, the server's from GET /api/games/pictures), what a game card
+// WittyPlay's game pictures in use: the choices (the person's own in /me/ui, the server's from GET /api/modules/wittyplay/games/pictures), what a game card
 // draws for them (its box art fitted, or the game in its case: GameCase.tsx), and the one-game chooser, opened from a game's detail panel
 // and offered to any page that wants it (GamePictureButton). The rules are gamePictures.ts.
 import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import { api, type GameConsole, type GameDetailsInfo } from '@wms/app/api'
+import { api } from '@wms/app/api'
+import type { GameConsole, GameDetailsInfo } from '../gameTypes'
 import { logoImageUrl } from '@wms/app/components/BrandLogo'
 import { Placeholder } from '@wms/app/components/common'
 import { getConsoles } from '../pages/games/consoles'
@@ -13,6 +14,7 @@ import { Button, Dialog, Segmented } from '@wms/app/ui/index'
 import { useUserPref } from '@wms/app/ui/userPrefs'
 import type { GameArtApi, GameArtArgs } from '@wms/app/sdui/render/glyphs'
 import { useBrandLogos } from './brandLogos'
+import { GameBio } from '../sdui/render/GameBio'
 import { IconImage } from '@wms/app/icons'
 import { FitArt, GameCase } from './GameCase'
 import {
@@ -33,7 +35,7 @@ let serverAsked: Promise<ServerPictures> | null = null
 const SERVER_CHANGED = 'wms-game-pictures-changed'
 export function loadServerPictures(fresh = false): Promise<ServerPictures> {
   if (!serverAsked || fresh) {
-    const p = api.get<ServerPictures>('/games/pictures')
+    const p = api.get<ServerPictures>('/modules/wittyplay/games/pictures')
     serverAsked = p
     p.catch(() => { if (serverAsked === p) serverAsked = null })
   }
@@ -76,7 +78,7 @@ function gameLogo(itemId: string): Promise<string> {
   if (!p) {
     p = new Promise<string>((done) => {
       queue.push(() => {
-        api.get<GameDetailsInfo>(`/games/${encodeURIComponent(itemId)}/metadata`)
+        api.get<GameDetailsInfo>(`/modules/wittyplay/games/${encodeURIComponent(itemId)}/metadata`)
           .then((m) => done(m?.art?.find((a) => a.kind === 'logo')?.url || ''), () => done(''))
           .finally(() => { running--; next() })
       })
@@ -215,6 +217,8 @@ export function useGameArtApi(): GameArtApi {
       const brand = brands?.enabled ? brands.logos[id] : undefined
       return <PanelCover key={itemId} mode={panelArt} look={caseLook} itemId={itemId} consoleId={id} image={image} title={title} brand={brand ? brandUrl(brand) : null} />
     },
+    // The panel under a row about a game: its logo, console, maker, rating, pictures and achievements, around the panel's title and buttons.
+    bio: ({ itemId, console: short, title, top, actions, children }) => <GameBio key={itemId} itemId={itemId} title={title} console={short || undefined} top={top} actions={actions}>{children}</GameBio>,
   }), [pref, server, consoles, brands, panelArt])
 }
 // A light logo reads on the dark plate a case gives it.
@@ -325,7 +329,7 @@ export function GamePictureDialog({ itemId, title, console: short, image, onClos
   const save = useCallback(async (l: Look) => {
     setErr('')
     if (scope === 'me') { setPref(withLook(pref, { game: itemId }, emptyLook(l) ? null : l)); return }
-    try { await api.put(`/games/${encodeURIComponent(itemId)}/picture`, cleanLook(l)); serverPicturesChanged() } catch (e: any) { setErr(e.message) }
+    try { await api.put(`/modules/wittyplay/games/${encodeURIComponent(itemId)}/picture`, cleanLook(l)); serverPicturesChanged() } catch (e: any) { setErr(e.message) }
   }, [scope, pref, itemId, setPref])
   return (
     <Dialog title={`How ${title} is pictured`} size="wide" className="gpic-dialog" onClose={onClose}

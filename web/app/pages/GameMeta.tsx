@@ -2,7 +2,8 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, artPreviewUrl, mediaUrl, type GameCandidate, type GameDetailsInfo, type GameMetaStatus, type GameSource, type Item } from '@wms/app/api'
+import { api, artPreviewUrl, mediaUrl, type Item } from '@wms/app/api'
+import type { GameCandidate, GameDetailsInfo, GameMetaStatus, GameSource } from '../gameTypes'
 import { IconCheck, IconClose, IconDown, IconLock, IconRefresh, IconSearch, IconUp } from '@wms/app/icons'
 import { toast } from '@wms/app/state'
 import { ask } from '@wms/app/ui/index'
@@ -12,7 +13,7 @@ import { WebLink } from '@wms/app/components/WebLink'
 
 // What's known about a game, and where it comes from: its ratings and pictures, fixing
 // a wrong match, and choosing sources and keys. Shared by the game's page, the library
-// page, Settings and the setup wizard. Everything here is the server's work: pictures
+// page, Settings and the setup wizard. Everything here is WittyPlay's work on the server: pictures
 // come through the server, and a source's address or key never reaches this page.
 
 const SOURCE_NAMES: Record<string, string> = { libretro: 'libretro database', libretroart: 'libretro thumbnails', wikidata: 'Wikidata', igdb: 'IGDB', rawg: 'RAWG', tgdb: 'TheGamesDB', screenscraper: 'ScreenScraper', retroachievements: 'RetroAchievements' }
@@ -107,10 +108,10 @@ const methodWords = (d: GameDetailsInfo) => {
 export function GameMatchBar({ it, d, onChanged }: { it: Item; d: GameDetailsInfo; onChanged: () => void }) {
   const [fixing, setFixing] = useState(false)
   const lock = async (on: boolean) => {
-    try { await api.put(`/games/${it.id}/metadata/match`, { lock: on }); toast(on ? 'Match locked' : 'Match unlocked'); onChanged() } catch (e: any) { toast(e.message) }
+    try { await api.put(`/modules/wittyplay/games/${it.id}/metadata/match`, { lock: on }); toast(on ? 'Match locked' : 'Match unlocked'); onChanged() } catch (e: any) { toast(e.message) }
   }
   const refresh = async () => {
-    try { await api.post(`/games/${it.id}/metadata/refresh`); toast('Looking this game up again'); onChanged() } catch (e: any) { toast(e.message) }
+    try { await api.post(`/modules/wittyplay/games/${it.id}/metadata/refresh`); toast('Looking this game up again'); onChanged() } catch (e: any) { toast(e.message) }
   }
   return (
     <section className="gm-match" aria-label="Match">
@@ -137,7 +138,7 @@ function GameMatchDialog({ it, onClose, onDone }: { it: Item; onClose: () => voi
   const search = async () => {
     setBusy(true)
     try {
-      const r = await api.get<{ results: GameCandidate[]; failed: string[] }>(`/games/${it.id}/metadata/search?q=${encodeURIComponent(q)}`)
+      const r = await api.get<{ results: GameCandidate[]; failed: string[] }>(`/modules/wittyplay/games/${it.id}/metadata/search?q=${encodeURIComponent(q)}`)
       setResults(r.results)
       setFailed(r.failed)
     } catch (e: any) { toast(e.message); setResults([]) } finally { setBusy(false) }
@@ -145,10 +146,10 @@ function GameMatchDialog({ it, onClose, onDone }: { it: Item; onClose: () => voi
   useEffect(() => { search() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const pick = async (c: GameCandidate) => {
     setBusy(true)
-    try { await api.put(`/games/${it.id}/metadata/match`, { source: c.source, id: c.id, lock }); toast('Match saved'); onDone() } catch (e: any) { toast(e.message); setBusy(false) }
+    try { await api.put(`/modules/wittyplay/games/${it.id}/metadata/match`, { source: c.source, id: c.id, lock }); toast('Match saved'); onDone() } catch (e: any) { toast(e.message); setBusy(false) }
   }
   const none = async () => {
-    try { await api.del(`/games/${it.id}/metadata/match`); toast('Match removed'); onDone() } catch (e: any) { toast(e.message) }
+    try { await api.del(`/modules/wittyplay/games/${it.id}/metadata/match`); toast('Match removed'); onDone() } catch (e: any) { toast(e.message) }
   }
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -201,7 +202,7 @@ export function GameMetaNotice({ onProgress, unmatched, onUnmatched }: { onProgr
     let timer = 0
     let was = -1
     const tick = async () => {
-      const r = await api.get<GameMetaStatus>('/gamemeta/status').catch(() => null)
+      const r = await api.get<GameMetaStatus>('/modules/wittyplay/gamemeta/status').catch(() => null)
       if (stop || !r) return
       setSt(r)
       const left = r.pending + r.pictures
@@ -229,7 +230,7 @@ export function GameMetaNotice({ onProgress, unmatched, onUnmatched }: { onProgr
       {!st.keysSet && !hidden && !busy && (
         <div className="warn-box gm-hint" role="status">
           <span><strong>Add a key for better matches.</strong> {missing > 0 ? `${missing.toLocaleString()} of your games have no match yet. ` : ''}A free key adds scores, age ratings and art for more games.{' '}
-            <Link to="/settings/metadata#games">Choose a source</Link></span>
+            <Link to="/settings/game-metadata">Choose a source</Link></span>
           <button className="btn sm ghost square" aria-label="Don't show this again" title="Don't show this again" onClick={() => { try { localStorage.setItem(dismissKey, '1') } catch { /* it just comes back */ } setHidden(true) }}><IconClose /></button>
         </div>
       )}
@@ -238,6 +239,13 @@ export function GameMetaNotice({ onProgress, unmatched, onUnmatched }: { onProgr
 }
 
 // ---------------------------------------------------------------- keys
+
+// A source's keys are WittyPlay's secrets on this server, set one at a time by an administrator
+// (PUT /modules/wittyplay/secrets/{name}; an empty value removes one). None is ever sent back:
+// GET /modules/wittyplay/gamemeta/sources says only which of a source's fields are saved.
+export async function saveGameKeys(keys: Record<string, string>) {
+  for (const [name, value] of Object.entries(keys)) await api.put(`/modules/wittyplay/secrets/${encodeURIComponent(name)}`, { value })
+}
 
 // The fields a source needs, with a test that says plainly whether they work. A saved
 // value isn't shown: the field says it's saved, and stays empty unless it's replaced.
@@ -249,7 +257,7 @@ export function GameKeyFields({ source, values, onChange }: { source: GameSource
     const send: Record<string, string> = {}
     for (const f of source.fields) if (values[f.setting]?.trim()) send[f.setting] = values[f.setting].trim()
     try {
-      const r = await api.post<{ ok: boolean; error?: string; message?: string }>(`/gamemeta/sources/${source.id}/test`, { fields: send })
+      const r = await api.post<{ ok: boolean; error?: string; message?: string }>(`/modules/wittyplay/gamemeta/sources/${source.id}/test`, { fields: send })
       setState({ ok: r.ok, msg: r.ok ? r.message : r.error })
     } catch (e: any) { setState({ ok: false, msg: e.message }) }
   }
@@ -281,20 +289,12 @@ export function GameSourcesSettings() {
   const [status, setStatus] = useState<GameMetaStatus | null>(null)
   const [values, setValues] = useState<Record<string, string>>({})
   const [open, setOpen] = useState<string | null>(null)
-  const load = () => api.get<{ sources: GameSource[] }>('/gamemeta/sources').then((r) => setSources(r.sources)).catch((e) => toast(e.message))
-  useEffect(() => { load(); api.get<GameMetaStatus>('/gamemeta/status').then(setStatus).catch(() => {}) }, [])
-  // Arriving from the Games page's "Add a key".
-  const anchored = useRef(false)
-  useEffect(() => {
-    if (sources && !anchored.current && window.location.hash === '#games') {
-      anchored.current = true
-      document.getElementById('games')?.scrollIntoView()
-    }
-  }, [sources])
+  const load = () => api.get<{ sources: GameSource[] }>('/modules/wittyplay/gamemeta/sources').then((r) => setSources(r.sources)).catch((e) => toast(e.message))
+  useEffect(() => { load(); api.get<GameMetaStatus>('/modules/wittyplay/gamemeta/status').then(setStatus).catch(() => {}) }, [])
   const store = async (list: GameSource[]) => {
     setSources(list)
     try {
-      const r = await api.put<{ sources: GameSource[] }>('/gamemeta/sources', { sources: list.map((s) => ({ id: s.id, on: s.on })) })
+      const r = await api.put<{ sources: GameSource[] }>('/modules/wittyplay/gamemeta/sources', { sources: list.map((s) => ({ id: s.id, on: s.on })) })
       setSources(r.sources)
     } catch (e: any) { toast(e.message); load() }
   }
@@ -306,7 +306,7 @@ export function GameSourcesSettings() {
       else if (values[f.setting]?.trim()) body[f.setting] = values[f.setting].trim()
     }
     try {
-      await api.put('/settings', body)
+      await saveGameKeys(body)
       setValues((v) => { const n = { ...v }; for (const f of s.fields) delete n[f.setting]; return n })
       toast(clear ? 'Key removed' : s.gives.includes('achievements') ? 'Key saved. Achievements show in each game\'s details.' : 'Key saved. Your games will be looked up again in the background.')
       load()
@@ -314,7 +314,7 @@ export function GameSourcesSettings() {
   }
   const refetch = async () => {
     if (!await ask({ title: 'Look up every game again?', body: 'This forgets what every source said about every game, and asks again. Games you locked stay as they are.', confirm: 'Look up all again' })) return
-    try { await api.post('/gamemeta/refetch'); toast('Looking up every game again') } catch (e: any) { toast(e.message) }
+    try { await api.post('/modules/wittyplay/gamemeta/refetch'); toast('Looking up every game again') } catch (e: any) { toast(e.message) }
   }
   const consoles = status ? Object.entries(status.consoles).filter(([, c]) => c.total > 0).sort((a, b) => b[1].total - a[1].total) : []
   return (

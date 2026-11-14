@@ -114,6 +114,10 @@ func rankRegion(tags string) int {
 	return best
 }
 
+// RankRegion is rankRegion for whoever else orders versions of a game by region: which of a
+// game's files leads it in a games library (package gamescan).
+func RankRegion(tags string) int { return rankRegion(tags) }
+
 // rankRegionFile is rankRegion for a file's name, where only what's in brackets says anything:
 // a game can be called America. It reads the short forms older sets use, too.
 func rankRegionFile(name string) int {

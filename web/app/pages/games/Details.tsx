@@ -4,7 +4,8 @@ import { ChangeLogoButton } from '@wms/app/components/edit/LogoChooser'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PromptBar, useInputKind, type Prompt } from './prompts'
-import { api, backdropUrl, fmtDateTime, mediaUrl, uploadFile, type ArtCandidate, type GameDetailsInfo, type Item } from '@wms/app/api'
+import { api, backdropUrl, fmtDateTime, mediaUrl, uploadFile, type ArtCandidate, type Item } from '@wms/app/api'
+import type { GameDetailsInfo } from '../../gameTypes'
 import ArtworkPicker, { ART_SOURCE } from '@wms/app/components/ArtworkPicker'
 import { Placeholder, Spinner } from '@wms/app/components/common'
 import LegalNote from '@wms/app/components/LegalNote'
@@ -102,7 +103,7 @@ export default function GameDetails({ it, reload, variant }: { it: Item; reload?
   const cheevos = useCheevos(variant === 'play' ? it.id : 0)
   const loadSaves = useCallback(() => api.get<SaveSlot[]>(`/modules/wittyplay/games/${it.id}/saves`).then(setSaves).catch(() => {}), [it.id])
   const loadCheck = useCallback(() => api.get<GameCheck>(`/modules/wittyplay/games/${it.id}/check`).then(setCheck).catch(() => {}), [it.id])
-  const loadMeta = useCallback(() => api.get<GameDetailsInfo>(`/games/${it.id}/metadata`).then(setMeta).catch(() => {}), [it.id])
+  const loadMeta = useCallback(() => api.get<GameDetailsInfo>(`/modules/wittyplay/games/${it.id}/metadata`).then(setMeta).catch(() => {}), [it.id])
   useEffect(() => { void loadSaves(); void loadCheck() }, [loadSaves, loadCheck])
   useEffect(() => { void loadMeta() }, [loadMeta, it.updatedAt])
   useEffect(() => {

@@ -3,7 +3,7 @@
 // Brand logos in WittyPlay: real console logos on its cartridges and cases, and as a console's mark. Off until an administrator turns
 // them on in WittyPlay Settings › Game pictures and confirms the warning; then the server downloads them (Wikimedia Commons, through its
 // logo service), keeps them with their source and licence, and serves them itself, so a browser never contacts anyone else
-// (GET /api/games/brand-logos). Off, or with no logo for a console, WittyPlay draws its own generic shapes and the console's name.
+// (GET /api/modules/wittyplay/games/brand-logos). Off, or with no logo for a console, WittyPlay draws its own generic shapes and the console's name.
 import { useEffect, useState } from 'react'
 import { api } from '@wms/app/api'
 import { logoImageUrl } from '@wms/app/components/BrandLogo'
@@ -27,7 +27,7 @@ const CHANGED = 'wms-brand-logos-changed'
 
 export function loadBrandLogos(fresh = false): Promise<BrandLogosState> {
   if (!asked || fresh) {
-    const p = api.get<BrandLogosState>('/games/brand-logos').then((s) => ({ ...OFF, ...s, logos: s.logos || {} }))
+    const p = api.get<BrandLogosState>('/modules/wittyplay/games/brand-logos').then((s) => ({ ...OFF, ...s, logos: s.logos || {} }))
     asked = p
     p.catch(() => { if (asked === p) asked = null })
   }

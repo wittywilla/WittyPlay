@@ -47,5 +47,6 @@ func main() {
 		// Module API 5: WittyPlay's own routes and data (package api).
 		HTTP:      func(mux *http.ServeMux) { api.Routes(mux); api.Watch(); rpc.Start() },
 		Lifecycle: api.Lifecycle,
+		Scan:      api.ScanHooks(),
 	})
 }

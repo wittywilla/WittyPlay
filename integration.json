@@ -6,9 +6,17 @@
     "web": ">=5",
     "sdui": ">=8",
     "http": ">=1",
-    "host": ">=1"
+    "host": ">=2"
   },
   "feature": "games",
+  "scan": {
+    "libraryKinds": [
+      "games"
+    ],
+    "identify": true,
+    "describe": true,
+    "facet": "console"
+  },
   "http": [
     {
       "path": "/consoles/{console}/controls",
@@ -913,6 +921,298 @@
       "limits": {
         "time": "15s"
       }
+    },
+    {
+      "path": "/libraries/{id}/games/review",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/libraries/{id}/games/review/apply",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "256KB"
+      }
+    },
+    {
+      "path": "/libraries/{id}/games/import",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/games/{id}/versions",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/games/{id}/version",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "item": "id",
+      "limits": {
+        "body": "8KB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/games/{id}/split",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "item": "id"
+    },
+    {
+      "path": "/games/{id}/console",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "item": "id",
+      "limits": {
+        "body": "8KB"
+      }
+    },
+    {
+      "path": "/games/{id}/not-a-game",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "item": "id"
+    },
+    {
+      "path": "/games/facets",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "limits": {
+        "time": "1m"
+      }
+    },
+    {
+      "path": "/games/{id}/metadata",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id"
+    },
+    {
+      "path": "/games/{id}/art/{n}",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "time": "1m"
+      }
+    },
+    {
+      "path": "/games/{id}/metadata/search",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "item": "id",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/games/{id}/metadata/match",
+      "methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "admin",
+      "item": "id",
+      "limits": {
+        "body": "4KB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/games/{id}/metadata/refresh",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "item": "id",
+      "limits": {
+        "body": "4KB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/gamemeta/status",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/gamemeta/refetch",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/gamemeta/sources",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "16KB"
+      }
+    },
+    {
+      "path": "/gamemeta/sources/{id}/test",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "16KB",
+        "time": "30s"
+      }
+    },
+    {
+      "path": "/games/pictures",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/games/pictures",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "80KB",
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/games/pictures/file",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/games/pictures/check",
+      "methods": [
+        "POST"
+      ],
+      "auth": "user",
+      "limits": {
+        "body": "80KB",
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/games/{id}/picture",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "item": "id",
+      "limits": {
+        "body": "8KB"
+      }
+    },
+    {
+      "path": "/games/brand-logos",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/games/brand-logos",
+      "methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/game-logos/{id}/image",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/console-photos/{id}",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/console-photos/{id}/image",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/items/{id}/achievements",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/items/{id}/achievements/badge/{badge}",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "time": "1m"
+      }
     }
   ],
   "web": {
@@ -948,6 +1248,10 @@
       {
         "path": "/games/game/:id",
         "frame": "tv"
+      },
+      {
+        "path": "/big/*",
+        "frame": "fullscreen"
       }
     ],
     "takeover": [
@@ -985,6 +1289,23 @@
         ]
       },
       {
+        "id": "game-metadata",
+        "label": "Game metadata",
+        "admin": true,
+        "after": "metadata",
+        "search": [
+          "IGDB",
+          "ScreenScraper",
+          "RAWG",
+          "TheGamesDB",
+          "RetroAchievements",
+          "libretro",
+          "game keys",
+          "box art",
+          "age ratings"
+        ]
+      },
+      {
         "id": "games",
         "label": "My game settings",
         "after": "appearance"
@@ -998,8 +1319,8 @@
         "page": "wittyplay-setup",
         "version": 1,
         "later": {
-          "where": "Settings, Metadata agents",
-          "to": "/settings/metadata"
+          "where": "Settings, Game metadata",
+          "to": "/settings/game-metadata"
         }
       }
     ],
@@ -1016,5 +1337,53 @@
   },
   "lifecycle": {
     "uninstall": "ask-keep-data"
+  },
+  "network": {
+    "hosts": [
+      {
+        "host": "raw.githubusercontent.com",
+        "why": "The libretro database: recognising your games by checksum, downloaded once per console"
+      },
+      {
+        "host": "thumbnails.libretro.com",
+        "why": "Box art and screenshots from the libretro thumbnails"
+      },
+      {
+        "host": "www.wikidata.org",
+        "why": "Game details, console photos and logos from Wikidata, when it's switched on"
+      },
+      {
+        "host": "query.wikidata.org",
+        "why": "Game details from Wikidata, when it's switched on"
+      },
+      {
+        "host": "*.wikimedia.org",
+        "why": "Console photos and logos from Wikimedia Commons, once an administrator agreed"
+      },
+      {
+        "host": "*.igdb.com",
+        "why": "Game details and box art from IGDB, with an administrator's key"
+      },
+      {
+        "host": "id.twitch.tv",
+        "why": "Signing in to IGDB, with an administrator's key"
+      },
+      {
+        "host": "*.screenscraper.fr",
+        "why": "Game details and box art from ScreenScraper, with an administrator's account"
+      },
+      {
+        "host": "*.rawg.io",
+        "why": "Game details and pictures from RAWG, with an administrator's key"
+      },
+      {
+        "host": "*.thegamesdb.net",
+        "why": "Game details and box art from TheGamesDB, with an administrator's key"
+      },
+      {
+        "host": "*.retroachievements.org",
+        "why": "A game's achievements, with an administrator's key"
+      }
+    ]
   }
 }

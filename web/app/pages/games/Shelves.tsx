@@ -2,7 +2,8 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import { useEffect, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
-import { api, mediaUrlQ, type GameConsole, type GamePlaying, type GameShelfShape, type Item } from '@wms/app/api'
+import { api, mediaUrlQ, type Item } from '@wms/app/api'
+import type { GameConsole, GamePlaying, GameShelfShape } from '../../gameTypes'
 import { Placeholder } from '@wms/app/components/common'
 import { useApp } from '@wms/app/state'
 import { Chip } from '@wms/app/ui/index'

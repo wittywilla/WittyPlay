@@ -4,7 +4,7 @@
 // WittyPlay's screens in WittyMediaServer's web app (module API 5; integration.json says what
 // it claims). The app calls register(host) once, when one of these is first needed, and draws
 // what it hands back in place of its own copy: the WittyPlay frame and pages, the game page,
-// game cards' art and links, its Settings sections, its first-run step and its TV screens.
+// game cards' art and links, couch mode, its Settings sections, its first-run step and its TV screens.
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { PageRoutes } from '@wms/app/App'
@@ -28,6 +28,8 @@ const EmulatorsSettings = lazy(() => import('./pages/settings/Emulators'))
 const GamesSupport = lazy(() => import('./pages/settings/GamesSupport'))
 const TvGamesLibrary = lazy(() => import('./tvmode/Games').then((m) => ({ default: m.GamesLibraryScreen })))
 const TvGame = lazy(() => import('./tvmode/Games').then((m) => ({ default: m.GameScreen })))
+const CouchMode = lazy(() => import('./pages/games/Couch'))
+const GameSources = lazy(() => import('./pages/GameMeta').then((m) => ({ default: m.GameSourcesSettings })))
 
 function RouteSkeleton() {
   return <PageSkeleton shape={shapeFor(useLocation().pathname)} />
@@ -97,6 +99,8 @@ export function register(_host: unknown): any {
       '/controllers': () => <Suspense fallback={<Spinner />}><ControllersScreen /></Suspense>,
       '/games/library/:id': () => <Suspense fallback={<Spinner />}><TvGamesLibrary /></Suspense>,
       '/games/game/:id': () => <Suspense fallback={<Spinner />}><TvGame /></Suspense>,
+      // Couch mode: the game library alone, full screen and large, for controllers.
+      '/big/*': () => <Routes><Route path="/big/*" element={<Suspense fallback={<Spinner />}><CouchMode /></Suspense>} /></Routes>,
     },
     cards: {
       game: { Provider: MainGames },
@@ -105,6 +109,7 @@ export function register(_host: unknown): any {
       gaming: () => <GamingSettings />,
       'games-support': () => <Settings><GamesSupport /></Settings>,
       emulators: () => <Settings><EmulatorsSettings /></Settings>,
+      'game-metadata': () => <><PageHead title="Game metadata" desc="Where your games' names, pictures, scores and age ratings come from, and the keys some sources need." /><Settings><GameSources /></Settings></>,
       games: () => <><PageHead title="My game settings" desc="How your games look, sound and behave. Set something for every game, for one console or, from a game’s own page, for one game. It follows you to every device." /><GameTitlesSetting /><GameSettingsPage /></>,
     },
     setup: {

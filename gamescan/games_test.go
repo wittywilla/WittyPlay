@@ -1,0 +1,224 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 WittyWilla and contributors
+
+package gamescan
+
+import (
+	"archive/zip"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"testing"
+
+	"github.com/wittywilla/wittyplay/gameid/fixture"
+)
+
+func writeFiles(t *testing.T, root string, files ...string) {
+	t.Helper()
+	for _, f := range files {
+		p := filepath.Join(root, filepath.FromSlash(f))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, gameBytes(f), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// gameBytes makes a file with what a real game of that kind has, so that a scan believes
+// it. Anything else gets one byte.
+func gameBytes(name string) []byte {
+	b := headerBytes(name)
+	// Different games have different contents, and checksums would say so.
+	if len(b) > 1024 {
+		copy(b[len(b)-256:], name)
+	}
+	return b
+}
+
+func headerBytes(name string) []byte {
+	switch strings.ToLower(filepath.Ext(name)) {
+	case ".sfc", ".smc":
+		return fixture.SNES("MADE UP GAME")
+	case ".nes":
+		return fixture.NES()
+	case ".gba":
+		return fixture.GBA("MADE UP", "AXXE")
+	case ".gb", ".gbc":
+		return fixture.GB("MADE UP")
+	case ".n64", ".z64":
+		return fixture.N64("MADE UP", "NXXE")
+	case ".nds":
+		return fixture.NDS("MADE UP", "AXXE")
+	case ".md", ".gen":
+		return fixture.MegaDrive("MADE UP", "GM 00000000-00")
+	case ".sms":
+		return fixture.MasterSystem(false)
+	case ".gg":
+		return fixture.MasterSystem(true)
+	case ".pce", ".a26", ".ws", ".vb":
+		return make([]byte, 64<<10)
+	}
+	return []byte("x")
+}
+
+func names(c []candidate, root string) []string {
+	var out []string
+	for _, x := range c {
+		rel, _ := filepath.Rel(root, x.path)
+		out = append(out, filepath.ToSlash(rel)+"="+x.console)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func equal(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func TestDiscoverGamesOneConsole(t *testing.T) {
+	root := t.TempDir()
+	writeFiles(t, root, "Hello.sfc", "sub/World.smc", "notes.txt", "other.gba", "bios/skip.sfc", ".hidden/skip.sfc")
+	got, err := discoverGames(root, "snes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"Hello.sfc=snes", "sub/World.smc=snes"}; !equal(names(got, root), want) {
+		t.Fatalf("got %v, want %v", names(got, root), want)
+	}
+}
+
+func TestDiscoverGamesAuto(t *testing.T) {
+	root := t.TempDir()
+	writeFiles(t, root, "a.sfc", "b.gba", "mystery.bin", "readme.txt")
+	write := func(rel string, b []byte) {
+		p := filepath.Join(root, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("Sega Genesis/c.bin", fixture.MegaDrive("MADE UP", "GM 00000000-00"))
+	write("Atari 2600/d.bin", make([]byte, 4096))
+	got, _ := discoverGames(root, "auto")
+	want := []string{"Atari 2600/d.bin=a2600", "Sega Genesis/c.bin=md", "a.sfc=snes", "b.gba=gba"}
+	if !equal(names(got, root), want) {
+		t.Fatalf("got %v, want %v", names(got, root), want)
+	}
+}
+
+func TestDiscoverGamesMultiFile(t *testing.T) {
+	root := t.TempDir()
+	writeFiles(t, root, "Game/Game (Track 2).bin", "Set/Disc 1.cue", "Set/Disc 2.cue")
+	raw := fixture.Raw(fixture.PS1("SLUS_123.45"))
+	_ = os.WriteFile(filepath.Join(root, "Game", "Game (Track 1).bin"), raw, 0o644)
+	_ = os.WriteFile(filepath.Join(root, "Solo.bin"), raw, 0o644)
+	_ = os.WriteFile(filepath.Join(root, "Set", "Disc 1.bin"), fixture.Raw(fixture.PS1("SLUS_123.46")), 0o644)
+	_ = os.WriteFile(filepath.Join(root, "Set", "Disc 2.bin"), fixture.Raw(fixture.PS1("SLUS_123.47")), 0o644)
+	_ = os.WriteFile(filepath.Join(root, "Game", "Game.cue"), []byte("FILE \"Game (Track 1).bin\" BINARY\n  TRACK 01 MODE2/2352\nFILE \"Game (Track 2).bin\" BINARY\n"), 0o644)
+	_ = os.WriteFile(filepath.Join(root, "Set", "Disc 1.cue"), []byte("FILE \"Disc 1.bin\" BINARY\n  TRACK 01 MODE2/2352\n"), 0o644)
+	_ = os.WriteFile(filepath.Join(root, "Set", "Disc 2.cue"), []byte("FILE \"Disc 2.bin\" BINARY\n  TRACK 01 MODE2/2352\n"), 0o644)
+	_ = os.WriteFile(filepath.Join(root, "Set", "Game.m3u"), []byte("# discs\nDisc 1.cue\nDisc 2.cue\n../../outside.bin\n"), 0o644)
+	got, _ := discoverGames(root, "ps1")
+	// Solo.bin is the same game as Game.cue: its checksum says so, so it isn't listed twice.
+	want := []string{"Game/Game.cue=ps1", "Set/Game.m3u=ps1"}
+	if !equal(names(got, root), want) {
+		t.Fatalf("got %v, want %v", names(got, root), want)
+	}
+}
+
+func TestDiscoverGamesZip(t *testing.T) {
+	root := t.TempDir()
+	mk := func(name, inner string) {
+		f, err := os.Create(filepath.Join(root, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		w := zip.NewWriter(f)
+		e, _ := w.Create(inner)
+		_, _ = e.Write(gameBytes(inner))
+		_ = w.Close()
+		_ = f.Close()
+	}
+	mk("good.zip", "game.nes")
+	mk("other.zip", "photo.jpg")
+	got, _ := discoverGames(root, "nes")
+	if want := []string{"good.zip=nes"}; !equal(names(got, root), want) {
+		t.Fatalf("got %v, want %v", names(got, root), want)
+	}
+	got, _ = discoverGames(root, "auto")
+	if want := []string{"good.zip=nes"}; !equal(names(got, root), want) {
+		t.Fatalf("auto: got %v, want %v", names(got, root), want)
+	}
+}
+
+func TestParseGameName(t *testing.T) {
+	for _, c := range []struct{ in, title, note string }{
+		{"Mega Game (USA) (Rev 1) [!]", "Mega Game", "USA, Rev 1"},
+		{"Mega Game, The (Europe)", "The Mega Game", "Europe"},
+		{"Legend of Stuff, The - Part Two (Japan)", "The Legend of Stuff - Part Two", "Japan"},
+		{"plain_name", "plain name", ""},
+		{"(USA)", "(USA)", "USA"},
+	} {
+		title, note := ParseGameName(c.in)
+		if title != c.title || note != c.note {
+			t.Errorf("ParseGameName(%q) = %q, %q; want %q, %q", c.in, title, note, c.title, c.note)
+		}
+	}
+}
+
+// A whole scan: two libraries of one console stay apart, each item has its console,
+func TestSkippedGameFilesAreCounted(t *testing.T) {
+	root := t.TempDir()
+	snes := filepath.Join(root, "Super Nintendo (SNES)")
+	if err := os.MkdirAll(snes, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"Playable.sfc", "Packed one.7z", "Packed two.7z", "notes.txt"} {
+		if err := os.WriteFile(filepath.Join(snes, name), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Not really archives, whatever they're called: counted by that, not by extension.
+	got := skippedGameFiles(root, "auto")
+	if got["damaged"] != 2 || len(got) != 1 {
+		t.Fatalf("want only two damaged archives reported, got %v", got)
+	}
+}
+
+// A PS3 disc or a Wii U game kept as a folder is found by the one file each dump has, and the
+// folder of games around them isn't mistaken for one.
+func TestDumpGame(t *testing.T) {
+	root := t.TempDir()
+	writeFiles(t, root, "PS3/Some Game/PS3_DISC.SFB", "PS3/Some Game/PS3_GAME/USRDIR/EBOOT.BIN", "PS3/Some Game/PS3_GAME/USRDIR/data.bin",
+		"Wii U/Other/code/game.rpx", "Wii U/Other/code/lib.rpl", "Wii U/Other/content/00000001.app", "Wii U/Other/meta/meta.xml",
+		"Wii U/NotADump/code/game.rpx", "PS3/Loose/PS3_DISC.SFB")
+	for dir, want := range map[string]string{
+		"PS3/Some Game":          "PS3/Some Game/PS3_DISC.SFB",
+		"Wii U/Other":            "Wii U/Other/code/game.rpx",
+		"Wii U/NotADump":         "", // no meta folder: not a dump's root
+		"PS3/Loose":              "", // no PS3_GAME beside it
+		"PS3":                    "",
+		"PS3/Some Game/PS3_GAME": "",
+	} {
+		got := dumpGame(filepath.Join(root, filepath.FromSlash(dir)))
+		if want != "" {
+			want = filepath.Join(root, filepath.FromSlash(want))
+		}
+		if got != want {
+			t.Errorf("%s: %q, want %q", dir, got, want)
+		}
+	}
+}

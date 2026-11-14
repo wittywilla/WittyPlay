@@ -2,7 +2,8 @@
 // Copyright (C) 2026 WittyWilla and contributors
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, type GameConsole, type GameCore } from '@wms/app/api'
+import { api } from '@wms/app/api'
+import type { GameConsole, GameCore } from '../../gameTypes'
 import { LoadError, Spinner } from '@wms/app/components/common'
 import { IconCheck, IconGamepad, IconInfo } from '@wms/app/icons'
 import { toast } from '@wms/app/state'

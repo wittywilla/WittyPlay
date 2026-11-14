@@ -56,10 +56,28 @@ var forgetters []func(*App, int64)
 
 func onForget(f func(*App, int64)) { forgetters = append(forgetters, f) }
 
+// background is work a route group runs while the service does (inBackground, in an init): it
+// starts with Watch, once WittyPlay's data can be reached.
+var background []func(*App)
+
+func inBackground(f func(*App)) { background = append(background, f) }
+
 // Watch follows the server's events while the service runs: an account that goes takes its
 // layouts, profiles and picture with it, as the server's own tables did.
 func Watch() {
 	watchOnce.Do(func() {
+		go func() {
+			for {
+				a, err := Get()
+				if err == nil {
+					for _, f := range background {
+						f(a)
+					}
+					return
+				}
+				time.Sleep(30 * time.Second)
+			}
+		}()
 		go func() {
 			var after int64
 			for {
