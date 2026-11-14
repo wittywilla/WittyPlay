@@ -98,6 +98,12 @@ func tvItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, bool, error) {
 			all = a.storeConsoles(ctx, on)
 		}
 	case srcPlaySetup:
+		var state struct{ Done []string }
+		if a.Host.Do(ctx, on, "GET", "/setup", nil, &state) == nil && slices.Contains(state.Done, "games") {
+			all = []sdui.Item{{ID: "finished", Kind: "view", Title: "WittyPlay is set up", Icon: "check",
+				Subtitle: "It's no longer on Home. Everything here is also in WittyPlay's Settings.", Action: &sdui.Action{Type: core.ActBack}}}
+			break
+		}
 		all = []sdui.Item{
 			{ID: "done", Kind: "view", Title: "Done", Icon: "check", Subtitle: "Stop showing \"Finish setting up WittyPlay\" on Home.",
 				Action: &sdui.Action{Type: core.ActCommand, Op: ui.CommandSetupDone}},
