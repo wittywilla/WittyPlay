@@ -12,7 +12,11 @@
 package ui
 
 import (
+	"bytes"
+	"encoding/json"
+
 	"github.com/wittywilla/wittymodule/sdui"
+	core "github.com/wittywilla/wittymodule/sdui/core"
 )
 
 // Module is WittyPlay's ID.
@@ -46,6 +50,35 @@ const (
 	SourcePrivacy     = Module + ".privacy"
 	SourceKidsFriends = Module + ".kidsFriends"
 )
+
+// The library and the store, for the apps that draw WittyPlay's screens themselves (the Apple TV
+// and Android TV apps, and the phone apps): answered by package api (sdui_store.go).
+const (
+	SourceLibrary       = Module + ".library"
+	SourceStoreConsoles = Module + ".storeConsoles"
+	SourceStoreEmus     = Module + ".storeEmulators"
+)
+
+// tvSources are the library's and the store's sources, as the catalogue describes them.
+func tvSources() []sdui.SourceSpec {
+	return []sdui.SourceSpec{
+		{Type: SourceLibrary, Label: "Games by console", Icon: "game", Title: "Games",
+			Description: "With a console, that console's games by title, in one games library ($library) or every one. Without, the consoles that have games there, each with how many, opening the library that holds them.",
+			Params: []sdui.PropSpec{
+				{Name: "library", Type: "library", Label: "Library", Help: "$library on a games library's page; empty for every games library."},
+				{Name: "console", Type: "string", Label: "Console", Help: "A console's ID, such as snes. Empty: the consoles themselves.", MaxLength: 40},
+				{Name: "limit", Type: "int", Label: "At most", Default: 40, Min: sdui.Int(1), Max: sdui.Int(500)},
+			},
+			Yields: []string{"game", "view"}, CardStyle: "game", Paged: true},
+		{Type: SourceStoreConsoles, Label: "Cores & emulators: consoles", Icon: "disc", Title: "Consoles & cores",
+			Description: "For an administrator: a row for each console, whether it plays here and on what, opening its own rows. With a console: the core it plays on (a choice), each of its cores to install (its licence accepted), update or remove, with a download's progress, and its BIOS files. Nothing for anyone else.",
+			Params:      []sdui.PropSpec{{Name: "console", Type: "string", Label: "Console", Help: "A console's ID, $item on a page opened about it. Empty: every console.", MaxLength: 64}},
+			Yields:      []string{"view"}, CardStyle: "tile"},
+		{Type: SourceStoreEmus, Label: "Cores & emulators: standalone emulators", Icon: "devices", Title: "Standalone emulators",
+			Description: "For an administrator: each standalone emulator, its consoles, licence and firmware, and rows to accept its licence and install it, update it, stop a download or remove it. Nothing for anyone else.",
+			Yields:      []string{"view"}, CardStyle: "tile"},
+	}
+}
 
 // onlineSources are WittyPlay Online's sources, as the catalogue describes them.
 func onlineSources() []sdui.SourceSpec {
@@ -113,6 +146,9 @@ func UI() *sdui.Module {
 	for _, src := range onlineSources() {
 		m.AddSource(src)
 	}
+	for _, src := range tvSources() {
+		m.AddSource(src)
+	}
 	shelf := sdui.Shelf(Module+"-consoles", "What this server plays", sdui.Src(SourceConsoles, "only", "ready", "limit", 40))
 	m.AddInsert("games", "playing", shelf)
 	m.AddPage(sdui.Page{ID: Module, Kind: "custom", Title: "What this server plays", Icon: "game",
@@ -152,7 +188,17 @@ const (
 	PageKeep        = Module + "-keep"
 	PagePrivacy     = Module + "-privacy"
 	PageKids        = Module + "-kids"
+	// The apps' own versions of WittyPlay's web pages (the web app keeps its React pages for these):
+	// every games library's page, Settings, and Cores & emulators with each console's rows.
+	PageLibrary      = Module + "-library"
+	PageSettings     = Module + "-settings"
+	PageStore        = Module + "-store"
+	PageStoreConsole = Module + "-store-console"
 )
+
+// onlyInApps: shown by the apps alone; the web app has its own (its Consoles and All games tabs link
+// to its own pages).
+var onlyInApps = &sdui.Condition{Not: &sdui.Condition{Platform: []string{"web", "desktop"}}}
 
 // onlineRegions is what WittyPlay Online puts into the shell while its pages show: the profile and
 // the server in the status bar, and the round dock of its destinations.
@@ -164,7 +210,8 @@ func onlineRegions() *sdui.PageRegions {
 			{ID: "together", Label: "Together", Icon: "users", Route: "/page/" + PageOnline + "?tab=together"},
 			{ID: "controllers", Label: "Controllers", Icon: "devices", Route: "/page/" + PageControllers, As: "layer"},
 			{ID: "memories", Label: "Memories", Icon: "photo", Route: "/page/" + PageOnline + "?tab=memories"},
-			{ID: "settings", Label: "Settings", Icon: "settings", Route: "/wittyplay/settings"}, // WittyPlay's whole Settings, in the app
+			// WittyPlay's Settings, which every app draws (the web app opens its own, /wittyplay/settings).
+			{ID: "settings", Label: "Settings", Icon: "settings", Route: "/page/" + PageSettings},
 		},
 	}
 }
@@ -189,6 +236,14 @@ func addOnlinePages(m *sdui.Module) {
 				sdui.Sec("recent-row", "Shelf", sdui.Props("title", "", "focusGrow", true, "detail", true, "cardSize", "l", "seeAll", "never",
 					"empty", "message", "emptyText", "Nothing played yet. Pick a game from Classics.",
 					"emptyAction", map[string]any{"label": "Open Classics", "to": "/page/" + PageOnline + "?tab=classics"}), sdui.Src(SourceRecent, "limit", 20))),
+			withWhen(tab("consoles", "Consoles", "game",
+				sdui.Sec("consoles-grid", "Grid", sdui.Props("title", "Consoles with games", "cardStyle", "tile", "empty", "message", "emptyText", "No games in your libraries yet.",
+					"emptyHint", "An administrator adds a games library in Settings; its games appear after a scan.",
+					"emptyAction", map[string]any{"label": "Add a games library", "native": "settings", "when": map[string]any{"admin": true}}), sdui.Src(SourceLibrary, "limit", 60))), onlyInApps),
+			withWhen(tab("all", "All games", "library",
+				sdui.Sec("libraries-grid", "Grid", sdui.Props("title", "Games libraries", "empty", "message", "emptyText", "No games library here yet.",
+					"emptyHint", "An administrator adds a games library in Settings; its games appear after a scan.",
+					"emptyAction", map[string]any{"label": "Add a games library", "native": "settings", "when": map[string]any{"admin": true}}), sdui.Src("libraries", "kind", "games"))), onlyInApps),
 			tab("classics", "Classics", "game",
 				sdui.Sec("eras", "Grid", sdui.Props("title", "Classics by era", "empty", "message", "emptyText", "No games in your libraries yet.",
 					"emptyHint", "An administrator adds a games library in Settings; its games appear after a scan.",
@@ -217,6 +272,7 @@ func addOnlinePages(m *sdui.Module) {
 		legend)
 	pads.Regions = onlineRegions()
 	m.AddPage(pads)
+	addTVPages(m, page, tab, list, legend)
 
 	// The in-game menu, shown as a layer over the game. Rewind and the screen and sound panel are the
 	// player's own; these are the places the server knows.
@@ -271,5 +327,140 @@ func addOnlinePages(m *sdui.Module) {
 	m.AddPage(kids)
 
 	m.AddNav(sdui.NavItem{ID: PageOnline, Type: "page", Page: PageOnline, Label: "Games", Icon: "game",
-		Placement: map[string]string{"phone": "more", "tablet": "more", "desktop": "more", "web": "more", "headset": "more"}})
+		Placement: map[string]string{"phone": "primary", "tablet": "primary", "desktop": "more", "web": "more", "headset": "more"}})
+}
+
+func withWhen(s sdui.Section, when *sdui.Condition) sdui.Section { s.When = when; return s }
+
+// libraryShelves are the consoles a games library's page has a shelf for, in the order of their
+// eras (home consoles, then handhelds), each by the name people call it. A console with no games in
+// the library has no shelf.
+var libraryShelves = []struct{ id, name string }{
+	{"a2600", "Atari 2600"}, {"a7800", "Atari 7800"}, {"nes", "NES"}, {"sms", "Master System"}, {"snes", "Super Nintendo"}, {"md", "Mega Drive"},
+	{"pce", "PC Engine"}, {"n64", "Nintendo 64"}, {"ps1", "PlayStation"}, {"dc", "Dreamcast"}, {"ps2", "PlayStation 2"}, {"gc", "GameCube"},
+	{"wii", "Wii"}, {"xbox", "Xbox"}, {"ps3", "PlayStation 3"}, {"wiiu", "Wii U"}, {"switch", "Switch"}, {"switch2", "Switch 2"},
+	{"gb", "Game Boy"}, {"gg", "Game Gear"}, {"lynx", "Lynx"}, {"ngp", "Neo Geo Pocket"}, {"ws", "WonderSwan"}, {"vb", "Virtual Boy"},
+	{"gba", "Game Boy Advance"}, {"nds", "Nintendo DS"}, {"psp", "PSP"}, {"3ds", "Nintendo 3DS"},
+}
+
+// addTVPages adds what the Apple TV and Android TV apps (and the phone apps) draw where the web app
+// has WittyPlay's React pages: a games library, Settings, and Cores & emulators for administrators.
+// Each ends with the dock and its key legend, and every row a remote can act on is a focus stop.
+func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sdui.Section) sdui.Page,
+	tab func(id, label, icon string, children ...sdui.Section) sdui.Section,
+	list func(id, title string, src sdui.Source, kv ...any) sdui.Section, legend sdui.Section) {
+	admin, notAdmin := true, false
+	forAdmins, forOthers := &sdui.Condition{Admin: &admin}, &sdui.Condition{Admin: &notAdmin}
+
+	// A games library: what was being played, a shelf for each console, and every game with a filter bar.
+	shelves := make([]sdui.Section, 0, len(libraryShelves))
+	for _, c := range libraryShelves {
+		shelves = append(shelves, sdui.Sec("c-"+c.id, "Shelf", sdui.Props("title", c.name, "cardStyle", "game", "seeAll", "never"),
+			sdui.Src(SourceLibrary, "library", "$library", "console", c.id, "limit", 60)))
+	}
+	lib := sdui.Page{ID: PageLibrary, Kind: "library", Title: "{library}", Icon: "game", Scope: Module, Match: &sdui.Match{LibraryKind: "games"},
+		Description: "A games library on every app: what you were playing, a shelf for each console, and every game with filters. The web app shows its own (/wittyplay/library).",
+		Sections: []sdui.Section{
+			sdui.Sec("playing", "Shelf", sdui.Props("title", "Continue playing", "cardStyle", "game"), sdui.Src("continuePlaying", "library", "$library")),
+			sdui.Sec("views", "Tabs", sdui.Props("style", "segments", "default", "consoles"), nil,
+				tab("consoles", "By console", "game", shelves...),
+				tab("all", "All games", "grid",
+					sdui.Sec("filters", "FilterBar", sdui.Props("target", "all-games", "fields", []string{"genre", "decade"}, "sorts", []string{"title", "added", "newest", "rating"}), nil),
+					sdui.Sec("all-games", "Grid", sdui.Props("cardStyle", "game", "empty", "message", "emptyText", "No games match.",
+						"emptyHint", "Change the filters, or add games to the library's folders; they appear after a scan."), sdui.Src("browse", "library", "$library", "filterable", true)))),
+			sdui.Sec("dock", "Dock", sdui.Props("legend", true, "target", "all-games", "controls", []string{"sort", "filter"}), nil),
+		}, Regions: onlineRegions()}
+	m.AddPage(lib)
+
+	// Settings, the dock's: the profile's own pages, and for an administrator the store.
+	item := func(id, title, subtitle, icon string, kv ...any) sdui.Section {
+		return sdui.Sec(id, "ListItem", sdui.Props(append([]any{"title", title, "subtitle", subtitle, "icon", icon}, kv...)...), nil)
+	}
+	set := page(PageSettings, "Settings", "settings",
+		sdui.Sec("you", "List", sdui.Props("title", "For you"), nil,
+			item("privacy", "Friends and what you play", "Who sees you online and what you are playing", "users", "to", "/page/"+PagePrivacy),
+			item("controllers", "Controllers", "Who is on which player", "devices", "to", "/page/"+PageControllers),
+			item("options", "WittyPlay options", "In this app's Settings, Modules, Games", "settings", "native", "settings")),
+		withWhen(sdui.Sec("server", "List", sdui.Props("title", "This server"), nil,
+			item("store", "Cores & emulators", "Consoles and their cores, BIOS files and standalone emulators: install, update, choose and remove", "disc", "to", "/page/"+PageStore),
+			item("plays", "What this server plays", "Every console, and whether its games play here", "game", "to", "/page/"+Module)), forAdmins),
+		sdui.Sec("computer", "List", sdui.Props("title", "On a computer", "focusable", true), nil,
+			item("look", "On a computer: how WittyPlay looks and plays", "Layout, tabs and buttons, game pictures, controller mapping and my game settings are in WittyPlay's Settings in a browser.", "info")),
+		legend)
+	set.Description = "WittyPlay's Settings on every app: the dock's Settings. The web app shows its own (/wittyplay/settings)."
+	set.Regions = onlineRegions()
+	m.AddPage(set)
+
+	// Cores & emulators, for administrators. Rows run WittyPlay's own commands; "Check again" reads
+	// a download's progress again.
+	admins := withWhen(sdui.Notice("admins", "info", "Only an administrator installs cores and emulators. What this server plays is in Settings."), forOthers)
+	again := withWhen(sdui.Sec("again", "List", sdui.Props("title", ""), nil,
+		item("check", "Check again", "Reads again how downloads and installs are going.", "history", "op", "refresh")), forAdmins)
+	store := page(PageStore, "Cores & emulators", "disc", admins,
+		withWhen(sdui.Sec("store", "Tabs", sdui.Props("style", "tabs", "default", "consoles"), nil,
+			tab("consoles", "Consoles & cores", "game",
+				list("consoles-list", "", sdui.Src(SourceStoreConsoles), "focusable", true, "empty", "message", "emptyText", "The consoles couldn't be read. Try again in a moment.")),
+			tab("emulators", "Standalone emulators", "devices",
+				list("emulators-list", "", sdui.Src(SourceStoreEmus), "focusable", true, "empty", "message", "emptyText", "The emulators couldn't be read. Try again in a moment.")),
+			tab("support", "What this server plays", "check",
+				sdui.Grid("support-grid", "", sdui.Src(SourceConsoles, "only", "all", "limit", 60)))), forAdmins),
+		again, legend)
+	store.Description = "For administrators, on every app: each console's cores (install, update, remove, the one it plays on) and BIOS files, and the standalone emulators."
+	store.Regions = onlineRegions()
+	m.AddPage(store)
+
+	// One console's rows, opened with ?item=<console>&name=<its name> from the store's.
+	one := page(PageStoreConsole, "{title}", "game", admins,
+		withWhen(list("rows", "", sdui.Src(SourceStoreConsoles, "console", "$item"), "focusable", true, "empty", "message", "emptyText", "This server doesn't know this console."), forAdmins),
+		again, legend)
+	one.Description = "For administrators: one console's core, its cores to install, update or remove, and its BIOS files. Opened with ?item=<console>&name=<its name>."
+	one.Regions = onlineRegions()
+	m.AddPage(one)
+}
+
+// The commands the store's rows run: WittyPlay's own routes (api/cores.go, rpc/docker.go), which
+// every app runs from the server's catalogue (WittyMediaServer docs/SDUI-MODULES.md, "Commands").
+// Every one is an administrator's route, and none needs a password.
+const (
+	CommandCoreInstall     = Module + ".core.install"
+	CommandCoreRemove      = Module + ".core.remove"
+	CommandConsoleCore     = Module + ".console.core"
+	CommandEmulatorInstall = Module + ".emulator.install"
+	CommandEmulatorCancel  = Module + ".emulator.cancel"
+	CommandEmulatorRemove  = Module + ".emulator.remove"
+)
+
+// Commands are WittyPlay's own commands, as sdui.json declares them.
+func Commands() []core.CommandSpec {
+	routes := "/api/modules/" + Module
+	return []core.CommandSpec{
+		{Op: CommandCoreInstall, Label: "Install the core", Method: "POST", Path: routes + "/gaming/cores/{item}/install",
+			Description: "Cores & emulators, administrators: downloads a console's core (item: its ID) from the libretro build server, or downloads it again to update it."},
+		{Op: CommandCoreRemove, Label: "Remove the core", Method: "DELETE", Path: routes + "/gaming/cores/{item}",
+			Description: "Cores & emulators, administrators: removes a core this server installed (item: its ID)."},
+		{Op: CommandConsoleCore, Label: "Choose the console's core", Method: "PUT", Path: routes + "/gaming/consoles/{item}/core", Body: `{"core":"{value}"}`,
+			Description: "Cores & emulators, administrators: the core a console (item: its ID) plays on unless a game has its own; params.value is an installed core's ID, empty for automatic. A select row adds value.",
+			Params:      []core.CommandParam{{Name: "value", Type: "string", Label: "Core"}}},
+		{Op: CommandEmulatorInstall, Label: "Accept the licence and install", Method: "POST", Path: routes + "/docker/emulators/{item}/install", Body: `{"license":"{license}"}`,
+			Description: "Cores & emulators, administrators: installs or updates a standalone emulator (item: its ID) in the background; params.license is the licence the row named, which must be the emulator's.",
+			Params:      []core.CommandParam{{Name: "license", Type: "string", Label: "Licence accepted", Required: true}}},
+		{Op: CommandEmulatorCancel, Label: "Stop installing", Method: "DELETE", Path: routes + "/docker/emulators/{item}/install",
+			Description: "Cores & emulators, administrators: stops a standalone emulator's download (item: its ID)."},
+		{Op: CommandEmulatorRemove, Label: "Remove the emulator", Method: "DELETE", Path: routes + "/docker/emulators/{item}",
+			Description: "Cores & emulators, administrators: uninstalls a standalone emulator (item: its ID). Saves stay."},
+	}
+}
+
+// JSON is sdui.json: UI, with Commands. WittyModule's sdui.Module has no field for commands yet (its
+// core has, and the server reads them), so they are added here; once it has, they go into UI.
+func JSON() ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
+	err := enc.Encode(struct {
+		*sdui.Module
+		Commands []core.CommandSpec `json:"commands,omitempty"`
+	}{UI(), Commands()})
+	return buf.Bytes(), err
 }

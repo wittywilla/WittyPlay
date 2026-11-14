@@ -208,8 +208,26 @@ func handleGaming(a *App, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	views := a.gamingConsoles(ctx, host.For(r))
+	systemDir := a.SystemDir()
+	var unpacked int64
+	if unpackedCache != nil {
+		if c := unpackedCache(a); c != nil {
+			unpacked = c.Used()
+		}
+	}
+	writeJSON(w, 200, map[string]any{
+		"runner": runnerName, "encoders": enc, "consoles": views, "cores": a.Cores().List(), "canDownload": cores.CanDownload(),
+		"coresDir": a.Cores().Dir, "systemDir": systemDir, "running": rpc.Mgr.Count(), "unpackedBytes": unpacked, "gpu": a.GPUStatus(ctx), "biosFolder": wittyplay.BIOSFolderName,
+	})
+}
+
+// gamingConsoles are the consoles as Settings, Consoles & cores shows them (GET /gaming, and the
+// store's rows for the apps, wittyplay.store.consoles): each with how many games every library
+// holds for it, the BIOS files in place, and what's stopping it from starting if that's a missing BIOS.
+func (a *App) gamingConsoles(ctx context.Context, on host.On) []ConsoleView {
 	views := a.ConsoleViews(ctx)
-	counts, _ := a.Host.Counts(ctx, host.For(r), "games", "console")
+	counts, _ := a.Host.Counts(ctx, on, "games", "console")
 	systemDir := a.SystemDir()
 	a.sweepBIOS(false) // what's found shows the next time this is asked
 	records := a.biosRecords()
@@ -229,16 +247,7 @@ func handleGaming(a *App, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	var unpacked int64
-	if unpackedCache != nil {
-		if c := unpackedCache(a); c != nil {
-			unpacked = c.Used()
-		}
-	}
-	writeJSON(w, 200, map[string]any{
-		"runner": runnerName, "encoders": enc, "consoles": views, "cores": a.Cores().List(), "canDownload": cores.CanDownload(),
-		"coresDir": a.Cores().Dir, "systemDir": systemDir, "running": rpc.Mgr.Count(), "unpackedBytes": unpacked, "gpu": a.GPUStatus(ctx), "biosFolder": wittyplay.BIOSFolderName,
-	})
+	return views
 }
 
 // handleUnpackedClear empties the unpacked games cache, apart from what's being played.

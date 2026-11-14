@@ -72,10 +72,13 @@ var eraLabels = map[string]struct{ badge, title string }{
 
 var presenceWords = map[string]string{"playing": "Playing", "online": "Online", "away": "Away", "offline": "Offline"}
 
-// SDUIItems answers the server's sdui.items call for every WittyPlay source: WittyPlay Online's
-// here, and the consoles (rpc.ConsoleItems) for the rest.
+// SDUIItems answers the server's sdui.items call for every WittyPlay source: the library and the
+// store (sdui_store.go), WittyPlay Online's here, and the consoles (rpc.ConsoleItems) for the rest.
 func SDUIItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, error) {
 	typ := req.Source.Type()
+	if ans, ok, err := tvItems(req); ok {
+		return ans, err
+	}
 	if !slices.Contains(onlineSources, typ) {
 		return rpc.ConsoleItems(req)
 	}
