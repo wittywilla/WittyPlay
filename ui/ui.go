@@ -216,6 +216,18 @@ func onlineRegions() *sdui.PageRegions {
 	}
 }
 
+// underSettings is the dock of a page reached from WittyPlay's Settings (Cores & emulators): its
+// Settings button is the current one, as no button opens the page itself.
+func underSettings() *sdui.PageRegions {
+	r := onlineRegions()
+	for i := range r.SystemDock {
+		if r.SystemDock[i].ID == "settings" {
+			r.SystemDock[i].Current = true
+		}
+	}
+	return r
+}
+
 func addOnlinePages(m *sdui.Module) {
 	page := func(id, title, icon string, sections ...sdui.Section) sdui.Page {
 		return sdui.Page{ID: id, Kind: "custom", Title: title, Icon: icon, Scope: Module, Sections: sections}
@@ -406,7 +418,7 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 				sdui.Grid("support-grid", "", sdui.Src(SourceConsoles, "only", "all", "limit", 60)))), forAdmins),
 		again, legend)
 	store.Description = "For administrators, on every app: each console's cores (install, update, remove, the one it plays on) and BIOS files, and the standalone emulators."
-	store.Regions = onlineRegions()
+	store.Regions = underSettings()
 	m.AddPage(store)
 
 	// One console's rows, opened with ?item=<console>&name=<its name> from the store's.
@@ -414,7 +426,7 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 		withWhen(list("rows", "", sdui.Src(SourceStoreConsoles, "console", "$item"), "focusable", true, "empty", "message", "emptyText", "This server doesn't know this console."), forAdmins),
 		again, legend)
 	one.Description = "For administrators: one console's core, its cores to install, update or remove, and its BIOS files. Opened with ?item=<console>&name=<its name>."
-	one.Regions = onlineRegions()
+	one.Regions = underSettings()
 	m.AddPage(one)
 }
 
