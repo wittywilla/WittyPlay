@@ -62,7 +62,10 @@ jobs:
           [ "v$want" = "$GITHUB_REF_NAME" ] || { echo "module.json says $want, and the tag is $GITHUB_REF_NAME"; exit 1; }
       - name: Install
         run: if [ -f package-lock.json ]; then npm ci --ignore-scripts --no-audit --no-fund; else npm install --ignore-scripts --no-audit --no-fund; fi
-      - run: npm run build:bundle
+      - name: Web part
+        run: |
+          git clone --depth 1 --branch v0.5.4 https://github.com/wittywilla/WittyModule "$RUNNER_TEMP/WittyModule"
+          WITTYMODULE="$RUNNER_TEMP/WittyModule" npm run build:bundle
       - name: Build every platform and write the checksum list
         run: go run github.com/wittywilla/wittymodule/cmd/wittymodule@v0.5.4 pack -freebsd-gcflags "github.com/ebitengine/purego/internal/fakecgo=-std" -web dist -out release .
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

@@ -3,6 +3,11 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.1
+
+- The first published release on module API 5, with the WittyModule 0.5.4 workflows. The tag v0.7.0 was made with workflows that couldn't build it and was never published.
+- `npm test` skips a web test that builds a screen from the app's own parts (`specs.test.ts`) when there is no WittyMediaServer checkout, and says so, so the module's own CI can run before the server it is for is published; beside a checkout every test runs.
+
 ## 0.7.0
 
 - Built on WittyModule 0.5.4 and module API 5; its workflows use WittyModule 0.5.4.

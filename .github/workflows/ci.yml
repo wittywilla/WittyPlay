@@ -61,4 +61,7 @@ jobs:
       - name: Install
         run: if [ -f package-lock.json ]; then npm ci --ignore-scripts --no-audit --no-fund; else npm install --ignore-scripts --no-audit --no-fund; fi
       - run: npm test --if-present
-      - run: npm run build:bundle
+      - name: Web part
+        run: |
+          git clone --depth 1 --branch v0.5.4 https://github.com/wittywilla/WittyModule "$RUNNER_TEMP/WittyModule"
+          WITTYMODULE="$RUNNER_TEMP/WittyModule" npm run build:bundle
