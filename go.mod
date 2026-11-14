@@ -18,7 +18,7 @@ require (
 	github.com/ulikunitz/xz v0.5.12
 	github.com/wittywilla/wittymodule v0.5.4
 	golang.org/x/image v0.47.0
-	golang.org/x/sys v0.49.0
+	golang.org/x/sys v0.50.0
 	modernc.org/sqlite v1.61.1
 )
 
