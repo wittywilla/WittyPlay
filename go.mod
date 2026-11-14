@@ -17,6 +17,7 @@ require (
 	github.com/pion/webrtc/v4 v4.2.26
 	github.com/ulikunitz/xz v0.5.12
 	github.com/wittywilla/wittymodule v0.5.0
+	golang.org/x/image v0.47.0
 	golang.org/x/sys v0.49.0
 	modernc.org/sqlite v1.61.1
 )
@@ -65,7 +66,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/crypto v0.48.0 // indirect
-	golang.org/x/image v0.47.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
