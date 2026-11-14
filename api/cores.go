@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -111,7 +112,12 @@ func (a *App) SystemDir() string {
 }
 
 // testingGames: the built-in test console is only offered when the server says it's testing.
-func testingGames() bool { return os.Getenv("WMS_GAMING_TESTCORE") == "1" }
+func testingGames() bool { return testCore.Load() || os.Getenv("WMS_GAMING_TESTCORE") == "1" }
+
+// testCore: the server offers the built-in test console (its host hello's machine.gamingTestCore:
+// a developer's server, or one started with WMS_GAMING_TESTCORE=1). The variable alone is for
+// WittyPlay's own tests.
+var testCore atomic.Bool
 
 // unpackedCache is the unpacked games cache, which the play group's archives set: GET /gaming
 // shows how much it holds, and DELETE /gaming/unpacked empties it. nil while there's none.

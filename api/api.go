@@ -35,6 +35,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/wittywilla/wittymodule/host"
 	"github.com/wittywilla/wittymodule/service"
@@ -76,6 +77,12 @@ func Get() (*App, error) {
 		return nil, err
 	}
 	shared = &App{DB: db, Dir: dir, Host: h, Log: slog.Default()}
+	// What whoever runs the machine allows: the server says whether the test console is offered.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if hello, err := h.Hello(ctx); err == nil {
+		testCore.Store(hello.Machine["gamingTestCore"])
+	}
+	cancel()
 	return shared, nil
 }
 
@@ -139,7 +146,7 @@ func who(r *http.Request) service.Identity { return service.Who(r) }
 // server says it is testing games.
 func console(id string) *wittyplay.Console {
 	c := wittyplay.ByID(id)
-	if c == nil || (c.Hidden && os.Getenv("WMS_GAMING_TESTCORE") != "1") {
+	if c == nil || (c.Hidden && !testingGames()) {
 		return nil
 	}
 	return c
