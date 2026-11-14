@@ -37,7 +37,7 @@ function ConsoleRow({ lib, c }: { lib: Library; c: GameConsole }) {
   const [, setParams] = useSearchParams()
   useEffect(() => {
     let on = true
-    api.get<{ items: Item[] }>(`/items?library=${lib.id}&kind=game&console=${encodeURIComponent(c.id)}&sort=popular&desc=0&limit=${ROW}`)
+    api.get<{ items: Item[] }>(`/items?library=${lib.id}&kind=game&console=${encodeURIComponent(c.id)}&sort=rating&desc=1&limit=${ROW}`)
       .then((r) => { if (on) setItems(r.items || []) }).catch(() => { if (on) setItems([]) })
     return () => { on = false }
   }, [lib.id, c.id])
