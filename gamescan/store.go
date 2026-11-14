@@ -373,3 +373,47 @@ func RegionsChanged(ctx context.Context, db *sql.DB, library int64) error {
 	_, err := db.ExecContext(ctx, `UPDATE game_items SET version_of = '' WHERE library = ?`, library)
 	return err
 }
+
+// ListedItem is the game the last scan answered that the server knows by this id.
+func ListedItem(ctx context.Context, db *sql.DB, item int64) (*Listed, error) {
+	rows, err := db.QueryContext(ctx, `SELECT `+listedCols+` FROM game_items WHERE item = ? LIMIT 1`, item)
+	if err != nil {
+		return nil, err
+	}
+	list, err := scanListed(rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(list) == 0 {
+		return nil, ErrNotFound
+	}
+	return &list[0], nil
+}
+
+// Detected is how a game's file was identified, as its metadata pages show it.
+type Detected struct {
+	How, Proof, Problem, ProblemText string
+	Sure                             int
+	Title, Serial, Name, Entry       string // what the file calls itself; the archive entry played
+}
+
+// Detection is how the file at a path was identified, from the verdict the scan kept.
+func Detection(ctx context.Context, db *sql.DB, library int64, p string) (Detected, bool) {
+	var raw string
+	if err := db.QueryRowContext(ctx, `SELECT verdict FROM game_files WHERE library = ? AND path = ?`, library, p).Scan(&raw); err != nil {
+		return Detected{}, false
+	}
+	var v gameVerdict
+	if json.Unmarshal([]byte(raw), &v) != nil {
+		return Detected{}, false
+	}
+	how := v.How
+	if how == "" {
+		how = howFolder
+	}
+	d := Detected{How: how, Sure: v.Sure, Proof: v.Proof, Problem: v.Problem, Title: v.Title, Serial: v.Serial, Name: v.Name, Entry: v.Entry}
+	if v.Problem != "" {
+		d.ProblemText = ProblemText(v.Problem, v.Proof)
+	}
+	return d, true
+}
