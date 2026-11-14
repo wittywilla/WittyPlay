@@ -61,13 +61,15 @@ function Frame() {
 // app catches a page load of that address; a move inside this web app isn't one, so here it becomes
 // one, and the web player never starts.
 function InAppHandoff({ children }: { children: ReactNode }) {
-  // Once for each address: an app that didn't catch it gets the web player, not a page that loads forever.
+  // An app that didn't catch it lands here again at once: then it gets the web player, not a page
+  // that loads forever. The same game started again later is handed over as before.
   const [handOff] = useState(() => {
     if (typeof document === 'undefined' || document.documentElement.dataset.app !== 'wittymediaclient') return false
     try {
       const key = 'wittyplay.handoff'
-      if (sessionStorage.getItem(key) === window.location.href) return false
-      sessionStorage.setItem(key, window.location.href)
+      const [href, at] = (sessionStorage.getItem(key) || '').split('\n')
+      if (href === window.location.href && Date.now() - Number(at) < 5000) return false
+      sessionStorage.setItem(key, window.location.href + '\n' + Date.now())
     } catch {
       return false
     }
