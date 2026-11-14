@@ -5,6 +5,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Unreleased
 
+- Repair: WittyPlay answers the server's `doctor.Check` with its own checks (`capabilities.doctor`): a Mac's missing Screen Recording or Accessibility permission for the native host, and a backend that can't run. `docker.Summary`, which the server used to call by name, is gone.
 - **The first-run step on every app.** An administrator's Home says "Finish setting up WittyPlay" until the step is done: the page `wittyplay-setup` (Cores & emulators, What this server plays, WittyPlay options, then Done or Do this later, the commands `wittyplay.setup.done` and `.later`, `POST /setup/games`). The browser's setup wizard keeps its own step for game titles, pictures and metadata keys.
 - **All games on a games library's page lists its games**, with genre, "score at least" and order (title, added, rating, oldest release): `wittyplay.library` with `every` and `filterable`.
 

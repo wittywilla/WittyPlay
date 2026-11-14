@@ -168,9 +168,10 @@ func init() {
 		}
 		return []any{Docker.Offers(ctx, console, systemDir)}, nil, nil
 	}
-	// How standalone emulators stand, for the server's diagnostics: see Summary.
-	Handlers["docker.Summary"] = func(ctx context.Context, _ json.RawMessage, _ []json.RawMessage) ([]any, any, error) {
-		return []any{Docker.Summary(ctx)}, nil, nil
+	// WittyPlay's own checks for the server's Repair page (capabilities.doctor in
+	// module.json): see Doctor.
+	Handlers["doctor.Check"] = func(ctx context.Context, _ json.RawMessage, _ []json.RawMessage) ([]any, any, error) {
+		return []any{Docker.Doctor(ctx)}, nil, nil
 	}
 	// Every console with an emulator set up for it, for the server's console list: a console no
 	// core plays (Xbox, PS3, Wii U) is ready when one of these is.
