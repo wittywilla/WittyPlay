@@ -3,8 +3,9 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
-## Unreleased
+## 0.7.0
 
+- Built on WittyModule 0.5.4 and module API 5; its workflows use WittyModule 0.5.4.
 - Repair: WittyPlay answers the server's `doctor.Check` with its own checks (`capabilities.doctor`): a Mac's missing Screen Recording or Accessibility permission for the native host, and a backend that can't run. `docker.Summary`, which the server used to call by name, is gone.
 - **Settings, Consoles & cores keeps its settings in WittyPlay.** Which version of a game comes first, picture quality, games at once, the limits on fast-forward, rewind and run-ahead, the runner, the room for unpacked games and the network were written to the server's `/settings`, which had stopped keeping them, so a change was lost. They are WittyPlay's own now (`wittyplay_config`), at `GET`/`PUT /gaming/settings` (administrators): every one as text by name, checked all together before any is kept, `""` unsetting one.
 - **Scans say how far they've got, and a full rescan reads every file again.** While WittyPlay works on a scan call (a batch of files, the last call that puts them together into games, a batch to describe) it reports its progress as the host task `scan-<library>`, which the server shows on the scan and takes as a sign the scan isn't stuck: only when the work moves, at most once a second, one report at a time. When the server's host libraries say a library's scan is a full rescan (`scan: {mode: "full", since}`), every file is worked out again from the start, once for each run, so a full rescan stopped by a restart carries on from where it got to; what people said about files stays.
