@@ -25,6 +25,7 @@ import (
 	"github.com/wittywilla/wittyplay"
 	"github.com/wittywilla/wittyplay/cores"
 	"github.com/wittywilla/wittyplay/gamearchive"
+	"github.com/wittywilla/wittyplay/gamescan"
 	"github.com/wittywilla/wittyplay/rpc"
 	"github.com/wittywilla/wittyplay/stream"
 )
@@ -113,12 +114,13 @@ func itemDiscs(it *service.Item) []gameDisc {
 	return out
 }
 
-// itemEntry is the file in a game's archive someone chose to play, or "" to choose by the rules.
-func itemEntry(it *service.Item) string {
-	if it == nil || it.Facets == nil {
+// itemEntry is the file in a game's archive someone chose to play, or "" to choose by the rules:
+// WittyPlay's own record of it (PUT /games/{id}/version), by the game's library and path.
+func (a *App) itemEntry(ctx context.Context, it *service.Item) string {
+	if it == nil || gamePath(it) == "" {
 		return ""
 	}
-	return it.Facets["entry"]
+	return gamescan.Entry(ctx, a.sqlDB(), it.Library, gamePath(it))
 }
 
 // prepareROM returns the file a core should open. An archive is unpacked first, or already has
@@ -136,7 +138,7 @@ func (a *App) prepareROM(ctx context.Context, path string, console *wittyplay.Co
 func (a *App) prepareGame(ctx context.Context, it *service.Item, console *wittyplay.Console) (string, func(), error) {
 	discs := itemDiscs(it)
 	if len(discs) < 2 || !console.Accepts(".m3u") {
-		return a.prepareROM(ctx, gamePath(it), console, itemEntry(it))
+		return a.prepareROM(ctx, gamePath(it), console, a.itemEntry(ctx, it))
 	}
 	return a.prepareDiscs(ctx, discs, console)
 }
@@ -445,7 +447,7 @@ func handleGamePrepare(a *App, w http.ResponseWriter, r *http.Request) {
 	}
 	st := ready
 	if gamearchive.IsArchive(gamePath(it)) {
-		st = a.archives().PrepareEntry(gamePath(it), c, itemEntry(it))
+		st = a.archives().PrepareEntry(gamePath(it), c, a.itemEntry(r.Context(), it))
 	}
 	if len(discs) > 1 && c.Accepts(".m3u") {
 		// Each disc in an archive has to be there. What's asked about is whichever is furthest behind.

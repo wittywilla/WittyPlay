@@ -40,8 +40,12 @@ func ScanHooks() *service.ScanHooks {
 		},
 		Describe: func(ctx context.Context, args wittymodule.ScanDescribeArgs) (wittymodule.ScanDescribed, error) {
 			a, err := Get()
-			if err != nil || scanDescribe == nil {
+			if err != nil {
 				return wittymodule.ScanDescribed{}, err
+			}
+			noteDescribed(ctx, a, args) // the server's id for each game, for the game routes
+			if scanDescribe == nil {
+				return wittymodule.ScanDescribed{}, nil
 			}
 			return scanDescribe(ctx, a, args)
 		},

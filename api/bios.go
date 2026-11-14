@@ -20,6 +20,7 @@ import (
 
 	"github.com/wittywilla/wittymodule/service"
 	"github.com/wittywilla/wittyplay"
+	"github.com/wittywilla/wittyplay/gamescan"
 )
 
 // BIOS files people keep beside their games, found by what they are rather than what they're
@@ -465,12 +466,9 @@ func pickRegionBIOS(files []string, current, region string, regionOf func(string
 // own region where there is one, and otherwise current, the one the core would take anyway.
 // PlayStation 2 is the console this matters for: LRPS2 takes any region's BIOS.
 //
-// The disc's serial comes from the server, as the item's "serial" facet when it has one.
+// The disc's serial is what WittyPlay's scan read in the game's file, when it read one.
 func (a *App) regionBIOSFor(ctx context.Context, it *service.Item, folder, current string) string {
-	serial := ""
-	if it.Facets != nil {
-		serial = it.Facets["serial"]
-	}
+	serial := gamescan.Serial(ctx, a.sqlDB(), it.Library, gamePath(it))
 	region := gameRegion(serial, filepath.Base(gamePath(it)))
 	dir := filepath.Join(a.SystemDir(), filepath.FromSlash(folder))
 	ents, err := os.ReadDir(dir)

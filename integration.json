@@ -6,9 +6,17 @@
     "web": ">=5",
     "sdui": ">=8",
     "http": ">=1",
-    "host": ">=1"
+    "host": ">=2"
   },
   "feature": "games",
+  "scan": {
+    "libraryKinds": [
+      "games"
+    ],
+    "identify": true,
+    "describe": true,
+    "facet": "console"
+  },
   "http": [
     {
       "path": "/consoles/{console}/controls",
@@ -913,6 +921,80 @@
       "limits": {
         "time": "15s"
       }
+    },
+    {
+      "path": "/libraries/{id}/games/review",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/libraries/{id}/games/review/apply",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "256KB"
+      }
+    },
+    {
+      "path": "/libraries/{id}/games/import",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/games/{id}/versions",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user",
+      "item": "id",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/games/{id}/version",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "item": "id",
+      "limits": {
+        "body": "8KB",
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/games/{id}/split",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "item": "id"
+    },
+    {
+      "path": "/games/{id}/console",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "item": "id",
+      "limits": {
+        "body": "8KB"
+      }
+    },
+    {
+      "path": "/games/{id}/not-a-game",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "item": "id"
     }
   ],
   "web": {
