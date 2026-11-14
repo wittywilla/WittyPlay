@@ -40,5 +40,32 @@ CREATE TABLE IF NOT EXISTS wittyplay_backgrounds (
   version INTEGER NOT NULL, fit TEXT NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, dim INTEGER NOT NULL);`})
 }
 
-// Imported are the server's tables these routes took over (data.import "server-games-v1").
-var Imported = []string{"wittyplay_controls", "wittyplay_profiles", "wittyplay_backgrounds"}
+// Cores and consoles (the cores group): custom cores and their versions, custom consoles, which core
+// a game uses, and how each core has played each game. The audit log of cores stays the server's
+// (its module audit log shares it): WittyPlay writes to it through the host API.
+func init() {
+	store.Register(store.Migration{Version: 2, SQL: `
+CREATE TABLE IF NOT EXISTS custom_cores (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, version TEXT NOT NULL DEFAULT '', sha256 TEXT NOT NULL, size INTEGER NOT NULL DEFAULT 0,
+  license TEXT NOT NULL DEFAULT '', license_source TEXT NOT NULL DEFAULT '', non_commercial INTEGER NOT NULL DEFAULT 0,
+  consoles TEXT NOT NULL DEFAULT '[]', note TEXT NOT NULL DEFAULT '', source TEXT NOT NULL DEFAULT '', source_url TEXT NOT NULL DEFAULT '',
+  added_by TEXT NOT NULL DEFAULT '', added_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, report TEXT NOT NULL DEFAULT '{}', system_files TEXT NOT NULL DEFAULT '[]');
+CREATE TABLE IF NOT EXISTS custom_core_versions (
+  core_id TEXT NOT NULL, sha256 TEXT NOT NULL, version TEXT NOT NULL DEFAULT '', added_at INTEGER NOT NULL,
+  PRIMARY KEY(core_id, sha256));
+CREATE TABLE IF NOT EXISTS custom_consoles (
+  id TEXT PRIMARY KEY, data TEXT NOT NULL, aliases TEXT NOT NULL DEFAULT '[]', cores TEXT NOT NULL DEFAULT '[]',
+  created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS game_core_choice (item_id INTEGER PRIMARY KEY, core_id TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS game_core_plays (
+  core_id TEXT NOT NULL, item_id INTEGER NOT NULL,
+  starts INTEGER NOT NULL DEFAULT 0, failures INTEGER NOT NULL DEFAULT 0, seconds REAL NOT NULL DEFAULT 0,
+  last_error TEXT NOT NULL DEFAULT '', last_at INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(core_id, item_id));`})
+}
+
+// Imported are the server's tables WittyPlay took over (data.import "server-games-v1"), each once.
+var Imported = []string{"wittyplay_controls", "wittyplay_profiles", "wittyplay_backgrounds",
+	"custom_cores", "custom_core_versions", "custom_consoles", "game_core_choice", "game_core_plays"}
+
+// perUser are the tables with a person's own rows, which go when the account goes.
+var perUser = []string{"wittyplay_controls", "wittyplay_profiles", "wittyplay_backgrounds"}

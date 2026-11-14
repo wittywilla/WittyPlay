@@ -132,7 +132,7 @@ func Watch() {
 
 func (a *App) forget(userID int64) {
 	ctx := context.Background()
-	for _, t := range Imported {
+	for _, t := range perUser {
 		_, _ = a.DB.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %q WHERE user_id = ?`, t), userID)
 	}
 	_ = os.Remove(a.backgroundPath(userID))
