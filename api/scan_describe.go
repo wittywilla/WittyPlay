@@ -14,9 +14,11 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/wittywilla/wittymodule"
+	"github.com/wittywilla/wittymodule/host"
 	"github.com/wittywilla/wittyplay/gamemeta"
 )
 
@@ -53,7 +55,7 @@ func describeGames(ctx context.Context, a *App, args wittymodule.ScanDescribeArg
 		if it.Facets != nil {
 			console = it.Facets["console"]
 		}
-		f, local := a.localGameFields(ctx, it, console)
+		f, local := a.localGameFields(ctx, it, console, a.foreignNFO(ctx, args.Library.ID))
 		if err := a.enqueueGame(ctx, gameEnqueued{ItemID: it.ID, LibraryID: args.Library.ID, Console: console, Title: it.Title, Files: it.Files, Local: local, Edited: it.Edited}); err != nil {
 			return out, err
 		}
@@ -125,13 +127,14 @@ func overlayFields(found, own wittymodule.ItemFields) wittymodule.ItemFields {
 // localGameFields reads what the owner's files beside a game say: an NFO, and box art. local
 // lists the fields they gave, which sources then leave alone. An NFO WittyMediaServer wrote beside
 // a game earlier is only what it thought then: what it says is used, but a better answer replaces it.
-func (a *App) localGameFields(ctx context.Context, it wittymodule.ScanDescribeItem, console string) (wittymodule.ItemFields, []string) {
+// foreign says the library reads NFOs other programs wrote; without it only the server's own count.
+func (a *App) localGameFields(ctx context.Context, it wittymodule.ScanDescribeItem, console string, foreign bool) (wittymodule.ItemFields, []string) {
 	f := wittymodule.ItemFields{ID: it.ID}
 	var local []string
 	path := it.Files[0]
 	dir, base := filepath.Dir(path), gameBaseName(filepath.Base(path))
 	nfo := filepath.Join(dir, base+".nfo")
-	if m, ok := readGameNFO(nfo); ok {
+	if m, ok := readGameNFO(nfo); ok && (foreign || m.writtenHere) {
 		ours := m.writtenHere
 		note := func(field string) {
 			if !ours {
@@ -335,3 +338,34 @@ func (m *gameNFO) rating() *float64 {
 	}
 	return &v
 }
+
+// foreignNFO says whether a library reads .nfo files other programs wrote beside its media (a
+// library's setting, on unless an administrator turned it off), as the server's host API says.
+// Asked at most every half minute; when the server can't be asked, they're read.
+func (a *App) foreignNFO(ctx context.Context, library int64) bool {
+	nfoMu.Lock()
+	defer nfoMu.Unlock()
+	if time.Since(nfoAt) > 30*time.Second || nfoLibs == nil {
+		var out struct {
+			Libraries []struct {
+				ID         int64 `json:"id"`
+				ForeignNFO *bool `json:"foreignNfo"`
+			} `json:"libraries"`
+		}
+		if a.Host != nil && a.Host.Do(ctx, host.On{}, "GET", "/libraries", nil, &out) == nil {
+			nfoLibs = map[int64]bool{}
+			for _, l := range out.Libraries {
+				nfoLibs[l.ID] = l.ForeignNFO == nil || *l.ForeignNFO
+			}
+			nfoAt = time.Now()
+		}
+	}
+	use, known := nfoLibs[library]
+	return use || !known
+}
+
+var (
+	nfoMu   sync.Mutex
+	nfoAt   time.Time
+	nfoLibs map[int64]bool
+)
