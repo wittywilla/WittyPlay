@@ -37,17 +37,26 @@ func homeHost(t *testing.T) *host.Client {
 		p := strings.TrimPrefix(r.URL.Path, host.Base)
 		switch {
 		case p == "/items":
-			lib, _ := strconv.ParseInt(r.URL.Query().Get("library"), 10, 64)
-			out := []service.Item{}
-			if r.URL.Query().Get("offset") == "" {
-				for _, it := range games {
-					if it.Library == lib && sees(r, it) {
-						it.Files = nil
-						out = append(out, it)
-					}
+			// As the server answers with full=1: its own item JSON (here an id, a title and a
+			// poster), only what the person may see, ids and the "added" order (newest id first).
+			q := r.URL.Query()
+			lib, _ := strconv.ParseInt(q.Get("library"), 10, 64)
+			only := map[int64]bool{}
+			for _, v := range strings.Split(q.Get("ids"), ",") {
+				if id, err := strconv.ParseInt(v, 10, 64); err == nil {
+					only[id] = true
+				}
+			}
+			out := []map[string]any{}
+			for i := len(games) - 1; i >= 0; i-- {
+				it := games[i]
+				if it.Library == lib && sees(r, it) && (len(only) == 0 || only[it.ID]) && q.Get("genre") == "" {
+					out = append(out, map[string]any{"id": it.ID, "title": it.Title, "kind": "game", "poster": "/api/items/" + strconv.FormatInt(it.ID, 10) + "/poster"})
 				}
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{"items": out})
+		case p == "/items/facets":
+			_, _ = w.Write([]byte(`{"genres":[{"value":"Puzzle","count":2}],"series":[]}`))
 		case strings.HasPrefix(p, "/items/"):
 			id, _ := strconv.ParseInt(strings.TrimPrefix(p, "/items/"), 10, 64)
 			for _, it := range games {
