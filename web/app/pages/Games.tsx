@@ -95,14 +95,9 @@ export function GamePage() {
       controllers: getControllers, profiles: profileHost,
       saveControl: async (s) => { await api.put(`/modules/wittyplay/consoles/${it.console}/controls`, s) },
       stop: async (sid) => { setLogSession(null); await api.del(`/play/${sid}`) },
-      answer: async (sid, sdp, prefer) => (await api.post<{ sdp: string }>(`/play/${sid}/webrtc`, { sdp, prefer })).sdp,
-      // As for pictures and sound: over HTTPS in a browser the sign-in cookie comes along.
-      wsUrl: (sid, video) => {
-        const url = mediaUrl(`/api/play/${sid}/ws?video=${video}`)
-        return (url.startsWith('http') ? url : window.location.origin + url).replace(/^http/, 'ws')
-      },
-      // Version 2 of the stream, the same for every device: docs/GAMING-STREAM.md.
+      // The stream, the same for every device: docs/GAMING-STREAM.md.
       stream: (sid, hello, sdp) => api.post(`/play/${sid}/stream`, { hello, sdp }),
+      // As for pictures and sound: over HTTPS in a browser the sign-in cookie comes along.
       streamUrl: (sid) => {
         const url = mediaUrl(`/api/play/${sid}/stream`)
         return (url.startsWith('http') ? url : window.location.origin + url).replace(/^http/, 'ws')

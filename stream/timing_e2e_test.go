@@ -126,11 +126,11 @@ func TestFramesAreMeasuredAndMayNotWait(t *testing.T) {
 	<-gathered
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	answer, err := s.Answer(ctx, pc.LocalDescription().SDP, "")
+	connected, err := s.Connect(ctx, Hello{V: StreamVersion}, pc.LocalDescription().SDP, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: answer}); err != nil {
+	if err := pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: connected.SDP}); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, 20*time.Second, "the channels", func() bool {
@@ -216,11 +216,11 @@ func TestAStoppedEncoderIsReplaced(t *testing.T) {
 	<-gathered
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	answer, err := s.Answer(ctx, pc.LocalDescription().SDP, "")
+	connected, err := s.Connect(ctx, Hello{V: StreamVersion}, pc.LocalDescription().SDP, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: answer}); err != nil {
+	if err := pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: connected.SDP}); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, 20*time.Second, "video", func() bool { return packets.Load() > 30 })

@@ -210,7 +210,5 @@ func (v *viewer) sendTiming(t *frameTrace) {
 	}
 	if v.q != nil {
 		v.q.pushCtrl(websocketBinary, b) // before the frame it describes, which waits behind it
-	} else if v.ws != nil {
-		v.send(websocketBinary, b)
 	}
 }

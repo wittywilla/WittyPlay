@@ -31,8 +31,8 @@ const AUDIO_HOLD: Record<AudioBuffer_, number> = { lowest: 0, balanced: 0.06, sm
 
 export type PlayEvent = { type: string; port?: number; strength?: number; text?: string; effect?: number; aspect?: number; width?: number; height?: number; turns?: number; index?: number; count?: number; code?: string; seats?: Seat[]; ms?: number; motor?: string; state?: number }
 
-// Version 2 of the stream (the server's docs/GAMING-STREAM.md): one way in, the same messages
-// over WebRTC and the WebSocket.
+// The stream (the server's docs/GAMING-STREAM.md): one way in, the same messages over WebRTC
+// and the WebSocket.
 export type Hello = {
   v: 2; app?: string; device?: string; name?: string; watch?: boolean; video?: string[]; audio?: string[]; seats?: number[]
   display?: { hz?: number; width?: number; height?: number }; latency?: string; maxKbps?: number
@@ -68,7 +68,7 @@ export interface Transport {
   onWaiting?: () => void
   // The picture has stopped on a connection that's still up (true), or come back (false).
   onStall?: (stalled: boolean) => void
-  // Version 2: says something to the server as JSON, such as which players this device holds.
+  // Says something to the server as JSON, such as which players this device holds.
   control?(msg: object): void
 }
 
@@ -117,20 +117,17 @@ class TimingLink {
 }
 
 export type Signal = {
-  answer(sdp: string, prefer?: string): Promise<string>
-  wsUrl(video: string): string
-  // Version 2, when the server has it: the hello and the offer in, the stream and the answer out.
-  stream?(hello: Hello, sdp: string): Promise<{ stream: StreamInfo; sdp: string }>
+  // What this device says about itself as it connects.
+  hello(): Hello
+  // WebRTC: the hello and the offer in, the stream and the answer out.
+  stream(hello: Hello, sdp: string): Promise<{ stream: StreamInfo; sdp: string }>
+  // The WebSocket's address, where there is one; the hello is its first message.
   streamUrl?(): string
-  hello?(): Hello
 }
 
-// answerFor connects through version 2 when it can, and version 1 when it can't.
+// answerFor connects over WebRTC, watching.
 async function answerFor(signal: Signal, sdp: string): Promise<string> {
-  if (signal.stream && signal.hello) {
-    return (await signal.stream({ ...signal.hello(), watch: true }, sdp)).sdp
-  }
-  return signal.answer(sdp)
+  return (await signal.stream({ ...signal.hello(), watch: true }, sdp)).sdp
 }
 
 // A JSON channel to the server that holds what's said before it opens.
@@ -575,11 +572,10 @@ function firstFrame(v: HTMLVideoElement, ms: number) {
 
 // ---- WebSocket ----
 
-const MSG_H264 = 1, MSG_JPEG = 2, MSG_PCM = 3
-const MSG_VIDEO = 0x11, MSG_OPUS = 0x12 // version 2
-const REPORT_MS = 500 // how often a version 2 connection says how late frames are arriving
+const MSG_JPEG = 2, MSG_PCM = 3, MSG_VIDEO = 0x11, MSG_OPUS = 0x12
+const REPORT_MS = 500 // how often the WebSocket says how late frames are arriving
 
-// Whether this browser can decode Opus by itself, for version 2's WebSocket sound.
+// Whether this browser can decode Opus by itself, for the WebSocket's sound.
 async function canOpus(): Promise<boolean> {
   const AD = (window as any).AudioDecoder
   if (!AD) return false
@@ -612,8 +608,6 @@ class WSTransport implements Transport {
   private hold = 0
   private meter: LatencyMeter | null = null
   private link = new TimingLink((b) => { if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(b) })
-  // Version 2
-  private v2 = false
   private opus: any = null
   private delay = new ArrivalDelay()
   private reportTimer = 0
@@ -627,22 +621,21 @@ class WSTransport implements Transport {
   }
 
   async connect() {
+    const url = this.signal.streamUrl?.()
+    if (!url) throw new Error('this game has no WebSocket to connect to')
     if (this.kind === 'ws-h264') await this.makeDecoder()
-    this.v2 = !!(this.signal.streamUrl && this.signal.hello)
-    const opus = this.v2 && await canOpus()
+    const opus = await canOpus()
     if (opus) this.makeOpus()
     await new Promise<void>((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('no picture arrived')), FIRST_FRAME_MS)
       this.first = () => { clearTimeout(t); resolve() }
-      const ws = new WebSocket(this.v2 ? this.signal.streamUrl!() : this.signal.wsUrl(this.kind === 'ws-h264' ? 'h264' : 'jpeg'))
+      const ws = new WebSocket(url)
       ws.binaryType = 'arraybuffer'
       this.ws = ws
       ws.onopen = () => {
-        if (this.v2) {
-          const hello = { ...this.signal.hello!(), type: 'hello', watch: true, video: [this.kind === 'ws-h264' ? 'h264' : 'jpeg'], audio: opus ? ['opus', 'pcm'] : ['pcm'] }
-          ws.send(JSON.stringify(hello))
-          this.reportTimer = window.setInterval(() => this.report(), REPORT_MS)
-        }
+        const hello = { ...this.signal.hello(), type: 'hello', watch: true, video: [this.kind === 'ws-h264' ? 'h264' : 'jpeg'], audio: opus ? ['opus', 'pcm'] : ['pcm'] }
+        ws.send(JSON.stringify(hello))
+        this.reportTimer = window.setInterval(() => this.report(), REPORT_MS)
         this.onWaiting?.()
       }
       ws.onmessage = (m) => this.message(m.data)
@@ -687,7 +680,7 @@ class WSTransport implements Transport {
       try {
         const e = JSON.parse(data)
         if (e.type === 'stream') this.info = e
-        if (e.type !== 'hello') this.onEvent?.(e)
+        this.onEvent?.(e)
       } catch { /* not ours */ }
       return
     }
@@ -700,11 +693,10 @@ class WSTransport implements Transport {
       return
     }
     switch (b[0]) {
-      case MSG_H264: this.h264(b, 2); break
       case MSG_VIDEO: {
         const v = new DataView(data)
         this.delay.note(v.getUint32(6, true) / 90, performance.now())
-        this.h264(b, 10)
+        this.h264(b)
         break
       }
       case MSG_OPUS: this.opusPacket(data); break
@@ -746,7 +738,8 @@ class WSTransport implements Transport {
     this.opus.decode(new Chunk({ type: 'key', timestamp: Math.round(ts * 1e6 / 48000), data: new Uint8Array(data, 5) }))
   }
 
-  private h264(b: Uint8Array, at: number) {
+  // A frame: u8 flags (bit 0: keyframe), u32 frame number, u32 90 kHz timestamp, then Annex B.
+  private h264(b: Uint8Array) {
     const key = (b[1] & 1) === 1
     if (this.needKey && !key) return
     if (!this.decoder || this.decoder.state !== 'configured') return
@@ -757,7 +750,7 @@ class WSTransport implements Transport {
     const Chunk = (window as any).EncodedVideoChunk
     // A frame's number goes through the decoder as its timestamp when it's being measured.
     this.ts += 16667
-    this.decoder.decode(new Chunk({ type: key ? 'key' : 'delta', timestamp: this.meter ? this.nextSeq : this.ts, data: b.subarray(at) }))
+    this.decoder.decode(new Chunk({ type: key ? 'key' : 'delta', timestamp: this.meter ? this.nextSeq : this.ts, data: b.subarray(10) }))
   }
 
   private nextSeq = 0

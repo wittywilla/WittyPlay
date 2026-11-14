@@ -69,7 +69,6 @@
         "Manager.Start",
         "Manager.Configure",
         "Session.Done",
-        "Session.ServeWS",
         "Session.Input",
         "Manager.StopAll",
         "Session.ServeStream"

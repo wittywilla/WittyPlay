@@ -7,10 +7,8 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"net"
-	"net/http"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -46,17 +44,16 @@ type viewer struct {
 	audio  *webrtc.TrackLocalStaticSample
 	events atomic.Pointer[webrtc.DataChannel]
 
-	// WebSocket
-	ws  *websocket.Conn
-	out chan wsMessage
+	// WebSocket (wsv2.go)
+	ws *websocket.Conn
+	q  *wsQueue // what it has still to be sent
 
 	seq       uint64 // order of attaching; the oldest gives way
 	closed    atomic.Bool
 	evicted   atomic.Bool
 	closeOnce sync.Once
 
-	// Version 2 (connect.go). A version 1 viewer watches, and may drive any player nobody holds.
-	v2             bool
+	// What its hello asked for (connect.go).
 	conn           string // its id in seats
 	hello          Hello
 	watch          bool   // it's shown the game; a controller only isn't
@@ -73,7 +70,6 @@ type viewer struct {
 	clientDelay    atomic.Int64  // the arrival delay it last reported, in nanoseconds
 	clientDelayAt  atomic.Int64  // when, in Unix nanoseconds
 	lost           atomic.Uint32 // the last share lost, in 256ths
-	q              *wsQueue      // a version 2 WebSocket's outgoing messages
 	early          earlyEvents   // events for it before its channel for them has opened
 }
 
@@ -93,7 +89,6 @@ type wsMessage struct {
 
 // What a WebSocket viewer receives; the first byte says which.
 const (
-	wsH264 = 1 // then one byte, 1 for a keyframe, then Annex B
 	wsJPEG = 2
 	wsPCM  = 3 // then a u32 sample rate, then s16le stereo
 )
@@ -109,9 +104,7 @@ func (s *Session) attach(v *viewer) {
 	s.viewSeq++
 	v.seq = s.viewSeq
 	s.viewers[v] = true
-	if v.v2 {
-		s.updatePaceLocked()
-	}
+	s.updatePaceLocked()
 	var oldest *viewer
 	if len(s.viewers) > maxViewers {
 		for o := range s.viewers {
@@ -210,8 +203,8 @@ func (s *Session) detach(v *viewer) {
 	s.log.Info("viewer disconnected", "conn", v.conn, "evicted", v.evicted.Load(), "viewers", n)
 }
 
-// anyWebRTCLocked says whether anyone is listening to Opus: over WebRTC, or a version 2
-// WebSocket that asked for it.
+// anyWebRTCLocked says whether anyone is listening to Opus: over WebRTC, or a WebSocket that
+// asked for it.
 func (s *Session) anyWebRTCLocked() bool {
 	for v := range s.viewers {
 		if v.wantsOpus() {
@@ -280,28 +273,7 @@ func (s *Session) deliverVideo(codec string, au AU, tr *frameTrace) {
 			continue
 		}
 		if v.q != nil {
-			s.deliverVideoV2(v, au, tr)
-			continue
-		}
-		if v.ws == nil {
-			continue
-		}
-		// A viewer that fell behind waits for the next keyframe, because its
-		// decoder can't use anything before that.
-		if v.waitKey.Load() && !au.Key {
-			continue
-		}
-		flags := byte(0)
-		if au.Key {
-			flags = 1
-		}
-		msg := append([]byte{wsH264, flags}, au.Data...)
-		tr.Sent = time.Now().UnixNano()
-		v.sendTiming(tr) // first, so that it's known about when the picture arrives
-		if v.send(websocket.MessageBinary, msg) {
-			v.waitKey.Store(false)
-		} else {
-			v.waitKey.Store(true)
+			s.deliverVideoWS(v, au, tr)
 		}
 	}
 }
@@ -309,16 +281,12 @@ func (s *Session) deliverVideo(codec string, au AU, tr *frameTrace) {
 func (s *Session) deliverJPEG(b []byte) {
 	s.bytesOut.Add(int64(len(b)))
 	for _, v := range s.snapshotViewers() {
-		if v.codec != "jpeg" || !v.watch {
+		if v.codec != "jpeg" || !v.watch || v.q == nil {
 			continue
 		}
 		msg := append([]byte{wsJPEG}, b...)
 		v.sent.Add(int64(len(msg)))
-		if v.q != nil {
-			v.q.pushVideo(msg, true, time.Now())
-		} else {
-			v.send(websocket.MessageBinary, msg)
-		}
+		v.q.pushVideo(msg, true, time.Now())
 	}
 }
 
@@ -406,7 +374,7 @@ func (s *Session) deliverPCM(b []byte) {
 	vs := s.snapshotViewers()
 	var msg []byte
 	for _, v := range vs {
-		if v.ws == nil || !v.watch || (v.v2 && v.audioWS != "pcm") {
+		if v.q == nil || !v.watch || v.audioWS != "pcm" {
 			continue
 		}
 		if msg == nil {
@@ -418,11 +386,7 @@ func (s *Session) deliverPCM(b []byte) {
 			msg = append(msg, b...)
 		}
 		v.sent.Add(int64(len(msg)))
-		if v.q != nil {
-			v.q.pushCtrl(websocket.MessageBinary, msg)
-		} else {
-			v.send(websocket.MessageBinary, msg)
-		}
+		v.q.pushCtrl(websocket.MessageBinary, msg)
 	}
 }
 
@@ -438,9 +402,7 @@ func (v *viewer) sendEvent(b []byte) {
 		_ = dc.SendText(string(b))
 	} else if v.q != nil {
 		v.q.pushCtrl(websocket.MessageText, b)
-	} else if v.ws != nil {
-		v.send(websocket.MessageText, b)
-	} else if v.v2 {
+	} else {
 		// Its events channel isn't open yet: kept until it is.
 		v.early.add(b)
 	}
@@ -450,16 +412,6 @@ func (v *viewer) sendEvent(b []byte) {
 func (v *viewer) endedFor(code, text string) {
 	b, _ := json.Marshal(map[string]string{"type": "ended", "code": code, "text": text})
 	v.sendEvent(b)
-}
-
-// send queues a message without waiting, and reports whether it fit.
-func (v *viewer) send(t websocket.MessageType, b []byte) bool {
-	select {
-	case v.out <- wsMessage{t, b}:
-		return true
-	default:
-		return false
-	}
 }
 
 // ---- WebRTC ----
@@ -537,25 +489,6 @@ const (
 	iceFailed       = 6 * time.Second
 	iceKeepalive    = time.Second
 )
-
-// Answer connects a browser over WebRTC: it takes the browser's offer and returns
-// the answer. prefer is "" or "vp8". Which codec is used depends on what the
-// browser offered and what FFmpeg here can encode.
-func (s *Session) Answer(ctx context.Context, offer, prefer string) (string, error) {
-	if len(offer) > MaxOfferSize {
-		return "", errors.New("the connection offer is too large")
-	}
-	select {
-	case <-s.done:
-		return "", ErrStopped
-	default:
-	}
-	codec := s.pickCodec(offer, prefer)
-	if codec == "" {
-		return "", errors.New("this browser and this server have no video format in common")
-	}
-	return s.peer(ctx, &viewer{s: s, codec: codec, watch: true, anySeat: true}, offer)
-}
 
 // peer makes the server's side of a WebRTC connection for a viewer, and answers its offer. A
 // viewer that isn't watching gets no picture or sound, only the data channels.
@@ -649,26 +582,22 @@ func (s *Session) peer(ctx context.Context, v *viewer, offer string) (string, er
 			})
 		case "events":
 			dc.OnOpen(func() {
-				if v.v2 {
-					// The first event says what it's getting, and who has which player.
-					b, _ := json.Marshal(s.streamInfo(v))
-					_ = dc.SendText(string(b))
-					for _, e := range v.early.take() {
-						_ = dc.SendText(string(e))
-					}
+				// The first event says what it's getting, and who has which player.
+				b, _ := json.Marshal(s.streamInfo(v))
+				_ = dc.SendText(string(b))
+				for _, e := range v.early.take() {
+					_ = dc.SendText(string(e))
 				}
 				v.events.Store(dc)
 				for _, e := range v.early.take() {
 					_ = dc.SendText(string(e))
 				}
 			})
-			if v.v2 {
-				dc.OnMessage(func(m webrtc.DataChannelMessage) {
-					if m.IsString {
-						s.clientText(v, m.Data)
-					}
-				})
-			}
+			dc.OnMessage(func(m webrtc.DataChannelMessage) {
+				if m.IsString {
+					s.clientText(v, m.Data)
+				}
+			})
 		case "timing":
 			dc.OnOpen(func() { v.timing.Store(dc) })
 			dc.OnMessage(func(m webrtc.DataChannelMessage) {
@@ -732,60 +661,4 @@ func (s *Session) pickCodec(offer, prefer string) string {
 		return "vp8"
 	}
 	return ""
-}
-
-// ---- WebSocket: the path that works wherever HTTP does ----
-
-// ServeWS is the fallback transport. mode is "h264" (decoded with WebCodecs) or
-// "jpeg". Origin checks are done by Accept, as for the rest of the API.
-func (s *Session) ServeWS(w http.ResponseWriter, r *http.Request, mode string) {
-	if mode != "h264" {
-		mode = "jpeg"
-	}
-	if mode == "h264" && len(s.chain("h264")) == 0 {
-		mode = "jpeg"
-	}
-	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{CompressionMode: websocket.CompressionDisabled})
-	if err != nil {
-		return
-	}
-	c.SetReadLimit(4096)
-	v := &viewer{s: s, codec: mode, ws: c, out: make(chan wsMessage, 16), watch: true, anySeat: true}
-	v.waitKey.Store(true)
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	defer v.close()
-	hello, _ := json.Marshal(map[string]any{"type": "hello", "video": mode})
-	v.send(websocket.MessageText, hello)
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-s.done:
-				_ = c.Close(websocket.StatusNormalClosure, "the game has ended")
-				return
-			case m := <-v.out:
-				wctx, wcancel := context.WithTimeout(ctx, 5*time.Second)
-				err := c.Write(wctx, m.typ, m.data)
-				wcancel()
-				if err != nil {
-					cancel()
-					return
-				}
-			}
-		}
-	}()
-	s.attach(v)
-	for {
-		t, b, err := c.Read(ctx)
-		if err != nil {
-			return
-		}
-		if t == websocket.MessageBinary {
-			if !v.timingMessage(b, func(out []byte) { v.send(websocket.MessageBinary, out) }) {
-				s.inputFrom(v, b)
-			}
-		}
-	}
 }

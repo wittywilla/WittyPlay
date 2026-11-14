@@ -211,7 +211,7 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	sess.SetAutoSave(false)
 	r.Started, r.LoadSeconds = true, time.Since(began).Seconds()
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, q *http.Request) { sess.ServeWS(w, q, "h264") }))
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, q *http.Request) { sess.ServeStream(w, q, false) }))
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -221,6 +221,11 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	}
 	defer conn.CloseNow()
 	conn.SetReadLimit(64 << 20)
+	// H.264 and PCM, which go straight into files FFmpeg reads.
+	hello, _ := json.Marshal(stream.Hello{Type: "hello", V: stream.StreamVersion, App: "wittyplay-probe", Video: []string{"h264"}, Audio: []string{"pcm"}})
+	if err := conn.Write(ctx, websocket.MessageText, hello); err != nil {
+		return err
+	}
 
 	dir, err := os.MkdirTemp("", "wittyplay-sweep-")
 	if err != nil {
@@ -247,10 +252,13 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 				continue
 			}
 			switch b[0] {
-			case 1: // see wsH264
+			case 0x11: // see wsVideo: flags, frame number and timestamp, then Annex B
+				if len(b) < 10 {
+					continue
+				}
 				delivered.Add(1)
 				if written < keep {
-					n, _ := vf.Write(b[2:])
+					n, _ := vf.Write(b[10:])
 					written += int64(n)
 				}
 			case 3: // see wsPCM

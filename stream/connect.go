@@ -22,7 +22,7 @@ import (
 	"github.com/wittywilla/wittyplay/ipc"
 )
 
-// Version 2 of the stream: one way in for every client, and the same messages whichever way
+// The stream: one way in for every client, and the same messages whichever way
 // they travel. WebRTC is the way, and a WebSocket carrying the same messages is the fallback for
 // a network that won't carry UDP. The server's docs/GAMING-STREAM.md is the protocol; this is
 // the server's half of it.
@@ -126,8 +126,8 @@ const (
 	EndEvicted = "evicted"
 )
 
-// v2State is what a session keeps for version 2.
-type v2State struct {
+// connState is what a session keeps for its connections.
+type connState struct {
 	seatOf    [MaxPlayers]*viewer // who holds each player; under viewMu
 	connSeq   atomic.Uint64
 	pace      float64 // the refresh rate the game runs at, or 0 for its own; under viewMu
@@ -219,7 +219,7 @@ func (h Hello) prefers(a, b string) string {
 	return ""
 }
 
-// Connect answers a version 2 connection over WebRTC. away says the server counts the device
+// Connect answers a connection over WebRTC. away says the server counts the device
 // as away from home, which it starts lower for.
 func (s *Session) Connect(ctx context.Context, hello Hello, offer string, away bool) (Connected, error) {
 	hello, err := cleanHello(hello)
@@ -258,7 +258,7 @@ func (s *Session) Connect(ctx context.Context, hello Hello, offer string, away b
 
 // newV2Viewer makes the viewer a hello describes. It isn't counted in yet.
 func (s *Session) newV2Viewer(hello Hello) *viewer {
-	v := &viewer{s: s, v2: true, hello: hello, watch: hello.watching(), anySeat: hello.Seats == nil}
+	v := &viewer{s: s, hello: hello, watch: hello.watching(), anySeat: hello.Seats == nil}
 	v.conn = "k" + strconv.FormatUint(s.connSeq.Add(1), 36)
 	v.hz.Store(math.Float64bits(hello.Display.Hz))
 	v.maxKbps = hello.MaxKbps
@@ -411,13 +411,11 @@ func (s *Session) seatsLocked(v *viewer) []Seat {
 	return out
 }
 
-// seatsChangedLocked tells every version 2 viewer who has which player now.
+// seatsChangedLocked tells every viewer who has which player now.
 func (s *Session) seatsChangedLocked() {
 	for v := range s.viewers {
-		if v.v2 {
-			b, _ := json.Marshal(map[string]any{"type": "seats", "seats": s.seatsLocked(v)})
-			go v.sendEvent(b)
-		}
+		b, _ := json.Marshal(map[string]any{"type": "seats", "seats": s.seatsLocked(v)})
+		go v.sendEvent(b)
 	}
 	s.updatePaceLocked()
 }
@@ -488,7 +486,7 @@ type clientMessage struct {
 // maxClientMessage bounds what a client may say in one message.
 const maxClientMessage = 4096
 
-// clientText acts on one text message from a version 2 client.
+// clientText acts on one text message from a client.
 func (s *Session) clientText(v *viewer, b []byte) {
 	if len(b) > maxClientMessage {
 		v.queueError(CodeBadMsg, -1, "That message is too long.")

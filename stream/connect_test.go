@@ -59,7 +59,7 @@ func TestTheHelloIsChecked(t *testing.T) {
 	if h.Display.Hz != 0 || h.MaxKbps != 0 {
 		t.Errorf("a refresh rate or a limit that can't be is none: %+v", h)
 	}
-	// No seats is version 1's way; an empty list is a device that drives nobody.
+	// No seats may drive any player nobody holds; an empty list is a device that drives nobody.
 	if h, _ := cleanHello(Hello{V: 2}); h.Seats != nil {
 		t.Error("no seats should stay nil")
 	}
@@ -132,7 +132,7 @@ func TestTwoDevicesShareAGameBySeats(t *testing.T) {
 	defer cancel()
 
 	// The TV.
-	tv := dialV2WebRTC(t, ctx, s, Hello{V: 2, Device: "tv-1", Name: "Living room", Seats: []int{0}, Display: Display{Hz: 60}})
+	tv := dialWebRTC(t, ctx, s, Hello{V: 2, Device: "tv-1", Name: "Living room", Seats: []int{0}, Display: Display{Hz: 60}})
 	defer tv.pc.Close()
 	if tv.got.Stream.Transport != "webrtc" || tv.got.Stream.Audio != "opus" || tv.got.Stream.Ports != 4 || tv.got.Stream.V != 2 {
 		t.Fatalf("stream: %+v", tv.got.Stream)
@@ -172,7 +172,7 @@ func TestTwoDevicesShareAGameBySeats(t *testing.T) {
 	if list, _ := seats["seats"].([]any); len(list) != 1 {
 		t.Fatalf("the TV hears who has which player: %v", seats)
 	}
-	// The phone's picture starts with a keyframe, in version 2's framing.
+	// The phone's picture starts with a keyframe, in the WebSocket's framing.
 	key := ph.binary(t, ctx, wsVideo)
 	if key[1]&1 != 1 || !bytes.HasPrefix(key[10:], []byte{0, 0, 0, 1}) {
 		t.Fatal("the first frame is a keyframe in Annex B, after flags, frame number and time")
@@ -284,7 +284,7 @@ func TestAWebSocketMustSayHelloFirst(t *testing.T) {
 
 // ---- helpers ----
 
-type v2Peer struct {
+type rtcPeer struct {
 	pc     *webrtc.PeerConnection
 	input  *webrtc.DataChannel
 	got    Connected
@@ -300,13 +300,13 @@ type atomicCount struct {
 func (a *atomicCount) Add(n int) { a.mu.Lock(); a.n += n; a.mu.Unlock() }
 func (a *atomicCount) Load() int { a.mu.Lock(); defer a.mu.Unlock(); return a.n }
 
-func dialV2WebRTC(t *testing.T, ctx context.Context, s *Session, hello Hello) *v2Peer {
+func dialWebRTC(t *testing.T, ctx context.Context, s *Session, hello Hello) *rtcPeer {
 	t.Helper()
 	pc, err := webrtc.NewPeerConnection(webrtc.Configuration{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := &v2Peer{pc: pc, events: make(chan map[string]any, 64)}
+	p := &rtcPeer{pc: pc, events: make(chan map[string]any, 64)}
 	for _, kind := range []webrtc.RTPCodecType{webrtc.RTPCodecTypeVideo, webrtc.RTPCodecTypeAudio} {
 		if _, err := pc.AddTransceiverFromKind(kind, webrtc.RTPTransceiverInit{Direction: webrtc.RTPTransceiverDirectionRecvonly}); err != nil {
 			t.Fatal(err)
@@ -359,7 +359,7 @@ func dialV2WebRTC(t *testing.T, ctx context.Context, s *Session, hello Hello) *v
 }
 
 // event waits for an event of this type, passing over others.
-func (p *v2Peer) event(t *testing.T, ctx context.Context, typ string) map[string]any {
+func (p *rtcPeer) event(t *testing.T, ctx context.Context, typ string) map[string]any {
 	t.Helper()
 	for {
 		select {
@@ -374,7 +374,7 @@ func (p *v2Peer) event(t *testing.T, ctx context.Context, typ string) map[string
 }
 
 // viewer finds the server's side of this peer.
-func (p *v2Peer) viewer(s *Session) *viewer {
+func (p *rtcPeer) viewer(s *Session) *viewer {
 	for _, v := range s.snapshotViewers() {
 		if v.conn == p.got.Stream.Conn {
 			return v
@@ -501,7 +501,7 @@ func (r *wsReader) sawText(typ string) bool {
 // stays up brings the rate down.
 func TestAWebSocketFallingBehindBringsTheRateDown(t *testing.T) {
 	s := &Session{viewers: map[*viewer]bool{}, log: slog.New(slog.DiscardHandler)}
-	v := &viewer{s: s, v2: true, watch: true, codec: "h264", q: newWSQueue()}
+	v := &viewer{s: s, watch: true, codec: "h264", q: newWSQueue()}
 	v.connected.Store(time.Now().Add(-time.Minute))
 	var worst time.Duration
 	var dropped0, sent0 int64

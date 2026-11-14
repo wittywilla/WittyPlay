@@ -16,18 +16,18 @@ import (
 	"github.com/coder/websocket"
 )
 
-// The fallback for version 2: the same messages as over WebRTC, on a WebSocket, for a network
+// The WebSocket fallback: the same messages as over WebRTC, on a WebSocket, for a network
 // that won't carry UDP to the server. TCP never loses anything, so what it does with a network
 // that's too slow is queue, and every queued frame is delay. So only two frames may wait: past
 // that a frame is dropped, the next keyframe is waited for, and the video comes down to fit.
 
-// What a version 2 WebSocket viewer receives, beyond version 1's JPEG and PCM.
+// What a WebSocket viewer receives, besides JPEG (wsJPEG) and PCM (wsPCM).
 const (
 	wsVideo = 0x11 // u8 flags (bit 0: keyframe), u32 frame number, u32 90 kHz timestamp, the frame
 	wsOpus  = 0x12 // u32 48 kHz timestamp, one Opus packet
 )
 
-// How a version 2 WebSocket queues what it sends.
+// How a WebSocket queues what it sends.
 const (
 	wsVideoQueue   = 2                      // frames that may wait; past that one is dropped
 	wsCtrlQueue    = 512                    // sound, events and timing; past that the connection is hopeless
@@ -36,7 +36,7 @@ const (
 	wsWriteTimeout = 5 * time.Second
 )
 
-// wsQueue is what a version 2 WebSocket has to send: sound, events and timing first, never
+// wsQueue is what a WebSocket has to send: sound, events and timing first, never
 // dropped, then at most wsVideoQueue frames.
 type wsQueue struct {
 	mu     sync.Mutex
@@ -136,8 +136,8 @@ func (q *wsQueue) close() {
 	q.mu.Unlock()
 }
 
-// deliverVideoV2 queues one frame for a version 2 WebSocket viewer.
-func (s *Session) deliverVideoV2(v *viewer, au AU, tr *frameTrace) {
+// deliverVideoWS queues one frame for a WebSocket viewer.
+func (s *Session) deliverVideoWS(v *viewer, au AU, tr *frameTrace) {
 	if !v.watch {
 		return
 	}
@@ -174,7 +174,7 @@ func (s *Session) clock90k(unixNano int64) uint32 {
 	return uint32(uint64(max(unixNano-s.began.UnixNano(), 0)) * 9 / 100000)
 }
 
-// ServeStream is version 2's WebSocket: the hello comes first, as text, and the stream's
+// ServeStream is the stream's WebSocket: the hello comes first, as text, and the stream's
 // description goes back. away is the server's word on where the device is.
 func (s *Session) ServeStream(w http.ResponseWriter, r *http.Request, away bool) {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{CompressionMode: websocket.CompressionDisabled})

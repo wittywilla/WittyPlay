@@ -27,24 +27,16 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const post = (path: string, o: unknown) => fetch(path, { method: 'POST', body: JSON.stringify(o) })
 const summary = (s: Series) => ({ p50: round(s.median), p95: round(s.p95), n: s.count })
 
-const signal = {
-  answer: async (sdp: string) => {
-    const r = await fetch('/answer', { method: 'POST', body: sdp })
+// The player's own way in: the same hello, over WebRTC or the WebSocket.
+const signal: Signal = {
+  stream: async (hello: Hello, sdp: string) => {
+    const r = await fetch('/stream', { method: 'POST', body: JSON.stringify({ hello, sdp }) })
     if (!r.ok) throw new Error(await r.text())
-    return r.text()
+    return r.json() as Promise<{ stream: StreamInfo; sdp: string }>
   },
-  wsUrl: (video: string) => `ws://${location.host}/ws?video=${video}`,
-  // Version 2 of the stream, when asked for: the player's own way on a server that has it.
-  ...(q.get('v2') ? {
-    stream: async (hello: Hello, sdp: string) => {
-      const r = await fetch('/stream', { method: 'POST', body: JSON.stringify({ hello, sdp }) })
-      if (!r.ok) throw new Error(await r.text())
-      return r.json() as Promise<{ stream: StreamInfo; sdp: string }>
-    },
-    streamUrl: () => `ws://${location.host}/stream`,
-    hello: (): Hello => ({ v: 2, app: 'wittyplay-probe', device: 'probe', seats: [0] }),
-  } : {}),
-} as Signal
+  streamUrl: () => `ws://${location.host}/stream`,
+  hello: (): Hello => ({ v: 2, app: 'wittyplay-probe', device: 'probe', seats: [0] }),
+}
 
 // One stretch of measuring. A long run has many.
 class Window {

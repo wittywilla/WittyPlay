@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -90,14 +88,11 @@ func TestCrashWhilePlayingTellsTheViewer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeWS(w, r, "jpeg") }))
+	srv := streamServer(s)
 	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	c, _, err := websocket.Dial(ctx, srv.URL, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := dialStream(t, ctx, srv.URL, "jpeg")
 	defer c.CloseNow()
 	for {
 		typ, b, err := c.Read(ctx)

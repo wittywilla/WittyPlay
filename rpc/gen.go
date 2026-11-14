@@ -1306,22 +1306,6 @@ var Handlers = map[string]service.Handler{
 		err = recv.Advance(a0)
 		return nil, back, err
 	},
-	"stream.Session.Answer": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
-		var a0 string
-		if err := service.Arg(args, 0, &a0); err != nil {
-			return nil, nil, err
-		}
-		var a1 string
-		if err := service.Arg(args, 1, &a1); err != nil {
-			return nil, nil, err
-		}
-		recv, err := resolveSession(rawRecv)
-		if err != nil {
-			return nil, nil, err
-		}
-		r0, err := recv.Answer(ctx, a0, a1)
-		return []any{r0}, back, err
-	},
 	"stream.Session.Apply": func(ctx context.Context, rawRecv json.RawMessage, args []json.RawMessage) (rets []any, back any, err error) {
 		var a0 ipc.Control
 		if err := service.Arg(args, 0, &a0); err != nil {

@@ -326,7 +326,7 @@ func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, string, error)
 	}
 	id := newID()
 	s := &Session{id: id, runnerSaid: tailWriter{max: 16 << 10}, m: m, opt: opt, cfg: cfg, log: m.log.With("game", opt.Title, "session", id), done: make(chan struct{}), paused: true, controlState: controlState{speed: 1, optionsSet: make(chan struct{})},
-		v2State: v2State{began: time.Now()}, spawned: make(chan struct{}), viewers: map[*viewer]bool{}, stateWait: map[uint32]chan []byte{}, frameReady: make(chan struct{}, 1), lastInput: time.Now(), noViewerSince: time.Now(),
+		connState: connState{began: time.Now()}, spawned: make(chan struct{}), viewers: map[*viewer]bool{}, stateWait: map[uint32]chan []byte{}, frameReady: make(chan struct{}, 1), lastInput: time.Now(), noViewerSince: time.Now(),
 		audioCh: make(chan []byte, 32), opusOut: make(chan []byte, 32), stderr: &tailWriter{max: 1 << 16}}
 	m.sessions[id] = s
 	m.mu.Unlock()
@@ -496,7 +496,7 @@ type Session struct {
 	wrote     sync.WaitGroup
 
 	controlState
-	v2State
+	connState
 }
 
 // ID is the session's unguessable name.

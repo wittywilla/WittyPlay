@@ -41,7 +41,7 @@ type rigFlags struct {
 	browser, browserArgs, listen, host, ffmpeg     string
 	encoders, kind, label, state, profile, latency string
 	impair, shots, swap                            string
-	loopback, noAutoAhead, watchScreen, v2         bool
+	loopback, noAutoAhead, watchScreen             bool
 }
 
 func addRigFlags(fs *flag.FlagSet) *rigFlags {
@@ -66,7 +66,6 @@ func addRigFlags(fs *flag.FlagSet) *rigFlags {
 	fs.BoolVar(&f.watchScreen, "watch-screen", false, "count black pictures the browser puts on the screen, through its debugger")
 	fs.StringVar(&f.swap, "swap", "", "how a new connection's picture replaces the old: empty for the player's way, 0.3.4 for the way it was")
 	fs.IntVar(&f.reconnectEvery, "reconnect-every", 0, "connect again this many seconds apart, to test the change between connections")
-	fs.BoolVar(&f.v2, "v2", false, "connect with version 2 of the stream, as the player does on a server that has it")
 	return f
 }
 
@@ -177,19 +176,6 @@ func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
 		w.Header().Set("Content-Type", "text/javascript")
 		_, _ = w.Write(b)
 	})
-	mux.HandleFunc("/answer", func(w http.ResponseWriter, q *http.Request) {
-		offer, _ := io.ReadAll(io.LimitReader(q.Body, stream.MaxOfferSize+1))
-		sdp, err := r.session().Answer(q.Context(), string(offer), "")
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		if r.relay != nil {
-			sdp = r.relay.answer(sdp, f.udpPort)
-		}
-		_, _ = io.WriteString(w, sdp)
-	})
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, q *http.Request) { r.session().ServeWS(w, q, q.URL.Query().Get("video")) })
 	mux.HandleFunc("GET /stream", func(w http.ResponseWriter, q *http.Request) { r.session().ServeStream(w, q, false) })
 	mux.HandleFunc("POST /stream", func(w http.ResponseWriter, q *http.Request) {
 		var b struct {
@@ -287,9 +273,6 @@ func (f *rigFlags) start(extraQuery url.Values) (*rig, error) {
 	}
 	if f.reconnectEvery > 0 {
 		q.Set("reconnectEvery", strconv.Itoa(f.reconnectEvery))
-	}
-	if f.v2 {
-		q.Set("v2", "1")
 	}
 	for k, v := range extraQuery {
 		q[k] = v

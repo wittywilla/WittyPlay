@@ -95,9 +95,7 @@ export function EmulatorPlayer({ host, session, title, onExit }: Props) {
     const again = state.phase === 'reconnecting'
     let stale = false, taken = false
     const signal: Signal = {
-      // Version 1 of the stream isn't offered for an emulator; only stream and hello are used.
-      answer: () => Promise.reject(new Error('this game has only one way to connect')),
-      wsUrl: () => '',
+      // An emulator's stream is WebRTC only, so it has no WebSocket address.
       stream: (hello: Hello, sdp: string) => host.connect(hello, sdp),
       hello: (): Hello => ({ v: 2, app: 'WittyPlay web', device: deviceId(), seats: input.ports().filter((p) => p < players), display: screenNow(), latency: 'auto' }),
     }

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image/jpeg"
@@ -157,11 +158,11 @@ func TestWebRTCEndToEnd(t *testing.T) {
 	<-gathered
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	answer, err := s.Answer(ctx, pc.LocalDescription().SDP, "")
+	connected, err := s.Connect(ctx, Hello{V: StreamVersion}, pc.LocalDescription().SDP, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: answer}); err != nil {
+	if err := pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: connected.SDP}); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, 20*time.Second, "video and audio to arrive", func() bool { return videoPackets.Load() > 30 && audioPackets.Load() > 10 })
@@ -232,25 +233,40 @@ func waitFor(t *testing.T, d time.Duration, what string, ok func() bool) {
 	}
 }
 
+// streamServer serves a session's WebSocket.
+func streamServer(s *Session) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeStream(w, r, false) }))
+}
+
+// dialStream connects to a session's WebSocket and says hello, asking for this video and PCM
+// sound.
+func dialStream(t *testing.T, ctx context.Context, url, video string) *websocket.Conn {
+	t.Helper()
+	c, _, err := websocket.Dial(ctx, url, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.SetReadLimit(1 << 24)
+	hello, _ := json.Marshal(Hello{Type: "hello", V: StreamVersion, Video: []string{video}, Audio: []string{"pcm"}})
+	if err := c.Write(ctx, websocket.MessageText, hello); err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
 func TestWebSocketFallbacks(t *testing.T) {
 	m := newManager(t)
 	s := startGame(t, m, t.TempDir(), false)
 	defer s.Stop()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.ServeWS(w, r, r.URL.Query().Get("mode"))
-	}))
+	srv := streamServer(s)
 	defer srv.Close()
 
 	for _, mode := range []string{"h264", "jpeg"} {
 		t.Run(mode, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 			defer cancel()
-			c, _, err := websocket.Dial(ctx, srv.URL+"?mode="+mode, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			c := dialStream(t, ctx, srv.URL, mode)
 			defer c.Close(websocket.StatusNormalClosure, "")
-			c.SetReadLimit(1 << 24)
 			var video, audio int
 			firstKey := false
 			for video < 20 || audio < 5 {
@@ -262,15 +278,21 @@ func TestWebSocketFallbacks(t *testing.T) {
 					continue
 				}
 				switch b[0] {
-				case wsH264:
+				case wsVideo:
+					if mode != "h264" {
+						t.Fatal("H.264 when JPEG was asked for")
+					}
 					if video == 0 {
-						firstKey = b[1] == 1
-						if !bytes.HasPrefix(b[2:], []byte{0, 0, 0, 1}) {
+						firstKey = b[1]&1 == 1
+						if !bytes.HasPrefix(b[10:], []byte{0, 0, 0, 1}) {
 							t.Fatal("expected Annex B")
 						}
 					}
 					video++
 				case wsJPEG:
+					if mode != "jpeg" {
+						t.Fatal("JPEG when H.264 was asked for")
+					}
 					img, err := jpeg.Decode(bytes.NewReader(b[1:]))
 					if err != nil {
 						t.Fatal(err)
@@ -300,9 +322,7 @@ func TestViewerJoiningWhilePaused(t *testing.T) {
 	m := newManager(t)
 	s := startGame(t, m, t.TempDir(), false)
 	defer s.Stop()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.ServeWS(w, r, "jpeg")
-	}))
+	srv := streamServer(s)
 	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -318,21 +338,13 @@ func TestViewerJoiningWhilePaused(t *testing.T) {
 			}
 		}
 	}
-	first, _, err := websocket.Dial(ctx, srv.URL, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	first.SetReadLimit(1 << 24)
+	first := dialStream(t, ctx, srv.URL, "jpeg")
 	read(first)
 	if err := s.Pause(true); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(300 * time.Millisecond)
-	second, _, err := websocket.Dial(ctx, srv.URL, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	second.SetReadLimit(1 << 24)
+	second := dialStream(t, ctx, srv.URL, "jpeg")
 	defer second.Close(websocket.StatusNormalClosure, "")
 	read(second)
 	first.Close(websocket.StatusNormalClosure, "")
@@ -351,16 +363,12 @@ func TestAPausedGameRepeatsItsPictureSlowly(t *testing.T) {
 	m := NewManager(Config{Runner: buildRunner(t), RunnerArgs: []string{"-normal-priority"}, FFmpeg: "no-ffmpeg-needed", HaveEncoder: func(string) bool { return false }})
 	s := startGame(t, m, t.TempDir(), false)
 	defer s.Stop()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeWS(w, r, "jpeg") }))
+	srv := streamServer(s)
 	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	c, _, err := websocket.Dial(ctx, srv.URL, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := dialStream(t, ctx, srv.URL, "jpeg")
 	defer c.Close(websocket.StatusNormalClosure, "")
-	c.SetReadLimit(1 << 24)
 	pictures := make(chan struct{}, 1024)
 	go func() {
 		for {
@@ -442,7 +450,7 @@ func TestBadInputIgnored(t *testing.T) {
 	s.Input(nil)
 	s.Input(make([]byte, 5))
 	s.Input(input(200, 0xffff)) // no such player
-	if _, err := s.Answer(context.Background(), strings.Repeat("x", MaxOfferSize+1), ""); err == nil {
+	if _, err := s.Connect(context.Background(), Hello{V: StreamVersion}, strings.Repeat("x", MaxOfferSize+1), false); err == nil {
 		t.Fatal("an oversized offer should be refused")
 	}
 	if _, err := SlotName(SlotPrevAuto + 1); err == nil {
@@ -490,14 +498,11 @@ func TestPointerEndToEnd(t *testing.T) {
 	m := newManager(t)
 	s := startGame(t, m, t.TempDir(), false)
 	defer s.Stop()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeWS(w, r, "jpeg") }))
+	srv := streamServer(s)
 	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	c, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http"), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := dialStream(t, ctx, "ws"+strings.TrimPrefix(srv.URL, "http"), "jpeg")
 	defer c.CloseNow()
 	// Three quarters across and a quarter down.
 	press := []byte{ipc.PointerMark, 1, 0, 0, 0, 0}
@@ -609,16 +614,12 @@ func TestAnotherEncoderTakesOverWithoutAGap(t *testing.T) {
 	m := newManager(t)
 	s := startGame(t, m, t.TempDir(), false)
 	defer s.Stop()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeWS(w, r, "h264") }))
+	srv := streamServer(s)
 	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	c, _, err := websocket.Dial(ctx, srv.URL, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := dialStream(t, ctx, srv.URL, "h264")
 	defer c.Close(websocket.StatusNormalClosure, "")
-	c.SetReadLimit(1 << 24)
 	frames := make(chan time.Time, 4096)
 	go func() {
 		for {
@@ -626,7 +627,7 @@ func TestAnotherEncoderTakesOverWithoutAGap(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if typ == websocket.MessageBinary && len(b) > 1 && b[0] == wsH264 {
+			if typ == websocket.MessageBinary && len(b) > 1 && b[0] == wsVideo {
 				frames <- time.Now()
 			}
 		}

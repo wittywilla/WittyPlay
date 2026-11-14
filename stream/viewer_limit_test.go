@@ -6,8 +6,6 @@ package stream
 import (
 	"context"
 	"log/slog"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -38,16 +36,13 @@ func viewerTestSession(t *testing.T) *Session {
 // the oldest goes, so a reload or another device simply carries on.
 func TestAGameTakesOnlySoManyViewersOverWebSocket(t *testing.T) {
 	s := viewerTestSession(t)
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeWS(w, r, "jpeg") }))
+	srv := streamServer(s)
 	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	var conns []*websocket.Conn
 	for i := range maxViewers + 6 {
-		c, _, err := websocket.Dial(ctx, srv.URL, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		c := dialStream(t, ctx, srv.URL, "jpeg")
 		defer c.CloseNow()
 		conns = append(conns, c)
 		deadline := time.Now().Add(5 * time.Second)
@@ -112,7 +107,7 @@ func TestOffersThatNeverConnectAreLetGo(t *testing.T) {
 	before := runtime.NumGoroutine()
 	const offers = 40
 	for range offers {
-		if _, err := s.Answer(ctx, sdp, ""); err != nil {
+		if _, err := s.Connect(ctx, Hello{V: StreamVersion}, sdp, false); err != nil {
 			t.Fatal(err)
 		}
 	}

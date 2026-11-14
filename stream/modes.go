@@ -14,8 +14,7 @@ type Mode struct {
 	// BrowserOnly marks a mode only a web browser can use. None exists yet; in-browser
 	// emulation will be one, and is left out of the answer for native clients.
 	BrowserOnly bool `json:"browserOnly,omitempty"`
-	// Stream is the version of /play/{sid}/stream this mode can be reached through: 2. Left
-	// out, only version 1's own route.
+	// Stream is the version of /play/{sid}/stream this mode is reached through.
 	Stream int `json:"stream,omitempty"`
 }
 

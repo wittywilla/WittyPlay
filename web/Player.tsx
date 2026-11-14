@@ -44,11 +44,10 @@ export interface PlayHost extends SettingsHost {
   start(resume: boolean, safeMode: boolean): Promise<SessionInfo>
   relaunch(opts: { resume: boolean; safeMode: boolean }): void // start this game again
   stop(sessionId: string): Promise<void>
-  answer(sessionId: string, sdp: string, prefer?: string): Promise<string>
-  wsUrl(sessionId: string, video: string): string
-  // Version 2 of the stream (the server's docs/GAMING-STREAM.md), on servers that have it.
-  stream?(sessionId: string, hello: Hello, sdp: string): Promise<{ stream: StreamInfo; sdp: string }>
-  streamUrl?(sessionId: string): string
+  // The stream (the server's docs/GAMING-STREAM.md): WebRTC's hello and offer in, the stream
+  // and the answer out; and the WebSocket's address.
+  stream(sessionId: string, hello: Hello, sdp: string): Promise<{ stream: StreamInfo; sdp: string }>
+  streamUrl(sessionId: string): string
   action(sessionId: string, type: string, slot?: number, on?: boolean, extra?: { port?: number; device?: number; value?: number; key?: string; text?: string }): Promise<any>
   controls(device: string): Promise<ControlsData>
   saveControl(s: SaveControl): Promise<void>
@@ -238,16 +237,10 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
       transportRef.current = null
       setTransport(null)
     }
-    // Version 2 where the server offers it for every mode this player may use.
-    const v2 = !!(host.stream && host.streamUrl) && (s.modes || []).some((x) => x.stream === 2)
     const signal: Signal = {
-      answer: (sdp: string, prefer?: string) => host.answer(s.id, sdp, prefer),
-      wsUrl: (video: string) => host.wsUrl(s.id, video),
-      ...(v2 ? {
-        stream: (hello: Hello, sdp: string) => host.stream!(s.id, hello, sdp),
-        streamUrl: () => host.streamUrl!(s.id),
-        hello: (): Hello => ({ v: 2, app: 'WittyPlay web', device: deviceId(), seats: input.ports(), display: screenNow(), latency: (valuesRef.current['emulation.latency'] as string) || 'auto' }),
-      } : {}),
+      stream: (hello: Hello, sdp: string) => host.stream(s.id, hello, sdp),
+      streamUrl: () => host.streamUrl(s.id),
+      hello: (): Hello => ({ v: 2, app: 'WittyPlay web', device: deviceId(), seats: input.ports(), display: screenNow(), latency: (valuesRef.current['emulation.latency'] as string) || 'auto' }),
     }
     let last = ''
     for (const kind of plan(m, (s.modes || []).map((x) => x.id))) {
@@ -365,7 +358,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     input.onChange = () => {
       const pads = input.listPads()
       setPadName(pads.length ? pads.map((p) => `${p.name}: Player ${p.port + 1}`).join(', ') : '')
-      // The server is told which players this device holds now: version 2's seats.
+      // The server is told which players this device holds now: its seats.
       const ports = input.ports()
       if (ports.join() !== held) {
         held = ports.join()

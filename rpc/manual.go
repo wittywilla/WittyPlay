@@ -316,15 +316,7 @@ func Routes(mux *http.ServeMux) {
 		defer cancel()
 		Docker.Startup(ctx)
 	}()
-	mux.HandleFunc("GET /ws/{sid}", func(w http.ResponseWriter, r *http.Request) {
-		s := Mgr.Get(r.PathValue("sid"))
-		if s == nil {
-			http.NotFound(w, r)
-			return
-		}
-		s.ServeWS(w, r, r.URL.Query().Get("video"))
-	})
-	// Version 2's WebSocket. Only the server reaches this, and it says where the device is.
+	// The stream's WebSocket. Only the server reaches this, and it says where the device is.
 	mux.HandleFunc("GET /stream/{sid}", func(w http.ResponseWriter, r *http.Request) {
 		s := Mgr.Get(r.PathValue("sid"))
 		if s == nil {
