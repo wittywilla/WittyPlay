@@ -15,6 +15,7 @@ import { GameArtContext } from '@wms/app/sdui/render/glyphs'
 import { playGamePath } from '../shell/playPaths'
 import { GameReviewBanner } from './GameReview'
 import { PlayTabsRow } from './PlayConsoles'
+import { RefreshLibraryDetails } from './games/RefreshDetails'
 
 const ROW = 24
 const PAGE = 60
@@ -130,6 +131,7 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
           <input type="search" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={chosen ? `Search ${chosen.short || chosen.name} games` : 'Search these games'} aria-label="Search these games" />
         </label>
         {user?.isAdmin && <button type="button" className="wpl-btn" onClick={() => void scan()} disabled={scanning}><IconRefresh /> {scanning ? 'Looking…' : 'Scan'}</button>}
+        {user?.isAdmin && !consoleId && <RefreshLibraryDetails libraryId={lib.id} className="wpl-btn" />}
       </header>
       {user?.isAdmin && <div className="wpl-review"><GameReviewBanner libraryId={lib.id} consoles={consoles || []} version={version} onChanged={() => setVersion((v) => v + 1)} /></div>}
       {q || consoleId

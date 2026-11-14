@@ -9,6 +9,7 @@ import { toast } from '@wms/app/state'
 import { ask } from '@wms/app/ui/index'
 import { Row, Section, Switch } from '@wms/app/pages/settings/ui'
 import LegalNote from '@wms/app/components/LegalNote'
+import { RefreshGameDetails } from './games/RefreshDetails'
 import { WebLink } from '@wms/app/components/WebLink'
 
 // What's known about a game, and where it comes from: its ratings and pictures, fixing
@@ -110,9 +111,6 @@ export function GameMatchBar({ it, d, onChanged }: { it: Item; d: GameDetailsInf
   const lock = async (on: boolean) => {
     try { await api.put(`/modules/wittyplay/games/${it.id}/metadata/match`, { lock: on }); toast(on ? 'Match locked' : 'Match unlocked'); onChanged() } catch (e: any) { toast(e.message) }
   }
-  const refresh = async () => {
-    try { await api.post(`/modules/wittyplay/games/${it.id}/metadata/refresh`); toast('Looking this game up again'); onChanged() } catch (e: any) { toast(e.message) }
-  }
   return (
     <section className="gm-match" aria-label="Match">
       <p>
@@ -122,7 +120,7 @@ export function GameMatchBar({ it, d, onChanged }: { it: Item; d: GameDetailsInf
       <div className="gm-match-actions">
         <button className="btn sm" onClick={() => setFixing(true)}><IconSearch /> {d.matchSource ? 'Fix match' : 'Find a match'}</button>
         {d.matchSource && <button className="btn sm ghost" onClick={() => lock(!d.locked)}><IconLock /> {d.locked ? 'Unlock' : 'Lock'}</button>}
-        <button className="btn sm ghost" onClick={refresh}><IconRefresh /> Look up again</button>
+        <RefreshGameDetails id={it.id} onChanged={onChanged} />
       </div>
       {fixing && <GameMatchDialog it={it} onClose={() => setFixing(false)} onDone={() => { setFixing(false); onChanged() }} />}
     </section>

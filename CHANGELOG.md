@@ -3,6 +3,11 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## Unreleased
+
+- **Refresh game details, in one click.** An administrator refreshes a whole games library (its page's Refresh game details, `POST`/`GET /libraries/{id}/details/refresh`) or one game (its page, `POST /games/{id}/metadata/refresh`): every source is asked again from the start, so titles in their own script and in English, box art, logos and details come back fresh, and every picture is downloaded again. A match picked by hand and fields people typed stay. It runs as the host task "Finding out about games", and the library's button says how far it has got. The item editor's Refresh and a Full rescan (`scan.describe` with `refresh`) do the same. On every app: the SDUI source `wittyplay.refresh` (a row on `wittyplay-library` and, inserted, on a game's `detail` page) with the commands `wittyplay.library.refresh` and `wittyplay.game.refresh`.
+- **Console photos from Wikimedia are off until an administrator opts in.** They used to follow the brand-logo agreement. Now they have a switch of their own, beside a notice saying what is fetched (each console's name to Wikidata, one photo from Wikimedia Commons), from where, and the licences (Creative Commons or public domain, with author and licence shown): in WittyPlay's Settings (Console photos) and its first-run step, on the web and in the SDUI pages `wittyplay-settings` and `wittyplay-setup` (source `wittyplay.consolePhotos`, commands `wittyplay.consolePhotos.on` and `.off`, `GET`/`PUT /games/console-photos`). Nothing is fetched while it's off, and turning it off deletes the photos kept. The first-run step's version is now 2, so it shows again.
+
 ## 0.7.1
 
 - The first published release on module API 5, with the WittyModule 0.5.4 workflows. The tag v0.7.0 was made with workflows that couldn't build it and was never published.

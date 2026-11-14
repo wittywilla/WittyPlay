@@ -64,9 +64,9 @@ func describeGames(ctx context.Context, a *App, args wittymodule.ScanDescribeArg
 			return out, err
 		}
 		if args.Refresh {
-			// Looked up again from the start, a locked match too (its chosen answer stays): the
-			// file is read again as well.
-			if _, err := a.DB.ExecContext(ctx, `UPDATE wittyplay_game_details SET status = 'pending', file_size = -1 WHERE item_id = ?`, it.ID); err != nil {
+			// Looked up again from the start, a locked match too (its chosen answer stays), with
+			// its pictures downloaded again and its file read again (gamerefresh.go).
+			if err := g.refreshDetails(ctx, []int64{it.ID}, true); err != nil {
 				return out, err
 			}
 		}

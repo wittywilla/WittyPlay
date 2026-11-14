@@ -140,3 +140,7 @@
 /* A page with its sticky table of contents under the top bar: what gets focus is scrolled clear
    of both (a remote or the keyboard never leaves it hidden under the contents row). */
 html:has(.set-toc) { scroll-padding-top: calc(var(--topbar-h) + var(--control-h-sm) + var(--sp-8)); }
+/* Console photos from Wikimedia (ConsolePhotos.tsx): the notice, then the switch with its label. */
+.wplay-photos { display: grid; gap: var(--sp-3); margin-block-end: var(--sp-6); max-inline-size: 40rem; }
+.wplay-photos h2, .wplay-photos h3 { margin: 0; }
+.wplay-photos-switch { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-block-size: 48px; font-weight: 700; }
