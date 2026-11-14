@@ -43,6 +43,7 @@ const (
 	srcPlayLibrary       = ui.SourceLibrary
 	srcPlayStoreConsoles = ui.SourceStoreConsoles
 	srcPlayStoreEmus     = ui.SourceStoreEmus
+	srcPlaySetup         = ui.SourceSetup
 
 	opCoreInstall    = ui.CommandCoreInstall
 	opCoreRemove     = ui.CommandCoreRemove
@@ -54,7 +55,7 @@ const (
 )
 
 // storeSources are the sources only an administrator is given rows of.
-var storeSources = []string{srcPlayStoreConsoles, srcPlayStoreEmus}
+var storeSources = []string{srcPlayStoreConsoles, srcPlayStoreEmus, srcPlaySetup}
 
 // tvItems answers the library and the store; ok is false for a source that isn't one of them.
 func tvItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, bool, error) {
@@ -95,6 +96,13 @@ func tvItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, bool, error) {
 			all = a.storeConsoleRows(ctx, on, console)
 		} else {
 			all = a.storeConsoles(ctx, on)
+		}
+	case srcPlaySetup:
+		all = []sdui.Item{
+			{ID: "done", Kind: "view", Title: "Done", Icon: "check", Subtitle: "Stop showing \"Finish setting up WittyPlay\" on Home.",
+				Action: &sdui.Action{Type: core.ActCommand, Op: ui.CommandSetupDone}},
+			{ID: "later", Kind: "view", Title: "Do this later", Icon: "history", Subtitle: "Everything here is also in WittyPlay's Settings.",
+				Action: &sdui.Action{Type: core.ActCommand, Op: ui.CommandSetupLater}},
 		}
 	case srcPlayStoreEmus:
 		var entries []rpc.CatalogEntry

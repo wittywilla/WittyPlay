@@ -57,6 +57,7 @@ const (
 	SourceLibrary       = Module + ".library"
 	SourceStoreConsoles = Module + ".storeConsoles"
 	SourceStoreEmus     = Module + ".storeEmulators"
+	SourceSetup         = Module + ".setup"
 )
 
 // tvSources are the library's and the store's sources, as the catalogue describes them.
@@ -78,6 +79,9 @@ func tvSources() []sdui.SourceSpec {
 			Yields:      []string{"view"}, CardStyle: "tile"},
 		{Type: SourceStoreEmus, Label: "Cores & emulators: standalone emulators", Icon: "devices", Title: "Standalone emulators",
 			Description: "For an administrator: each standalone emulator, its consoles, licence and firmware, and rows to accept its licence and install it, update it, stop a download or remove it. Nothing for anyone else.",
+			Yields:      []string{"view"}, CardStyle: "tile"},
+		{Type: SourceSetup, Label: "Finishing the first-run step", Icon: "check", Title: "",
+			Description: "For an administrator: rows to finish WittyPlay's first-run step or put it off, which tell the server to stop showing \"Finish setting up WittyPlay\". Nothing for anyone else.",
 			Yields:      []string{"view"}, CardStyle: "tile"},
 	}
 }
@@ -196,6 +200,8 @@ const (
 	PageSettings     = Module + "-settings"
 	PageStore        = Module + "-store"
 	PageStoreConsole = Module + "-store-console"
+	// The first-run step on every app: the server's "Finish setting up WittyPlay" notice opens it.
+	PageSetup = Module + "-setup"
 )
 
 // onlyInApps: shown by the apps alone; the web app has its own (its Consoles and All games tabs link
@@ -430,6 +436,24 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 	one.Description = "For administrators: one console's core, its cores to install, update or remove, and its BIOS files. Opened with ?item=<console>&name=<its name>."
 	one.Regions = underSettings()
 	m.AddPage(one)
+
+	// WittyPlay's first-run step (integration.json setup "games"), for administrators on every app.
+	// Finishing or putting it off tells the server (POST /setup/games), which then stops showing
+	// "Finish setting up WittyPlay" on Home. What only a browser does (game titles, pictures, the
+	// optional metadata keys) stays in the web wizard's step and WittyPlay's Settings there.
+	setup := page(PageSetup, "Set up games", "game", admins,
+		withWhen(sdui.Sec("intro", "Text", sdui.Props("text", "WittyPlay plays the games in your games libraries, on this server and on every app. To play a console's games, install a core for it: start with the consoles you have games for."), nil), forAdmins),
+		withWhen(sdui.Sec("first", "List", sdui.Props("title", "First things"), nil,
+			item("store", "Cores & emulators", "Install the cores your consoles need, and add BIOS files where a console wants them", "disc", "to", "/page/"+PageStore),
+			item("plays", "What this server plays", "Every console, and whether its games play here yet", "game", "to", "/page/"+Module),
+			item("options", "WittyPlay options", "In this app's Settings, Modules, Games", "settings", "native", "settings")), forAdmins),
+		withWhen(sdui.Sec("computer", "List", sdui.Props("title", "On a computer", "focusable", true), nil,
+			item("more", "Game titles, pictures and more details", "How game titles are written, how games are pictured, and optional sources of scores and box art are chosen in WittyPlay's Settings in a browser.", "info")), forAdmins),
+		withWhen(list("finish", "", sdui.Src(SourceSetup), "focusable", true), forAdmins),
+		legend)
+	setup.Description = "WittyPlay's first-run step on every app, for administrators: the server's \"Finish setting up WittyPlay\" notice on Home opens it."
+	setup.Regions = underSettings()
+	m.AddPage(setup)
 }
 
 // The commands the store's rows run: WittyPlay's own routes (api/cores.go, rpc/docker.go), which
@@ -442,6 +466,8 @@ const (
 	CommandEmulatorInstall = Module + ".emulator.install"
 	CommandEmulatorCancel  = Module + ".emulator.cancel"
 	CommandEmulatorRemove  = Module + ".emulator.remove"
+	CommandSetupDone       = Module + ".setup.done"
+	CommandSetupLater      = Module + ".setup.later"
 )
 
 // Commands are WittyPlay's own commands, as sdui.json declares them.
@@ -462,6 +488,10 @@ func Commands() []core.CommandSpec {
 			Description: "Cores & emulators, administrators: stops a standalone emulator's download (item: its ID)."},
 		{Op: CommandEmulatorRemove, Label: "Remove the emulator", Method: "DELETE", Path: routes + "/docker/emulators/{item}",
 			Description: "Cores & emulators, administrators: uninstalls a standalone emulator (item: its ID). Saves stay."},
+		{Op: CommandSetupDone, Label: "Finish setting up", Method: "POST", Path: routes + "/setup/games", Body: `{"skip":false}`,
+			Description: "Administrators: WittyPlay's first-run step is done, so the server stops showing \"Finish setting up WittyPlay\"."},
+		{Op: CommandSetupLater, Label: "Do this later", Method: "POST", Path: routes + "/setup/games", Body: `{"skip":true}`,
+			Description: "Administrators: WittyPlay's first-run step is put off; everything in it is in WittyPlay's Settings."},
 	}
 }
 

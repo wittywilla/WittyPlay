@@ -903,6 +903,16 @@
       "limits": {
         "time": "30s"
       }
+    },
+    {
+      "path": "/setup/games",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "15s"
+      }
     }
   ],
   "web": {
@@ -985,6 +995,8 @@
         "id": "games",
         "title": "Games",
         "after": "details",
+        "page": "wittyplay-setup",
+        "version": 1,
         "later": {
           "where": "Settings, Metadata agents",
           "to": "/settings/metadata"

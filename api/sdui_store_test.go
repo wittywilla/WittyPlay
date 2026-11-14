@@ -596,12 +596,12 @@ func TestTVPages(t *testing.T) {
 			t.Errorf("%s: the dock's Settings isn't the apps' settings page", p.ID)
 		}
 	}
-	for id, kind := range map[string]string{"wittyplay-library": "library", "wittyplay-store": "custom", "wittyplay-store-console": "custom", "wittyplay-settings": "custom"} {
+	for id, kind := range map[string]string{"wittyplay-library": "library", "wittyplay-store": "custom", "wittyplay-store-console": "custom", "wittyplay-settings": "custom", "wittyplay-setup": "custom"} {
 		if pages[id] != kind {
 			t.Errorf("%s: %q", id, pages[id])
 		}
 	}
-	for _, s := range []string{`"type": "wittyplay.library"`, `"type": "wittyplay.storeConsoles"`, `"type": "wittyplay.storeEmulators"`, `"to": "/page/wittyplay-store"`, `"op": "refresh"`} {
+	for _, s := range []string{`"type": "wittyplay.library"`, `"type": "wittyplay.storeConsoles"`, `"type": "wittyplay.storeEmulators"`, `"type": "wittyplay.setup"`, `"to": "/page/wittyplay-store"`, `"op": "refresh"`} {
 		if !bytes.Contains(b, []byte(s)) {
 			t.Errorf("sdui.json has no %s", s)
 		}
