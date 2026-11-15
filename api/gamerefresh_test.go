@@ -59,6 +59,13 @@ func TestRefreshLibraryDetails(t *testing.T) {
 	if st.Waiting != 0 || st.Native != 2 || st.English != 2 || st.Logos != 2 {
 		t.Errorf("after: %+v", st)
 	}
+	// The work showed as WittyPlay's task, by a name the server takes and under its title.
+	f.host.titlesMu.Lock()
+	title := f.host.titles[gameMetaTaskName]
+	f.host.titlesMu.Unlock()
+	if title != gameMetaTaskTitle {
+		t.Errorf("the task's title: %q", title)
+	}
 	// The typed studio stays the person's.
 	if set := f.host.fields(7); set.Studio != "" || set.Titles == nil || set.Titles.Native != "ゲーム" {
 		t.Errorf("game 7: %+v", set)

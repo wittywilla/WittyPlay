@@ -17,6 +17,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -33,19 +34,23 @@ import (
 // gameHost is a server's host API as finding out about games uses it: items (with their files),
 // SetItem, PutImage, secrets and tasks. It keeps what it was told.
 type gameHost struct {
-	mu      sync.Mutex
-	items   map[int64]service.Item
-	full    map[int64]map[string]any
-	hidden  map[int64]bool // not for people: only WittyPlay itself sees them
-	secrets map[string]string
-	patches []wittymodule.ItemFields
-	images  []string // roles
-	tasks   atomic.Int32
+	mu       sync.Mutex
+	items    map[int64]service.Item
+	full     map[int64]map[string]any
+	hidden   map[int64]bool // not for people: only WittyPlay itself sees them
+	secrets  map[string]string
+	patches  []wittymodule.ItemFields
+	images   []string // roles
+	tasks    atomic.Int32
+	titlesMu sync.Mutex
+	titles   map[string]string // each task's title, by its name
 }
+
+var taskNameRe = regexp.MustCompile(`^[A-Za-z0-9._-]{1,64}$`)
 
 func newGameHost(t *testing.T) (*gameHost, *host.Client) {
 	t.Helper()
-	g := &gameHost{items: map[int64]service.Item{}, full: map[int64]map[string]any{}, hidden: map[int64]bool{}, secrets: map[string]string{}}
+	g := &gameHost{items: map[int64]service.Item{}, full: map[int64]map[string]any{}, hidden: map[int64]bool{}, secrets: map[string]string{}, titles: map[string]string{}}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Witty-Host", "1")
 		p := strings.TrimPrefix(r.URL.Path, host.Base)
@@ -114,6 +119,19 @@ func newGameHost(t *testing.T) (*gameHost, *host.Client) {
 		case r.Method == "GET" && strings.HasPrefix(p, "/secrets/"):
 			_ = json.NewEncoder(w).Encode(map[string]string{"value": g.secrets[strings.TrimPrefix(p, "/secrets/")]})
 		case r.Method == "POST" && strings.HasPrefix(p, "/tasks/"):
+			// As the server: a task's name is letters, digits, - _ and . only.
+			name := strings.TrimPrefix(p, "/tasks/")
+			if !taskNameRe.MatchString(name) {
+				w.WriteHeader(404)
+				return
+			}
+			var in struct {
+				Title string `json:"title"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&in)
+			g.titlesMu.Lock()
+			g.titles[name] = in.Title
+			g.titlesMu.Unlock()
 			g.tasks.Add(1)
 			w.WriteHeader(204)
 		default:
