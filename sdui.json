@@ -963,6 +963,28 @@
           }
         },
         {
+          "id": "details-again",
+          "component": "List",
+          "props": {
+            "title": ""
+          },
+          "when": {
+            "admin": true
+          },
+          "children": [
+            {
+              "id": "check",
+              "component": "ListItem",
+              "props": {
+                "icon": "clock",
+                "op": "refresh",
+                "subtitle": "Reads again how far a refresh has got.",
+                "title": "Check again"
+              }
+            }
+          ]
+        },
+        {
           "id": "dock",
           "component": "Dock",
           "props": {

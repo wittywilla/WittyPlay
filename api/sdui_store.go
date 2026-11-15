@@ -570,8 +570,9 @@ func clip(s string, n int) string {
 // ---------------------------------------------------------------- refresh game details
 
 // refreshRows is Refresh game details for a games library or, without one, for one game: the row
-// that starts it, its end saying how far it has got, and while it goes a row to read that again.
-// Nothing for what isn't a games library or a game WittyPlay knows.
+// that starts it, its end saying how far it has got (the page's own Check again reads it again: a
+// module's row may only run the module's commands). Nothing for what isn't a games library or a
+// game WittyPlay knows.
 func (a *App) refreshRows(ctx context.Context, library, item int64) ([]sdui.Item, error) {
 	if library <= 0 {
 		return a.gameRefreshRows(ctx, item)
@@ -580,14 +581,10 @@ func (a *App) refreshRows(ctx context.Context, library, item int64) ([]sdui.Item
 	if err != nil || st.Games == 0 {
 		return nil, err
 	}
-	out := []sdui.Item{{ID: "refresh", Kind: "view", Title: "Refresh game details", Icon: "history", Trailing: refreshWords(st),
+	return []sdui.Item{{ID: "refresh", Kind: "view", Title: "Refresh game details", Icon: "history", Trailing: refreshWords(st),
 		Subtitle: fmt.Sprintf("All %s games: titles, art, logos and details again. Edits stay.", thousands(st.Games)),
 		Action: &sdui.Action{Type: core.ActCommand, Op: ui.CommandLibraryRefresh, Item: strconv.FormatInt(library, 10),
-			Confirm: "Look up every game in this library again? It runs in the background, and a big library takes a while."}}}
-	if st.Running {
-		out = append(out, checkAgainRow())
-	}
-	return out, nil
+			Confirm: "Look up every game in this library again? It runs in the background, and a big library takes a while."}}}, nil
 }
 
 // gameRefreshRows is Refresh game details for one game.
@@ -611,19 +608,9 @@ func (a *App) gameRefreshRows(ctx context.Context, item int64) ([]sdui.Item, err
 	case art == 1:
 		words = "Downloading pictures"
 	}
-	out := []sdui.Item{{ID: "refresh", Kind: "view", Title: "Refresh game details", Icon: "history", Trailing: words,
+	return []sdui.Item{{ID: "refresh", Kind: "view", Title: "Refresh game details", Icon: "history", Trailing: words,
 		Subtitle: "Its titles, art, logos and details, fetched again. Edits stay.",
-		Action:   &sdui.Action{Type: core.ActCommand, Op: ui.CommandGameRefresh, Item: strconv.FormatInt(item, 10)}}}
-	if words != "Up to date" {
-		out = append(out, checkAgainRow())
-	}
-	return out, nil
-}
-
-// checkAgainRow asks for the page again, to see how far something has got.
-func checkAgainRow() sdui.Item {
-	return sdui.Item{ID: "check", Kind: "view", Title: "Check again", Subtitle: "Reads again how far it has got.", Icon: "clock",
-		Action: &sdui.Action{Type: core.ActCommand, Op: "refresh"}}
+		Action:   &sdui.Action{Type: core.ActCommand, Op: ui.CommandGameRefresh, Item: strconv.FormatInt(item, 10)}}}, nil
 }
 
 // ---------------------------------------------------------------- console photos

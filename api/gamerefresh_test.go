@@ -48,7 +48,7 @@ func TestRefreshLibraryDetails(t *testing.T) {
 		t.Errorf("while waiting: %+v", st)
 	}
 	rows, err := f.a.refreshRows(f.ctx, 1, 0)
-	if err != nil || len(rows) != 2 || rows[0].Action.Op != ui.CommandLibraryRefresh || rows[0].Action.Item != "1" || rows[0].Trailing != "Looking up 0 of 2" || rows[1].ID != "check" {
+	if err != nil || len(rows) != 1 || rows[0].Action.Op != ui.CommandLibraryRefresh || rows[0].Action.Item != "1" || rows[0].Trailing != "Looking up 0 of 2" {
 		t.Errorf("rows while waiting: %+v %v", rows, err)
 	}
 	f.work(t)
@@ -83,7 +83,7 @@ func TestRefreshLibraryDetails(t *testing.T) {
 	if w := callAdmin(t, f.h, "POST", "/games/7/metadata/refresh", nil); w.Code != 202 {
 		t.Fatalf("one game: %d %s", w.Code, w.Body)
 	}
-	if rows, _ := f.a.refreshRows(f.ctx, 0, 7); len(rows) != 2 || rows[0].Trailing != "Looking it up" {
+	if rows, _ := f.a.refreshRows(f.ctx, 0, 7); len(rows) != 1 || rows[0].Trailing != "Looking it up" {
 		t.Errorf("a game's row while looking: %+v", rows)
 	}
 }

@@ -423,6 +423,8 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 						"emptyHint", "Change the filters, or add games to the library's folders; they appear after a scan."), sdui.Src(SourceLibrary, "library", "$library", "every", true, "filterable", true)))),
 			// For administrators: look every game here up again, with how far it has got.
 			withWhen(sdui.Sec("details", "List", sdui.Props("title", "Game details", "focusable", true), sdui.Src(SourceRefresh, "library", "$library")), forAdmins),
+			withWhen(sdui.Sec("details-again", "List", sdui.Props("title", ""), nil,
+				sdui.Sec("check", "ListItem", sdui.Props("title", "Check again", "subtitle", "Reads again how far a refresh has got.", "icon", "clock", "op", "refresh"), nil)), forAdmins),
 			sdui.Sec("dock", "Dock", sdui.Props("legend", true, "target", "all-games", "controls", []string{"sort", "filter"}), nil),
 		}, Regions: onlineRegions()}
 	m.AddPage(lib)
