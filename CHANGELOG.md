@@ -3,7 +3,7 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
-## Unreleased
+## 0.7.2
 
 - **A virtual gamepad plays a game in the tests.** `web/tests/virtualpad.test.ts` stubs the browser's Gamepad API (`navigator.getGamepads`) with a standard pad, presses Start, Select, A and the left stick through the web player's input, and checks each state it sends; `host/virtualpad_test.go` plays those same states into the game runner with the test core and checks the game took them (Start counted, the LED and rumble, the square moving). Both read `testdata/virtual-pad.json`, whose NES controls are checked against the console table, so CI covers the way from a pad to a game with no server.
 - **Friends: invites, and batteries.** Someone playing a game invites a friend by name from Together (`POST /games/online/friends/{user}/invite`; Invite, then Invited with Cancel the invite, on the friend's card); the friend sees it under Invites, and in the status bar, with Accept (the game's page with `?invite=`, which joins as a seat) and Decline. An invite lasts ten minutes or until the game ends. A friend whose room is open has Join on their card, and someone who joined a room has Play (`/game/{id}?join={session}`, which the web player now plays as a seat). New commands `wittyplay.friend.invite`, `wittyplay.invite.accept`, `wittyplay.invite.decline`, `wittyplay.invite.cancel`, and source `wittyplay.invites`. The status bar and the game menu show each controller's battery where the browser gives one, and this device's (`navigator.getBattery`), as a level in words; one running low is shown over the game and said once, politely.
