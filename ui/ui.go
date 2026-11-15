@@ -59,7 +59,17 @@ const (
 	SourceStoreConsoles = Module + ".storeConsoles"
 	SourceStoreEmus     = Module + ".storeEmulators"
 	SourceSetup         = Module + ".setup"
+	// For administrators: refreshing a games library's or a game's details, and the opt-in to
+	// console photos from Wikimedia.
+	SourceRefresh       = Module + ".refresh"
+	SourceConsolePhotos = Module + ".consolePhotos"
 )
+
+// ConsolePhotoNotice is what an administrator is told before opting in to console photos: what is
+// fetched, from where, and under which licences. Every app shows these same words beside the switch:
+// the SDUI pages (Settings and the first-run step), and the web app's, from GET /games/console-photos.
+// At most 400 characters: a Notice's text.
+const ConsolePhotoNotice = "Off until you turn it on. Then this server sends each console's name to Wikidata (www.wikidata.org) and downloads one photo of its hardware from Wikimedia Commons (commons.wikimedia.org), once, for the Consoles page. Only freely licensed photos are used (Creative Commons or public domain), each shown with its author and licence. Turning it off deletes them."
 
 // tvSources are the library's and the store's sources, as the catalogue describes them.
 func tvSources() []sdui.SourceSpec {
@@ -84,6 +94,24 @@ func tvSources() []sdui.SourceSpec {
 		{Type: SourceSetup, Label: "Finishing the first-run step", Icon: "check", Title: "",
 			Description: "For an administrator: rows to finish WittyPlay's first-run step or put it off, which tell the server to stop showing \"Finish setting up WittyPlay\". Nothing for anyone else.",
 			Yields:      []string{"view"}, CardStyle: "tile"},
+		{Type: SourceRefresh, Label: "Refresh game details", Icon: "history", Title: "Game details",
+			Description: "For an administrator: a row that looks every game in a games library (library), or one game (item), up again from the start: titles in their own script and in English, box art, logos and details; what people typed or chose stays. Its end says how far it has got. Nothing for anyone else, or for what isn't a game.",
+			Params: []sdui.PropSpec{
+				{Name: "library", Type: "library", Label: "Library", Help: "$library on a games library's page."},
+				{Name: "item", Type: "ref", Label: "Game", Help: "$item on a game's page. Used when there's no library."},
+			},
+			Yields: []string{"view"}, CardStyle: "tile"},
+		{Type: SourceConsolePhotos, Label: "Console photos from Wikimedia", Icon: "photo", Title: "Console photos",
+			Description: "For an administrator: the switch that opts in to (or out of) photos of each console's hardware from Wikimedia Commons, which are off until then, with what it means now. Show ConsolePhotoNotice's words beside it. Nothing for anyone else.",
+			Yields:      []string{"view"}, CardStyle: "tile"},
+	}
+}
+
+// consolePhotoSections are the opt-in to console photos: the notice, then the switch.
+func consolePhotoSections(when *sdui.Condition) []sdui.Section {
+	return []sdui.Section{
+		withWhen(sdui.Sec("photos-notice", "Notice", sdui.Props("tone", "info", "title", "Console photos from Wikimedia", "text", ConsolePhotoNotice), nil), when),
+		withWhen(sdui.Sec("photos", "List", sdui.Props("title", "", "focusable", true), sdui.Src(SourceConsolePhotos)), when),
 	}
 }
 
@@ -161,6 +189,11 @@ func UI() *sdui.Module {
 	}
 	shelf := sdui.Shelf(Module+"-consoles", "What this server plays", sdui.Src(SourceConsoles, "only", "ready", "limit", 40))
 	m.AddInsert("games", "playing", shelf)
+	// A game's page, for administrators: Refresh game details. The source has nothing for what isn't
+	// a game, so the section is left out of every other page.
+	admin := true
+	m.AddInsert("detail", "header", withWhen(sdui.Sec(Module+"-refresh", "List", sdui.Props("title", "", "focusable", true),
+		sdui.Src(SourceRefresh, "item", "$item")), &sdui.Condition{Admin: &admin}))
 	m.AddPage(sdui.Page{ID: Module, Kind: "custom", Title: "What this server plays", Icon: "game",
 		Description: "Every console, whether its games play on this server, and how.",
 		Sections: []sdui.Section{
@@ -393,6 +426,10 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 					sdui.Sec("filters", "FilterBar", sdui.Props("target", "all-games", "fields", []string{"genre", "minRating"}, "sorts", []string{"title", "added", "rating", "oldest"}), nil),
 					sdui.Sec("all-games", "Grid", sdui.Props("cardStyle", "game", "empty", "message", "emptyText", "No games match.",
 						"emptyHint", "Change the filters, or add games to the library's folders; they appear after a scan."), sdui.Src(SourceLibrary, "library", "$library", "every", true, "filterable", true)))),
+			// For administrators: look every game here up again, with how far it has got.
+			withWhen(sdui.Sec("details", "List", sdui.Props("title", "Game details", "focusable", true), sdui.Src(SourceRefresh, "library", "$library")), forAdmins),
+			withWhen(sdui.Sec("details-again", "List", sdui.Props("title", ""), nil,
+				sdui.Sec("check", "ListItem", sdui.Props("title", "Check again", "subtitle", "Reads again how far a refresh has got.", "icon", "clock", "op", "refresh"), nil)), forAdmins),
 			sdui.Sec("dock", "Dock", sdui.Props("legend", true, "target", "all-games", "controls", []string{"sort", "filter"}), nil),
 		}, Regions: onlineRegions()}
 	m.AddPage(lib)
@@ -401,6 +438,8 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 	item := func(id, title, subtitle, icon string, kv ...any) sdui.Section {
 		return sdui.Sec(id, "ListItem", sdui.Props(append([]any{"title", title, "subtitle", subtitle, "icon", icon}, kv...)...), nil)
 	}
+	// The opt-in to console photos, on Settings and on the first-run step.
+	photos := consolePhotoSections(forAdmins)
 	set := page(PageSettings, "Settings", "settings",
 		sdui.Sec("you", "List", sdui.Props("title", "For you"), nil,
 			item("privacy", "Friends and what you play", "Who sees you online and what you are playing", "users", "to", "/page/"+PagePrivacy),
@@ -409,6 +448,7 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 		withWhen(sdui.Sec("server", "List", sdui.Props("title", "This server"), nil,
 			item("store", "Cores & emulators", "Consoles and their cores, BIOS files and standalone emulators: install, update, choose and remove", "disc", "to", "/page/"+PageStore),
 			item("plays", "What this server plays", "Every console, and whether its games play here", "game", "to", "/page/"+Module)), forAdmins),
+		photos[0], photos[1],
 		sdui.Sec("computer", "List", sdui.Props("title", "On a computer", "focusable", true), nil,
 			item("look", "On a computer: how WittyPlay looks and plays", "Layout, tabs and buttons, game pictures, controller mapping and my game settings are in WittyPlay's Settings in a browser.", "info")),
 		legend)
@@ -454,6 +494,7 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 			item("options", "WittyPlay options", "In this app's Settings, Modules, Games", "settings", "native", "settings")), forAdmins),
 		withWhen(sdui.Sec("computer", "List", sdui.Props("title", "On a computer", "focusable", true), nil,
 			item("more", "Game titles, pictures and more details", "How game titles are written, how games are pictured, and optional sources of scores and box art are chosen in WittyPlay's Settings in a browser.", "info")), forAdmins),
+		photos[0], photos[1],
 		withWhen(list("finish", "", sdui.Src(SourceSetup), "focusable", true), forAdmins),
 		legend)
 	setup.Description = "WittyPlay's first-run step on every app, for administrators: the server's \"Finish setting up WittyPlay\" notice on Home opens it."
@@ -478,6 +519,12 @@ const (
 	CommandInviteAccept  = Module + ".invite.accept"
 	CommandInviteDecline = Module + ".invite.decline"
 	CommandInviteCancel  = Module + ".invite.cancel"
+	// Refresh game details, for a games library (item: its ID) or one game (item: its ID).
+	CommandLibraryRefresh = Module + ".library.refresh"
+	CommandGameRefresh    = Module + ".game.refresh"
+	// The opt-in to console photos from Wikimedia, on and off.
+	CommandConsolePhotosOn  = Module + ".consolePhotos.on"
+	CommandConsolePhotosOff = Module + ".consolePhotos.off"
 )
 
 // Commands are WittyPlay's own commands, as sdui.json declares them.
@@ -510,6 +557,14 @@ func Commands() []core.CommandSpec {
 			Description: "WittyPlay Online: takes back an invite this profile sent (item: its ID)."},
 		{Op: CommandSetupLater, Label: "Do this later", Method: "POST", Path: routes + "/setup/games", Body: `{"skip":true}`,
 			Description: "Administrators: WittyPlay's first-run step is put off; everything in it is in WittyPlay's Settings."},
+		{Op: CommandLibraryRefresh, Label: "Refresh game details", Method: "POST", Path: routes + "/libraries/{item}/details/refresh",
+			Description: "Administrators: looks every game in a games library (item: its ID) up again from the start, in the background: titles in their own script and in English, box art, logos and details. What people typed or chose stays."},
+		{Op: CommandGameRefresh, Label: "Refresh game details", Method: "POST", Path: routes + "/games/{item}/metadata/refresh",
+			Description: "Administrators: looks one game (item: its ID) up again from the start, as for a library."},
+		{Op: CommandConsolePhotosOn, Label: "Turn on console photos", Method: "PUT", Path: routes + "/games/console-photos", Body: `{"enabled":true}`,
+			Description: "Administrators: opts in to photos of each console's hardware from Wikimedia Commons, having been shown what is fetched, from where, and the licences."},
+		{Op: CommandConsolePhotosOff, Label: "Turn off console photos", Method: "PUT", Path: routes + "/games/console-photos", Body: `{"enabled":false}`,
+			Description: "Administrators: stops console photos and deletes every one downloaded."},
 	}
 }
 

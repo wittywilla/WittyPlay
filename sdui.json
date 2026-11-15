@@ -959,6 +959,43 @@
           ]
         },
         {
+          "id": "details",
+          "component": "List",
+          "props": {
+            "focusable": true,
+            "title": "Game details"
+          },
+          "source": {
+            "library": "$library",
+            "type": "wittyplay.refresh"
+          },
+          "when": {
+            "admin": true
+          }
+        },
+        {
+          "id": "details-again",
+          "component": "List",
+          "props": {
+            "title": ""
+          },
+          "when": {
+            "admin": true
+          },
+          "children": [
+            {
+              "id": "check",
+              "component": "ListItem",
+              "props": {
+                "icon": "clock",
+                "op": "refresh",
+                "subtitle": "Reads again how far a refresh has got.",
+                "title": "Check again"
+              }
+            }
+          ]
+        },
+        {
           "id": "dock",
           "component": "Dock",
           "props": {
@@ -1096,6 +1133,32 @@
               }
             }
           ]
+        },
+        {
+          "id": "photos-notice",
+          "component": "Notice",
+          "props": {
+            "text": "Off until you turn it on. Then this server sends each console's name to Wikidata (www.wikidata.org) and downloads one photo of its hardware from Wikimedia Commons (commons.wikimedia.org), once, for the Consoles page. Only freely licensed photos are used (Creative Commons or public domain), each shown with its author and licence. Turning it off deletes them.",
+            "title": "Console photos from Wikimedia",
+            "tone": "info"
+          },
+          "when": {
+            "admin": true
+          }
+        },
+        {
+          "id": "photos",
+          "component": "List",
+          "props": {
+            "focusable": true,
+            "title": ""
+          },
+          "source": {
+            "type": "wittyplay.consolePhotos"
+          },
+          "when": {
+            "admin": true
+          }
         },
         {
           "id": "computer",
@@ -1557,6 +1620,32 @@
           ]
         },
         {
+          "id": "photos-notice",
+          "component": "Notice",
+          "props": {
+            "text": "Off until you turn it on. Then this server sends each console's name to Wikidata (www.wikidata.org) and downloads one photo of its hardware from Wikimedia Commons (commons.wikimedia.org), once, for the Consoles page. Only freely licensed photos are used (Creative Commons or public domain), each shown with its author and licence. Turning it off deletes them.",
+            "title": "Console photos from Wikimedia",
+            "tone": "info"
+          },
+          "when": {
+            "admin": true
+          }
+        },
+        {
+          "id": "photos",
+          "component": "List",
+          "props": {
+            "focusable": true,
+            "title": ""
+          },
+          "source": {
+            "type": "wittyplay.consolePhotos"
+          },
+          "when": {
+            "admin": true
+          }
+        },
+        {
           "id": "finish",
           "component": "List",
           "props": {
@@ -1915,6 +2004,25 @@
           "limit": 40,
           "only": "ready",
           "type": "wittyplay.consoles"
+        }
+      }
+    },
+    {
+      "page": "detail",
+      "after": "header",
+      "section": {
+        "id": "wittyplay-refresh",
+        "component": "List",
+        "props": {
+          "focusable": true,
+          "title": ""
+        },
+        "source": {
+          "item": "$item",
+          "type": "wittyplay.refresh"
+        },
+        "when": {
+          "admin": true
         }
       }
     }
@@ -2401,6 +2509,50 @@
       "cardStyle": "tile",
       "paged": false,
       "since": 8
+    },
+    {
+      "type": "wittyplay.refresh",
+      "label": "Refresh game details",
+      "description": "For an administrator: a row that looks every game in a games library (library), or one game (item), up again from the start: titles in their own script and in English, box art, logos and details; what people typed or chose stays. Its end says how far it has got. Nothing for anyone else, or for what isn't a game.",
+      "icon": "history",
+      "category": "",
+      "params": [
+        {
+          "name": "library",
+          "type": "library",
+          "label": "Library",
+          "help": "$library on a games library's page.",
+          "since": 0
+        },
+        {
+          "name": "item",
+          "type": "ref",
+          "label": "Game",
+          "help": "$item on a game's page. Used when there's no library.",
+          "since": 0
+        }
+      ],
+      "yields": [
+        "view"
+      ],
+      "cardStyle": "tile",
+      "paged": false,
+      "title": "Game details",
+      "since": 8
+    },
+    {
+      "type": "wittyplay.consolePhotos",
+      "label": "Console photos from Wikimedia",
+      "description": "For an administrator: the switch that opts in to (or out of) photos of each console's hardware from Wikimedia Commons, which are off until then, with what it means now. Show ConsolePhotoNotice's words beside it. Nothing for anyone else.",
+      "icon": "photo",
+      "category": "",
+      "yields": [
+        "view"
+      ],
+      "cardStyle": "tile",
+      "paged": false,
+      "title": "Console photos",
+      "since": 8
     }
   ],
   "navigation": [
@@ -2567,6 +2719,36 @@
       "method": "POST",
       "path": "/api/modules/wittyplay/setup/games",
       "body": "{\"skip\":true}"
+    },
+    {
+      "op": "wittyplay.library.refresh",
+      "label": "Refresh game details",
+      "description": "Administrators: looks every game in a games library (item: its ID) up again from the start, in the background: titles in their own script and in English, box art, logos and details. What people typed or chose stays.",
+      "method": "POST",
+      "path": "/api/modules/wittyplay/libraries/{item}/details/refresh"
+    },
+    {
+      "op": "wittyplay.game.refresh",
+      "label": "Refresh game details",
+      "description": "Administrators: looks one game (item: its ID) up again from the start, as for a library.",
+      "method": "POST",
+      "path": "/api/modules/wittyplay/games/{item}/metadata/refresh"
+    },
+    {
+      "op": "wittyplay.consolePhotos.on",
+      "label": "Turn on console photos",
+      "description": "Administrators: opts in to photos of each console's hardware from Wikimedia Commons, having been shown what is fetched, from where, and the licences.",
+      "method": "PUT",
+      "path": "/api/modules/wittyplay/games/console-photos",
+      "body": "{\"enabled\":true}"
+    },
+    {
+      "op": "wittyplay.consolePhotos.off",
+      "label": "Turn off console photos",
+      "description": "Administrators: stops console photos and deletes every one downloaded.",
+      "method": "PUT",
+      "path": "/api/modules/wittyplay/games/console-photos",
+      "body": "{\"enabled\":false}"
     }
   ]
 }

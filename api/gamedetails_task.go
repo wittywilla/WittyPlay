@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/wittywilla/wittymodule/host"
 )
 
 // What finding out about games is doing, in the server's activity panel (host Task).
@@ -18,8 +20,23 @@ const (
 	phasePictures = "Fetching box art"
 )
 
-// gameMetaTaskName is the task's name with the server's tasks.
-const gameMetaTaskName = "Finding out about games"
+// The task with the server's tasks: its name (letters, digits, - _ and . only, which the host's
+// tasks route takes) and the title the activity panel shows.
+const (
+	gameMetaTaskName  = "game-details"
+	gameMetaTaskTitle = "Finding out about games"
+)
+
+// hostTask reports a task of WittyPlay's to the server's activity panel, under its title. end
+// finishes it (so does done reaching a total above 0). The host client's own Task sends no
+// title, and only a name the route takes is shown at all.
+func (a *App) hostTask(ctx context.Context, name, title string, done, total int, end bool, failed error) error {
+	body := map[string]any{"title": title, "done": done, "total": total, "end": end}
+	if failed != nil {
+		body["error"] = failed.Error()
+	}
+	return a.Host.Do(ctx, host.On{}, "POST", "/tasks/"+name, body, nil)
+}
 
 // gameMetaTask reports one round of the lookup worker. The worker wakes every few minutes, so
 // nothing shows until a round has found something to do. Pictures go on beside the details, so
@@ -56,7 +73,7 @@ func (t *gameMetaTask) report(force bool) {
 	t.sent = time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_ = t.g.a.Host.Task(ctx, gameMetaTaskName, t.done, t.total, nil)
+	_ = t.g.a.hostTask(ctx, gameMetaTaskName, gameMetaTaskTitle, t.done, t.total, false, nil)
 }
 
 // did says n games of this stage have been dealt with.
@@ -98,13 +115,13 @@ func (t *gameMetaTask) finish(ctx context.Context, failed error) {
 	defer cancel()
 	if ctx.Err() == nil && failed == nil {
 		t.g.log().Info("wittyplay: "+gameMetaResult(t.g.status(rctx)), "cat", "games")
-		_ = t.g.a.Host.Task(rctx, gameMetaTaskName, t.total, t.total, nil)
+		_ = t.g.a.hostTask(rctx, gameMetaTaskName, gameMetaTaskTitle, t.total, t.total, true, nil)
 		return
 	}
 	if failed == nil {
 		failed = errors.New("stopped")
 	}
-	_ = t.g.a.Host.Task(rctx, gameMetaTaskName, t.done, t.total, failed)
+	_ = t.g.a.hostTask(rctx, gameMetaTaskName, gameMetaTaskTitle, t.done, t.total, true, failed)
 }
 
 // gameMetaResult says what's known about the games now, for the log.

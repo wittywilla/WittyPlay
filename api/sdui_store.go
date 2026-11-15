@@ -44,6 +44,8 @@ const (
 	srcPlayStoreConsoles = ui.SourceStoreConsoles
 	srcPlayStoreEmus     = ui.SourceStoreEmus
 	srcPlaySetup         = ui.SourceSetup
+	srcPlayRefresh       = ui.SourceRefresh
+	srcConsolePhotos     = ui.SourceConsolePhotos
 
 	opCoreInstall    = ui.CommandCoreInstall
 	opCoreRemove     = ui.CommandCoreRemove
@@ -55,7 +57,7 @@ const (
 )
 
 // storeSources are the sources only an administrator is given rows of.
-var storeSources = []string{srcPlayStoreConsoles, srcPlayStoreEmus, srcPlaySetup}
+var storeSources = []string{srcPlayStoreConsoles, srcPlayStoreEmus, srcPlaySetup, srcPlayRefresh, srcConsolePhotos}
 
 // tvItems answers the library and the store; ok is false for a source that isn't one of them.
 func tvItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, bool, error) {
@@ -110,6 +112,10 @@ func tvItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, bool, error) {
 			{ID: "later", Kind: "view", Title: "Do this later", Icon: "history", Subtitle: "Everything here is also in WittyPlay's Settings.",
 				Action: &sdui.Action{Type: core.ActCommand, Op: ui.CommandSetupLater}},
 		}
+	case srcPlayRefresh:
+		all, err = a.refreshRows(ctx, int64(srcInt(req.Source, "library")), int64(srcInt(req.Source, "item")))
+	case srcConsolePhotos:
+		all = a.consolePhotoRows(ctx)
 	case srcPlayStoreEmus:
 		var entries []rpc.CatalogEntry
 		if entries, err = rpc.Docker.Catalog(); err == nil {
@@ -557,6 +563,85 @@ func upperFirst(s string) string {
 func clip(s string, n int) string {
 	if len(s) > n {
 		return s[:n]
+	}
+	return s
+}
+
+// ---------------------------------------------------------------- refresh game details
+
+// refreshRows is Refresh game details for a games library or, without one, for one game: the row
+// that starts it, its end saying how far it has got (the page's own Check again reads it again: a
+// module's row may only run the module's commands). Nothing for what isn't a games library or a
+// game WittyPlay knows.
+func (a *App) refreshRows(ctx context.Context, library, item int64) ([]sdui.Item, error) {
+	if library <= 0 {
+		return a.gameRefreshRows(ctx, item)
+	}
+	st, err := a.libraryRefreshState(ctx, library)
+	if err != nil || st.Games == 0 {
+		return nil, err
+	}
+	return []sdui.Item{{ID: "refresh", Kind: "view", Title: "Refresh game details", Icon: "history", Trailing: refreshWords(st),
+		Subtitle: fmt.Sprintf("All %s games: titles, art, logos and details again. Edits stay.", thousands(st.Games)),
+		Action: &sdui.Action{Type: core.ActCommand, Op: ui.CommandLibraryRefresh, Item: strconv.FormatInt(library, 10),
+			Confirm: "Look up every game in this library again? It runs in the background, and a big library takes a while."}}}, nil
+}
+
+// gameRefreshRows is Refresh game details for one game.
+func (a *App) gameRefreshRows(ctx context.Context, item int64) ([]sdui.Item, error) {
+	if item <= 0 {
+		return nil, nil
+	}
+	var status string
+	var art int
+	err := a.DB.QueryRowContext(ctx, `SELECT status, art_wanted FROM wittyplay_game_details WHERE item_id = ? AND path <> ''`, item).Scan(&status, &art)
+	if isNoRows(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	words := "Up to date"
+	switch {
+	case status == "pending":
+		words = "Looking it up"
+	case art == 1:
+		words = "Downloading pictures"
+	}
+	return []sdui.Item{{ID: "refresh", Kind: "view", Title: "Refresh game details", Icon: "history", Trailing: words,
+		Subtitle: "Its titles, art, logos and details, fetched again. Edits stay.",
+		Action:   &sdui.Action{Type: core.ActCommand, Op: ui.CommandGameRefresh, Item: strconv.FormatInt(item, 10)}}}, nil
+}
+
+// ---------------------------------------------------------------- console photos
+
+// consolePhotoRows is the opt-in to console photos from Wikimedia: one switch (ui.ConsolePhotoNotice
+// is the notice beside it), and why it does nothing while Wikidata may not be asked.
+func (a *App) consolePhotoRows(ctx context.Context) []sdui.Item {
+	on := a.consolePhotosOn(ctx)
+	op, trailing := ui.CommandConsolePhotosOn, "Off"
+	if on {
+		op, trailing = ui.CommandConsolePhotosOff, "On"
+	}
+	sw := sdui.Item{ID: "console-photos", Kind: "view", Title: "Download console photos from Wikimedia", Icon: "photo", Trailing: trailing,
+		Subtitle: "Each console's hardware, credited with its author and licence.",
+		Control:  &sdui.Control{Type: core.ControlSwitch, Value: on}, Action: &sdui.Action{Type: core.ActCommand, Op: op}}
+	if on {
+		sw.Action.Confirm = "Turn off console photos? Every one downloaded is deleted."
+	}
+	out := []sdui.Item{sw}
+	if on && !a.wikidataOn(ctx) {
+		out = append(out, sdui.Item{ID: "wikidata-off", Kind: "view", Title: "Wikidata is switched off", Icon: "info",
+			Subtitle: "It's off in the game sources, so no photos are fetched."})
+	}
+	return out
+}
+
+// thousands writes n with commas: 2,292.
+func thousands(n int) string {
+	s := strconv.Itoa(n)
+	for i := len(s) - 3; i > 0; i -= 3 {
+		s = s[:i] + "," + s[i:]
 	}
 	return s
 }

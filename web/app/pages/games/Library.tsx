@@ -23,6 +23,7 @@ import { useConsoleLogos } from './ConsoleMark'
 import { CollectionBand, GamesDock, OnTheGo, ResumeCard, Shelf, useShelfView, ViewSwitch, YoursOn } from './Shelves'
 import { ConsoleCores } from './ConsoleCores'
 import { GameName, useGameName } from './GameName'
+import { RefreshLibraryDetails } from './RefreshDetails'
 import './games-ui.css'
 
 // The games home: covers at the top, what's being played, the consoles, shelves, then every
@@ -373,6 +374,7 @@ export default function GamesLibrary({ lib }: { lib: Library }) {
             <input ref={search} className="input gm-search" type="search" placeholder="Search these games" aria-label="Search these games" value={typed} onChange={(e) => setTyped(e.target.value)} />
           </label>
           <ScanButton lib={lib} onStarted={() => setWatch((n) => n + 1)} />
+          {user?.isAdmin && !consoleId && <RefreshLibraryDetails libraryId={lib.id} />}
           <Link className="btn ghost" to="/big" onClick={() => { setCouchOn(true); void document.documentElement.requestFullscreen?.().catch(() => {}) }} aria-label="Couch mode: full screen, made for controllers"><IconFull size={18} /> <span className="gm-hide-narrow">Couch mode</span></Link>
         </>}
         actions={consoleId && <Link className="btn ghost sm" to={links.library(lib.id)}>All consoles</Link>}

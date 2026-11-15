@@ -30,7 +30,7 @@ import './games/games-ui.css'
 const ControllersScreen = lazy(() => import('./Games').then((m) => ({ default: m.ControllersScreen })))
 
 // A console's picture of its hardware, from Wikimedia Commons by way of the server, which fetches and keeps it (GET
-// /api/modules/wittyplay/console-photos/{id}); none when Wikidata lookups are off, Wikimedia downloads weren't agreed to, or Commons has no free one.
+// /api/modules/wittyplay/console-photos/{id}); none until an administrator opts in to console photos (Settings, Console photos), when Wikidata lookups are off, or when Commons has no free one.
 type ConsolePhoto = { imageUrl: string; credit?: string; license?: string; licenseUrl?: string; pageUrl?: string; source?: string }
 const photos = new Map<string, Promise<ConsolePhoto | null>>()
 function useConsolePhoto(id: string): ConsolePhoto | null {

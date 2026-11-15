@@ -1141,16 +1141,16 @@ func (g *gameMeta) clearMatch(ctx context.Context, it metaGame) error {
 	return err
 }
 
-// refresh asks every source about a game again. A locked or chosen match keeps its game: the
-// source's own id is asked for, rather than the name being searched again.
+// refresh asks every source about a game again, and downloads its pictures again. A locked or
+// chosen match keeps its game: the source's own id is asked for, rather than the name being
+// searched again.
 func (g *gameMeta) refresh(ctx context.Context, it metaGame) error {
 	if err := g.ensureRow(ctx, it); err != nil {
 		return err
 	}
 	var source, id string
-	var locked int
-	_ = g.a.DB.QueryRowContext(ctx, `SELECT IFNULL(s.source, ''), IFNULL(s.source_id, ''), m.locked FROM wittyplay_game_details m
-		LEFT JOIN wittyplay_game_answers s ON s.item_id = m.item_id AND s.method = 'manual' WHERE m.item_id = ?`, it.ID).Scan(&source, &id, &locked)
+	_ = g.a.DB.QueryRowContext(ctx, `SELECT IFNULL(s.source, ''), IFNULL(s.source_id, '') FROM wittyplay_game_details m
+		LEFT JOIN wittyplay_game_answers s ON s.item_id = m.item_id AND s.method = 'manual' WHERE m.item_id = ?`, it.ID).Scan(&source, &id)
 	if source != "" && id != "" {
 		if src := g.sources(ctx).all[source]; src != nil {
 			in, err := src.Fetch(ctx, it.Console, id)
@@ -1163,15 +1163,9 @@ func (g *gameMeta) refresh(ctx context.Context, it metaGame) error {
 			}
 		}
 	}
-	if _, err := g.a.DB.ExecContext(ctx, `DELETE FROM wittyplay_game_answers WHERE item_id = ? AND method <> 'manual'`, it.ID); err != nil {
-		return err
-	}
-	// Refreshing a file means reading it again too.
-	if _, err := g.a.DB.ExecContext(ctx, `UPDATE wittyplay_game_details SET status = 'pending', next_try = 0, tries = 0, file_size = -1, locked = ? WHERE item_id = ?`, locked, it.ID); err != nil {
-		return err
-	}
-	g.Kick()
-	return nil
+	// Refreshing a game means reading its file again too, and downloading its pictures again
+	// (gamerefresh.go).
+	return g.refreshDetails(ctx, []int64{it.ID}, true)
 }
 
 // requeueAll asks again about whatever hasn't answered yet, after the list of sources or their

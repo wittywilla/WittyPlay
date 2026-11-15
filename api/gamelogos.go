@@ -35,6 +35,7 @@ const (
 	cfgBrandLogos      = "brandLogos"
 	cfgBrandLogosAt    = "brandLogosAt"
 	brandLogosVersion  = "1"
+	brandLogoTaskName  = "brand-logos"
 	brandLogoTaskTitle = "Looking for console logos"
 )
 
@@ -68,7 +69,7 @@ func (a *App) logos() *gamelogos.Logos {
 			Report: func(done int, err error) {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cancel()
-				_ = a.Host.Task(ctx, brandLogoTaskTitle, done, 0, err)
+				_ = a.hostTask(ctx, brandLogoTaskName, brandLogoTaskTitle, done, 0, true, err)
 			}}
 		logos[a] = l
 	}

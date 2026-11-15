@@ -165,6 +165,23 @@ func TestConsolePhotosAndBrandLogos(t *testing.T) {
 	if g, _ := f.a.logos().LogoFor(f.ctx, logoConsole, "Super Nintendo Entertainment System"); g == nil {
 		t.Fatal("no row for a console's logo")
 	}
+	// Console photos are their own opt-in, off by default: agreeing to logos doesn't fetch them.
+	w = callRaw(t, f.h, "GET", "/games/console-photos", 3, false, nil)
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"enabled":false`) || !strings.Contains(w.Body.String(), "commons.wikimedia.org") || !strings.Contains(w.Body.String(), "Creative Commons") {
+		t.Fatalf("console photos by default: %d %s", w.Code, w.Body)
+	}
+	if w := callRaw(t, f.h, "GET", "/console-photos/snes", 3, false, nil); w.Code != 404 || src.asked.Load() != 0 {
+		t.Fatalf("off by default: %d, asked %d", w.Code, src.asked.Load())
+	}
+	if w := callRaw(t, f.h, "PUT", "/games/console-photos", 3, false, []byte(`{"enabled":true}`)); w.Code != 403 {
+		t.Fatalf("a viewer opted in: %d", w.Code)
+	}
+	if w := callRaw(t, f.h, "PUT", "/games/console-photos", 1, true, []byte(`{}`)); w.Code != 400 {
+		t.Fatalf("no answer: %d", w.Code)
+	}
+	if w := callRaw(t, f.h, "PUT", "/games/console-photos", 1, true, []byte(`{"enabled":true}`)); w.Code != 200 || !strings.Contains(w.Body.String(), `"enabled":true`) {
+		t.Fatalf("opting in: %d %s", w.Code, w.Body)
+	}
 	// Now a console's photo is fetched once, kept, and served by WittyPlay.
 	w = callRaw(t, f.h, "GET", "/console-photos/snes", 3, false, nil)
 	if w.Code != 200 || !strings.Contains(w.Body.String(), `"/api/modules/wittyplay/console-photos/snes/image?v=`) || !strings.Contains(w.Body.String(), `"credit":"Someone"`) {
@@ -193,6 +210,26 @@ func TestConsolePhotosAndBrandLogos(t *testing.T) {
 	}
 	if f.a.brandLogosOn(f.ctx) {
 		t.Error("still on")
+	}
+	// Turning console photos off deletes them, and nothing more is fetched.
+	if w := callRaw(t, f.h, "GET", "/console-photos/snes", 3, false, nil); w.Code != 200 {
+		t.Errorf("logos off took console photos with them: %d", w.Code)
+	}
+	if w := callRaw(t, f.h, "PUT", "/games/console-photos", 1, true, []byte(`{"enabled":false}`)); w.Code != 200 || !strings.Contains(w.Body.String(), `"enabled":false`) {
+		t.Fatalf("opting out: %d %s", w.Code, w.Body)
+	}
+	src.none = false
+	before := src.asked.Load()
+	for _, p := range []string{"/console-photos/snes", "/console-photos/snes/image", "/console-photos/gb"} {
+		if w := callRaw(t, f.h, "GET", p, 3, false, nil); w.Code != 404 {
+			t.Errorf("%s while off: %d", p, w.Code)
+		}
+	}
+	if src.asked.Load() != before {
+		t.Error("Wikimedia was asked while console photos were off")
+	}
+	if _, err := os.Stat(f.a.consolePhotoPath("snes")); !os.IsNotExist(err) {
+		t.Errorf("the photo kept wasn't deleted: %v", err)
 	}
 }
 

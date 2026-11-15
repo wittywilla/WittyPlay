@@ -1218,6 +1218,35 @@
       "auth": "user"
     },
     {
+      "path": "/games/console-photos",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
+      "path": "/games/console-photos",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/libraries/{id}/details/refresh",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB",
+        "time": "2m"
+      }
+    },
+    {
       "path": "/console-photos/{id}",
       "methods": [
         "GET"
@@ -1359,7 +1388,7 @@
         "title": "Games",
         "after": "details",
         "page": "wittyplay-setup",
-        "version": 1,
+        "version": 2,
         "later": {
           "where": "Settings, Game metadata",
           "to": "/settings/game-metadata"
