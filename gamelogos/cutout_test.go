@@ -12,18 +12,25 @@ import (
 	"testing"
 )
 
-// A light grey console with a white button on it, on white: the white round it goes, the console
-// and its button stay.
+// A cream console (a Famicom's plastic, close to white) with a small white button on it, a black
+// controller, and a cord making a loop of background the edge can't reach, all on white: the white
+// round them and inside the loop goes; the cream plastic, the button and the controller stay whole.
 func TestCutOutWhiteBackground(t *testing.T) {
-	img := image.NewRGBA(image.Rect(0, 0, 120, 80))
-	for y := 0; y < 80; y++ {
-		for x := 0; x < 120; x++ {
+	const W, H = 200, 120
+	img := image.NewRGBA(image.Rect(0, 0, W, H))
+	for y := 0; y < H; y++ {
+		for x := 0; x < W; x++ {
 			c := color.RGBA{255, 255, 255, 255}
-			if x >= 30 && x < 90 && y >= 20 && y < 60 {
-				c = color.RGBA{200, 200, 205, 255} // the console
-				if x >= 55 && x < 65 && y >= 35 && y < 45 {
-					c = color.RGBA{255, 255, 255, 255} // a white button, inside it
+			switch {
+			case x >= 90 && x < 180 && y >= 20 && y < 100:
+				c = color.RGBA{236, 232, 218, 255} // the console's cream plastic
+				if x >= 130 && x < 136 && y >= 50 && y < 56 {
+					c = color.RGBA{255, 255, 255, 255} // a small white button on it
 				}
+			case x >= 10 && x < 50 && y >= 70 && y < 100:
+				c = color.RGBA{20, 20, 24, 255} // a black controller
+			case (x >= 20 && x < 70 && (y == 20 || y == 21 || y == 60 || y == 61)) || (y >= 20 && y < 62 && (x == 20 || x == 21 || x == 68 || x == 69)):
+				c = color.RGBA{30, 30, 30, 255} // a cord's loop, around a pocket of white
 			}
 			img.Set(x, y, c)
 		}
@@ -41,14 +48,14 @@ func TestCutOutWhiteBackground(t *testing.T) {
 		t.Fatal(err)
 	}
 	alpha := func(x, y int) uint8 { return color.NRGBAModel.Convert(got.At(x, y)).(color.NRGBA).A }
-	for _, p := range [][2]int{{2, 2}, {117, 77}, {10, 40}, {60, 10}} {
+	for name, p := range map[string][2]int{"top left": {2, 2}, "bottom right": {197, 117}, "between": {75, 90}, "inside the cord's loop": {45, 40}} {
 		if a := alpha(p[0], p[1]); a != 0 {
-			t.Errorf("background at %v: alpha %d, want 0", p, a)
+			t.Errorf("background %s at %v: alpha %d, want 0", name, p, a)
 		}
 	}
-	for _, p := range [][2]int{{40, 30}, {80, 50}, {60, 40}} {
+	for name, p := range map[string][2]int{"cream plastic": {100, 30}, "more cream": {170, 90}, "the white button": {132, 52}, "the controller": {30, 85}} {
 		if a := alpha(p[0], p[1]); a != 255 {
-			t.Errorf("console at %v: alpha %d, want 255 (the white button inside it stays)", p, a)
+			t.Errorf("%s at %v: alpha %d, want 255", name, p, a)
 		}
 	}
 }

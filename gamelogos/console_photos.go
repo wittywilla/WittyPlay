@@ -27,20 +27,29 @@ var consoleWikidata = map[string]string{
 // PhotoVariant is one of the versions of a console sold under another name or shape in another
 // part of the world (an NES and a Famicom), with the Commons photo of that one. A console with
 // versions shows the one an administrator chose for its library, the first to begin with.
+//
+// Name and Short are what the console is called when that version is chosen (and the console's
+// names follow it, which they do unless an administrator keeps its usual names).
 type PhotoVariant struct {
 	ID    string `json:"id"`
 	Label string `json:"label"`
 	File  string `json:"-"`
+	Name  string `json:"name"`
+	Short string `json:"short"`
 }
 
 // consolePhotoVariants are the consoles whose versions look different enough to choose between.
 // Each file is a free photo on Commons (checked 2026-11-16: all public domain, by Evan-Amos).
 var consolePhotoVariants = map[string][]PhotoVariant{
-	"nes":  {{"nes", "NES", "NES-Console-Set.jpg"}, {"famicom", "Famicom", "Nintendo-Famicom-Console-Set-FL.jpg"}},
-	"snes": {{"snes", "SNES", "SNES-Mod1-Console-Set.jpg"}, {"superfamicom", "Super Famicom", "Nintendo-Super-Famicom-Set-FL.jpg"}},
-	"md": {{"genesis", "Genesis", "Sega-Genesis-Mod1-Set.jpg"}, {"megadrive", "Mega Drive", "Sega-Mega-Drive-EU-Mk1-wController-FL.jpg"},
-		{"megadrivejp", "Mega Drive (Japan)", "Sega-Mega-Drive-JP-Mk1-Console-Set.jpg"}},
-	"pce": {{"pcengine", "PC Engine", "PC-Engine-Console-Set.png"}, {"turbografx", "TurboGrafx-16", "TurboGrafx16-Console-Set.png"}},
+	"nes": {{"nes", "NES", "NES-Console-Set.jpg", "Nintendo Entertainment System", "NES"},
+		{"famicom", "Famicom", "Nintendo-Famicom-Console-Set-FL.jpg", "Family Computer", "Famicom"}},
+	"snes": {{"snes", "SNES", "SNES-Mod1-Console-Set.jpg", "Super Nintendo", "SNES"},
+		{"superfamicom", "Super Famicom", "Nintendo-Super-Famicom-Set-FL.jpg", "Super Famicom", "Super Famicom"}},
+	"md": {{"genesis", "Genesis", "Sega-Genesis-Mod1-Set.jpg", "Sega Genesis", "Genesis"},
+		{"megadrive", "Mega Drive", "Sega-Mega-Drive-EU-Mk1-wController-FL.jpg", "Sega Mega Drive", "Mega Drive"},
+		{"megadrivejp", "Mega Drive (Japan)", "Sega-Mega-Drive-JP-Mk1-Console-Set.jpg", "Sega Mega Drive", "Mega Drive"}},
+	"pce": {{"pcengine", "PC Engine", "PC-Engine-Console-Set.png", "PC Engine", "PC Engine"},
+		{"turbografx", "TurboGrafx-16", "TurboGrafx16-Console-Set.png", "TurboGrafx-16", "TurboGrafx-16"}},
 }
 
 // ConsolePhotoVariants are a console's versions to choose a photo from, or none.

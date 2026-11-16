@@ -79,7 +79,7 @@ func TestConsolePhotoVersions(t *testing.T) {
 	src := &fakeWikimedia{pic: pngBytes(t)}
 	was := photoSource
 	photoSource = func() consolePhotoSource { return src }
-	t.Cleanup(func() { photoSource = was })
+	t.Cleanup(func() { photoSource = was; consoleNames.Store(nil) })
 	f := newGameFixture(t)
 	callRaw(t, f.h, "PUT", "/games/console-photos", 1, true, []byte(`{"enabled":true}`))
 	w := callRaw(t, f.h, "GET", "/console-photos/nes", 3, false, nil)
@@ -110,5 +110,45 @@ func TestConsolePhotoVersions(t *testing.T) {
 	}
 	if w := callRaw(t, f.h, "PUT", "/console-photos/n64/variant", 1, true, []byte(`{"variant":"n64"}`)); w.Code != 400 {
 		t.Errorf("a version of a console with none: %d", w.Code)
+	}
+}
+
+// Choosing the Famicom names the NES Famicom wherever WittyPlay names it, unless its usual names are
+// kept; until a version is chosen, nothing is renamed.
+func TestConsoleNamesFollowTheVersion(t *testing.T) {
+	src := &fakeWikimedia{pic: pngBytes(t)}
+	was := photoSource
+	photoSource = func() consolePhotoSource { return src }
+	consoleNames.Store(nil)
+	t.Cleanup(func() { photoSource = was; consoleNames.Store(nil) })
+	f := newGameFixture(t)
+	callRaw(t, f.h, "PUT", "/games/console-photos", 1, true, []byte(`{"enabled":true}`))
+	nes := func() (string, string, string) {
+		for _, v := range f.a.ConsoleViews(f.ctx) {
+			if v.ID == "nes" {
+				return v.Name, v.Short, strings.Join(v.Also, ",")
+			}
+		}
+		t.Fatal("no NES")
+		return "", "", ""
+	}
+	if name, short, also := nes(); name != "Nintendo Entertainment System" || short != "NES" || !strings.Contains(also, "Famicom") {
+		t.Fatalf("before choosing: %q %q also %q", name, short, also)
+	}
+	if w := callRaw(t, f.h, "PUT", "/console-photos/nes/variant", 1, true, []byte(`{"variant":"famicom"}`)); w.Code != 200 {
+		t.Fatalf("choosing: %d %s", w.Code, w.Body)
+	}
+	if name, short, _ := nes(); name != "Family Computer" || short != "Famicom" {
+		t.Errorf("after choosing the Famicom: %q %q", name, short)
+	}
+	if got := consoleShort("nes"); got != "Famicom" {
+		t.Errorf("a game card's console: %q", got)
+	}
+	w := callRaw(t, f.h, "PUT", "/console-photos/nes/variant", 1, true, []byte(`{"keepNames":true}`))
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"keepNames":true`) || !strings.Contains(w.Body.String(), `"variant":"famicom"`) {
+		t.Fatalf("keeping its names: %d %s", w.Code, w.Body)
+	}
+	if name, short, _ := nes(); name != "Nintendo Entertainment System" || short != "NES" {
+		t.Errorf("with its usual names kept: %q %q", name, short)
 	}
 }

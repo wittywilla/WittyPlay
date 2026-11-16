@@ -19,11 +19,12 @@ import (
 // CutOut takes a picture's plain background away: most photos of a console's hardware on
 // Wikimedia Commons are shot on white, which reads as a white box on WittyPlay's dark pages. It
 // looks at the colour all round the picture's edge, and only when nearly all of it is one plain
-// colour does it fill inward from the edge through that colour, making it transparent. The fill
-// goes by how far each pixel is from the background's colour, never by how far it is from its
-// neighbour, so it stops at a light grey console rather than creeping into it. Pixels near the
-// limit get some of their opacity back, and the background's colour is taken out of them, so the
-// edge is soft and has no white halo.
+// colour does it fill inward from the edge through pixels nearly exactly that colour, making them
+// transparent, and take big flat pockets of it the edge can't reach (inside a cord's loop). The
+// limit is strict, so it stops at a light grey or cream console rather than seeping into it. The
+// picture's own edge pixels get the share of opacity their colour says they have, against the
+// picture's colour just inside, with the background's colour taken out, so the edge is soft and
+// has no white fringe.
 //
 // ok is false when the picture is left as it is: its edge isn't one plain colour (a photo taken
 // in a room), it's already transparent there, or nearly all of it would go.
@@ -52,42 +53,136 @@ func CutOut(src []byte) (out []byte, ok bool, err error) {
 		return nil, false, nil
 	}
 
-	// Fill inward from every edge pixel close enough to the background.
 	n := w * h
-	gone := make([]bool, n)
-	queue := make([]int, 0, 2*(w+h))
 	at := func(i int) color.NRGBA { o := i * 4; p := pix.Pix; return color.NRGBA{p[o], p[o+1], p[o+2], p[o+3]} }
-	try := func(i int) {
-		if !gone[i] && far(at(i), bg) < cutLimit {
+	dist := make([]uint8, n)
+	for i := range dist {
+		dist[i] = uint8(far(at(i), bg))
+	}
+	near4 := func(i int, f func(j int)) {
+		x, y := i%w, i/w
+		if x > 0 {
+			f(i - 1)
+		}
+		if x < w-1 {
+			f(i + 1)
+		}
+		if y > 0 {
+			f(i - w)
+		}
+		if y < h-1 {
+			f(i + w)
+		}
+	}
+
+	// The background: from every edge pixel that is it, inward through pixels that are nearly
+	// exactly its colour. A strict limit, so light plastic (a Famicom's cream, an SNES's grey) is
+	// never taken, however close to white it is.
+	gone := make([]bool, n)
+	fill := func(seeds []int, ok func(int) bool, mark []bool) int {
+		queue := append([]int(nil), seeds...)
+		count := 0
+		for _, i := range seeds {
+			mark[i] = true
+			count++
+		}
+		for len(queue) > 0 {
+			i := queue[len(queue)-1]
+			queue = queue[:len(queue)-1]
+			near4(i, func(j int) {
+				if !mark[j] && ok(j) {
+					mark[j] = true
+					count++
+					queue = append(queue, j)
+				}
+			})
+		}
+		return count
+	}
+	isBg := func(i int) bool { return dist[i] <= cutBackground }
+	var seeds []int
+	addSeed := func(i int) {
+		if isBg(i) && !gone[i] {
 			gone[i] = true
-			queue = append(queue, i)
+			seeds = append(seeds, i)
 		}
 	}
 	for x := 0; x < w; x++ {
-		try(x)
-		try((h-1)*w + x)
+		addSeed(x)
+		addSeed((h-1)*w + x)
 	}
 	for y := 0; y < h; y++ {
-		try(y * w)
-		try(y*w + w - 1)
+		addSeed(y * w)
+		addSeed(y*w + w - 1)
 	}
-	for len(queue) > 0 {
-		i := queue[len(queue)-1]
-		queue = queue[:len(queue)-1]
-		x, y := i%w, i/w
-		if x > 0 {
-			try(i - 1)
+	for _, i := range seeds {
+		gone[i] = false
+	}
+	fill(seeds, isBg, gone)
+
+	// Pockets of background the edge can't reach: inside a loop of a controller's cord, between a
+	// controller and the console. Only big, flat ones (a studio's backdrop, not a white label or
+	// button, which have shading and edges of their own).
+	seen := make([]bool, n)
+	minPocket := max(64, n/400)
+	for i := 0; i < n; i++ {
+		if gone[i] || seen[i] || !isBg(i) {
+			continue
 		}
-		if x < w-1 {
-			try(i + 1)
+		var members []int
+		queue := []int{i}
+		seen[i] = true
+		sum := 0
+		for len(queue) > 0 {
+			k := queue[len(queue)-1]
+			queue = queue[:len(queue)-1]
+			members = append(members, k)
+			sum += int(dist[k])
+			near4(k, func(j int) {
+				if !seen[j] && !gone[j] && isBg(j) {
+					seen[j] = true
+					queue = append(queue, j)
+				}
+			})
 		}
-		if y > 0 {
-			try(i - w)
-		}
-		if y < h-1 {
-			try(i + w)
+		if len(members) >= minPocket && sum <= len(members)*cutPocketFlat {
+			for _, k := range members {
+				gone[k] = true
+			}
 		}
 	}
+
+	// Specks: a few light pixels left in the background where a JPEG's noise went just past the
+	// limit. A small island of light pixels with background all round it is background too.
+	seen = make([]bool, n)
+	maxSpeck := max(6, n/40000)
+	for i := 0; i < n; i++ {
+		if gone[i] || seen[i] {
+			continue
+		}
+		var members []int
+		queue := []int{i}
+		seen[i] = true
+		light := true
+		for len(queue) > 0 && len(members) <= maxSpeck {
+			k := queue[len(queue)-1]
+			queue = queue[:len(queue)-1]
+			members = append(members, k)
+			light = light && dist[k] <= cutSpeck
+			near4(k, func(j int) {
+				if !seen[j] && !gone[j] {
+					seen[j] = true
+					queue = append(queue, j)
+				}
+			})
+		}
+		if len(queue) == 0 && len(members) <= maxSpeck && light {
+			for _, k := range members {
+				gone[k] = true
+			}
+		}
+	}
+
 	count := 0
 	for _, g := range gone {
 		if g {
@@ -99,23 +194,67 @@ func CutOut(src []byte) (out []byte, ok bool, err error) {
 		return nil, false, nil
 	}
 
-	for i, g := range gone {
-		if !g {
+	// The edge: each pixel of the picture beside the background is partly background (a photo's
+	// edge blends the two). How much is read from its colour against the picture's own colour just
+	// inside it: a mid-grey pixel beside a black controller is half see-through, with the white
+	// taken out, so there's no white fringe; a light pixel beside light plastic stays as it is.
+	edge := func(i int) bool {
+		if gone[i] {
+			return false
+		}
+		x, y := i%w, i/w
+		for dy := -1; dy <= 1; dy++ {
+			for dx := -1; dx <= 1; dx++ {
+				xx, yy := x+dx, y+dy
+				if xx >= 0 && yy >= 0 && xx < w && yy < h && gone[yy*w+xx] {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	alpha := make([]float64, n)
+	for i := range alpha {
+		alpha[i] = 1
+		if gone[i] {
+			alpha[i] = 0
+		}
+	}
+	for i := 0; i < n; i++ {
+		if !edge(i) {
 			continue
 		}
-		c := at(i)
-		d := far(c, bg)
+		// The picture's own colour here: the farthest from the background within two pixels.
+		x, y := i%w, i/w
+		inside := 0
+		for dy := -2; dy <= 2; dy++ {
+			for dx := -2; dx <= 2; dx++ {
+				xx, yy := x+dx, y+dy
+				if xx >= 0 && yy >= 0 && xx < w && yy < h && !gone[yy*w+xx] {
+					inside = max(inside, int(dist[yy*w+xx]))
+				}
+			}
+		}
+		if inside <= cutBackground {
+			continue
+		}
+		a := float64(int(dist[i])-cutBackground) / float64(inside-cutBackground)
+		if a < 1 {
+			alpha[i] = max(a, 0)
+		}
+	}
+	for i := 0; i < n; i++ {
 		o := i * 4
-		if d <= cutClear {
+		switch a := alpha[i]; {
+		case a <= 0.02:
 			pix.Pix[o+3] = 0
-			continue
+		case a < 0.98:
+			c := at(i)
+			pix.Pix[o] = unmix(c.R, bg.R, a)
+			pix.Pix[o+1] = unmix(c.G, bg.G, a)
+			pix.Pix[o+2] = unmix(c.B, bg.B, a)
+			pix.Pix[o+3] = uint8(a * float64(c.A))
 		}
-		// Between clear and the limit: partly kept, with the background's colour taken out.
-		a := float64(d-cutClear) / float64(cutLimit-cutClear)
-		pix.Pix[o] = unmix(c.R, bg.R, a)
-		pix.Pix[o+1] = unmix(c.G, bg.G, a)
-		pix.Pix[o+2] = unmix(c.B, bg.B, a)
-		pix.Pix[o+3] = uint8(a * float64(c.A))
 	}
 	var buf bytes.Buffer
 	if err := (&png.Encoder{CompressionLevel: png.BestSpeed}).Encode(&buf, pix); err != nil {
@@ -127,10 +266,13 @@ func CutOut(src []byte) (out []byte, ok bool, err error) {
 const (
 	// A Commons thumbnail is far smaller; anything bigger isn't worth the memory on a small server.
 	maxCutOutPixels = 4096 * 4096
-	// How far from the background's colour, at most, on any of red, green and blue (0 to 255): up
-	// to cutClear is see-through, up to cutLimit fades in, and from there on it's the picture.
-	cutClear = 14
-	cutLimit = 46
+	// How far from the background's colour, at most, on any of red, green and blue (0 to 255), a
+	// pixel is still background: strict, so light plastic is never taken. A JPEG's white is within it.
+	cutBackground = 12
+	// How flat a pocket of background the edge can't reach must be: its pixels' average distance.
+	cutPocketFlat = 5
+	// How light a speck in the background is, at most, to be taken as background.
+	cutSpeck = 48
 	// How alike the edge must be: this share of it within edgeLimit of its middle colour.
 	edgeShare = 0.82
 	edgeLimit = 28

@@ -29,13 +29,14 @@ import (
 // mark.
 //
 // A photo's plain background (most are shot on white) is taken away, once, when it's first shown
-// (gamelogos.CutOut, kept beside it as <id>.cut.png), unless an administrator turned that off; the
+// (gamelogos.CutOut, kept beside it as <id>.cut<version>.png), unless an administrator turned that off; the
 // credit then says "background removed", as the licences ask for changes to be noted.
 //
 // GET /console-photos/{id}        → {imageUrl, credit, license, licenseUrl, pageUrl, source, changed}, or 404
 // GET /console-photos/{id}/image  → the picture
 // GET /games/console-photos       → {enabled, cutout, notice, agreedAt}
-// PUT /console-photos/{id}/variant {variant} → the photo, of that version (administrators)
+// PUT /console-photos/{id}/variant {variant?, keepNames?} → the photo, of that version (administrators);
+//   keepNames true keeps the console's usual names whichever version is chosen (consolenames.go)
 //
 // A console sold in another shape elsewhere (an NES and a Famicom) has versions to choose from
 // (gamelogos.ConsolePhotoVariants); the photo answers say which there are and which is shown.
@@ -61,6 +62,8 @@ const (
 	cfgConsolePhotoCutout = "consolePhotoCutout"
 	// cfgConsolePhotoVariants is each console's chosen version, by console id.
 	cfgConsolePhotoVariants = "consolePhotoVariants"
+	// cutoutVersion is gamelogos.CutOut's: raised when it cuts differently.
+	cutoutVersion = "2"
 )
 
 // consolePhotoSource finds a console's picture; a fake in tests.
@@ -110,8 +113,9 @@ func (a *App) cutPhoto(id string) (string, bool) {
 	if err != nil {
 		return src, false
 	}
-	cut := filepath.Join(a.Dir, "console-photos", id+".cut.png")
-	none := filepath.Join(a.Dir, "console-photos", id+".cut.none")
+	// The cut-out's version is in its name, so a better one is made again for photos already cut.
+	cut := filepath.Join(a.Dir, "console-photos", id+".cut"+cutoutVersion+".png")
+	none := filepath.Join(a.Dir, "console-photos", id+".cut"+cutoutVersion+".none")
 	fresh := func(p string) bool { fi, err := os.Stat(p); return err == nil && !fi.ModTime().Before(si.ModTime()) }
 	m, _ := consolePhotoBusy.LoadOrStore("cut:"+id, &sync.Mutex{})
 	mu := m.(*sync.Mutex)
@@ -270,37 +274,58 @@ func handleConsolePhoto(a *App, w http.ResponseWriter, r *http.Request) {
 		"license": f.License, "licenseUrl": f.LicenseURL, "pageUrl": f.PageURL, "source": "Wikimedia Commons", "changed": changed}
 	if v, ok := a.photoVariant(r.Context(), id); ok {
 		out["variant"], out["variants"] = v.ID, gamelogos.ConsolePhotoVariants(id)
+		out["keepNames"] = a.namesKept(r.Context(), id)
 	}
 	writeJSON(w, 200, out)
 }
 
-// PUT /console-photos/{id}/variant {variant}: which version of a console its photo shows; the
-// photo of that one is fetched (or kept one used) and answered as GET /console-photos/{id} does.
+// PUT /console-photos/{id}/variant {variant?, keepNames?}: which version of a console its photo
+// shows (and, unless its usual names are kept, what it's called); the photo of that one is fetched
+// (or a kept one used) and answered as GET /console-photos/{id} does.
 func handleConsolePhotoVariant(a *App, w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	var b struct {
-		Variant string `json:"variant"`
+		Variant   *string `json:"variant"`
+		KeepNames *bool   `json:"keepNames"`
 	}
-	if !consoleIDRe.MatchString(id) || readJSON(r, &b) != nil {
-		writeErr(w, 400, "Say {variant: <one of the console's versions>}.")
+	if !consoleIDRe.MatchString(id) || readJSON(r, &b) != nil || (b.Variant == nil && b.KeepNames == nil) || len(gamelogos.ConsolePhotoVariants(id)) == 0 {
+		writeErr(w, 400, "Say {variant: <one of the console's versions>}, or {keepNames: true or false}.")
 		return
 	}
-	found := false
-	for _, v := range gamelogos.ConsolePhotoVariants(id) {
-		found = found || v.ID == b.Variant
+	ctx := r.Context()
+	if b.Variant != nil {
+		found := false
+		for _, v := range gamelogos.ConsolePhotoVariants(id) {
+			found = found || v.ID == *b.Variant
+		}
+		if !found {
+			writeErr(w, 400, "This console has no version called that.")
+			return
+		}
+		chosen := map[string]string{}
+		_, _ = a.Config(ctx, cfgConsolePhotoVariants, &chosen)
+		chosen[id] = *b.Variant
+		if err := a.SetConfig(ctx, cfgConsolePhotoVariants, chosen); err != nil {
+			writeErr(w, 500, err.Error())
+			return
+		}
+		a.Log.InfoContext(ctx, "wittyplay: console photo version", "cat", "games", "console", id, "variant", *b.Variant, "by", who(r).User)
 	}
-	if !found {
-		writeErr(w, 400, "This console has no version called that.")
-		return
+	if b.KeepNames != nil {
+		kept := map[string]bool{}
+		_, _ = a.Config(ctx, cfgConsoleNamesKept, &kept)
+		if *b.KeepNames {
+			kept[id] = true
+		} else {
+			delete(kept, id)
+		}
+		if err := a.SetConfig(ctx, cfgConsoleNamesKept, kept); err != nil {
+			writeErr(w, 500, err.Error())
+			return
+		}
+		a.Log.InfoContext(ctx, "wittyplay: console names", "cat", "games", "console", id, "keepUsual", *b.KeepNames, "by", who(r).User)
 	}
-	chosen := map[string]string{}
-	_, _ = a.Config(r.Context(), cfgConsolePhotoVariants, &chosen)
-	chosen[id] = b.Variant
-	if err := a.SetConfig(r.Context(), cfgConsolePhotoVariants, chosen); err != nil {
-		writeErr(w, 500, err.Error())
-		return
-	}
-	a.Log.InfoContext(r.Context(), "wittyplay: console photo version", "cat", "games", "console", id, "variant", b.Variant, "by", who(r).User)
+	a.refreshConsoleNames(ctx)
 	handleConsolePhoto(a, w, r)
 }
 
