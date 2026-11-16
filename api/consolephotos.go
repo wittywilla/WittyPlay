@@ -270,7 +270,7 @@ func handleConsolePhoto(a *App, w http.ResponseWriter, r *http.Request) {
 	if cut {
 		changed = "background removed"
 	}
-	out := map[string]any{"imageUrl": gmBase + "/console-photos/" + id + "/image?v=" + strconv.FormatInt(f.At, 36) + "&cut=" + strconv.FormatBool(cut), "credit": f.Credit,
+	out := map[string]any{"imageUrl": gmBase + "/console-photos/" + id + "/image?v=" + strconv.FormatInt(f.At, 36) + "&cut=" + map[bool]string{true: cutoutVersion, false: "0"}[cut], "credit": f.Credit,
 		"license": f.License, "licenseUrl": f.LicenseURL, "pageUrl": f.PageURL, "source": "Wikimedia Commons", "changed": changed}
 	if v, ok := a.photoVariant(r.Context(), id); ok {
 		out["variant"], out["variants"] = v.ID, gamelogos.ConsolePhotoVariants(id)

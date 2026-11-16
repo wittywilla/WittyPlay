@@ -38,7 +38,7 @@ func TestConsolePhotoBackgroundRemoved(t *testing.T) {
 		t.Fatalf("opting in: %d %s", w.Code, w.Body)
 	}
 	w := callRaw(t, f.h, "GET", "/console-photos/snes", 3, false, nil)
-	if w.Code != 200 || !strings.Contains(w.Body.String(), `"changed":"background removed"`) || !strings.Contains(w.Body.String(), "cut=true") {
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"changed":"background removed"`) || !strings.Contains(w.Body.String(), "cut="+cutoutVersion) {
 		t.Fatalf("photo: %d %s", w.Code, w.Body)
 	}
 	corner := func() uint8 {
