@@ -16,6 +16,8 @@ import { playGamePath } from '../shell/playPaths'
 import { GameReviewBanner } from './GameReview'
 import { PlayTabsRow } from './PlayConsoles'
 import { RefreshLibraryDetails } from './games/RefreshDetails'
+import { TileSizeSwitch } from '../shell/GamePictureArt'
+import { LayoutSwitch } from '../shell/playPads'
 
 const ROW = 24
 const PAGE = 60
@@ -134,6 +136,9 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
         </label>
         {user?.isAdmin && <button type="button" className="wpl-btn" onClick={() => void scan()} disabled={scanning}><IconRefresh /> {scanning ? 'Looking…' : 'Scan'}</button>}
         {user?.isAdmin && !consoleId && <RefreshLibraryDetails libraryId={lib.id} className="wpl-btn" />}
+        {/* The tab row, with the size and layout switches at its end, is only on the top page: a console's games and a search
+            have the switches here instead. */}
+        {(consoleId || q) && <div className="wplay-switches wpl-switches"><TileSizeSwitch /><LayoutSwitch only={['grid', 'list']} /></div>}
       </header>
       {user?.isAdmin && <div className="wpl-review"><GameReviewBanner libraryId={lib.id} consoles={consoles || []} version={version} onChanged={() => setVersion((v) => v + 1)} /></div>}
       {q || consoleId

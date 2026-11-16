@@ -5,7 +5,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## 0.7.3
 
-- **All games follows the layout switch** (#59): Grid lays each console's games out as a grid and List as a list, as on Recent; a console's All and search follow List too. Each console's shelf runs to the edge of the screen, so its pictures slide off the edge instead of being cut inside the page's margin.
+- **All games follows the layout switch** (#59): Grid lays each console's games out as a grid and List as a list, as on Recent. A console's games (from Consoles or All) and a search have the size and layout switches too, with Grid and List. Each console's shelf runs to the edge of the screen, so its pictures slide off the edge instead of being cut inside the page's margin.
 - Tests: the emulator tests check Unix file modes only where there are any, so they pass on Windows (#48).
 
 ## 0.7.2

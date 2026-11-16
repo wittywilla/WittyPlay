@@ -663,6 +663,7 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wplay-size-switch button[aria-pressed="true"] { background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
 .wplay-size-switch button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wplay-switches { flex: none; display: inline-flex; align-items: center; gap: 10px; }
+.wpl-head > .wpl-switches { margin-inline-start: auto; }
 /* The game page's cards keep their contents their own size, however tall the row makes the card: buttons stay buttons, a console's
    button names stay a row of chips. */
 .wpg .gm-panel, .wpg-card { align-content: start; }
