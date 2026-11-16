@@ -11,7 +11,7 @@ import type { GameConsole } from '../gameTypes'
 import { IconLeft, IconRefresh, IconSearch } from '@wms/app/icons'
 import { useApp } from '@wms/app/state'
 import { Spinner } from '@wms/app/ui/Surface'
-import { GameArtContext } from '@wms/app/sdui/render/glyphs'
+import { GameArtContext, RowLayoutContext } from '@wms/app/sdui/render/glyphs'
 import { playGamePath } from '../shell/playPaths'
 import { GameReviewBanner } from './GameReview'
 import { PlayTabsRow } from './PlayConsoles'
@@ -33,8 +33,9 @@ function GameTile({ it, short }: { it: Item; short: string }) {
   )
 }
 
-// A console's row: its games sideways, and All for the rest.
+// A console's row: its games sideways (or as a grid or a list, as the layout switch says), and All for the rest.
 function ConsoleRow({ lib, c }: { lib: Library; c: GameConsole }) {
+  const layout = useContext(RowLayoutContext)
   const [items, setItems] = useState<Item[] | null>(null)
   const [, setParams] = useSearchParams()
   useEffect(() => {
@@ -51,7 +52,7 @@ function ConsoleRow({ lib, c }: { lib: Library; c: GameConsole }) {
         <button type="button" className="wpl-all" onClick={() => setParams({ console: c.id })}>All</button>
       </div>
       {items === null ? <div className="wpl-wait"><Spinner /></div> : (
-        <div className="wpl-line" data-nav-group data-nav-entry=":scope > :first-child">
+        <div className={'wpl-line layout-' + layout} data-nav-group data-nav-entry=":scope > :first-child">
           {items.map((it) => <GameTile key={it.id} it={it} short={c.short} />)}
         </div>
       )}
@@ -59,8 +60,9 @@ function ConsoleRow({ lib, c }: { lib: Library; c: GameConsole }) {
   )
 }
 
-// Every game of a console, or every game a search finds: a grid, more as it scrolls.
+// Every game of a console, or every game a search finds: a grid (a list with the List layout), more as it scrolls.
 function GameGrid({ lib, consoleId, query, short }: { lib: Library; consoleId: string; query: string; short: string }) {
+  const layout = useContext(RowLayoutContext)
   const [items, setItems] = useState<Item[]>([])
   const [total, setTotal] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
@@ -84,7 +86,7 @@ function GameGrid({ lib, consoleId, query, short }: { lib: Library; consoleId: s
   return (
     <>
       {total !== null && <p className="wpl-found" role="status">{total.toLocaleString()} {total === 1 ? 'game' : 'games'}</p>}
-      <div className="wpl-grid" data-nav-group data-nav-entry=":scope > :first-child">
+      <div className={'wpl-grid layout-' + layout} data-nav-group data-nav-entry=":scope > :first-child">
         {items.map((it) => <GameTile key={it.id} it={it} short={short} />)}
       </div>
       <div ref={end} aria-hidden="true" />

@@ -621,6 +621,15 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wpl-line::-webkit-scrollbar { display: none; }
 .wpl-line > .wpl-game { flex: none; inline-size: calc(clamp(140px, 13vw, 240px) * var(--wp-scale, 1)); scroll-snap-align: start; }
 .wpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(150px, 14vw, 260px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, 1.6vw, 28px); padding: 12px; margin-inline: -12px; }
+/* A shelf runs to the edge of the screen, so a game slides off the edge instead of being cut inside the page's margin. */
+.wpl-line.layout-shelf { margin-inline: calc(-1 * var(--wp-gutter)); padding-inline: var(--wp-gutter); scroll-padding-inline: var(--wp-gutter); }
+/* All games follows the layout switch, as Recent does: Grid wraps each console's games, List lays every game out on a line of its own. */
+.wpl-line.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(150px, 14vw, 260px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, 1.6vw, 28px); overflow: visible; scroll-snap-type: none; }
+.wpl :is(.wpl-line, .wpl-grid).layout-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; overflow: visible; scroll-snap-type: none; }
+.wpl :is(.wpl-line.layout-grid, .wpl-line.layout-list, .wpl-grid.layout-list) > .wpl-game { inline-size: auto; }
+.wpl :is(.wpl-line, .wpl-grid).layout-list > .wpl-game { grid-template-columns: calc(clamp(52px, 4.4vw, 80px) * var(--wp-scale, 1)) minmax(0, 1fr); grid-template-rows: auto; align-items: center; column-gap: var(--sp-4); padding: 8px 14px 8px 8px; border-radius: 14px; background: var(--wp-chip); }
+.wpl .layout-list .wpl-game-name { text-align: start; min-block-size: 0; }
+.wpl .layout-list > .wpl-game:hover, .wpl .layout-list > .wpl-game:focus-visible { transform: none; }
 .wpl-game { display: grid; grid-template-rows: auto auto; align-content: start; align-self: start; gap: 8px; color: var(--fg); text-decoration: none; border-radius: 14px; transition: transform var(--dur-2) var(--ease-out); }
 .wpl-game:hover, .wpl-game:focus-visible { transform: translateY(-3px); }
 .wpl-game-art { position: relative; display: grid; place-items: center; inline-size: 100%; aspect-ratio: 1 / 1; border-radius: 12px; overflow: visible; }
