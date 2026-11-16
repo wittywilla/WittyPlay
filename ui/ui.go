@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 WittyWilla and contributors
 
-// Package ui is WittyPlay's server-driven UI (module API 4): what it adds to every app, as data
+// Package ui is WittyPlay's server-driven UI (module API 5): what it adds to every app, as data
 // the server checks, merges and renders (WittyMediaServer docs/SDUI-MODULES.md). sdui.json at
 // the repository's root is written from UI and held equal to it by a test.
 //
