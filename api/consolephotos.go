@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,15 +28,24 @@ import (
 // sources). Turning them off deletes every photo kept. With none, the app draws the console's own
 // mark.
 //
-// GET /console-photos/{id}        → {imageUrl, credit, license, licenseUrl, pageUrl, source}, or 404
+// A photo's plain background (most are shot on white) is taken away, once, when it's first shown
+// (gamelogos.CutOut, kept beside it as <id>.cut.png), unless an administrator turned that off; the
+// credit then says "background removed", as the licences ask for changes to be noted.
+//
+// GET /console-photos/{id}        → {imageUrl, credit, license, licenseUrl, pageUrl, source, changed}, or 404
 // GET /console-photos/{id}/image  → the picture
-// GET /games/console-photos       → {enabled, notice, agreedAt}
-// PUT /games/console-photos       {enabled} → the same (administrators)
+// GET /games/console-photos       → {enabled, cutout, notice, agreedAt}
+// PUT /console-photos/{id}/variant {variant} → the photo, of that version (administrators)
+//
+// A console sold in another shape elsewhere (an NES and a Famicom) has versions to choose from
+// (gamelogos.ConsolePhotoVariants); the photo answers say which there are and which is shown.
+// PUT /games/console-photos       {enabled?, cutout?} → the same (administrators)
 
 func init() {
 	addRoutes(func(mux *http.ServeMux, w with) {
 		mux.Handle("GET /console-photos/{id}", w(handleConsolePhoto))
 		mux.Handle("GET /console-photos/{id}/image", w(handleConsolePhotoImage))
+		mux.Handle("PUT /console-photos/{id}/variant", w(adminRoute(handleConsolePhotoVariant)))
 		mux.Handle("GET /games/console-photos", w(handleConsolePhotos))
 		mux.Handle("PUT /games/console-photos", w(adminRoute(handleConsolePhotosPut)))
 	})
@@ -46,11 +57,15 @@ const (
 	cfgConsolePhotos     = "consolePhotos"
 	cfgConsolePhotosAt   = "consolePhotosAt"
 	consolePhotosVersion = "1"
+	// cfgConsolePhotoCutout is "0" when an administrator wants the photos as they were downloaded.
+	cfgConsolePhotoCutout = "consolePhotoCutout"
+	// cfgConsolePhotoVariants is each console's chosen version, by console id.
+	cfgConsolePhotoVariants = "consolePhotoVariants"
 )
 
 // consolePhotoSource finds a console's picture; a fake in tests.
 type consolePhotoSource interface {
-	ConsolePhoto(ctx context.Context, console, name string) (gamelogos.LogoCandidate, error)
+	ConsolePhoto(ctx context.Context, console, name, variant string) (gamelogos.LogoCandidate, error)
 	Fetch(ctx context.Context, c gamelogos.LogoCandidate) ([]byte, error)
 }
 
@@ -79,6 +94,50 @@ func (a *App) consolePhotoPath(id string) string {
 	return filepath.Join(a.Dir, "console-photos", id+".img")
 }
 
+// cutoutOn says whether a console photo's plain background is taken away (on unless turned off).
+func (a *App) cutoutOn(ctx context.Context) bool {
+	var v string
+	ok, err := a.Config(ctx, cfgConsolePhotoCutout, &v)
+	return !(ok && err == nil && v == "0")
+}
+
+// cutPhoto is the file to serve for a console's photo with its background taken away, made the
+// first time it's asked for and kept beside the photo; or the photo itself, and false, when it has
+// no plain background to take. Either answer is kept until the photo is downloaded again.
+func (a *App) cutPhoto(id string) (string, bool) {
+	src := a.consolePhotoPath(id)
+	si, err := os.Stat(src)
+	if err != nil {
+		return src, false
+	}
+	cut := filepath.Join(a.Dir, "console-photos", id+".cut.png")
+	none := filepath.Join(a.Dir, "console-photos", id+".cut.none")
+	fresh := func(p string) bool { fi, err := os.Stat(p); return err == nil && !fi.ModTime().Before(si.ModTime()) }
+	m, _ := consolePhotoBusy.LoadOrStore("cut:"+id, &sync.Mutex{})
+	mu := m.(*sync.Mutex)
+	mu.Lock()
+	defer mu.Unlock()
+	if fresh(cut) {
+		return cut, true
+	}
+	if fresh(none) {
+		return src, false
+	}
+	body, err := os.ReadFile(src)
+	if err != nil {
+		return src, false
+	}
+	out, ok, err := gamelogos.CutOut(body)
+	if err != nil || !ok {
+		_ = writeFileAtomic(none, []byte{})
+		return src, false
+	}
+	if writeFileAtomic(cut, out) != nil {
+		return src, false
+	}
+	return cut, true
+}
+
 // consolePhotosOn says an administrator opted in to console photos.
 func (a *App) consolePhotosOn(ctx context.Context) bool {
 	var v string
@@ -91,8 +150,24 @@ func (a *App) consolePhotoAllowed(ctx context.Context) bool {
 	return a.consolePhotosOn(ctx) && a.wikidataOn(ctx)
 }
 
+// photoVariant is the version of a console whose photo is shown, and whether it has versions.
+func (a *App) photoVariant(ctx context.Context, id string) (gamelogos.PhotoVariant, bool) {
+	chosen := map[string]string{}
+	_, _ = a.Config(ctx, cfgConsolePhotoVariants, &chosen)
+	return gamelogos.PhotoVariantOf(id, chosen[id])
+}
+
+// sameFile says two Commons file names are the same file (spaces and underscores are alike).
+func sameFile(a, b string) bool {
+	n := func(s string) string {
+		return strings.ToLower(strings.ReplaceAll(strings.TrimPrefix(s, "File:"), "_", " "))
+	}
+	return n(a) == n(b)
+}
+
 // consolePhoto is the console's picture's facts, asking Commons when there are none yet (and it
-// may), or ok false for none. Off, there are none.
+// may), or ok false for none. Off, there are none. A photo kept of another version than the one
+// chosen is fetched again.
 func (a *App) consolePhoto(ctx context.Context, id string) (consolePhotoFacts, bool) {
 	if !a.consolePhotosOn(ctx) {
 		return consolePhotoFacts{}, false
@@ -102,10 +177,11 @@ func (a *App) consolePhoto(ctx context.Context, id string) (consolePhotoFacts, b
 	mu.Lock()
 	defer mu.Unlock()
 	facts, kept := a.readConsolePhoto(ctx, id)
-	if kept && !facts.None {
+	v, versions := a.photoVariant(ctx, id)
+	if kept && !facts.None && (!versions || sameFile(facts.File, v.File)) {
 		return facts, true
 	}
-	if kept && facts.None && time.Since(time.Unix(facts.At, 0)) < consolePhotoRetry {
+	if kept && facts.None && (!versions || sameFile(facts.File, v.File)) && time.Since(time.Unix(facts.At, 0)) < consolePhotoRetry {
 		return facts, false
 	}
 	if !a.consolePhotoAllowed(ctx) {
@@ -114,9 +190,9 @@ func (a *App) consolePhoto(ctx context.Context, id string) (consolePhotoFacts, b
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	src := photoSource()
-	c, err := src.ConsolePhoto(ctx, id, consoleLogoNameOf(id))
+	c, err := src.ConsolePhoto(ctx, id, consoleLogoNameOf(id), v.ID)
 	if errors.Is(err, gamelogos.ErrNoPhoto) {
-		_ = a.writeConsolePhoto(ctx, id, consolePhotoFacts{None: true, At: time.Now().Unix()}, nil)
+		_ = a.writeConsolePhoto(ctx, id, consolePhotoFacts{None: true, At: time.Now().Unix(), File: v.File}, nil)
 		return consolePhotoFacts{}, false
 	}
 	if err != nil {
@@ -182,8 +258,50 @@ func handleConsolePhoto(a *App, w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 404, "no picture of this console")
 		return
 	}
-	writeJSON(w, 200, map[string]any{"imageUrl": gmBase + "/console-photos/" + id + "/image?v=" + time.Unix(f.At, 0).UTC().Format("20060102"), "credit": f.Credit,
-		"license": f.License, "licenseUrl": f.LicenseURL, "pageUrl": f.PageURL, "source": "Wikimedia Commons"})
+	cut := false
+	if a.cutoutOn(r.Context()) {
+		_, cut = a.cutPhoto(id)
+	}
+	changed := ""
+	if cut {
+		changed = "background removed"
+	}
+	out := map[string]any{"imageUrl": gmBase + "/console-photos/" + id + "/image?v=" + strconv.FormatInt(f.At, 36) + "&cut=" + strconv.FormatBool(cut), "credit": f.Credit,
+		"license": f.License, "licenseUrl": f.LicenseURL, "pageUrl": f.PageURL, "source": "Wikimedia Commons", "changed": changed}
+	if v, ok := a.photoVariant(r.Context(), id); ok {
+		out["variant"], out["variants"] = v.ID, gamelogos.ConsolePhotoVariants(id)
+	}
+	writeJSON(w, 200, out)
+}
+
+// PUT /console-photos/{id}/variant {variant}: which version of a console its photo shows; the
+// photo of that one is fetched (or kept one used) and answered as GET /console-photos/{id} does.
+func handleConsolePhotoVariant(a *App, w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var b struct {
+		Variant string `json:"variant"`
+	}
+	if !consoleIDRe.MatchString(id) || readJSON(r, &b) != nil {
+		writeErr(w, 400, "Say {variant: <one of the console's versions>}.")
+		return
+	}
+	found := false
+	for _, v := range gamelogos.ConsolePhotoVariants(id) {
+		found = found || v.ID == b.Variant
+	}
+	if !found {
+		writeErr(w, 400, "This console has no version called that.")
+		return
+	}
+	chosen := map[string]string{}
+	_, _ = a.Config(r.Context(), cfgConsolePhotoVariants, &chosen)
+	chosen[id] = b.Variant
+	if err := a.SetConfig(r.Context(), cfgConsolePhotoVariants, chosen); err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	a.Log.InfoContext(r.Context(), "wittyplay: console photo version", "cat", "games", "console", id, "variant", b.Variant, "by", who(r).User)
+	handleConsolePhoto(a, w, r)
 }
 
 func handleConsolePhotoImage(a *App, w http.ResponseWriter, r *http.Request) {
@@ -196,7 +314,11 @@ func handleConsolePhotoImage(a *App, w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 404, "no picture of this console")
 		return
 	}
-	servePicture(w, a.consolePhotoPath(id), "private, max-age=604800")
+	file := a.consolePhotoPath(id)
+	if a.cutoutOn(r.Context()) {
+		file, _ = a.cutPhoto(id)
+	}
+	servePicture(w, file, "private, max-age=604800")
 }
 
 // forgetConsolePhotos deletes every console photo kept, and what was kept about them.
@@ -218,7 +340,7 @@ func (a *App) forgetConsolePhotos(ctx context.Context) (int, error) {
 func (a *App) consolePhotosState(ctx context.Context) map[string]any {
 	var at int64
 	_, _ = a.Config(ctx, cfgConsolePhotosAt, &at)
-	return map[string]any{"enabled": a.consolePhotosOn(ctx), "notice": ui.ConsolePhotoNotice, "source": "Wikimedia Commons", "changedAt": at,
+	return map[string]any{"enabled": a.consolePhotosOn(ctx), "cutout": a.cutoutOn(ctx), "notice": ui.ConsolePhotoNotice, "source": "Wikimedia Commons", "changedAt": at,
 		"wikidata": a.wikidataOn(ctx)}
 }
 
@@ -249,18 +371,33 @@ func (a *App) setConsolePhotos(ctx context.Context, on bool, by int64) error {
 	return nil
 }
 
-// PUT /games/console-photos {enabled}: the administrator's opt-in, having been shown the notice.
+// PUT /games/console-photos {enabled?, cutout?}: the administrator's opt-in, having been shown the
+// notice, and whether the photos' plain backgrounds are taken away.
 func handleConsolePhotosPut(a *App, w http.ResponseWriter, r *http.Request) {
 	var b struct {
 		Enabled *bool `json:"enabled"`
+		Cutout  *bool `json:"cutout"`
 	}
-	if err := readJSON(r, &b); err != nil || b.Enabled == nil {
-		writeErr(w, 400, "Say {enabled: true} or {enabled: false}.")
+	if err := readJSON(r, &b); err != nil || (b.Enabled == nil && b.Cutout == nil) {
+		writeErr(w, 400, "Say {enabled: true} or {enabled: false}, or {cutout: true} or {cutout: false}.")
 		return
 	}
-	if err := a.setConsolePhotos(r.Context(), *b.Enabled, who(r).User); err != nil {
-		writeErr(w, 500, err.Error())
-		return
+	if b.Cutout != nil {
+		v := "1"
+		if !*b.Cutout {
+			v = "0"
+		}
+		if err := a.SetConfig(r.Context(), cfgConsolePhotoCutout, v); err != nil {
+			writeErr(w, 500, err.Error())
+			return
+		}
+		a.Log.InfoContext(r.Context(), "wittyplay: console photo backgrounds", "cat", "games", "removed", *b.Cutout, "by", who(r).User)
+	}
+	if b.Enabled != nil {
+		if err := a.setConsolePhotos(r.Context(), *b.Enabled, who(r).User); err != nil {
+			writeErr(w, 500, err.Error())
+			return
+		}
 	}
 	writeJSON(w, 200, a.consolePhotosState(r.Context()))
 }

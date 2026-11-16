@@ -290,6 +290,8 @@ html[data-wplay] body { font-family: var(--font); }
 }
 .wplay-tabs-row .tabs > a.active::after { content: ""; position: absolute; inset-inline: 0; inset-block-end: -6px; block-size: 4px; border-radius: 2px; background: var(--accent); }
 .wplay-tabs-row .tabs > a:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 6px; }
+.wplay-photo-versions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-block: 4px 12px; color: var(--fg-2); font-size: var(--text-sm); }
+.wplay-photo-versions .wplay-layout-switch button { inline-size: auto; padding-inline: 14px; font-weight: 700; color: var(--fg); }
 .wplay-layout-switch { flex: none; display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--r-full); background: var(--wp-chip); }
 .wplay-layout-switch button { display: grid; place-items: center; inline-size: 44px; block-size: 40px; border: 0; border-radius: var(--r-full); background: none; color: var(--fg-2); cursor: pointer; }
 .wplay-layout-switch button:hover { color: var(--fg); background: var(--wp-chip); }

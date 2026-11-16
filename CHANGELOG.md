@@ -5,6 +5,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## 0.7.3
 
+- **Console photos without their white box** (#61): a photo's plain background (most are shot on white) is taken away, once, when it's first shown, and kept beside it (`gamelogos.CutOut`: it fills inward from the edge through the edge's colour only, with a soft edge and the background's colour taken out of it, and leaves a photo whose edge isn't one plain colour as it is). On to begin with; Settings, Console photos has **Remove plain backgrounds** to turn it off. The credit says "background removed".
+- **A console's version, for its photo** (#61): the NES or the Famicom, the SNES or the Super Famicom, the Genesis or the Mega Drive (Europe or Japan), the PC Engine or the TurboGrafx-16, each its own free photo on Commons. The first is shown to begin with; an administrator chooses under the photo on the Consoles tab (`PUT /console-photos/{id}/variant`), and that version's photo is fetched instead.
 - Tests: the emulator tests check Unix file modes only where there are any, so they pass on Windows (#48).
 
 ## 0.7.2

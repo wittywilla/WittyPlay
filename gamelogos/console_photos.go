@@ -24,15 +24,64 @@ var consoleWikidata = map[string]string{
 	"a2600": "Q206261", "lynx": "Q753600", "pce": "Q1057377",
 }
 
+// PhotoVariant is one of the versions of a console sold under another name or shape in another
+// part of the world (an NES and a Famicom), with the Commons photo of that one. A console with
+// versions shows the one an administrator chose for its library, the first to begin with.
+type PhotoVariant struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+	File  string `json:"-"`
+}
+
+// consolePhotoVariants are the consoles whose versions look different enough to choose between.
+// Each file is a free photo on Commons (checked 2026-11-16: all public domain, by Evan-Amos).
+var consolePhotoVariants = map[string][]PhotoVariant{
+	"nes":  {{"nes", "NES", "NES-Console-Set.jpg"}, {"famicom", "Famicom", "Nintendo-Famicom-Console-Set-FL.jpg"}},
+	"snes": {{"snes", "SNES", "SNES-Mod1-Console-Set.jpg"}, {"superfamicom", "Super Famicom", "Nintendo-Super-Famicom-Set-FL.jpg"}},
+	"md": {{"genesis", "Genesis", "Sega-Genesis-Mod1-Set.jpg"}, {"megadrive", "Mega Drive", "Sega-Mega-Drive-EU-Mk1-wController-FL.jpg"},
+		{"megadrivejp", "Mega Drive (Japan)", "Sega-Mega-Drive-JP-Mk1-Console-Set.jpg"}},
+	"pce": {{"pcengine", "PC Engine", "PC-Engine-Console-Set.png"}, {"turbografx", "TurboGrafx-16", "TurboGrafx16-Console-Set.png"}},
+}
+
+// ConsolePhotoVariants are a console's versions to choose a photo from, or none.
+func ConsolePhotoVariants(console string) []PhotoVariant { return consolePhotoVariants[console] }
+
+// PhotoVariantOf is the version with that id, or the console's first; ok false for a console
+// with no versions.
+func PhotoVariantOf(console, id string) (PhotoVariant, bool) {
+	vs := consolePhotoVariants[console]
+	if len(vs) == 0 {
+		return PhotoVariant{}, false
+	}
+	for _, v := range vs {
+		if v.ID == id {
+			return v, true
+		}
+	}
+	return vs[0], true
+}
+
 // ConsoleWikidataID is a console's Wikidata entity, or "".
 func ConsoleWikidataID(console string) string { return consoleWikidata[console] }
 
 // ErrNoPhoto: Commons has no picture of the console that may be used.
 var ErrNoPhoto = errors.New("no free picture of this console")
 
-// ConsolePhoto finds the picture of a console: its Wikidata entity's image, with Commons' licence and author. name is used
-// to search when the console has no entity in the table.
-func (w *WikimediaLogos) ConsolePhoto(ctx context.Context, console, name string) (LogoCandidate, error) {
+// ConsolePhoto finds the picture of a console: for a console with versions, the chosen version's
+// own photo (variant, or its first); otherwise its Wikidata entity's image. Either way with
+// Commons' licence and author. name is used to search when the console has no entity in the table.
+func (w *WikimediaLogos) ConsolePhoto(ctx context.Context, console, name, variant string) (LogoCandidate, error) {
+	if v, ok := PhotoVariantOf(console, variant); ok {
+		info, err := w.fileInfo(ctx, []string{"File:" + v.File})
+		if err != nil {
+			return LogoCandidate{}, err
+		}
+		if c, ok := info[normalFileTitle("File:"+v.File)]; ok {
+			c.Name, c.Exact = v.Label, true
+			return c, nil
+		}
+		return LogoCandidate{}, ErrNoPhoto
+	}
 	apiBase := w.WikidataAPI
 	if apiBase == "" {
 		apiBase = wikidataAPI
