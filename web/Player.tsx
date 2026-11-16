@@ -715,7 +715,9 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
   // A console's touch screen: a press on the picture is the stylus, wherever it
   // came from. Positions are fractions of the picture, which is all the server wants.
   const hasPointer = !!controls.pad?.pointer
-  const onPoint = useCallback((clientX: number, clientY: number, phase: 'down' | 'move' | 'up') => {
+  // An aimed pointer (a Wii Remote's) follows the mouse even with no button down; a stylus only draws while pressed.
+  const aimed = !!controls.pad?.aim
+  const onPoint = useCallback((clientX: number, clientY: number, phase: 'down' | 'move' | 'up' | 'hover') => {
     const r = pic.current?.getBoundingClientRect()
     if (!r || r.width === 0 || r.height === 0) return
     // The rectangle already holds the turned shape; undo the turn to reach the game's own axes.
@@ -724,7 +726,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     if (quarter === 1) [x, y] = [y, 1 - x]
     else if (quarter === 2) [x, y] = [1 - x, 1 - y]
     else if (quarter === 3) [x, y] = [1 - y, x]
-    input.setPointer(x, y, phase !== 'up')
+    input.setPointer(x, y, phase === 'down' || phase === 'move')
   }, [input])
   const stylusDown = useRef(false)
   const stageDown = (e: React.PointerEvent) => {
@@ -734,7 +736,10 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     stylusDown.current = true
     onPoint(e.clientX, e.clientY, 'down')
   }
-  const stageMove = (e: React.PointerEvent) => { if (stylusDown.current) onPoint(e.clientX, e.clientY, 'move') }
+  const stageMove = (e: React.PointerEvent) => {
+    if (stylusDown.current) onPoint(e.clientX, e.clientY, 'move')
+    else if (aimed && !paused && e.pointerType === 'mouse') onPoint(e.clientX, e.clientY, 'hover')
+  }
   const stageUp = (e: React.PointerEvent) => { if (stylusDown.current) { stylusDown.current = false; onPoint(e.clientX, e.clientY, 'up') } }
 
   // With a controller in hand, touch controls get out of the way unless asked for.

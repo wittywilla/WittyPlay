@@ -88,6 +88,8 @@ export class InputManager {
   private remoteOf = new Map<string, number>()
   private tv = onTV()
   private pulseMask = 0
+  // A pressed aimed pointer (a Wii Remote's) is also this button, held while it is: pointing and clicking chooses.
+  private aimMask = 0
   private held = new Set<number>() // keyboard
   private touchMask = 0
   private touchX = 0
@@ -181,6 +183,11 @@ export class InputManager {
     view.setInt16(4, at(y), true)
     this.pointRepeats = 4
     this.send(this.point)
+    const press = this.controls.pad.aimPress
+    if (this.controls.pad.aim && press !== undefined) {
+      const mask = pressed ? 1 << press : 0
+      if (mask !== this.aimMask) { this.aimMask = mask; this.flush() }
+    }
   }
 
   private beatPointer() {
@@ -193,7 +200,7 @@ export class InputManager {
   setEnabled(on: boolean) {
     if (this.enabled === on) return
     this.enabled = on
-    if (!on) { this.held.clear(); this.touchMask = 0; this.touchX = 0; this.touchY = 0; this.stopRumble(); if (this.point[1]) { this.point[1] = 0; this.pointRepeats = 4; this.send(this.point) } }
+    if (!on) { this.held.clear(); this.touchMask = 0; this.aimMask = 0; this.touchX = 0; this.touchY = 0; this.stopRumble(); if (this.point[1]) { this.point[1] = 0; this.pointRepeats = 4; this.send(this.point) } }
     this.flush(true)
   }
 
@@ -480,6 +487,7 @@ export class InputManager {
       if (this.keyboardTurbo && Math.floor((performance.now() * this.keyboardHz * 2) / 1000) % 2) b[this.keyboardPort] &= ~this.keyboardTurbo
       for (let id = 0; id < TARGETS; id++) if (this.touchMask & (1 << id)) this.press(this.touchPort, id)
       for (let id = 0; id < TARGETS; id++) if (this.pulseMask & (1 << id)) this.press(0, id)
+      for (let id = 0; id < TARGETS; id++) if (this.aimMask & (1 << id)) this.press(0, id)
       if (this.touchX || this.touchY) { a[this.touchPort * 4] = this.touchX; a[this.touchPort * 4 + 1] = this.touchY }
       for (const s of this.slots.values()) {
         const r = s.reading, n = s.port * 4

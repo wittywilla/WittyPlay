@@ -16,7 +16,8 @@ export type Placement = { x: number; y: number; size: number; opacity: number; h
 export type Layout = Record<string, Placement>
 export type Orientation = 'landscape' | 'portrait'
 export type Background = { version: number; fit: 'cover' | 'contain'; x: number; y: number; dim: number }
-export type PadShape = { art: string; sticks?: boolean; stickFirst?: boolean; pointer?: boolean } // pointer: the console has a touch screen
+// pointer: the console has a touch screen, or (aim) a pointer aimed as a Wii Remote is, whose press is also aimPress
+export type PadShape = { art: string; sticks?: boolean; stickFirst?: boolean; pointer?: boolean; aim?: boolean; aimPress?: number }
 
 export type ControlsData = {
   console: string

@@ -152,7 +152,11 @@ var traits = map[string]CoreTraits{
 			"dolphin_log_boot_enabled": "disabled", "dolphin_log_core_enabled": "disabled", "dolphin_log_video_enabled": "disabled", "dolphin_log_common_enabled": "disabled",
 			// Its on-screen messages are for someone at the machine: here they'd sit over a
 			// player's picture, warning about the server's graphics driver.
-			"dolphin_osd_enabled": "disabled"},
+			"dolphin_osd_enabled": "disabled",
+			// The Wii Remote points where the player's mouse or finger is: the runner gives the core
+			// the browser's pointer (a libretro pointer device), which it reads only in this mode.
+			// Its default takes the pointer from the right stick.
+			"dolphin_ir_mode": "Mouse controls pointer"},
 		Resolution: pick("dolphin_efb_scale", "1", "2", "3", "4")},
 }
 
