@@ -339,7 +339,8 @@ html[data-wplay] body { font-family: var(--font); }
 }
 
 /* ---- the Consoles tab: a grid of console buttons, and the chosen one shown off in a panel at the side (a sheet on a phone) ---- */
-.wplay-consoles-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem); gap: clamp(16px, 2vw, 40px); align-items: start; padding-block-end: calc(var(--wp-dock) + 80px); }
+/* Room under the tab row and its switches, so the console panel (and the list's heading level with it) doesn't touch them. */
+.wplay-consoles-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem); gap: clamp(16px, 2vw, 40px); align-items: start; margin-block-start: clamp(14px, 1.6vw, 28px); padding-block-end: calc(var(--wp-dock) + 80px); }
 .wplay-consoles.phone .wplay-consoles-body { grid-template-columns: minmax(0, 1fr); }
 .wplay-consoles-h { margin: 0 0 var(--sp-3); font-size: clamp(1.1rem, 1.5vw, 1.75rem); font-weight: 800; color: var(--fg-2); }
 .wplay-console-grid { list-style: none; margin: 0; padding: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(150px, 12vw, 230px), 1fr)); gap: clamp(10px, 1.2vw, 22px); }
