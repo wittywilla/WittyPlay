@@ -10,7 +10,7 @@ require (
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
 	github.com/nwaples/rardecode/v2 v2.4.5
-	github.com/pion/ice/v4 v4.4.8
+	github.com/pion/ice/v4 v4.4.9
 	github.com/pion/interceptor v0.1.51
 	github.com/pion/rtcp v1.2.20
 	github.com/pion/rtp v1.10.6
