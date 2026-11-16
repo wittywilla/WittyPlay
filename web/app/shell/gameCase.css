@@ -157,4 +157,4 @@
 .wplay .sdui-shelf.layout-grid .card .poster:has(> .gcase-fit) { aspect-ratio: 4 / 5; background: none; box-shadow: none; overflow: visible; }
 .wplay .sdui-shelf.layout-grid .card .poster > .gcase-fit { inset: 2%; }
 .wplay .sdui .sdui-shelf.layout-grid .sdui-item .card:has(.gcase-fit) .title, .wplay .sdui .sdui-shelf.layout-grid.focus-grow.has-detail .sdui-item.grown .card:has(.gcase-fit) .title { inset: auto; position: static; display: -webkit-box; margin-block-start: 8px; padding: 0 4px; color: var(--fg); text-shadow: none; text-align: center; }
-.wplay .sdui-shelf.layout-grid .sdui-item.grown .card .poster:has(> .gcase-fit) { box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px #fff; border-radius: 14px; }
+.wplay .sdui-shelf.layout-grid .sdui-item.grown .card .poster:has(> .gcase-fit) { box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; border-radius: 14px; }

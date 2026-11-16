@@ -4,14 +4,15 @@
 // their case or cartridge, or their box art, as chosen in Game pictures). Search finds any of them; a console's All shows every one of its
 // games as a grid; each game opens its own page. What a scan wasn't sure about ("files need a look") is offered at the top, to an admin.
 // Built for a controller first: every row is a line a d-pad walks, entered at its first game.
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api, posterUrl, type Item, type Library } from '@wms/app/api'
 import type { GameConsole } from '../gameTypes'
 import { IconLeft, IconRefresh, IconSearch } from '@wms/app/icons'
 import { useApp } from '@wms/app/state'
 import { Spinner } from '@wms/app/ui/Surface'
-import { GameArtContext, RowLayoutContext } from '@wms/app/sdui/render/glyphs'
+import { GameArtContext, GlyphContext, RowLayoutContext } from '@wms/app/sdui/render/glyphs'
+import { useUserPref } from '@wms/app/ui/userPrefs'
 import { playGamePath } from '../shell/playPaths'
 import { GameReviewBanner } from './GameReview'
 import { PlayTabsRow } from './PlayConsoles'
@@ -22,13 +23,66 @@ import { LayoutSwitch } from '../shell/playPads'
 const ROW = 24
 const PAGE = 60
 
-// One game: drawn as WittyPlay draws it, its name under it, opening its page.
+// The details panel beside the games (a switch, per profile; on to begin with): the game pointed at or moved to, the way Recent's
+// grid and list show it. Under 760 pixels wide there's no room beside the games, so it's not drawn there.
+const PANEL_KEY = 'wittyplayLibraryPanel'
+type Shown = { it: Item; short: string }
+const PickContext = createContext<((s: Shown) => void) | null>(null)
+
+function usePanel(): [boolean, (on: boolean) => void] {
+  const [saved, save] = useUserPref<boolean | null>(PANEL_KEY, null)
+  return [saved !== false, (on) => { void save(on).catch(() => {}) }]
+}
+
+export function PanelSwitch() {
+  const [on, setOn] = usePanel()
+  return (
+    <div className="wplay-layout-switch wpl-panel-switch" role="group" aria-label="Details panel">
+      <button type="button" aria-pressed={on} aria-label="Details panel" title={on ? 'Hide the details panel' : 'Show the details panel'} onClick={() => setOn(!on)}>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><rect x="2" y="4" width="11" height="16" rx="1.5" opacity=".45" /><rect x="15" y="4" width="7" height="16" rx="1.5" /></svg>
+      </button>
+    </div>
+  )
+}
+
+// The panel: the game's cover, logo, title, Play and its page, then what's known of it (WittyPlay's bio, as on Recent).
+function GamePanel({ shown }: { shown: Shown | null }) {
+  const art = useContext(GameArtContext)
+  const glyph = useContext(GlyphContext)
+  if (!shown) return <aside className="sdui-detail wpl-panel" aria-live="polite"><p className="wpl-panel-empty">Point at a game, or move to one, to see it here.</p></aside>
+  const { it, short } = shown
+  const args = { itemId: String(it.id), console: short || it.console || '', image: it.poster ? posterUrl(it) : '', title: it.title }
+  const title = (
+    <>
+      <b className="sdui-detail-title">{it.title}</b>
+      {it.year ? <span className="sdui-detail-line">{it.year}</span> : null}
+    </>
+  )
+  const actions = (
+    <div className="sdui-detail-actrow" data-nav-group>
+      <div className="sdui-detail-actions">
+        <Link className="btn primary" to={`/game/${it.id}`}>{glyph?.('a')} Play</Link>
+        <Link className="btn" to={playGamePath(it.id)}>{glyph?.('y')} Details</Link>
+      </div>
+      {art?.detail?.(args)}
+    </div>
+  )
+  return (
+    <aside className={'sdui-detail wpl-panel' + (art?.bio ? ' has-bio' : '')} aria-live="polite" aria-label={`${it.title}: details`}>
+      {art?.bio ? art.bio({ ...args, top: art.cover?.(args), actions, children: title }) : <>{art?.cover?.(args)}{title}{actions}</>}
+    </aside>
+  )
+}
+
+// One game: drawn as WittyPlay draws it, its name under it, opening its page. Pointing at it or moving to it shows it in the panel.
 function GameTile({ it, short }: { it: Item; short: string }) {
   const art = useContext(GameArtContext)
+  const pick = useContext(PickContext)
   const image = it.poster ? posterUrl(it) : ''
   const drawn = art?.art({ itemId: String(it.id), console: short || it.console || '', image, title: it.title })
+  const show = pick ? () => pick({ it, short }) : undefined
   return (
-    <Link className="wpl-game" to={playGamePath(it.id)} aria-label={it.title + (it.year ? `, ${it.year}` : '')}>
+    <Link className="wpl-game" to={playGamePath(it.id)} aria-label={it.title + (it.year ? `, ${it.year}` : '')} onFocus={show} onPointerEnter={show}>
       <span className="wpl-game-art">{drawn ?? (image ? <img src={image} alt="" loading="lazy" /> : <span className="wpl-game-blank">{it.title}</span>)}</span>
       <span className="wpl-game-name">{it.title}</span>
     </Link>
@@ -122,6 +176,9 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
     window.setTimeout(() => { setScanning(false); setVersion((v) => v + 1) }, 4000)
   }
   const total = useMemo(() => (consoles || []).reduce((n, c) => n + (c.count || 0), 0), [consoles])
+  const [panel] = usePanel()
+  const [shown, setShown] = useState<Shown | null>(null)
+  useEffect(() => { setShown(null) }, [consoleId, q])
   const chosen = consoles?.find((c) => c.id === consoleId)
   return (
     <div className="wpl">
@@ -138,14 +195,21 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
         {user?.isAdmin && !consoleId && <RefreshLibraryDetails libraryId={lib.id} className="wpl-btn" />}
         {/* The tab row, with the size and layout switches at its end, is only on the top page: a console's games and a search
             have the switches here instead. */}
-        {(consoleId || q) && <div className="wplay-switches wpl-switches"><TileSizeSwitch /><LayoutSwitch only={['grid', 'list']} /></div>}
+        <div className="wplay-switches wpl-switches">{(consoleId || q) && <><TileSizeSwitch /><LayoutSwitch only={['grid', 'list']} /></>}<PanelSwitch /></div>
       </header>
       {user?.isAdmin && <div className="wpl-review"><GameReviewBanner libraryId={lib.id} consoles={consoles || []} version={version} onChanged={() => setVersion((v) => v + 1)} /></div>}
-      {q || consoleId
-        ? <GameGrid key={`${consoleId}|${q}`} lib={lib} consoleId={consoleId} query={q} short={chosen?.short || ''} />
-        : consoles === null ? <div className="wpl-wait"><Spinner /></div>
-          : consoles.length === 0 ? <p className="wpl-empty">No games found in this library yet. {user?.isAdmin ? 'Scan to look through its folders.' : ''}</p>
-            : consoles.map((c) => <ConsoleRow key={c.id} lib={lib} c={c} />)}
+      <PickContext.Provider value={panel ? setShown : null}>
+        <div className={'wpl-body' + (panel ? ' with-panel' : '')}>
+          <div className="wpl-games">
+            {q || consoleId
+              ? <GameGrid key={`${consoleId}|${q}`} lib={lib} consoleId={consoleId} query={q} short={chosen?.short || ''} />
+              : consoles === null ? <div className="wpl-wait"><Spinner /></div>
+                : consoles.length === 0 ? <p className="wpl-empty">No games found in this library yet. {user?.isAdmin ? 'Scan to look through its folders.' : ''}</p>
+                  : consoles.map((c) => <ConsoleRow key={c.id} lib={lib} c={c} />)}
+          </div>
+          {panel && <GamePanel shown={shown} />}
+        </div>
+      </PickContext.Provider>
     </div>
   )
 }
