@@ -140,10 +140,16 @@ func (a *App) ConsoleViews(ctx context.Context) []ConsoleView {
 			continue
 		}
 		v := ConsoleView{Console: shownConsole(c), Installed: []cores.Core{}, Pad: wittyplay.Pad(c.ID), LogoName: consoleLogoName(c)}
-		if vs := gamelogos.ConsolePhotoVariants(c.ID); len(vs) > 0 {
-			v.Also = append(v.Also, c.Short)
-			for _, x := range vs {
-				v.Also = append(v.Also, x.Short)
+		if vs := gamelogos.ConsolePhotoVariants(c.ID); len(vs) > 1 {
+			for _, n := range append([]string{c.Short}, func() (s []string) {
+				for _, x := range vs {
+					s = append(s, x.Short)
+				}
+				return
+			}()...) {
+				if n != "" && !slices.Contains(v.Also, n) {
+					v.Also = append(v.Also, n)
+				}
 			}
 		}
 		addTraits(&v)

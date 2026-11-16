@@ -38,7 +38,8 @@ type PhotoVariant struct {
 	Short string `json:"short"`
 }
 
-// consolePhotoVariants are the consoles whose versions look different enough to choose between.
+// consolePhotoVariants are the consoles whose versions look different enough to choose between,
+// and the consoles with one fixed photo.
 // Each file is a free photo on Commons (checked 2026-11-16: all public domain, by Evan-Amos).
 var consolePhotoVariants = map[string][]PhotoVariant{
 	"nes": {{"nes", "NES", "NES-Console-Set.jpg", "Nintendo Entertainment System", "NES"},
@@ -50,6 +51,13 @@ var consolePhotoVariants = map[string][]PhotoVariant{
 		{"megadrivejp", "Mega Drive (Japan)", "Sega-Mega-Drive-JP-Mk1-Console-Set.jpg", "Sega Mega Drive", "Mega Drive"}},
 	"pce": {{"pcengine", "PC Engine", "PC-Engine-Console-Set.png", "PC Engine", "PC Engine"},
 		{"turbografx", "TurboGrafx-16", "TurboGrafx16-Console-Set.png", "TurboGrafx-16", "TurboGrafx-16"}},
+	// One fixed photo, for a console whose Wikidata photo can't be cut out (the Wii's is a white
+	// console on white) or that has none to find (the Switches): no choice, and no renaming.
+	// Wii-Console.png is public domain (Evan-Amos), already see-through; the Switch's is public
+	// domain (Evan-Amos); the Switch 2's is CC0 (AOMAF2024), already see-through. Checked 2026-11-16.
+	"wii":     {{"wii", "Wii", "Wii-Console.png", "", ""}},
+	"switch":  {{"switch", "Switch", "Nintendo-Switch-Console-Docked-wJoyConRB.jpg", "", ""}},
+	"switch2": {{"switch2", "Switch 2", "Nintendo Switch 2 console in handheld mode.png", "", ""}},
 }
 
 // ConsolePhotoVariants are a console's versions to choose a photo from, or none.
