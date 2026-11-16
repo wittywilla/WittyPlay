@@ -2,6 +2,10 @@
 
 Plays console games from WittyMediaServer on any screen with a browser or a client app. You need it if you want a games library. Each game runs on the server, in its own sandboxed process, and its picture and sound stream to you.
 
+It's a module of [WittyMediaServer](https://github.com/wittywilla/WittyMediaServer) ([wittymediaserver.com](https://wittymediaserver.com)), which brings the games library; WittyPlay plays the games in it.
+
+> **Known issue: emulation isn't working with the 0.8.x server.** 0.8.0-alpha has a new streaming pipeline, made so games can stream to the new iOS and tvOS apps. Right now the new WittyMediaClient apps crash when a game is started, and in a browser a game keeps loading and never starts. The 0.6.x alpha servers still play games.
+
 <!-- pictures -->
 
 ![A library of open-licence homebrew games](docs/images/games.webp)
@@ -43,7 +47,7 @@ Plays console games from WittyMediaServer on any screen with a browser or a clie
 - **Sorts games into consoles** from their files, with the settings for each console and core as data.
 - **Refuses encrypted game files** with a clear message, such as encrypted 3DS files. Nothing is decrypted.
 - **Optional: standalone emulators.** PCSX2, Dolphin, PPSSPP, melonDS, Flycast, xemu, Cemu and RPCS3, downloaded from their own projects with the licence shown first, each run one per game on the server's own desktop in its system's sandbox (macOS, Windows), in a bubblewrap sandbox (Linux), or in a hardened Docker container, and streamed over WebRTC. Every one of each emulator's settings, from its own configuration, in the web pages; every player's controller written into its own settings. Off by default; libretro cores always stay in the process sandbox; no emulator, game, BIOS or key is bundled. Ryujinx and Lichii, for the Switch and the Switch 2, are integrated the same way but never downloaded: the owner installs them and adds them by hand. See [docs/STANDALONE-EMULATORS.md](docs/STANDALONE-EMULATORS.md), [docs/DOCKER-BACKEND.md](docs/DOCKER-BACKEND.md), and what plays on which server in [docs/PLATFORMS-AND-PLAN.md](docs/PLATFORMS-AND-PLAN.md).
-- **GameCube, Wii, Wii U, PlayStation 3, Xbox, Switch and Switch 2** are consoles of the library, recognised from their files' own bytes: GameCube and Wii on Dolphin's libretro core (which on a Mac loads but stalls after its first frame: see docs/PLATFORMS-AND-PLAN.md) or in standalone Dolphin, the others in a standalone emulator.
+- **GameCube, Wii, Wii U, PlayStation 3, Xbox, Switch and Switch 2** are consoles of the library, recognised from their files' own bytes: GameCube and Wii on Dolphin's libretro core (run on a Mac with real discs: see [docs/PLATFORMS-AND-PLAN.md](docs/PLATFORMS-AND-PLAN.md)) or in standalone Dolphin, the others in a standalone emulator.
 
 The games library, its metadata and where saves are kept stay with the server.
 
@@ -53,7 +57,9 @@ How to use it is in **Help** inside WittyMediaServer: see Games.
 
 ## How to get it
 
-An admin adds it from the module store inside WittyMediaServer: **Settings → Modules**, then **Browse the store**, then **Add** beside WittyPlay. That needs WittyMediaServer 0.6.0-alpha or later, and it works with nothing older. The range this version fits is in `module.json`: 0.8.0-alpha through 0.8.x, as it carries module API 4.
+An admin adds it from the module store inside WittyMediaServer: **Settings → Modules**, then **Browse the store**, then **Add** beside WittyPlay. This version carries module API 5, so it needs WittyMediaServer 0.8.0-alpha or later and works with nothing older. The range it fits is in `module.json`: 0.8.0-alpha through 0.8.x. See the known issue above before you upgrade a server for its games.
+
+Under module API 5 WittyPlay owns the games feature: its routes at `/api/modules/wittyplay/…` (`integration.json`), its own database in the module's data folder, its settings, the games screens in the web app, and the SDUI pages (`sdui.json`) every other app draws.
 
 ## What it needs
 
@@ -158,7 +164,13 @@ GOOS=freebsd CGO_ENABLED=0 go build -gcflags="github.com/ebitengine/purego/inter
 | `stream` | Starts runners, encodes with FFmpeg, serves WebRTC and WebSocket viewers |
 | `cores` | Finds cores on the machine and installs them on request |
 | `patch` | IPS and BPS patches |
-| `web` | The player, picture effects, the game menu, controllers, remapping and the touch editor |
+| `api`, `cmd/wittyplay-module` | The module's own routes (module API 5), and the program the server starts |
+| `store` | Its own SQLite database, in the module's data folder |
+| `gamescan`, `gameid`, `gamearchive` | What a library scan finds: which files are games, for which console, and the archives they come in |
+| `gamemeta`, `gamelogos` | What a game is called, who made it and what it looks like; consoles' and studios' logos |
+| `emulators`, `sandbox`, `cmd/wittyplay-input-agent` | The optional standalone emulators: their list, settings and controllers, and where they run |
+| `ui` | Its SDUI pages (`sdui.json`) |
+| `web` | The player, picture effects, the game menu, controllers, remapping and the touch editor, and the games screens in the web app (`web/app`) |
 
 `facade.json` lists what the server calls in this module. Changing it means rerunning the generator in WittyModule's `kit/facade`, which writes the stubs on both sides.
 
