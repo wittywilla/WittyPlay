@@ -6,6 +6,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 ## 0.7.3
 
 - **All games follows the layout switch** (#59): Grid lays each console's games out as a grid and List as a list, as on Recent. A console's games (from Consoles or All) and a search have the size and layout switches too, with Grid and List. Each console's shelf runs to the edge of the screen, so its pictures slide off the edge instead of being cut inside the page's margin.
+- **Narrower windows read better** (#59): a game's details panel keeps a tall cover (a PS2 case) inside its box instead of spilling over the title and buttons; between 760 and 1,199 pixels wide the details panel is narrower and the grid's games smaller, so two or more fit beside it; the status bar's backing is solid enough that what scrolls under it doesn't show through.
 - Tests: the emulator tests check Unix file modes only where there are any, so they pass on Windows (#48).
 
 ## 0.7.2

@@ -102,7 +102,7 @@ html[data-wplay] body { font-family: var(--font); }
    that fades to nothing at its foot, so what passes under it never muddles it and there is no hard edge. */
 /* Its own layer: rows that scroll sideways get layers of their own, and would otherwise be painted over it. */
 .wplay .play-status { position: sticky; inset-block-start: 0; z-index: 4; transform: translateZ(0); will-change: transform; }
-.wplay[data-scrolled] .play-status { background: linear-gradient(180deg, rgb(16 14 52 / .97) 0%, rgb(16 14 52 / .94) 86%, rgb(16 14 52 / 0) 100%); }
+.wplay[data-scrolled] .play-status { background: linear-gradient(180deg, rgb(16 14 52 / .99) 0%, rgb(16 14 52 / .98) 86%, rgb(16 14 52 / 0) 100%); }
 /* Rows that scroll sideways keep below it: they are given a place in the stacking order under the status bar's. */
 .wplay :is(.wpg-shots, .wpl-line, .wpg-saves, .sdui-shelf .row) { position: relative; z-index: 0; }
 .wplay .play-avatar { inline-size: clamp(44px, 3.2vw, 60px); block-size: clamp(44px, 3.2vw, 60px); background: linear-gradient(135deg, #ff8aa3, #8a7bd8 55%, #5ff0d6); color: #13163f; font-size: clamp(1.1rem, 1.3vw, 1.6rem); font-weight: 900; box-shadow: 0 0 0 2px rgb(255 255 255 / .35); }
@@ -322,6 +322,13 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .sdui-shelf.layout-list .card .poster .sdui-badges { display: none; }
 .wplay .sdui-shelf.layout-list .card .title, .wplay .sdui-shelf.layout-list.has-detail .sdui-item.grown .card .title { position: static; display: block; padding: 0; text-shadow: none; font-size: clamp(1rem, 1.25vw, 1.4rem); align-self: end; }
 .wplay .sdui-shelf.layout-list .card .sub, .wplay .sdui-shelf.layout-list.has-detail .sdui-item.grown .card .sub { display: block; align-self: start; margin: 0; color: var(--fg-2); font-size: clamp(.85rem, 1vw, 1.1rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A window between a phone and a full screen (a browser beside other windows, a small laptop): the details panel takes less of
+   the width and the grid's games are smaller, so two or more fit beside it instead of one huge one. */
+@media (min-width: 760px) and (max-width: 1199px) {
+  .wplay .sdui-shelf.layout-grid, .wplay .sdui-shelf.layout-list { grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); }
+  .wplay .sdui-shelf.layout-grid .row { grid-template-columns: repeat(auto-fill, minmax(calc(clamp(120px, 14vw, 170px) * var(--wp-scale, 1)), 1fr)); }
+  .wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-detail-title { font-size: clamp(1.2rem, 2.2vw, 1.6rem); }
+}
 @media (max-width: 759px) {
   .wplay .sdui-shelf.layout-grid, .wplay .sdui-shelf.layout-list { grid-template-columns: minmax(0, 1fr); grid-template-areas: "bar" "detail" "row"; }
   .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail { position: static; }
