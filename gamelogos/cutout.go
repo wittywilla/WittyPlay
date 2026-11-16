@@ -120,11 +120,11 @@ func CutOut(src []byte) (out []byte, ok bool, err error) {
 	}
 	fill(seeds, isBg, gone)
 
-	// Pockets of background the edge can't reach: inside a loop of a controller's cord, between a
-	// controller and the console. Only big, flat ones (a studio's backdrop, not a white label or
-	// button, which have shading and edges of their own).
+	// Pockets of background the edge can't reach: inside a loop or arch of a controller's cord,
+	// between a controller and the console. Only ones as flat as a studio's backdrop (on average
+	// within 2.5 of its colour: a white label or button has shading of its own) and not tiny.
 	seen := make([]bool, n)
-	minPocket := max(64, n/400)
+	minPocket := max(48, n/4000)
 	for i := 0; i < n; i++ {
 		if gone[i] || seen[i] || !isBg(i) {
 			continue
@@ -145,7 +145,7 @@ func CutOut(src []byte) (out []byte, ok bool, err error) {
 				}
 			})
 		}
-		if len(members) >= minPocket && sum <= len(members)*cutPocketFlat {
+		if len(members) >= minPocket && sum*10 <= len(members)*cutPocketFlat {
 			for _, k := range members {
 				gone[k] = true
 			}
@@ -269,8 +269,8 @@ const (
 	// How far from the background's colour, at most, on any of red, green and blue (0 to 255), a
 	// pixel is still background: strict, so light plastic is never taken. A JPEG's white is within it.
 	cutBackground = 12
-	// How flat a pocket of background the edge can't reach must be: its pixels' average distance.
-	cutPocketFlat = 5
+	// How flat a pocket of background the edge can't reach must be: its pixels' average distance, in tenths.
+	cutPocketFlat = 25 // tenths: an average of 2.5
 	// How light a speck in the background is, at most, to be taken as background.
 	cutSpeck = 48
 	// How alike the edge must be: this share of it within edgeLimit of its middle colour.

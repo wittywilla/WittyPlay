@@ -63,7 +63,7 @@ const (
 	// cfgConsolePhotoVariants is each console's chosen version, by console id.
 	cfgConsolePhotoVariants = "consolePhotoVariants"
 	// cutoutVersion is gamelogos.CutOut's: raised when it cuts differently.
-	cutoutVersion = "2"
+	cutoutVersion = "3"
 )
 
 // consolePhotoSource finds a console's picture; a fake in tests.
