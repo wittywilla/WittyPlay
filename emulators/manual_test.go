@@ -6,9 +6,19 @@ package emulators
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
+
+// unixPrograms skips a test of a Linux or Mac program on Windows, whose disks keep no executable
+// bit: what makes a file there a program is its name, and the program's own system is checked.
+func unixPrograms(t *testing.T) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("a Linux or Mac program needs an executable bit, which Windows doesn't keep")
+	}
+}
 
 func standIn() *Emulator {
 	return &Emulator{ID: "standin", Name: "Stand-in", Manual: &Manual{
@@ -33,6 +43,7 @@ func program(t *testing.T, p string) string {
 // A program is that emulator by its name on the system it will run on, an AppImage's name gives
 // its version, and anything else is refused in words.
 func TestIdentifyByName(t *testing.T) {
+	unixPrograms(t)
 	e := standIn()
 	dir := t.TempDir()
 	img := program(t, filepath.Join(dir, "standin-1.4.2-x64.AppImage"))
@@ -99,6 +110,7 @@ func TestIdentifyMacApp(t *testing.T) {
 // What's found in the drop folder is added, an install by hand is never downloaded, and
 // forgetting it leaves the program where it is.
 func TestManualInstalls(t *testing.T) {
+	unixPrograms(t)
 	e := standIn()
 	in := &Installer{DataDir: t.TempDir()}
 	if _, err := in.Install(t.Context(), e); err != ErrManual {
