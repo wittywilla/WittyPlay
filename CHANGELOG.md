@@ -3,6 +3,10 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.3
+
+- Tests: the emulator tests check Unix file modes only where there are any, so they pass on Windows (#48).
+
 ## 0.7.2
 
 - **A virtual gamepad plays a game in the tests.** `web/tests/virtualpad.test.ts` stubs the browser's Gamepad API (`navigator.getGamepads`) with a standard pad, presses Start, Select, A and the left stick through the web player's input, and checks each state it sends; `host/virtualpad_test.go` plays those same states into the game runner with the test core and checks the game took them (Start counted, the LED and rumble, the square moving). Both read `testdata/virtual-pad.json`, whose NES controls are checked against the console table, so CI covers the way from a pad to a game with no server.
