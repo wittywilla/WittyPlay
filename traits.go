@@ -154,9 +154,15 @@ var traits = map[string]CoreTraits{
 			// player's picture, warning about the server's graphics driver.
 			"dolphin_osd_enabled": "disabled",
 			// The Wii Remote points where the player's mouse or finger is: the runner gives the core
-			// the browser's pointer (a libretro pointer device), which it reads only in this mode.
-			// Its default takes the pointer from the right stick.
-			"dolphin_ir_mode": "Mouse controls pointer"},
+			// the browser's pointer (a libretro pointer device), which it reads only in this mode,
+			// "Mouse controls pointer" (2; its values are codes, its labels only shown). Its default
+			// takes the pointer from the right stick.
+			"dolphin_ir_mode": "2",
+			// Shaders compiled while drawing, with Dolphin's uber shaders standing in until each is
+			// ready (2, "Async (UberShaders)"): the default compiles each new one before the frame
+			// goes on, which stutters a game every time it shows something new. The uber shaders
+			// cost the graphics card a little, which a card that runs Dolphin has.
+			"dolphin_shader_compilation_mode": "2"},
 		Resolution: pick("dolphin_efb_scale", "1", "2", "3", "4")},
 }
 

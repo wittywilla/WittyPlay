@@ -5,7 +5,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## 0.7.3
 
-- **The Wii Remote's pointer works from a browser** (#63): over a Wii game the mouse (or a finger) is where the Wii Remote points, and a click presses A. Dolphin's core reads the browser's pointer only in its "Mouse controls pointer" mode (`dolphin_ir_mode`), now always set; a layout marked `aim` sends where the pointer is as it moves, not only while pressed, and its `aimPress` button is held while it is.
+- **Smoother games on Windows** (#64): the game runner opts out of Windows' power throttling for itself, so Windows 11 doesn't treat it as background work (efficiency cores, a coarse timer) for having no window; Dolphin compiles shaders while drawing, with its uber shaders standing in (`dolphin_shader_compilation_mode` 2), instead of stopping each frame that shows something new.
+- **The Wii Remote's pointer works from a browser** (#63): over a Wii game the mouse (or a finger) is where the Wii Remote points, and a click presses A. Dolphin's core reads the browser's pointer only in its "Mouse controls pointer" mode (`dolphin_ir_mode` 2: the core's values are codes), now always set; a layout marked `aim` sends where the pointer is as it moves, not only while pressed, and its `aimPress` button is held while it is.
 - Tests: the emulator tests check Unix file modes only where there are any, so they pass on Windows (#48).
 
 ## 0.7.2

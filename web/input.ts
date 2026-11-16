@@ -74,6 +74,9 @@ type PadSlot = {
 
 type Motors = { strong: number; weak: number; timer: number; until: [number, number] }
 
+// How long a click on an aimed pointer holds its button at least: a few frames at 60 a second.
+const AIM_HOLD_MS = 120
+
 export class InputManager {
   onChange?: () => void // the list of controllers changed
   onActivity?: () => void // a state went out
@@ -90,6 +93,8 @@ export class InputManager {
   private pulseMask = 0
   // A pressed aimed pointer (a Wii Remote's) is also this button, held while it is: pointing and clicking chooses.
   private aimMask = 0
+  private aimSince = 0
+  private aimLetGo: ReturnType<typeof setTimeout> | undefined
   private held = new Set<number>() // keyboard
   private touchMask = 0
   private touchX = 0
@@ -185,8 +190,15 @@ export class InputManager {
     this.send(this.point)
     const press = this.controls.pad.aimPress
     if (this.controls.pad.aim && press !== undefined) {
-      const mask = pressed ? 1 << press : 0
-      if (mask !== this.aimMask) { this.aimMask = mask; this.flush() }
+      // Held for at least a few frames: a quick click can be shorter than one, and the game would never see it.
+      clearTimeout(this.aimLetGo)
+      if (pressed && !this.aimMask) { this.aimMask = 1 << press; this.aimSince = performance.now(); this.flush() }
+      else if (!pressed && this.aimMask) {
+        const wait = AIM_HOLD_MS - (performance.now() - this.aimSince)
+        const letGo = () => { this.aimMask = 0; this.flush() }
+        if (wait > 0) this.aimLetGo = setTimeout(letGo, wait)
+        else letGo()
+      }
     }
   }
 
