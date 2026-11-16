@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -294,7 +295,7 @@ func TestSettingsStore(t *testing.T) {
 	if _, u, g := (&Store{Path: p}).Layers("pcsx2", 5, 42); len(u) != 0 || len(g) != 0 {
 		t.Error("a forgotten account's settings are still there")
 	}
-	if st, err := os.Stat(p); err != nil || st.Mode().Perm() != 0o600 {
+	if st, err := os.Stat(p); err != nil || (runtime.GOOS != "windows" && st.Mode().Perm() != 0o600) { // no such modes on Windows
 		t.Errorf("the file's mode: %v %v", st.Mode(), err)
 	}
 }

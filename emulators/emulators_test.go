@@ -16,6 +16,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -165,6 +166,11 @@ func zipOf(t *testing.T, files map[string]string, links map[string]string) []byt
 }
 
 func TestInstallZipAndUninstall(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		if err := os.Symlink("a", filepath.Join(t.TempDir(), "b")); err != nil {
+			t.Skip("the archive holds a link, which takes developer mode on Windows")
+		}
+	}
 	body := zipOf(t, map[string]string{"bin/emu": "#!/bin/sh\n", "share/readme": "hi"}, map[string]string{"emu": "bin/emu"})
 	in, url := server(t, body)
 	got, err := in.Install(context.Background(), emu(url+"/emu.zip", hash(body), ArchiveZip, "bin/emu"))
@@ -205,7 +211,7 @@ func TestInstallAppImage(t *testing.T) {
 		t.Fatal(err)
 	}
 	st, err := os.Stat(filepath.Join(got.Dir, "Emu.AppImage"))
-	if err != nil || st.Mode()&0o111 == 0 {
+	if err != nil || (runtime.GOOS != "windows" && st.Mode()&0o111 == 0) { // Windows keeps no such bit
 		t.Fatalf("the AppImage isn't executable: %v %v", st, err)
 	}
 }
