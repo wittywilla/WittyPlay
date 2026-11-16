@@ -281,7 +281,9 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay [data-sdui-tabs], .wplay-tabs-row { display: flex; align-items: center; gap: var(--sp-4); min-inline-size: 0; }
 .wplay [data-sdui-tabs] > .tabs, .wplay-tabs-row > .tabs { flex: 1; min-inline-size: 0; }
 .wplay-tabs-row .tabs { display: flex; gap: clamp(14px, 1.7vw, 34px); box-shadow: none; margin-block: clamp(4px, .8vw, 14px) clamp(6px, 1vw, 20px); padding-block-end: 6px; overflow-x: auto; scrollbar-width: none; }
-.wplay-tabs-row .tabs > a { position: relative; flex: none; padding: 4px 0; border-radius: 6px; color: var(--fg-2); font-size: clamp(1.15rem, 1.6vw, 1.9rem); font-weight: 800; text-decoration: none; white-space: nowrap; }
+/* No border of its own: WittyPlay draws the chosen tab's bar (::after). The app's .tabs gives the chosen link a bottom border, which
+   on this rounded link curved up at both ends and sat on top of the bar, a hook under the tab. */
+.wplay-tabs-row .tabs > a { position: relative; flex: none; padding: 4px 0; border: 0; border-radius: 6px; color: var(--fg-2); font-size: clamp(1.15rem, 1.6vw, 1.9rem); font-weight: 800; text-decoration: none; white-space: nowrap; }
 .wplay-tabs-row .tabs > a:hover, .wplay-tabs-row .tabs > a.active { color: var(--fg); }
 /* On a phone the tabs take a line of their own, and the size and layout switches go under them. */
 @media (max-width: 640px) {
