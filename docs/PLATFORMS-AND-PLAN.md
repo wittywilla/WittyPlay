@@ -1,6 +1,8 @@
-# What plays where, and the plan
+# What plays where
 
-An audit of WittyPlay and the games side of WittyMediaServer, written in November 2026 for the 0.8.0-alpha server, and the plan that followed from it. Each part says what works on each server platform, what doesn't, and why. "Verified" means it was run; everything else is built and tested only, and says so.
+An audit of WittyPlay and the games side of WittyMediaServer, written in November 2026 for the 0.8.0-alpha server. Each part says what works on each server platform, what doesn't, and why. "Verified" means it was run; everything else is built and tested only, and says so.
+
+**Known issue with the 0.8.x server:** emulation isn't working. The new streaming pipeline, made for the iOS and tvOS apps, means the WittyMediaClient apps crash when a game is started, and a browser keeps loading. The 0.6.x alpha servers still play games. See the [README](../README.md).
 
 The short version, for the owner:
 
@@ -21,8 +23,8 @@ The short version, for the owner:
 | Settings | `emulators/configfile`, `emulators/schemas`, `cmd/wittyplay-emuschema` | Every option of each emulator, from its own source, written into its own files |
 | Controllers | `emulators/inputmap` | Each player's keys in each emulator's own notation, per system |
 | Where emulators run | `sandbox/docker`, `sandbox/local`, `sandbox/host` | A container; Linux's bubblewrap; this machine's own desktop |
-| Server side | WittyMediaServer `internal/gameid`, `internal/gamemeta`, `internal/library/games_*`, `internal/server/api_games*`, `games_standalone.go`, `games_adopt.go` | Recognising files, metadata, the library, play routes |
-| Web | WittyMediaServer `web/src/pages/games`, `web/src/pages/settings/Emulators.tsx`; WittyPlay `web/` | The games pages, settings, the player |
+| The module's own side (module API 5) | `gamescan`, `gameid`, `gamemeta`, `api`, `store` | Recognising files, metadata, its own database, the play routes |
+| Web | `web/app/pages/games`, `web/app/pages/settings` (`Emulators.tsx`), `web/` | The games pages, settings, the player |
 
 ## Per platform
 
@@ -99,7 +101,7 @@ Values layer: default, then an administrator's for everyone, then a person's own
 
 Ryujinx (Switch) and Lichii (Switch 2 and Switch) are integrated like every other standalone emulator, on every system each publishes a build for, and are never downloaded: the owner installs them from their own projects and adds them in Settings, Standalone emulators (or in `manual.json`, for a server with no screen or in a container), and WittyPlay checks each is what it says and notes its version. Keys and firmware are the owner's, put in the BIOS folder; WittyPlay copies them where each emulator looks and never fetches them. Ryujinx plays no Switch 2 games; Lichii plays some, by its authors' account very experimentally. The owner is responsible for having the right to the keys, firmware and games. Everything, with where to get each and the legal note: [STANDALONE-EMULATORS.md, The Switch and the Switch 2](STANDALONE-EMULATORS.md#the-switch-and-the-switch-2).
 
-## Engine work in this round
+## Engine work for 0.8.0-alpha
 
 - Standalone emulators on macOS and Windows, with their own capture, input and sandbox.
 - Bitrate: an emulator's encoder steps its bitrate down under loss and back up, as before, on every runtime; on this machine it restarts the encoder with a keyframe rather than freezing.
