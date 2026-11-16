@@ -312,6 +312,9 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .sdui-shelf.layout-grid .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(170px, 16vw, 300px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, 1.6vw, 28px); }
 .wplay .sdui-shelf.layout-grid .sdui-item .card, .wplay .sdui-shelf.layout-grid .sdui-item.grown .card { width: 100%; }
 .wplay .sdui-shelf.layout-grid .sdui-item.grown .card .poster { box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; }
+/* The server's focus-grow makes the chosen card 25% bigger, for a shelf that makes room for it; in a grid or a list it covered the games
+   beside and under it, so there it stays its size and the ring shows which it is. */
+.wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-item:is(:focus-within, .grown) { transform: none; }
 .wplay .sdui-shelf.layout-grid .card .title, .wplay .sdui-shelf.layout-grid.has-detail .sdui-item.grown .card .title { font-size: clamp(.95rem, 1.15vw, 1.35rem); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; padding-block-end: 0; inset-block-end: clamp(10px, 1.1vw, 20px); }
 /* List: a dense row each, the art small at the start, the title and its line beside it. */
 .wplay .sdui-shelf.layout-list .row { display: grid; grid-template-columns: 1fr; gap: 10px; }
@@ -425,6 +428,8 @@ html[data-wplay] body { font-family: var(--font); }
 /* ---- a game's bio in the detail panel (GameBio.tsx): logo, console, makers, rating, pictures, and its RetroAchievements greyed ---- */
 .wplay .sdui-detail.has-bio { display: grid; gap: clamp(8px, .8vw, 14px); align-content: start; }
 .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail.has-bio { max-block-size: calc(100dvh - var(--wp-bar) - var(--wp-dock) - 7rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+/* A details panel scrolls its last buttons clear of the Dock, which floats over the bottom of the screen. */
+:is(.wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail.has-bio, .wpl-panel) { padding-block-end: calc(var(--wp-dock) + 48px); }
 .wplay-bio { display: grid; gap: clamp(8px, .8vw, 14px); min-inline-size: 0; }
 .wplay-bio-logo { display: block; justify-self: center; max-inline-size: min(100%, 22rem); max-block-size: clamp(56px, 7vw, 120px); object-fit: contain; object-position: center; filter: drop-shadow(0 2px 8px rgb(0 0 0 / .5)); }
 .wplay-bio-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1.05rem); font-weight: 700; }

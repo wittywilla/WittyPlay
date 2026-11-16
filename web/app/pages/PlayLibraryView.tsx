@@ -55,7 +55,6 @@ function GamePanel({ shown }: { shown: Shown | null }) {
   const title = (
     <>
       <b className="sdui-detail-title">{it.title}</b>
-      {it.year ? <span className="sdui-detail-line">{it.year}</span> : null}
     </>
   )
   const actions = (
