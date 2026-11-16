@@ -21,7 +21,7 @@ func TestManifestFitsThisServer(t *testing.T) {
 			t.Errorf("%s: %v", server, err)
 		}
 	}
-	// Module API 4 carries its own SDUI, which a server before 0.8.0-alpha can't read.
+	// Module API 5 carries its own SDUI and integration.json, which a server before 0.8.0-alpha can't read.
 	if err := m.Supports("0.6.5", wittymodule.MinAPI, wittymodule.API); err == nil {
 		t.Error("a 0.6 server would take this version")
 	}

@@ -182,16 +182,6 @@ Linked in: ebitengine/purego (Apache-2.0), pion/webrtc and its dependencies (MIT
 
 Cores, RetroArch, ROMs and BIOS files are not part of it. A core is a separate file with its own licence, loaded only by the separate runner. Each release archive carries a `THIRD-PARTY-NOTICES.txt` for what its programs link.
 
-## Legal
-
-WittyPlay is an independent open-source project. It isn't associated with, sponsored by or endorsed
-by any console maker, game publisher, the libretro project, or the authors of any core. Console
-names only say which games a core can run. No games, ROMs, BIOS files or cores come with it: use
-only files you've obtained legally. Cores are separate programs under their own licenses. Games can
-contain flashing images. Any third-party names here only describe what it works with, and belong to
-their owners. It's provided “as is”, with no warranty; see [LICENSE](LICENSE). Local law applies to
-how you use it. This isn't legal advice.
-
 <!-- module-kit -->
 ## Releasing
 
@@ -213,3 +203,13 @@ To take a version back, run the *withdraw* workflow from the *Actions* tab. It a
 
 Licensed under AGPL-3.0-or-later: see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 <!-- /module-kit -->
+
+## Legal
+
+WittyPlay is an independent open-source project. It isn't associated with, sponsored by or endorsed
+by any console maker, game publisher, the libretro project, or the authors of any core. Console
+names only say which games a core can run. No games, ROMs, BIOS files or cores come with it: use
+only files you've obtained legally. Cores are separate programs under their own licenses. Games can
+contain flashing images. Any third-party names here only describe what it works with, and belong to
+their owners. It's provided “as is”, with no warranty; see [LICENSE](LICENSE). Local law applies to
+how you use it. This isn't legal advice.
