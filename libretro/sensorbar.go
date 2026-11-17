@@ -16,14 +16,16 @@ import "github.com/wittywilla/wittyplay/engine"
 // field, and "pressed" for a dot it can see.
 const sensorBarOption = "dolphin_ir_passthrough"
 
-// Where the dots go. The camera sees the bar move the other way to the pointer: pointing right
-// puts the bar on the left of its picture. The screen spans sensorSpanX and sensorSpanY of the
-// camera's field, which keeps both dots in view at every edge, with the bar at sensorRest when the
-// pointer is in the middle of the screen. The bar is sensorGap of the field wide, as it looks from
-// a couple of metres away.
+// Where the dots go, measured against the Wii's own pointer: the hand's fingertip in Mario Kart
+// Wii's menus, which read it as every game built on the Wii's pointer library does. The camera
+// sees the bar move the other way to the pointer across, and the same way up and down in the
+// core's terms. The screen spans sensorSpanX and sensorSpanY of the camera's field, with the bar
+// at sensorRest when the pointer is in the middle; the bar sits above the middle, as a bar on top
+// of a television does. Both dots stay in view at every edge. The bar is sensorGap of the field
+// wide, as it looks from a couple of metres away.
 const (
-	sensorSpanX, sensorSpanY = 0.62, 0.62
-	sensorRestX, sensorRestY = 0.5, 0.5
+	sensorSpanX, sensorSpanY = 0.443, 0.608
+	sensorRestX, sensorRestY = 0.5, 0.36
 	sensorGap                = 0.2
 )
 
@@ -37,7 +39,7 @@ func sensorDot(p engine.PointerState, index, id uintptr) int16 {
 	px := (float64(p.X) + 0x7fff) / (2 * 0x7fff)
 	py := (float64(p.Y) + 0x7fff) / (2 * 0x7fff)
 	x := sensorRestX - (px-0.5)*sensorSpanX
-	y := sensorRestY - (py-0.5)*sensorSpanY
+	y := sensorRestY + (py-0.5)*sensorSpanY
 	if index == 0 {
 		x -= sensorGap / 2
 	} else {
