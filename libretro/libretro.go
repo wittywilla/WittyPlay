@@ -493,6 +493,9 @@ func onInputState(port, device, index, id uintptr) uintptr {
 		if port != 0 {
 			return 0 // a touch screen is the first player's
 		}
+		if c.options[sensorBarOption] == "enabled" {
+			return uintptr(uint16(sensorDot(c.pointer, index, id)))
+		}
 		// Index 0 is where the pointer is even when nothing is touching, as a mouse would be;
 		// the other fingers are only there while they're down.
 		p := c.pointer

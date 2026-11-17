@@ -153,11 +153,12 @@ var traits = map[string]CoreTraits{
 			// Its on-screen messages are for someone at the machine: here they'd sit over a
 			// player's picture, warning about the server's graphics driver.
 			"dolphin_osd_enabled": "disabled",
-			// The Wii Remote points where the player's mouse or finger is: the runner gives the core
-			// the browser's pointer (a libretro pointer device), which it reads only in this mode,
-			// "Mouse controls pointer" (2; its values are codes, its labels only shown). Its default
-			// takes the pointer from the right stick.
-			"dolphin_ir_mode": "2",
+			// The Wii Remote points where the player's mouse or finger is. With "IR passthrough" the
+			// runner draws the sensor bar as the Wii Remote's camera would see it for that spot
+			// (libretro/sensorbar.go), so nothing hangs on the angles and the bar's height the core
+			// would otherwise work it out from. The pointer mode, "Mouse controls pointer" (2; its
+			// values are codes, its labels only shown), is what it falls back on.
+			"dolphin_ir_mode": "2", "dolphin_ir_passthrough": "enabled",
 			// Shaders compiled while drawing, with Dolphin's uber shaders standing in until each is
 			// ready (2, "Async (UberShaders)"): the default compiles each new one before the frame
 			// goes on, which stutters a game every time it shows something new. The uber shaders

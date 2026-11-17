@@ -130,9 +130,14 @@ var pads = map[string]PadLayout{
 	// By position, as Dolphin's libretro core numbers them: A is the big button (RetroPad B).
 	"gc": {Art: "dual", Face: []PadButton{{RetroY, "B"}, {RetroX, "Y"}, {RetroB, "A"}, {RetroA, "X"}}, Shoulder: []PadButton{{RetroL2, "L"}, {RetroR2, "R"}, {RetroR, "Z"}},
 		Meta: startOnly, Sticks: true, Right: []PadButton{{StickLeftR, "C left"}, {StickRightR, "C right"}, {StickUpR, "C up"}, {StickDownR, "C down"}}},
-	// A Wii Remote held sideways, with the Nunchuk's stick: the way most Wii games play from a pad.
-	"wii": {Art: "dual", Face: []PadButton{{RetroY, "1"}, {RetroX, "2"}, {RetroB, "A"}, {RetroA, "B"}}, Shoulder: []PadButton{{RetroL, "C"}, {RetroR, "Z"}},
-		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Pointer: true, Aim: true, AimPress: buttonID(RetroB),
+	// A Wii Remote with the Nunchuk's stick: the way most Wii games play from a pad. The buttons are
+	// where Dolphin's core reads them for that pair: the Wii Remote's A and B from the RetroPad's,
+	// C and Z from X and Y, 1 and 2 from Start and Select, − and + from L and R, Home from R3, and a
+	// shake of the Wii Remote or the Nunchuk from R2 or L2.
+	"wii": {Art: "dual", Face: []PadButton{{RetroY, "Z"}, {RetroX, "C"}, {RetroB, "B"}, {RetroA, "A"}},
+		Shoulder: []PadButton{{RetroL, "−"}, {RetroR, "+"}, {RetroL2, "Shake Nunchuk"}, {RetroR2, "Shake"}},
+		Meta:     []PadButton{{RetroSelect, "2"}, {RetroStart, "1"}}, Extra: []PadButton{{RetroR3, "Home"}},
+		Sticks: true, Pointer: true, Aim: true, AimPress: buttonID(RetroA),
 		// Dolphin's core plugs in an upright Wii Remote alone unless told otherwise, and then
 		// none of this layout's buttons are where it says.
 		PreferDevices: []string{"wiimote + nunchuk"}},
