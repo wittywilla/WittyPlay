@@ -84,8 +84,8 @@
 .wpp-face { position: absolute; transform: translate(-50%, -50%); pointer-events: none; }
 .wpp-face .wpg { --g: max(14px, 2.6cqw); background: transparent; box-shadow: none; }
 .wpp-call { position: absolute; display: flex; align-items: center; gap: 6px; box-sizing: border-box; padding: 0 8px; border: 1px solid var(--border, rgba(127, 127, 127, .25)); border-radius: 8px;
-  background: var(--bg, #0d0f14); color: var(--wp-fg); font: 600 clamp(10px, 1.45cqw, 14px)/1.1 system-ui, sans-serif; text-align: left; cursor: pointer; }
-.wpp-call .wpg { --g: clamp(16px, 2.3cqw, 26px); }
+  background: var(--bg, #0d0f14); color: var(--wp-fg); font: 600 clamp(12px, 1.5cqw, 15px)/1.1 system-ui, sans-serif; text-align: left; cursor: pointer; }
+.wpp-call .wpg { --g: clamp(18px, 2.3cqw, 26px); }
 .wpp-what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wpp-l { flex-direction: row-reverse; text-align: right; }
 .wpp-b { justify-content: center; }
