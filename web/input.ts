@@ -70,11 +70,14 @@ type PadSlot = {
   index: number; id: string; model: string; port: number
   standing: Standing; style: string; raw: boolean; layoutName: string
   map: PadMap; profile: Profile | null; compiled: Compiled; reading: Reading; lastStamp: number
+  stickX: number; stickY: number // the stick that moves an aimed pointer, kept from the game
 }
 
 type Motors = { strong: number; weak: number; timer: number; until: [number, number] }
 
 // How long a click on an aimed pointer holds its button at least: a few frames at 60 a second.
+// How far a stick all the way over moves an aimed pointer each second, across the picture.
+const AIM_RATE = 0.7
 const AIM_HOLD_MS = 120
 
 export class InputManager {
@@ -95,6 +98,11 @@ export class InputManager {
   private aimMask = 0
   private aimSince = 0
   private aimLetGo: ReturnType<typeof setTimeout> | undefined
+  // Where an aimed pointer is, 0 to 1 across the picture, for a stick to move it from wherever
+  // the mouse left it; and when a stick last moved it.
+  private aimX = 0.5
+  private aimY = 0.5
+  private aimAt = 0
   private held = new Set<number>() // keyboard
   private touchMask = 0
   private touchX = 0
@@ -184,6 +192,8 @@ export class InputManager {
     const at = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 65534) - 32767
     const view = new DataView(this.point.buffer)
     this.point[1] = pressed ? 1 : 0
+    this.aimX = Math.max(0, Math.min(1, x))
+    this.aimY = Math.max(0, Math.min(1, y))
     view.setInt16(2, at(x), true)
     view.setInt16(4, at(y), true)
     this.pointRepeats = 4
@@ -201,6 +211,49 @@ export class InputManager {
       }
     }
   }
+
+  // The stick a profile gives an aimed pointer (a Wii Remote's) moves it and nothing else: the
+  // game doesn't also get it as a stick.
+  private takeAimStick(s: PadSlot) {
+    const which = this.controls.pad.aim ? s.compiled.pointerStick : 0
+    const r = s.reading
+    if (which === 1) { s.stickX = r.lx; s.stickY = r.ly; r.lx = 0; r.ly = 0 }
+    else if (which === 2) { s.stickX = r.rx; s.stickY = r.ry; r.rx = 0; r.ry = 0 }
+    else { s.stickX = 0; s.stickY = 0 }
+  }
+
+  // Moves an aimed pointer by the sticks that hold it, every frame they're pushed: a stick all
+  // the way over crosses the picture in about a second and a half at speed 1, and a stick pushed
+  // a little moves it slowly, for fine aim.
+  private moveAim(now: number) {
+    let dx = 0, dy = 0, idle = true
+    if (this.enabled && !this.hidden) {
+      for (const s of this.slots.values()) {
+        if (!s.stickX && !s.stickY) continue
+        dx += s.stickX * Math.abs(s.stickX) * s.compiled.pointerSpeed
+        dy += s.stickY * Math.abs(s.stickY) * s.compiled.pointerSpeed
+        idle = false
+      }
+    }
+    const dt = this.aimAt ? Math.min(50, now - this.aimAt) / 1000 : 0
+    if (idle) { this.aimAt = 0; return }
+    this.aimAt = now
+    if (!dt) return
+    const x = Math.max(0, Math.min(1, this.aimX + dx * AIM_RATE * dt))
+    const y = Math.max(0, Math.min(1, this.aimY + dy * AIM_RATE * dt))
+    if (x === this.aimX && y === this.aimY) return
+    this.aimX = x
+    this.aimY = y
+    const at = (v: number) => Math.round(v * 65534) - 32767
+    const view = new DataView(this.point.buffer)
+    view.setInt16(2, at(x), true)
+    view.setInt16(4, at(y), true)
+    this.pointRepeats = 4
+    this.send(this.point)
+    this.onAim?.(x, y)
+  }
+
+  onAim?: (x: number, y: number) => void // a stick moved the aimed pointer
 
   private beatPointer() {
     if (this.point[1] === 0 && this.pointRepeats <= 0) return
@@ -316,7 +369,7 @@ export class InputManager {
       port = 0
       while (used.has(port) && port < MAX_PLAYERS - 1) port++
     }
-    const s = { seat, index: p.index, id: p.id, model, port, reading: newReading(), lastStamp: -1 } as PadSlot
+    const s = { seat, index: p.index, id: p.id, model, port, reading: newReading(), lastStamp: -1, stickX: 0, stickY: 0 } as PadSlot
     this.bind(s, p)
     this.slots.set(p.index, s)
     this.onChange?.()
@@ -467,11 +520,13 @@ export class InputManager {
       if (stamp === 0 || stamp !== s.lastStamp || turbo) {
         s.lastStamp = stamp
         readPad(s.compiled, p, now, s.reading)
+        this.takeAimStick(s)
         changed = true
       }
       if (!this.capturing && menuHeld(s.compiled, p)) menu = true
     }
     if (seen !== this.slots.size) { this.forgetGone(pads); changed = true }
+    this.moveAim(now)
     if (menu !== this.menuDown) {
       this.menuDown = menu
       if (menu) this.onMenu?.()

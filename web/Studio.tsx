@@ -91,6 +91,18 @@ function Toggle({ label, on, onChange, hint }: { label: string; on: boolean; onC
   )
 }
 
+// One of a few values, as buttons, which a remote can reach as easily as a mouse.
+function Choice({ label, value, choices, onChange }: { label: string; value: string; choices: [string, string][]; onChange: (v: string) => void }) {
+  return (
+    <div className="wps-stepper" role="radiogroup" aria-label={label}>
+      <span className="wp-grow">{label}</span>
+      {choices.map(([v, text]) => (
+        <button key={v} type="button" role="radio" aria-checked={v === value} className={'wp-chip' + (v === value ? ' on' : '')} onClick={() => onChange(v)}>{text}</button>
+      ))}
+    </div>
+  )
+}
+
 export function ControllerStudio(props: Props) {
   const { host, data, input, onClose, refresh } = props
   // Something has to have the focus, or a remote has nothing to move from.
@@ -620,6 +632,8 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
           {!isKeys && <Stepper label="Press point" value={Math.round((options.threshold ?? 0.5) * 100)} text={pct(options.threshold ?? 0.5)} min={10} max={90} step={5} onChange={(v) => void setOption({ threshold: v / 100 })} />}
           {!isKeys && !data.pad.sticks && <Toggle label="Left stick steers the D-pad too" on={options.stickDpad ?? true} onChange={(on) => void setOption({ stickDpad: on })} />}
           {!isKeys && data.pad.sticks && <Toggle label="Left stick steers the D-pad too" on={options.stickDpad ?? false} onChange={(on) => void setOption({ stickDpad: on })} />}
+          {!isKeys && data.pad.aim && <Choice label="Stick that moves the pointer" value={options.pointerStick || 'right'} choices={[['right', 'Right stick'], ['left', 'Left stick'], ['off', 'Neither']]} onChange={(v) => void setOption({ pointerStick: v as 'left' | 'right' | 'off' })} />}
+          {!isKeys && data.pad.aim && (options.pointerStick || 'right') !== 'off' && <Stepper label="Pointer speed" value={Math.round((options.pointerSpeed ?? 1) * 100)} text={`${(options.pointerSpeed ?? 1).toFixed(2).replace(/\.?0+$/, '')}×`} min={25} max={400} step={25} onChange={(v) => void setOption({ pointerSpeed: v / 100 })} />}
           {!isKeys && pad?.rumble && <Toggle label="Rumble" on={!options.noRumble} onChange={(on) => void setOption({ noRumble: !on })} />}
           {!isKeys && pad?.rumble && <button type="button" className="wp-btn" onClick={() => input.testRumble(device as number)}>Try the rumble</button>}
           {!isKeys && pad && (cal

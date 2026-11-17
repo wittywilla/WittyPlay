@@ -753,7 +753,7 @@ function Playing({ host, initial, known }: { host: PlayHost; initial: ControlsDa
     <div ref={root} tabIndex={-1} className={`wp-root wp-${orientation}${touchShown ? ' wp-with-touch' : ''}${paused || noGame ? '' : ' wp-playing'}`}>
       <div ref={areaRef} className="wp-video-area" style={bezel === 'color' ? { background: String(values['display.bezelColor'] || '#000') } : undefined}>
         {bezel === 'image' && !!values['display.bezelImage'] && <img className="wp-bezel-img" src={host.mediaUrl(`/api/modules/wittyplay/game-bezels/${values['display.bezelImage']}`)} alt="" />}
-        <div className={'wp-stage' + (hasPointer ? ' wp-has-pointer' : '')} style={{ width: layout.boxW, height: layout.boxH }}
+        <div className={'wp-stage' + (hasPointer ? ' wp-has-pointer' : '') + (hasPointer && values['display.crosshair'] === false ? ' wp-no-crosshair' : '')} style={{ width: layout.boxW, height: layout.boxH }}
           onPointerDown={stageDown} onPointerMove={stageMove} onPointerUp={stageUp} onPointerCancel={stageUp}>
           <div ref={pic} className="wp-pic" style={{ width: layout.picW, height: layout.picH, transform: `translate(-50%, -50%) rotate(${turns * 90}deg)` }} />
         </div>
