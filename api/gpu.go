@@ -126,6 +126,17 @@ func (a *App) GPUStatus(ctx context.Context) stream.GPUProbe {
 			}
 			e.gpuMu.Lock()
 			defer e.gpuMu.Unlock()
+			// No card is only believed when two checks in a row say so. One check can land
+			// on Windows' own basic OpenGL, without the card's driver, at a moment the card
+			// isn't to be had (a module updating, the machine waking), and it would turn
+			// every game drawn on a card away until the module restarted.
+			switch {
+			case got.Name != "":
+				e.gpuNoneOnce = false
+			case got.Error != "" && !got.Again && !e.gpuNoneOnce:
+				e.gpuNoneOnce, got.Again = true, true
+				a.Log.Warn("wittyplay: the graphics card check found none; asking again before believing it", "cat", "games", "err", got.Error)
+			}
 			e.gpu, e.gpuAt, e.gpuChecking = got, time.Now(), false
 		}()
 		got = probeGPU(runner, filepath.Join(a.Dir, "probe"), a.Log.With("cat", "games"))
