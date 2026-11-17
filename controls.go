@@ -332,6 +332,8 @@ func DefaultKeyboard() map[int]string {
 		RetroUp: "ArrowUp", RetroDown: "ArrowDown", RetroLeft: "ArrowLeft", RetroRight: "ArrowRight",
 		RetroB: "KeyZ", RetroA: "KeyX", RetroY: "KeyA", RetroX: "KeyS", RetroL: "KeyQ", RetroR: "KeyW", RetroL2: "KeyE", RetroR2: "KeyR",
 		RetroStart: "Enter", RetroSelect: "ShiftRight",
+		// The stick clicks, which some consoles use for a button of their own: the Wii Remote's Home.
+		RetroL3: "KeyD", RetroR3: "KeyF",
 	}
 }
 

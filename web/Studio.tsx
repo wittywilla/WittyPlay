@@ -4,15 +4,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ControllerPicture } from './art'
 import type { Background, ControlsData, Target } from './consoles'
 import { MAX_PLAYERS, onTV, padSupport, type InputManager, type PadInfo } from './input'
-import { PromptBar } from './prompts'
 import {
   conflicts, describeKey, describeSource, effectiveKeys, effectiveMap, effectiveOptions, findPress, keyConflicts, noteReleases, rawFromDefaults, resolveProfile, snapshot, standingOf, toStandard,
   type Binding, type ControllerData, type KeyMap, type PadMap, type Profile, type ProfileOptions,
 } from './mapping'
+import { PadPicture, type Callout } from './padart'
+import { KeyGlyph, PhysGlyph, StickGlyph, physName } from './padglyph'
+import { PromptBar } from './prompts'
+import { familyOf, type PadFamily } from './words'
+import './studio.css'
 
-// The controller screen: who's on which player, what each button does, and the picture
-// behind it all. Everything here works with a D-pad and OK: real buttons in a sensible
-// order, steppers instead of sliders and drop-downs, and nothing that needs pointing.
+// The controller screen. Along the top, the controllers that are here; down the side, what
+// can be set for the one chosen. Buttons are shown as the controller in someone's hands prints
+// them, with what each does in this game beside it. Everything works with a D-pad and OK: real
+// buttons in a sensible order, steppers instead of sliders, and nothing that needs pointing.
 
 export type ImportResult = { imported: Profile[]; rejected: { index: number; name: string; error: string }[]; notes: string[] }
 
@@ -50,11 +55,13 @@ type Props = {
   onClose: () => void
 }
 
-type Tab = 'buttons' | 'players' | 'picture'
+type Section = 'buttons' | 'sticks' | 'pointer' | 'vibration' | 'players' | 'profiles' | 'background'
 type Device = number | 'keyboard'
 
 const LISTEN_MS = 7000
-const TRY_IDLE_MS = 6000
+const MAX_FILE = 10 << 20
+const MAX_IMPORT = 256 << 10
+const GROUPS: [Target['group'], string][] = [['face', 'Buttons'], ['dpad', 'D-pad'], ['shoulder', 'Shoulders and triggers'], ['stick', 'Stick'], ['meta', 'System']]
 
 // While this is held, a pad's buttons mean nothing to the app's own navigation
 // (the server's web/src/tv.ts). Let go a moment late, so that what was just pressed isn't also OK.
@@ -64,17 +71,18 @@ function holdTvNavigation(on: boolean) {
   if (on) document.documentElement.classList.add('wp-capture')
   else setTimeout(() => { if (tvHolds === 0) document.documentElement.classList.remove('wp-capture') }, 120)
 }
-const MAX_FILE = 10 << 20
-const MAX_IMPORT = 256 << 10
 
 const pct = (v: number) => `${Math.round(v * 100)}%`
+const cap = (t: string) => t && t[0].toUpperCase() + t.slice(1)
+
+// ---- small controls ----
 
 // A value changed by pressing + and −, which a remote can do and a slider often can't.
-function Stepper({ label, value, text, onChange, min, max, step }: { label: string; value: number; text?: string; onChange: (v: number) => void; min: number; max: number; step: number }) {
+function Stepper({ label, hint, value, text, onChange, min, max, step }: { label: string; hint?: string; value: number; text?: string; onChange: (v: number) => void; min: number; max: number; step: number }) {
   const set = (v: number) => onChange(Math.round(Math.min(max, Math.max(min, v)) / step) * step)
   return (
     <div className="wps-stepper" role="group" aria-label={label}>
-      <span className="wp-grow">{label}</span>
+      <span className="wp-grow">{label}{hint && <small className="wp-muted wsc-hint">{hint}</small>}</span>
       <button type="button" className="wp-btn" disabled={value <= min} aria-label={`Less ${label.toLowerCase()}`} onClick={() => set(value - step)}>−</button>
       <output className="wps-value">{text ?? value}</output>
       <button type="button" className="wp-btn" disabled={value >= max} aria-label={`More ${label.toLowerCase()}`} onClick={() => set(value + step)}>+</button>
@@ -91,62 +99,24 @@ function Toggle({ label, on, onChange, hint }: { label: string; on: boolean; onC
   )
 }
 
-// One of a few values, as buttons, which a remote can reach as easily as a mouse.
-function Choice({ label, value, choices, onChange }: { label: string; value: string; choices: [string, string][]; onChange: (v: string) => void }) {
+// One of a few values, side by side.
+function Segmented({ label, value, choices, onChange }: { label: string; value: string; choices: [string, string][]; onChange: (v: string) => void }) {
   return (
-    <div className="wps-stepper" role="radiogroup" aria-label={label}>
-      <span className="wp-grow">{label}</span>
-      {choices.map(([v, text]) => (
-        <button key={v} type="button" role="radio" aria-checked={v === value} className={'wp-chip' + (v === value ? ' on' : '')} onClick={() => onChange(v)}>{text}</button>
-      ))}
-    </div>
-  )
-}
-
-export function ControllerStudio(props: Props) {
-  const { host, data, input, onClose, refresh } = props
-  // Something has to have the focus, or a remote has nothing to move from.
-  const root = useRef<HTMLDivElement>(null)
-  useEffect(() => { root.current?.querySelector<HTMLElement>('.wps-tabs [aria-selected=true]')?.focus({ preventScroll: true }) }, [])
-  const [tab, setTab] = useState<Tab>('buttons')
-  const [note, setNote] = useState('')
-  const [bg, setBg] = useState<Background>(data.background)
-  useEffect(() => setBg(data.background), [data.background])
-  const say = useCallback((t: string) => setNote(t && t[0].toUpperCase() + t.slice(1)), [])
-  const tabs: [Tab, string][] = [['buttons', 'Buttons'], ['players', 'Players'], ['picture', 'Background']]
-
-  return (
-    <div ref={root} className="wps" role="dialog" aria-label="Controllers">
-      <header className="wps-head">
-        <h1 className="wps-title">Controllers <span className="wp-muted">· {props.gameTitle || props.consoleName}</span></h1>
-        <button type="button" className="wp-btn" onClick={onClose}>Done</button>
-      </header>
-      <div className="wps-tabs" role="tablist" aria-label="Controllers">
-        {tabs.map(([id, name]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className="wp-tab" onClick={() => setTab(id)}>{name}</button>)}
+    <div className="wsc-seg-row">
+      <span className="wsc-seg-label">{label}</span>
+      <div className="wsc-seg" role="radiogroup" aria-label={label}>
+        {choices.map(([v, text]) => <button key={v} type="button" role="radio" aria-checked={v === value} className={v === value ? 'on' : ''} onClick={() => onChange(v)}>{text}</button>)}
       </div>
-      {props.consolePicker}
-      <div className="wps-note" role="status" aria-live="polite">{note}</div>
-      {tab === 'buttons' && <ButtonsTab {...props} bg={bg} say={say} />}
-      {tab === 'players' && <PlayersTab {...props} say={say} />}
-      {tab === 'picture' && <PictureTab host={host} bg={bg} setBg={setBg} refresh={refresh} say={say} data={data} input={input} />}
-      <PromptBar className="wps-prompts" items={[{ button: 'dpad', label: 'Move' }, { button: 'confirm', label: 'Choose' }, { button: 'back', label: 'Done' }]} />
     </div>
   )
 }
 
-// ---- the picture, with whatever's behind it ----
-
-function Stage({ bg, host, children }: { bg: Background; host: ProfileHost; children: React.ReactNode }) {
+function Card({ title, children, actions, className }: { title?: string; children: React.ReactNode; actions?: React.ReactNode; className?: string }) {
   return (
-    <div className="wps-stage">
-      {bg.version > 0 && (
-        <>
-          <img className="wps-bg" src={host.backgroundUrl(bg.version)} alt="" style={{ objectFit: bg.fit, objectPosition: `${bg.x}% ${bg.y}%` }} />
-          <div className="wps-dim" style={{ opacity: bg.dim / 100 }} />
-        </>
-      )}
+    <section className={'wsc-card' + (className ? ' ' + className : '')}>
+      {(title || actions) && <header className="wsc-card-head">{title && <h3>{title}</h3>}{actions}</header>}
       {children}
-    </div>
+    </section>
   )
 }
 
@@ -155,75 +125,141 @@ const noPadWords = (): string => {
   if (s === 'insecure') return 'No controller can be seen: this page is on plain http, and most browsers only show gamepads to secure pages. Open this server over https, or at localhost on this computer. Until then the keyboard and touch controls work.'
   if (s === 'blocked') return 'This browser is set not to share controllers with this page. Check its site settings.'
   if (s === 'none') return 'This browser has no way to read gamepads. Try a current version of Chrome, Edge, Firefox or Safari.'
-  return 'No controller yet. Connect one and press any button on it: browsers only show a pad once it has been pressed.'
+  return 'No controller yet. Turn one on or plug it in, then press any button on it: browsers only show a controller once it has been pressed.'
 }
 
-// ---- buttons ----
+// A drawing of a kind of controller, for its card: a pad, or a keyboard.
+function DeviceIcon({ kind }: { kind: 'pad' | 'keyboard' | 'touch' }) {
+  const s = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinejoin: 'round', strokeLinecap: 'round' } as const
+  if (kind === 'keyboard') return <svg viewBox="0 0 32 24" aria-hidden="true"><rect {...s} x="2" y="5" width="28" height="15" rx="2.5" /><path {...s} d="M7 10h1M11 10h1M15 10h1M19 10h1M23 10h1M9 15h14" /></svg>
+  if (kind === 'touch') return <svg viewBox="0 0 32 24" aria-hidden="true"><rect {...s} x="9" y="2" width="14" height="20" rx="2.5" /><circle cx="16" cy="18.5" r="1" fill="currentColor" /></svg>
+  return <svg viewBox="0 0 32 24" aria-hidden="true"><path {...s} d="M9 5h14q5 0 6.5 6l1.3 6q.7 4-2.6 4-2 0-3.6-2.3L23 17H9l-1.6 1.7Q5.8 21 3.8 21 .5 21 1.2 17l1.3-6Q4 5 9 5z" /><path {...s} d="M8 10v4M6 12h4" /><circle cx="23" cy="10.5" r="1" fill="currentColor" /><circle cx="25.5" cy="13" r="1" fill="currentColor" /></svg>
+}
 
-function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, bg, refresh, onTouch, say }: Props & { bg: Background; say: (t: string) => void }) {
+// ---- the screen ----
+
+export function ControllerStudio(props: Props) {
+  const { host, data, input, onClose, refresh, onTouch } = props
+  const root = useRef<HTMLDivElement>(null)
+  const [note, setNote] = useState('')
+  const say = useCallback((t: string) => setNote(cap(t)), [])
+  const [bg, setBg] = useState<Background>(data.background)
+  useEffect(() => setBg(data.background), [data.background])
+
+  // What's connected, kept up to date while this screen is open: some browsers fire no events.
+  const [pads, setPads] = useState<PadInfo[]>(() => input.listPads())
+  useEffect(() => {
+    const on = () => setPads(input.listPads())
+    const prev = input.onChange
+    input.onChange = () => { prev?.(); on() }
+    const iv = setInterval(on, 1000)
+    return () => { input.onChange = prev; clearInterval(iv) }
+  }, [input])
+  const [device, setDevice] = useState<Device>(() => input.listPads()[0]?.index ?? 'keyboard')
+  useEffect(() => { if (typeof device === 'number' && !pads.some((p) => p.index === device)) setDevice(pads[0]?.index ?? 'keyboard') }, [pads, device])
+  // A controller turned on while the keyboard is showing is what someone came here for.
+  const seen = useRef(pads.length)
+  useEffect(() => { if (pads.length > seen.current && device === 'keyboard') setDevice(pads[pads.length - 1].index); seen.current = pads.length }, [pads.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ed = useEditor(props, device, pads, say)
+  const isKeys = device === 'keyboard'
+  const sections: [Section, string][] = [
+    ['buttons', 'Buttons'],
+    ...(!isKeys ? [['sticks', 'Sticks and triggers'] as [Section, string]] : []),
+    ...(!isKeys && data.pad.aim ? [['pointer', 'Pointer'] as [Section, string]] : []),
+    ...(!isKeys ? [['vibration', 'Vibration'] as [Section, string]] : []),
+    ['players', 'Players'], ['profiles', 'Profiles'], ['background', 'Background'],
+  ]
+  const [section, setSection] = useState<Section>('buttons')
+  useEffect(() => { if (!sections.some(([s]) => s === section)) setSection('buttons') }) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { root.current?.querySelector<HTMLElement>('.wsc-device[aria-pressed=true]')?.focus({ preventScroll: true }) }, [])
+
+  return (
+    <div ref={root} className="wps wsc" role="dialog" aria-label="Controllers">
+      <header className="wps-head">
+        <h1 className="wps-title">Controllers <span className="wp-muted">· {props.gameTitle || props.consoleName}</span></h1>
+        <button type="button" className="wp-btn primary" onClick={onClose}>Done</button>
+      </header>
+
+      <nav className="wsc-devices" aria-label="Which controller">
+        {pads.map((p) => (
+          <button key={p.index + p.id} type="button" className="wsc-device" aria-pressed={device === p.index} onClick={() => setDevice(p.index)}>
+            <DeviceIcon kind="pad" />
+            <span className="wsc-device-text"><b>{p.name}</b><small>Player {p.port + 1}{p.profile ? ` · ${p.profile.name}` : ''}</small></span>
+          </button>
+        ))}
+        <button type="button" className="wsc-device" aria-pressed={isKeys} onClick={() => setDevice('keyboard')}>
+          <DeviceIcon kind="keyboard" /><span className="wsc-device-text"><b>Keyboard</b><small>Player {input.keyboardPlayer + 1}</small></span>
+        </button>
+        {onTouch && (
+          <button type="button" className="wsc-device" onClick={onTouch}>
+            <DeviceIcon kind="touch" /><span className="wsc-device-text"><b>Touch controls</b><small>Edit on screen…</small></span>
+          </button>
+        )}
+      </nav>
+      {pads.length === 0 && <p className="wsc-nopad" role="status">{noPadWords()}</p>}
+      {props.consolePicker}
+
+      <div className="wsc-body">
+        <nav className="wsc-nav" role="tablist" aria-label="What to set" aria-orientation="vertical">
+          {sections.map(([id, name]) => <button key={id} type="button" role="tab" aria-selected={section === id} className="wsc-nav-item" onClick={() => setSection(id)}>{name}</button>)}
+        </nav>
+        <main className="wsc-main">
+          <div className="wps-note" role="status" aria-live="polite">{note}</div>
+          {['buttons', 'sticks', 'pointer', 'vibration'].includes(section) && <ProfileBar ed={ed} props={props} say={say} goProfiles={() => setSection('profiles')} />}
+          {section === 'buttons' && <ButtonsSection ed={ed} props={props} say={say} goSticks={() => setSection(data.pad.aim && ed.options.pointerStick !== 'off' ? 'pointer' : 'sticks')} />}
+          {section === 'sticks' && <SticksSection ed={ed} props={props} say={say} />}
+          {section === 'pointer' && <PointerSection ed={ed} />}
+          {section === 'vibration' && <VibrationSection ed={ed} props={props} />}
+          {section === 'players' && <PlayersSection props={props} pads={pads} say={say} />}
+          {section === 'profiles' && <ProfilesSection ed={ed} props={props} say={say} />}
+          {section === 'background' && <BackgroundSection host={host} bg={bg} setBg={setBg} refresh={refresh} say={say} data={data} />}
+        </main>
+      </div>
+      <PromptBar className="wps-prompts" items={[{ button: 'dpad', label: 'Move' }, { button: 'confirm', label: 'Choose' }, { button: 'back', label: 'Done' }]} />
+    </div>
+  )
+}
+
+// ---- what's being edited: one controller's profile, shared by every section ----
+
+type Editor = ReturnType<typeof useEditor>
+
+function useEditor(props: Props, device: Device, pads: PadInfo[], say: (t: string) => void) {
+  const { host, data, known, input, consoleName, gameId, refresh } = props
   const targets = data.targets
   const targetIds = useMemo(() => new Set(targets.map((t) => t.id)), [targets])
-  const [pads, setPads] = useState<PadInfo[]>(() => input.listPads())
-  const [device, setDevice] = useState<Device>(() => input.listPads()[0]?.index ?? 'keyboard')
   const [profiles, setProfiles] = useState<Profile[] | null>(null)
-  const [selected, setSelected] = useState<number | null>(null) // which profile; null is the built-in default
-  const [listening, setListening] = useState<number | null>(null)
-  const [walk, setWalk] = useState<number[]>([]) // targets left to set, setting them all in turn
-  const [renaming, setRenaming] = useState<string | null>(null)
-  const [armed, setArmed] = useState('') // what a second press would do
-  const [problems, setProblems] = useState<string[]>([])
-  const [focused, setFocused] = useState<number | null>(null)
-  const hot = useRef(new Map<number, HTMLButtonElement>())
-  const file = useRef<HTMLInputElement>(null)
+  const [selected, setSelected] = useState<number | null>(null) // null is the built-in standard
   const pad = typeof device === 'number' ? pads.find((p) => p.index === device) || null : null
   const isKeys = device === 'keyboard'
   const consoleId = data.console
-  const tv = useMemo(onTV, [])
-
-  // Hot-plugging, while this screen is open.
-  useEffect(() => {
-    const refreshPads = () => setPads(input.listPads())
-    const prev = input.onChange
-    input.onChange = () => { prev?.(); refreshPads() }
-    const iv = setInterval(refreshPads, 1000)
-    return () => { input.onChange = prev; clearInterval(iv) }
-  }, [input])
-  useEffect(() => { if (typeof device === 'number' && !pads.some((p) => p.index === device)) setDevice(pads[0]?.index ?? 'keyboard') }, [pads, device])
-  useEffect(() => { if (device === 'keyboard' && pads.length === 1 && listening === null) setDevice(pads[0].index) }, [pads.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  const family: PadFamily = pad ? familyOf(pad.id) : 'generic'
 
   const load = useCallback(() => host.list().then(setProfiles).catch((e) => say(e?.message || 'Profiles couldn’t be loaded')), [host, say])
   useEffect(() => { void load() }, [load])
 
-  // The profiles that could apply to this controller here.
   const model = isKeys ? 'keyboard' : pad?.model || ''
-  const standing = useMemo(() => {
-    const raw = typeof device === 'number' ? navigator.getGamepads?.()[device] : null
-    return raw ? standingOf(raw, known, navigator.userAgent) : null
-  }, [device, known, pads])
+  const raw = typeof device === 'number' ? (() => { try { return navigator.getGamepads?.()[device] ?? null } catch { return null } })() : null
+  const standing = useMemo(() => (raw ? standingOf(raw, known, navigator.userAgent) : null), [device, known, pads]) // eslint-disable-line react-hooks/exhaustive-deps
   const rawPad = standing?.standing === 'unknown'
+  const extraButton = !!raw && raw.buttons.length > 17
   const fitting = useMemo(() => (profiles || []).filter((p) => p.kind === (isKeys ? 'keyboard' : 'gamepad') && (!p.controller || p.controller === model) && (!p.console || p.console === consoleId) && (!p.game || p.game === gameId) && (isKeys || !!p.raw === rawPad)),
     [profiles, isKeys, model, consoleId, gameId, rawPad])
-
-  // What's in use is what the screen opens on.
   const inUse = useMemo(() => resolveProfile(fitting, isKeys ? 'keyboard' : 'gamepad', model, consoleId, gameId || 0, rawPad), [fitting, isKeys, model, consoleId, gameId, rawPad])
   useEffect(() => { setSelected(inUse?.id ?? null) }, [inUse?.id, device]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (profiles && selected !== null && !fitting.some((p) => p.id === selected)) setSelected(inUse?.id ?? null) }, [fitting]) // eslint-disable-line react-hooks/exhaustive-deps
   const profile = fitting.find((p) => p.id === selected) || null
 
-  const defaults = useMemo<PadMap>(() => {
-    const raw = typeof device === 'number' ? navigator.getGamepads?.()[device] : null
-    return rawPad && raw ? rawFromDefaults(data.defaults.gamepad, raw) : data.defaults.gamepad
-  }, [data.defaults.gamepad, rawPad, device, pads.length])
+  const defaults = useMemo<PadMap>(() => (rawPad && raw ? rawFromDefaults(data.defaults.gamepad, raw) : data.defaults.gamepad), [data.defaults.gamepad, rawPad, device, pads.length]) // eslint-disable-line react-hooks/exhaustive-deps
   const map = useMemo<PadMap>(() => (rawPad && !profile ? defaults : effectiveMap(data.defaults.gamepad, targetIds, profile)), [data.defaults.gamepad, targetIds, profile, rawPad, defaults])
   const keys = useMemo<KeyMap>(() => effectiveKeys(data.defaults.keyboard, targetIds, profile), [data.defaults.keyboard, targetIds, profile])
   const clashes = useMemo(() => (isKeys ? keyConflicts(keys) : conflicts(map)), [isKeys, keys, map])
   const options = effectiveOptions(data.defaults.options, profile)
-  const style = pad?.style || 'generic'
   const labelOf = useCallback((id: number) => targets.find((t) => t.id === id)?.label || String(id), [targets])
-  const describe = useCallback((t: Target) => (isKeys ? describeKey(keys[t.id]) : describeSource(map[t.id], style, rawPad)), [isKeys, keys, map, style, rawPad])
 
-  // Changes are kept as they're made, and tried on the controller straight away. A
-  // queue keeps them in order however fast they come.
+  // Changes are kept as they're made, and tried on the controller straight away. A queue keeps
+  // them in order however fast they come.
   const queue = useRef<Promise<unknown>>(Promise.resolve())
   const timer = useRef(0)
   const pending = useRef<Profile | null>(null)
@@ -232,15 +268,20 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
     if (!p) return
     pending.current = null
     queue.current = queue.current.then(() => host.update(p.id, p)).then((saved) => {
-      // A newer change may be waiting: what's on the screen then stays.
       setProfiles((list) => (list || []).map((x) => (x.id === saved.id && pending.current?.id !== saved.id ? saved : x)))
       return refresh()
     }).catch((e) => say(e?.message || 'That couldn’t be saved'))
   }, [host, refresh, say])
   useEffect(() => () => { clearTimeout(timer.current); flushSave() }, [flushSave])
 
-  // A press can land while the first change is still making the profile. It waits, and
-  // changes that profile, rather than making another.
+  const fresh = useCallback((): Partial<Profile> => ({
+    name: `${isKeys ? 'Keyboard' : pad?.name || 'Controller'} · ${consoleName}`.slice(0, 60), kind: isKeys ? 'keyboard' : 'gamepad', controller: isKeys ? 'keyboard' : model, controllerName: pad?.name,
+    console: consoleId, raw: !isKeys && rawPad, active: true, map: !isKeys && rawPad ? defaults : {}, keys: {}, options: {},
+  }), [isKeys, pad, consoleName, model, consoleId, rawPad, defaults])
+
+  // A press can land while the first change is still making the profile. It waits, and changes
+  // that profile, rather than making another. The first change to the standard layout makes a
+  // profile of it, so that a person gets what they asked for with nothing else to do first.
   const creating = useRef<Promise<Profile | null> | null>(null)
   const change = useCallback(async (edit: (p: Profile) => Profile) => {
     let cur = profile
@@ -250,14 +291,7 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
       if (pending.current?.id === cur.id) cur = pending.current
     }
     if (!cur) {
-      // The first change to a default makes a profile out of it, so that a person gets
-      // what they asked for with nothing else to do first.
-      const name = isKeys ? `Keyboard · ${consoleName}` : `${pad?.name || 'Controller'} · ${consoleName}`
-      const fresh: Partial<Profile> = {
-        name: name.slice(0, 60), kind: isKeys ? 'keyboard' : 'gamepad', controller: isKeys ? 'keyboard' : model, controllerName: pad?.name, console: consoleId, raw: !isKeys && rawPad,
-        active: true, map: !isKeys && rawPad ? defaults : {}, keys: {}, options: {},
-      }
-      const making = host.create(edit(fresh as Profile)).catch((e: any) => { say(e?.message || 'That couldn’t be saved'); return null })
+      const making = host.create(edit(fresh() as Profile)).catch((e: any) => { say(e?.message || 'That couldn’t be saved'); return null })
       creating.current = making
       const made = await making
       creating.current = null
@@ -274,7 +308,7 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
     pending.current = next
     clearTimeout(timer.current)
     timer.current = window.setTimeout(flushSave, 300)
-  }, [profile, isKeys, consoleName, pad, model, consoleId, rawPad, defaults, host, device, input, refresh, say, flushSave])
+  }, [profile, fresh, host, device, input, refresh, say, flushSave])
 
   const setBinding = useCallback((id: number, b: Binding | null) => change((p) => ({ ...p, map: { ...(p.map || {}), [id]: b } })), [change])
   const setKey = useCallback((id: number, code: string) => change((p) => {
@@ -283,25 +317,126 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
     return { ...p, keys: { ...next, [id]: code } }
   }), [change])
   const setOption = useCallback((patch: Partial<ProfileOptions>) => change((p) => ({ ...p, options: { ...(p.options || {}), ...patch } })), [change])
-  // Listening below outlives a render, and must make its change on the profile as it is by then.
-  const setBindingNow = useRef(setBinding)
-  setBindingNow.current = setBinding
-  const setKeyNow = useRef(setKey)
-  setKeyNow.current = setKey
+  // One button back to what it does by default.
+  const resetTarget = useCallback((id: number) => change((p) => {
+    if (isKeys) { const k = { ...(p.keys || {}) }; delete k[id]; return { ...p, keys: k } }
+    const m = { ...(p.map || {}) }
+    if (p.raw) m[id] = defaults[id] ?? null
+    else delete m[id]
+    return { ...p, map: m }
+  }), [change, isKeys, defaults])
 
-  // The two pairs of face buttons people most often want the other way round.
-  const swaps = useMemo(() => (data.pad.art === 'six' ? [] : [[0, 8], [1, 9]].filter(([a, b]) => targetIds.has(a) && targetIds.has(b))), [targetIds, data.pad.art]) // six in two rows have no such pairs
-  const swapTargets = (a: number, b: number) => {
-    void change((p) => ({ ...p, map: { ...(p.map || {}), [a]: map[b] ?? null, [b]: map[a] ?? null } }))
-    say(`Swapped ${labelOf(a)} and ${labelOf(b)}`)
+  const act = useCallback(async (fn: () => Promise<unknown>, done?: string) => {
+    try {
+      await fn()
+      if (done) say(done)
+      await load()
+      await refresh()
+    } catch (e: any) { say(e?.message || 'That didn’t work') }
+  }, [load, refresh, say])
+
+  // A binding as the controller in someone's hands shows it.
+  const glyphOf = useCallback((b: Binding | null | undefined, size: 'sm' | 'md' = 'md'): React.ReactNode => {
+    if (!b) return <span className="wsc-unset">Not set</span>
+    if (rawPad) return <span className="wsc-rawsrc">{describeSource(b, 'generic', true)}</span>
+    if ('b' in b) return <PhysGlyph i={b.b} family={family} size={size} />
+    if ('h' in b) return <PhysGlyph i={[0, 12, 15, 13, 14][b.d]} family={family} size={size} />
+    const dir = [['←', '→'], ['↑', '↓'], ['←', '→'], ['↑', '↓']][b.a]?.[b.d > 0 ? 1 : 0]
+    if (b.a > 3 || !dir) return <span className="wsc-rawsrc">{describeSource(b, pad?.style || 'generic', false)}</span>
+    return <span className="wsc-stickdir"><StickGlyph right={b.a >= 2} size={size} /><b aria-hidden="true">{dir}</b></span>
+  }, [rawPad, family, pad?.style])
+
+  return {
+    targets, targetIds, profiles, fitting, inUse, profile, selected, setSelected, pad, isKeys, model, family, rawPad, extraButton, defaults, map, keys, clashes, options,
+    labelOf, change, setBinding, setKey, setOption, resetTarget, act, load, fresh, glyphOf, device, consoleId,
   }
+}
+
+// ---- the profile line ----
+
+type Scope = 'game' | 'console' | 'all'
+const scopeOf = (p: Profile | null): Scope => (!p ? 'console' : p.game ? 'game' : p.console ? 'console' : 'all')
+
+function ProfileBar({ ed, props, say, goProfiles }: { ed: Editor; props: Props; say: (t: string) => void; goProfiles: () => void }) {
+  const { profile, fitting, inUse } = ed
+  const [open, setOpen] = useState(false)
+  const [armed, setArmed] = useState(false)
+  useEffect(() => { setArmed(false) }, [profile?.id])
+  const scopes: [string, string][] = [...(props.gameId ? [['game', 'This game'] as [string, string]] : []), ['console', `All ${props.consoleName} games`], ['all', 'Every console']]
+  const setScope = (s: string) => {
+    const patch = { game: s === 'game' ? props.gameId : undefined, console: s === 'all' ? undefined : ed.consoleId }
+    void ed.change((p) => ({ ...p, ...patch }))
+    say(s === 'game' ? `Used for ${props.gameTitle || 'this game'} only` : s === 'console' ? `Used for every ${props.consoleName} game` : 'Used for every console')
+  }
+  const choose = (p: Profile | null) => {
+    setOpen(false)
+    if (!p) {
+      if (inUse) void ed.act(() => props.host.setActive(inUse.id, false), 'Using the standard layout')
+      ed.setSelected(null)
+      return
+    }
+    ed.setSelected(p.id)
+    if (!p.active) void ed.act(() => props.host.setActive(p.id, true), `Using “${p.name}”`)
+  }
+  const reset = () => {
+    if (!profile) { say('This is already the standard layout'); return }
+    if (!armed) { setArmed(true); say('Press Reset again to put every button back as it was'); return }
+    setArmed(false)
+    void ed.change((p) => ({ ...p, map: !ed.isKeys && ed.rawPad ? ed.defaults : {}, keys: {}, options: {} }))
+    say('Every button is back as it was')
+  }
+  return (
+    <div className="wsc-profilebar">
+      <div className="wsc-profile-pick">
+        <span className="wsc-seg-label">Profile</span>
+        <button type="button" className="wp-btn wsc-profile-btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <span>{profile ? profile.name : 'Standard'}</span>{profile && !profile.active && <small className="wsc-badge">Not in use</small>}<span aria-hidden="true" className="wsc-caret">▾</span>
+        </button>
+        <button type="button" className="wp-btn" onClick={reset}>{armed ? 'Reset, really' : 'Reset'}</button>
+      </div>
+      {profile && <Segmented label="Used for" value={scopeOf(profile)} choices={scopes} onChange={setScope} />}
+      {!profile && <p className="wp-muted wsc-bar-note">The standard layout. Change anything and it’s kept as your own profile for {props.consoleName} games.</p>}
+      {open && (
+        <div className="wsc-menu" role="menu" aria-label="Profiles">
+          <button type="button" role="menuitemradio" aria-checked={!profile} onClick={() => choose(null)}><b>Standard</b><small>As this console’s buttons are usually set</small></button>
+          {fitting.map((p) => (
+            <button key={p.id} type="button" role="menuitemradio" aria-checked={profile?.id === p.id} onClick={() => choose(p)}>
+              <b>{p.name}</b><small>{describeScope(p, props)}{p.active ? '' : ' · not in use'}</small>
+            </button>
+          ))}
+          <button type="button" role="menuitem" className="wsc-menu-more" onClick={() => { setOpen(false); goProfiles() }}>New, copy, rename, import…</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function describeScope(p: Profile, props: Props): string {
+  const where = p.game ? (p.game === props.gameId ? props.gameTitle || 'One game' : p.gameTitle || 'One game') : p.console ? `All ${p.console === props.data.console ? props.consoleName : p.console} games` : 'Every console'
+  const who = p.kind === 'keyboard' ? 'Keyboard' : p.controller ? p.controllerName || 'One model of controller' : 'Any controller'
+  return `${where} · ${who}`
+}
+
+// ---- buttons ----
+
+function ButtonsSection({ ed, props, say, goSticks }: { ed: Editor; props: Props; say: (t: string) => void; goSticks: () => void }) {
+  const { targets, map, keys, defaults, isKeys, pad, rawPad, family, clashes, options, labelOf } = ed
+  const { input, data, known } = props
+  const [listening, setListening] = useState<number | null>(null)
+  const [walk, setWalk] = useState<number[]>([])
+  const [picking, setPicking] = useState<Callout | null>(null)
+  const tv = useMemo(onTV, [])
+  const setBindingNow = useRef(ed.setBinding)
+  setBindingNow.current = ed.setBinding
+  const setKeyNow = useRef(ed.setKey)
+  setKeyNow.current = ed.setKey
+  const device = ed.device
 
   // ---- listening for a press ----
-
   useEffect(() => {
     if (listening === null) return
     const what = labelOf(listening)
-    say(`Press what you want for ${what}. It stops waiting by itself after a few seconds.`)
+    say(`Press what you want for ${what}. Esc or waiting a few seconds leaves it as it is.`)
     const next = () => setWalk((w) => { const [n, ...rest] = w; setListening(n ?? null); return rest })
     const deadline = window.setTimeout(() => { say(walk.length ? `${what} left as it was` : 'Nothing was pressed, so nothing changed'); next() }, LISTEN_MS)
     const cancel = (e: KeyboardEvent) => {
@@ -341,16 +476,16 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
       const p = get()
       if (!p || finished) return
       noteReleases(p, base)
-      const raw = findPress(p, base)
-      if (!raw) return
+      const got = findPress(p, base)
+      if (!got) return
       const st = standingOf(p, known, navigator.userAgent)
-      const b = st.standing === 'unknown' || st.standing === 'standard' ? raw : toStandard(raw, st.layout, p)
+      const b = st.standing === 'unknown' || st.standing === 'standard' ? got : toStandard(got, st.layout, p)
       finished = true
       clearInterval(iv)
       clearTimeout(deadline)
       if (!b) { say('That button can’t be used here'); next(); return }
       void setBindingNow.current(listening, b)
-      say(`${what} is now ${describeSource(b, style, st.standing === 'unknown')}`)
+      say(`${what} is now ${'b' in b && !rawPad ? physName(family, b.b) : describeSource(b, pad?.style || 'generic', st.standing === 'unknown')}`)
       // Whatever was pressed mustn't also count as OK when this screen gets it back.
       const wait = window.setInterval(() => {
         const q = get()
@@ -368,38 +503,14 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
     }
   }, [listening, device, isKeys]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ---- trying it out ----
-
-  // Normally a pad also moves around this screen, and its right-hand button goes back.
-  // This lets someone press everything and see it light up, with nothing else happening.
-  // It ends by itself, so that someone with only a controller can't get stuck in it.
-  const [trying, setTrying] = useState(false)
-  useEffect(() => {
-    if (!trying) return
-    let last = performance.now()
-    input.setCapturing(true)
-    holdTvNavigation(true)
-    say('Press anything on the controller. This stops after a few seconds of nothing.')
-    const iv = window.setInterval(() => {
-      const r = typeof device === 'number' ? input.reading(device) : null
-      if (r && (r.mask !== 0 || r.lx !== 0 || r.ly !== 0 || r.rx !== 0 || r.ry !== 0)) last = performance.now()
-      if (performance.now() - last > TRY_IDLE_MS) setTrying(false)
-    }, 200)
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'GoBack' || e.key === 'BrowserBack') { e.preventDefault(); e.stopPropagation(); setTrying(false) } else last = performance.now()
-    }
-    window.addEventListener('keydown', key, true)
-    return () => { clearInterval(iv); window.removeEventListener('keydown', key, true); input.setCapturing(false); holdTvNavigation(false); say('') }
-  }, [trying, device, input, say])
-
-  // ---- lighting up as buttons are pressed ----
-
+  // ---- rows light up as the game's buttons are pressed ----
+  const rows = useRef(new Map<number, HTMLElement>())
   useEffect(() => {
     let raf = 0
     const lit = new Set<number>()
     const paint = (id: number, on: boolean) => {
       if (on === lit.has(id)) return
-      const el = hot.current.get(id)
+      const el = rows.current.get(id)
       if (on) { lit.add(id); el?.setAttribute('data-on', '') } else { lit.delete(id); el?.removeAttribute('data-on') }
     }
     if (isKeys) {
@@ -424,37 +535,350 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
     return () => { input.onFrame = prev; cancelAnimationFrame(raf); for (const id of [...lit]) paint(id, false) }
   }, [input, device, isKeys, keys])
 
-  // ---- profiles ----
+  // ---- the controller's own buttons, and what each does ----
+  const same = (a: Binding | null | undefined, b: Binding | null | undefined) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+  const physOf = (b: Binding | null | undefined): number | null => (!b ? null : 'b' in b ? b.b : 'h' in b ? [-1, 12, 15, 13, 14][b.d] : null)
+  const doing = (m: PadMap, i: number) => targets.filter((t) => physOf(m[t.id]) === i).map((t) => t.id)
+  const plain = (label: string) => label.replace(/\s+(up|down|left|right)$/i, '')
+  const describeCallout = (c: Callout) => {
+    if (c.stick !== undefined) {
+      const axes = [c.stick * 2, c.stick * 2 + 1]
+      const names = new Set<string>()
+      for (const t of targets) { const b = map[t.id]; if (b && 'a' in b && axes.includes(b.a)) names.add(plain(t.label)) }
+      if (data.pad.aim && (options.pointerStick || 'right') === (c.stick ? 'right' : 'left')) { names.clear(); names.add('Pointer') }
+      if (c.stick === 0 && options.stickDpad) names.add('D-pad')
+      return { text: names.size ? [...names].join(' · ') : 'Not used', none: !names.size }
+    }
+    const now = doing(map, c.phys!), was = doing(defaults, c.phys!)
+    const changed = now.length !== was.length || now.some((x) => !was.includes(x))
+    return { text: now.length ? now.map(labelOf).join(' · ') : 'Not used', none: !now.length, changed }
+  }
+  // A button of the controller made to do one of the game's: whatever that did before moves to
+  // what pressed this one, so nothing is left out.
+  const assign = (i: number, t: number | null) => {
+    const src: Binding = { b: i }
+    const had = doing(map, i)
+    setPicking(null)
+    if (t === null) {
+      void ed.change((p) => { const m = { ...(p.map || {}) }; for (const o of had) m[o] = null; return { ...p, map: m } })
+      say(`${physName(family, i)} does nothing in this game now`)
+      return
+    }
+    const prev = map[t] ?? null
+    void ed.change((p) => { const m = { ...(p.map || {}), [t]: src }; for (const o of had) if (o !== t) m[o] = prev; return { ...p, map: m } })
+    const moved = had.filter((o) => o !== t)
+    const prevPhys = physOf(prev)
+    say(`${physName(family, i)} is now ${labelOf(t)}` + (moved.length ? `, and ${moved.map(labelOf).join(', ')} moved to ${prevPhys !== null ? physName(family, prevPhys) : 'nothing'}` : ''))
+  }
 
-  const act = async (fn: () => Promise<unknown>, done?: string) => {
-    try {
-      await fn()
-      if (done) say(done)
-      await load()
-      await refresh()
-    } catch (e: any) { say(e?.message || 'That didn’t work') }
+  const showPicture = !isKeys && !!pad && !rawPad
+  const turboable = (t: Target) => t.id < 16 && (t.group === 'face' || t.group === 'shoulder')
+  const anyTurbo = !!options.turbo?.length
+  const toggleTurbo = (id: number) => {
+    const on = !!options.turbo?.includes(id)
+    void ed.setOption({ turbo: on ? (options.turbo || []).filter((x) => x !== id) : [...(options.turbo || []), id] })
+    say(on ? `${labelOf(id)} no longer repeats` : `${labelOf(id)} repeats while held`)
   }
-  const scopeEdit = (patch: Partial<Profile>) => change((p) => ({ ...p, ...patch }))
-  const newProfile = () => act(async () => {
-    const created = await host.create({
-      name: `${isKeys ? 'Keyboard' : pad?.name || 'Controller'} · ${consoleName}`.slice(0, 60), kind: isKeys ? 'keyboard' : 'gamepad', controller: isKeys ? 'keyboard' : model, controllerName: pad?.name, console: consoleId,
-      raw: !isKeys && rawPad, active: true, map: !isKeys && rawPad ? defaults : {}, keys: {}, options: {},
+
+  return (
+    <div className="wsc-buttons">
+      {showPicture && (
+        <Card className="wsc-picture-card">
+          <PadPicture family={family} extraButton={ed.extraButton} device={typeof device === 'number' ? device : null} describe={describeCallout} picking={picking?.key ?? null}
+            onPick={(c) => { if (c.stick !== undefined) goSticks(); else setPicking(c) }} />
+          <p className="wp-muted wsc-caption">Choose a button to change what it does. Press buttons on your controller to see them light up.</p>
+        </Card>
+      )}
+      {!isKeys && !pad && <Card><p className="wps-para">{noPadWords()}</p></Card>}
+      {rawPad && <Card><p className="wps-para wps-warn">This browser doesn’t say what this controller’s buttons are, so they may be in the wrong places. Choose “Set them all” to be sure.</p></Card>}
+
+      {picking && picking.phys !== undefined && (
+        <PhysPicker i={picking.phys} family={family} targets={targets} current={doing(map, picking.phys)} labelOf={labelOf} onPick={(t) => assign(picking.phys!, t)} onClose={() => setPicking(null)} />
+      )}
+
+      <Card title={`${props.consoleName} buttons`} actions={
+        <div className="wsc-card-actions">
+          <button type="button" className="wp-btn" disabled={(!isKeys && !pad) || listening !== null} onClick={() => { const [n, ...rest] = targets.map((t) => t.id); setWalk(rest); setListening(n) }}>Set them all</button>
+          {listening !== null && <button type="button" className="wp-btn" onClick={() => { setWalk([]); setListening(null); say('Nothing changed') }}>Stop</button>}
+        </div>
+      }>
+        <div className="wsc-groups">
+          {GROUPS.map(([g, title]) => {
+            const list = targets.filter((t) => t.group === g)
+            if (!list.length) return null
+            return (
+              <div key={g} className="wsc-group">
+                <h4>{title}</h4>
+                <ul className="wsc-rows">
+                  {list.map((t) => {
+                    const clash = clashes.get(t.id)
+                    const changed = isKeys ? !!ed.profile?.keys && t.id in (ed.profile.keys || {}) : !same(map[t.id], defaults[t.id])
+                    const turbo = !!options.turbo?.includes(t.id)
+                    return (
+                      <li key={t.id} ref={(el) => { if (el) rows.current.set(t.id, el); else rows.current.delete(t.id) }} className={'wsc-row' + (listening === t.id ? ' listening' : '')}>
+                        <span className="wsc-row-name">{t.label}{changed && <small className="wsc-dot" title="Changed from the standard layout" aria-label="changed" />}</span>
+                        <span className="wsc-row-src">
+                          {listening === t.id ? <span className="wsc-waiting">Press a {isKeys ? 'key' : 'button'}…</span> : isKeys ? <KeyGlyph code={keys[t.id]} /> : ed.glyphOf(map[t.id])}
+                          {clash && <small className="wsc-clash">also {clash.map(labelOf).join(', ')}</small>}
+                        </span>
+                        <span className="wsc-row-actions">
+                          {!isKeys && turboable(t) && <button type="button" className={'wsc-chip' + (turbo ? ' on' : '')} aria-pressed={turbo} onClick={() => toggleTurbo(t.id)} title="Repeats while held">Turbo</button>}
+                          <button type="button" className={'wp-btn wps-small' + (listening === t.id ? ' primary' : '')} aria-label={`Change ${t.label}`} disabled={!isKeys && !pad} onClick={() => setListening(listening === t.id ? null : t.id)}>{listening === t.id ? 'Cancel' : 'Change'}</button>
+                          <button type="button" className="wp-btn wps-small wsc-icon" aria-label={`Put ${t.label} back`} title="Put it back" disabled={!changed} onClick={() => { void ed.resetTarget(t.id); say(`${t.label} is back as it was`) }}>↺</button>
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )
+          })}
+        </div>
+        {anyTurbo && <Stepper label="Turbo speed" hint="How fast turbo buttons repeat" value={options.turboHz ?? 12} text={`${options.turboHz ?? 12} a second`} min={2} max={30} step={2} onChange={(v) => void ed.setOption({ turboHz: v })} />}
+      </Card>
+    </div>
+  )
+}
+
+// What one of the controller's buttons should do: the game's buttons, grouped, or nothing.
+function PhysPicker({ i, family, targets, current, labelOf, onPick, onClose }: { i: number; family: PadFamily; targets: Target[]; current: number[]; labelOf: (id: number) => string; onPick: (t: number | null) => void; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    ref.current?.querySelector<HTMLElement>('[aria-checked=true], button')?.focus()
+    const esc = (e: KeyboardEvent) => { if (['Escape', 'GoBack', 'BrowserBack'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); onClose() } }
+    window.addEventListener('keydown', esc, true)
+    return () => window.removeEventListener('keydown', esc, true)
+  }, [i]) // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="wsc-scrim" onClick={onClose}>
+      <div ref={ref} className="wsc-picker" role="dialog" aria-label={`What ${physName(family, i)} does`} onClick={(e) => e.stopPropagation()}>
+        <header className="wsc-picker-head">
+          <PhysGlyph i={i} family={family} size="lg" />
+          <div><h3>{physName(family, i)}</h3><p className="wp-muted">Now: {current.length ? current.map(labelOf).join(', ') : 'nothing'}</p></div>
+          <button type="button" className="wp-btn" onClick={onClose}>Cancel</button>
+        </header>
+        {GROUPS.map(([g, title]) => {
+          const list = targets.filter((t) => t.group === g)
+          if (!list.length) return null
+          return (
+            <div key={g} className="wsc-picker-group">
+              <h4>{title}</h4>
+              <div className="wsc-picker-grid" role="radiogroup" aria-label={title}>
+                {list.map((t) => <button key={t.id} type="button" role="radio" aria-checked={current.includes(t.id)} onClick={() => onPick(t.id)}>{t.label}</button>)}
+              </div>
+            </div>
+          )
+        })}
+        <div className="wsc-picker-group">
+          <div className="wsc-picker-grid"><button type="button" role="radio" aria-checked={!current.length} onClick={() => onPick(null)}>Nothing</button></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---- sticks and triggers ----
+
+function SticksSection({ ed, props, say }: { ed: Editor; props: Props; say: (t: string) => void }) {
+  const { options, pad, family } = ed
+  const device = ed.device
+  const dz = options.deadzone ?? 0.15, thr = options.threshold ?? 0.5
+  const stickRefs = useRef<(SVGCircleElement | null)[]>([null, null])
+  const trigRefs = useRef<(HTMLDivElement | null)[]>([null, null])
+  const [cal, setCal] = useState<null | { rest: number[]; low: number[]; high: number[] }>(null)
+  const calRef = useRef(cal)
+  calRef.current = cal
+
+  // The sticks and triggers as they are now, drawn sixty times a second without React.
+  useEffect(() => {
+    if (typeof device !== 'number') return
+    let raf = 0
+    const loop = () => {
+      raf = requestAnimationFrame(loop)
+      let p: Gamepad | null = null
+      try { p = navigator.getGamepads?.()[device] ?? null } catch { /* blocked */ }
+      if (!p) return
+      for (let n = 0; n < 2; n++) {
+        const el = stickRefs.current[n]
+        if (!el) continue
+        const x = p.axes[n * 2] ?? 0, y = p.axes[n * 2 + 1] ?? 0
+        el.setAttribute('cx', String(50 + x * 40)); el.setAttribute('cy', String(50 + y * 40))
+        el.toggleAttribute('data-on', Math.hypot(x, y) > dz)
+      }
+      for (let n = 0; n < 2; n++) {
+        const el = trigRefs.current[n]
+        if (!el) continue
+        const v = p.buttons[6 + n]?.value ?? 0
+        el.style.setProperty('--v', String(v))
+        el.toggleAttribute('data-on', v > thr)
+      }
+      const c = calRef.current
+      if (c) setCal({ ...c, low: c.low.map((v, i) => Math.min(v, p!.axes[i] ?? v)), high: c.high.map((v, i) => Math.max(v, p!.axes[i] ?? v)) })
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [device, dz, thr])
+
+  const startCal = () => {
+    const p = typeof device === 'number' ? navigator.getGamepads?.()[device] : null
+    if (!p) return
+    const rest = Array.from(p.axes)
+    setCal({ rest, low: [...rest], high: [...rest] })
+    say('Move each stick all the way round a few times, then press Finish. Keep your hands off the triggers.')
+  }
+  const finishCal = () => {
+    if (!cal) return
+    const out: Record<number, [number, number, number]> = {}
+    cal.rest.forEach((c, i) => {
+      if (Math.abs(c) > 0.6) return // a trigger or a hat, not a stick
+      const low = cal.low[i], high = cal.high[i]
+      if (high - c > 0.3 && c - low > 0.3) out[i] = [low, c, high]
     })
-    setSelected(created.id)
-  }, 'New profile made')
-  const copyProfile = () => profile && act(async () => { const c = await host.copy(profile.id); setSelected(c.id) }, 'Copied')
-  const deleteProfile = () => {
-    if (!profile) return
-    if (armed !== 'delete') { setArmed('delete'); say(`Press Delete again to remove “${profile.name}”`); return }
-    setArmed('')
-    void act(() => host.remove(profile.id), 'Deleted')
+    setCal(null)
+    if (!Object.keys(out).length) { say('Nothing moved far enough, so nothing changed'); return }
+    void ed.setOption({ calibration: out })
+    say(`Calibrated ${Object.keys(out).length} axes`)
   }
-  const resetProfile = () => {
-    if (armed !== 'reset') { setArmed('reset'); say('Press Reset again to put every button back to its default'); return }
-    setArmed('')
-    if (profile) void change((p) => ({ ...p, map: !isKeys && rawPad ? defaults : {}, keys: {}, options: {} }))
-    say('Back to the default buttons')
+
+  if (!pad) return <Card><p className="wps-para">{noPadWords()}</p></Card>
+  const r = dz * 40
+  return (
+    <div className="wsc-stack">
+      <Card title="Sticks">
+        <div className="wsc-sticks">
+          {[0, 1].map((n) => (
+            <figure key={n} className="wsc-stickview">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle className="wsc-sv-ring" cx="50" cy="50" r="40" />
+                <circle className="wsc-sv-dead" cx="50" cy="50" r={r} />
+                <path className="wsc-sv-axis" d="M10 50h80M50 10v80" />
+                <circle ref={(el) => { stickRefs.current[n] = el }} className="wsc-sv-dot" cx="50" cy="50" r="5" />
+              </svg>
+              <figcaption><StickGlyph right={n === 1} size="sm" /> {n ? 'Right stick' : 'Left stick'}</figcaption>
+            </figure>
+          ))}
+        </div>
+        <Stepper label="Dead zone" hint="How far a stick moves before it counts: the shaded middle" value={Math.round(dz * 100)} text={pct(dz)} min={0} max={60} step={5} onChange={(v) => void ed.setOption({ deadzone: v / 100 })} />
+        <Toggle label="Left stick works the D-pad too" on={options.stickDpad ?? !props.data.pad.sticks} onChange={(on) => void ed.setOption({ stickDpad: on })} />
+        <div className="wsc-card-actions">
+          {cal ? <button type="button" className="wp-btn primary" onClick={finishCal}>Finish calibrating</button> : <button type="button" className="wp-btn" onClick={startCal}>Calibrate the sticks</button>}
+          {options.calibration && !cal && <button type="button" className="wp-btn" onClick={() => { void ed.setOption({ calibration: undefined }); say('Calibration forgotten') }}>Forget calibration</button>}
+        </div>
+      </Card>
+      <Card title="Triggers">
+        <div className="wsc-triggers">
+          {[0, 1].map((n) => (
+            <div key={n} className="wsc-trig">
+              <PhysGlyph i={6 + n} family={family} size="sm" />
+              <div ref={(el) => { trigRefs.current[n] = el }} className="wsc-trig-bar" style={{ '--thr': String(thr) } as React.CSSProperties}><span /></div>
+            </div>
+          ))}
+        </div>
+        <Stepper label="Press point" hint="How far a trigger goes down to count as pressed: the line" value={Math.round(thr * 100)} text={pct(thr)} min={10} max={90} step={5} onChange={(v) => void ed.setOption({ threshold: v / 100 })} />
+      </Card>
+    </div>
+  )
+}
+
+// ---- the Wii Remote's pointer ----
+
+function PointerSection({ ed }: { ed: Editor }) {
+  const { options } = ed
+  const stick = options.pointerStick || 'right'
+  const speed = options.pointerSpeed ?? 1
+  return (
+    <div className="wsc-stack">
+      <Card title="Aiming with a stick">
+        <p className="wp-muted wps-para">The pointer follows your mouse or finger over the picture. A stick can move it too: the stick then aims and does nothing else.</p>
+        <Segmented label="Stick" value={stick} choices={[['right', 'Right stick'], ['left', 'Left stick'], ['off', 'Neither']]} onChange={(v) => void ed.setOption({ pointerStick: v as 'left' | 'right' | 'off' })} />
+        {stick !== 'off' && <Stepper label="Speed" hint="Pushed all the way, how fast it crosses the picture" value={Math.round(speed * 100)} text={`${speed.toFixed(2).replace(/\.?0+$/, '')}×`} min={25} max={400} step={25} onChange={(v) => void ed.setOption({ pointerSpeed: v / 100 })} />}
+      </Card>
+      <Card title="The mouse">
+        <p className="wp-muted wps-para">A click is the Wii Remote’s A. To hide the crosshair over the game, turn it off in Settings, Picture, Pointer.</p>
+      </Card>
+    </div>
+  )
+}
+
+// ---- vibration ----
+
+function VibrationSection({ ed, props }: { ed: Editor; props: Props }) {
+  const { pad, options } = ed
+  if (!pad) return <Card><p className="wps-para">{noPadWords()}</p></Card>
+  if (!pad.rumble) {
+    return <Card title="Vibration"><p className="wps-para">This browser doesn’t let the page make {pad.name} vibrate, so games can’t either. Chrome and Edge on a computer usually can.</p></Card>
   }
+  return (
+    <Card title="Vibration">
+      <Toggle label="Vibrate when the game says to" on={!options.noRumble} onChange={(on) => void ed.setOption({ noRumble: !on })} />
+      <div className="wsc-card-actions"><button type="button" className="wp-btn" onClick={() => props.input.testRumble(pad.index)}>Try it</button></div>
+    </Card>
+  )
+}
+
+// ---- players ----
+
+function PlayersSection({ props, pads, say }: { props: Props; pads: PadInfo[]; say: (t: string) => void }) {
+  const { input, devices, setDevice } = props
+  const [, tick] = useState(0)
+  useEffect(() => { const iv = setInterval(() => tick((x) => x + 1), 1000); return () => clearInterval(iv) }, [])
+  const players = Array.from({ length: MAX_PLAYERS }, (_, i) => i)
+  const seat = (label: string, cur: number, set: (n: number) => void) => (
+    <div className="wsc-seg" role="radiogroup" aria-label={`${label}: which player`}>
+      {players.map((n) => <button key={n} type="button" role="radio" aria-checked={cur === n} aria-label={`Player ${n + 1}`} className={cur === n ? 'on' : ''} onClick={() => set(n)}>{n + 1}</button>)}
+    </div>
+  )
+  return (
+    <div className="wsc-stack">
+      <Card title="Who plays as who">
+        <p className="wp-muted wps-para">Choosing a player that’s taken swaps the two.</p>
+        <ul className="wsc-players">
+          {pads.map((p) => (
+            <li key={p.index + p.id}>
+              <DeviceIcon kind="pad" />
+              <div className="wp-grow"><b>{p.name}</b><small className="wp-muted">{p.profile ? `Profile: ${p.profile.name}` : 'Standard layout'}</small></div>
+              {seat(p.name, p.port, (n) => input.setPadPort(p.index, n))}
+              {p.rumble && <button type="button" className="wp-btn wps-small" onClick={() => input.testRumble(p.index)}>Which one?</button>}
+            </li>
+          ))}
+          {pads.length === 0 && <li className="wp-muted" role="status">{noPadWords()}</li>}
+          <li><DeviceIcon kind="keyboard" /><div className="wp-grow"><b>Keyboard</b></div>{seat('Keyboard', input.keyboardPlayer, (n) => input.setKeyboardPort(n))}</li>
+          <li><DeviceIcon kind="touch" /><div className="wp-grow"><b>Touch controls</b></div>{seat('Touch controls', input.touchPlayer, (n) => input.setTouchPort(n))}</li>
+        </ul>
+      </Card>
+      {devices && devices.some((d) => d.types.length > 1) && (
+        <Card title="What each player has plugged in">
+          <p className="wp-muted wps-para">This game’s emulator offers a choice of controller for each player.</p>
+          <ul className="wsc-players">
+            {devices.filter((d) => d.types.length > 1).map((d) => (
+              <li key={d.port}>
+                <div className="wp-grow"><b>Player {d.port + 1}</b></div>
+                <div className="wsc-seg" role="radiogroup" aria-label={`Player ${d.port + 1}: kind of controller`}>
+                  {d.types.map((t) => <button key={t.id} type="button" role="radio" aria-checked={d.current === t.id} className={d.current === t.id ? 'on' : ''}
+                    onClick={() => void setDevice?.(d.port, t.id).catch((e) => say(e?.message || 'That didn’t work'))}>{t.name}</button>)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// ---- profiles ----
+
+function ProfilesSection({ ed, props, say }: { ed: Editor; props: Props; say: (t: string) => void }) {
+  const { host } = props
+  const { profiles, profile, isKeys, pad, model } = ed
+  const [renaming, setRenaming] = useState<number | null>(null)
+  const [name, setName] = useState('')
+  const [armed, setArmed] = useState<number | null>(null)
+  const [problems, setProblems] = useState<string[]>([])
+  const file = useRef<HTMLInputElement>(null)
+  const tv = useMemo(onTV, [])
+  const mine = (profiles || []).filter((p) => p.kind === (isKeys ? 'keyboard' : 'gamepad'))
+
   const exportProfiles = async (ids?: number[]) => {
     try {
       const text = await host.exportFile(ids)
@@ -473,262 +897,56 @@ function ButtonsTab({ host, data, known, input, consoleName, gameId, gameTitle, 
       const r = await host.importFile(await f.text())
       setProblems([...r.notes, ...r.rejected.map((x) => `“${x.name || 'A profile'}” wasn’t added: ${x.error}.`)])
       say(`Added ${r.imported.length} ${r.imported.length === 1 ? 'profile' : 'profiles'}`)
-      await load()
-      await refresh()
+      await ed.load()
+      await props.refresh()
     } catch (e: any) { say(e?.message || 'That file couldn’t be read') }
   }
-
-  // ---- calibration ----
-
-  const [cal, setCal] = useState<null | { rest: number[]; low: number[]; high: number[] }>(null)
-  useEffect(() => {
-    if (!cal || typeof device !== 'number') return
-    const iv = window.setInterval(() => {
-      const p = navigator.getGamepads?.()[device]
-      if (!p) return
-      setCal((c) => c && { ...c, low: c.low.map((v, i) => Math.min(v, p.axes[i] ?? v)), high: c.high.map((v, i) => Math.max(v, p.axes[i] ?? v)) })
-    }, 16)
-    return () => clearInterval(iv)
-  }, [!!cal, device]) // eslint-disable-line react-hooks/exhaustive-deps
-  const startCal = () => {
-    const p = typeof device === 'number' ? navigator.getGamepads?.()[device] : null
-    if (!p) return
-    const rest = Array.from(p.axes)
-    setCal({ rest, low: [...rest], high: [...rest] })
-    say('Move each stick all the way round, then press Finish. Keep hands off the triggers.')
-  }
-  const finishCal = () => {
-    if (!cal) return
-    const out: Record<number, [number, number, number]> = {}
-    cal.rest.forEach((c, i) => {
-      if (Math.abs(c) > 0.6) return // a trigger or a hat, not a stick
-      const low = cal.low[i], high = cal.high[i]
-      if (high - c > 0.3 && c - low > 0.3) out[i] = [low, c, high]
-    })
-    setCal(null)
-    if (!Object.keys(out).length) { say('Nothing moved far enough, so nothing changed'); return }
-    void setOption({ calibration: out })
-    say(`Calibrated ${Object.keys(out).length} axes`)
-  }
-
-  // ---- what it looks like ----
-
-  const isDefault = !profile
-  const list = (
-    <ul className="wps-map" aria-label="Every button, as a list">
-      {targets.map((t) => {
-        const clash = clashes.get(t.id)
-        return (
-          <li key={t.id} className={clash ? 'clash' : ''}>
-            <span className="wps-map-name">{t.label}</span>
-            <span className="wp-muted wps-map-src">{describe(t)}{listening === t.id && ' · waiting…'}</span>
-            {clash && (
-              <span className="wps-clash">
-                Also {clash.map(labelOf).join(', ')}
-                {!isKeys && clash.length === 1 && (
-                  <button type="button" className="wp-btn wps-small" aria-label={`Swap ${t.label} with ${labelOf(clash[0])}`} onClick={() => {
-                    // The other takes what this one had by default, so both end up pressed by something.
-                    const a = map[t.id], other = clash[0], def = defaults[t.id] ?? null
-                    void change((p) => ({ ...p, map: { ...(p.map || {}), [t.id]: a ?? null, [other]: def } }))
-                    say(`${labelOf(other)} moved to ${describeSource(def, style, rawPad)}`)
-                  }}>Swap</button>
-                )}
-              </span>
-            )}
-            <button type="button" className={'wp-btn wps-small' + (listening === t.id ? ' primary' : '')} aria-label={`Change ${t.label}`} onClick={() => setListening(t.id)} disabled={!isKeys && !pad}>{listening === t.id ? 'Press…' : 'Change'}</button>
-            {!isKeys && <button type="button" className="wp-btn wps-small" aria-label={`Clear ${t.label}`} onClick={() => { void setBinding(t.id, null); say(`Nothing presses ${t.label} now`) }} disabled={!map[t.id]}>Clear</button>}
-          </li>
-        )
-      })}
-    </ul>
-  )
-  const focusedTarget = targets.find((t) => t.id === (listening ?? focused))
+  const save = (p: Profile, patch: Partial<Profile>) => ed.act(() => host.update(p.id, { ...p, ...patch }))
 
   return (
-    <div className="wps-body-grid">
-      <section className="wps-left" aria-label="Picture of the controller">
-        <Stage bg={bg} host={host}>
-          <ControllerPicture art={data.pad.art} targets={targets} active={listening} describe={describe} refs={hot}
-            onPick={(id) => { if (isKeys || pad) setListening(id); else say(noPadWords()) }} onFocusTarget={setFocused} />
-          <div className="wps-caption" aria-hidden="true">
-            {listening !== null ? <b>Press what you want for {labelOf(listening)}</b> : focusedTarget ? <><b>{focusedTarget.label}</b> <span>{describe(focusedTarget)}</span></> : <span>Choose a button, then press what you want for it.</span>}
-          </div>
-        </Stage>
-        <div className="wps-row">
-          <button type="button" className="wp-btn" disabled={(!isKeys && !pad) || listening !== null} onClick={() => { const [n, ...rest] = targets.map((t) => t.id); setWalk(rest); setListening(n) }}>Set them all, one by one</button>
-          {listening !== null && <button type="button" className="wp-btn" onClick={() => { setWalk([]); setListening(null); say('Nothing changed') }}>Stop</button>}
-          <button type="button" className={'wp-btn' + (trying ? ' primary' : '')} aria-pressed={trying} disabled={!pad && !isKeys} onClick={() => setTrying((t) => !t)}>{trying ? 'Stop trying' : 'Try your controller'}</button>
-          {onTouch && <button type="button" className="wp-btn" onClick={onTouch}>Edit touch controls…</button>}
-        </div>
-      </section>
-
-      <section className="wps-right" aria-label="Controller and profile">
-        <div className="wps-card">
-        <h3>Controller</h3>
-        <div className="wps-choices" role="group" aria-label="Which controller">
-          {pads.map((p) => (
-            <button key={p.index} type="button" aria-pressed={device === p.index} className={'wp-chip' + (device === p.index ? ' on' : '')} onClick={() => setDevice(p.index)}>{p.name}</button>
-          ))}
-          <button type="button" aria-pressed={isKeys} className={'wp-chip' + (isKeys ? ' on' : '')} onClick={() => setDevice('keyboard')}>Keyboard</button>
-        </div>
-        {pads.length === 0 && <p className="wp-muted wps-para" role="status">{noPadWords()}</p>}
-        {pad && pad.standing === 'known' && <p className="wp-muted wps-para">Recognised, and its buttons were put in order for you. If any are wrong, set them here.</p>}
-        {pad && pad.standing === 'unknown' && <p className="wps-para wps-warn">This browser doesn’t say what this controller’s buttons are, so they may be in the wrong places. Choose “Set them all, one by one” to be sure.</p>}
-        </div>
-
-        <div className="wps-card">
-        <h3>Profile</h3>
-        <div className="wps-profiles" role="group" aria-label="Which profile">
-          <button type="button" aria-pressed={isDefault} className={'wp-chip' + (isDefault ? ' on' : '')} onClick={() => setSelected(null)}>Default</button>
-          {fitting.map((p) => (
-            <button key={p.id} type="button" aria-pressed={selected === p.id} className={'wp-chip' + (selected === p.id ? ' on' : '')} onClick={() => setSelected(p.id)}>
-              {p.name}{p.active && <small className="wps-tag">in use</small>}
-            </button>
-          ))}
-        </div>
-        <div className="wps-row wps-wrap">
-          <button type="button" className="wp-btn wps-small" onClick={newProfile}>New</button>
-          <button type="button" className="wp-btn wps-small" disabled={!profile} onClick={copyProfile}>Copy</button>
-          <button type="button" className="wp-btn wps-small" disabled={!profile} onClick={() => setRenaming(profile?.name || '')}>Rename</button>
-          <button type="button" className="wp-btn wps-small" onClick={resetProfile}>Reset</button>
-          <button type="button" className="wp-btn wps-small" disabled={!profile} onClick={deleteProfile}>{armed === 'delete' ? 'Delete, really' : 'Delete'}</button>
-          {!tv && <button type="button" className="wp-btn wps-small" disabled={!profiles?.length} onClick={() => void exportProfiles(profile ? [profile.id] : undefined)}>Export</button>}
-          {!tv && <button type="button" className="wp-btn wps-small" onClick={() => file.current?.click()}>Import</button>}
+    <div className="wsc-stack">
+      <Card title={isKeys ? 'Keyboard profiles' : 'Controller profiles'} actions={
+        <div className="wsc-card-actions">
+          <button type="button" className="wp-btn primary" onClick={() => void ed.act(async () => { const c = await host.create(ed.fresh()); ed.setSelected(c.id) }, 'New profile made')}>New profile</button>
+          {!tv && <button type="button" className="wp-btn" onClick={() => file.current?.click()}>Import…</button>}
+          {!tv && <button type="button" className="wp-btn" disabled={!mine.length} onClick={() => void exportProfiles(mine.map((p) => p.id))}>Export all</button>}
           <input ref={file} type="file" accept=".json,application/json" hidden aria-label="Import a profile file" onChange={(e) => { void importProfiles(e.target.files?.[0]); e.target.value = '' }} />
         </div>
-        {renaming !== null && profile && (
-          <form className="wps-row" onSubmit={(e) => { e.preventDefault(); const name = renaming.trim(); if (name) void change((p) => ({ ...p, name })); setRenaming(null) }}>
-            <label className="wp-grow">Name <input className="wp-select wps-name" autoFocus maxLength={60} value={renaming} onChange={(e) => setRenaming(e.target.value)} /></label>
-            <button type="submit" className="wp-btn primary">Save</button>
-          </form>
-        )}
+      }>
+        <p className="wp-muted wps-para">When more than one could be used, the one for this game wins, then the one for this console, then one for every console.</p>
         {problems.length > 0 && <ul className="wps-problems" role="alert">{problems.map((p, i) => <li key={i}>{p}</li>)}</ul>}
-
-        {profile && (
-          <div className="wps-group">
-            <Toggle label="Use this profile" on={profile.active} onChange={(on) => void act(() => host.setActive(profile.id, on), on ? `Using “${profile.name}”` : 'No longer using it')} />
-            {!isKeys && !rawPad && <Toggle label="Only this model of controller" hint={pad?.name} on={!!profile.controller} onChange={(on) => void scopeEdit({ controller: on ? model : '', controllerName: on ? pad?.name : undefined })} />}
-            <Toggle label={`Only ${consoleName}`} on={!!profile.console} onChange={(on) => void scopeEdit({ console: on ? consoleId : undefined, game: on ? profile.game : undefined })} />
-            {!!gameId && <Toggle label="Only this game" hint={gameTitle} on={!!profile.game} onChange={(on) => void scopeEdit({ game: on ? gameId : undefined, console: on ? consoleId : profile.console })} />}
-          </div>
-        )}
-        <p className="wp-muted wps-para">The most exact profile in use wins: one for this game, then this console, then this controller, then the default.</p>
-        </div>
-
-        {!isKeys && swaps.length > 0 && (
-          <div className="wps-card">
-            <h3>Go by the letters</h3>
-            <p className="wp-muted wps-para">Buttons are matched by where they are on the pad, which is how games were designed to be held. If you’d rather go by what’s printed on yours, swap them.</p>
-            <div className="wps-row wps-wrap">
-              {swaps.map(([a, b]) => <button key={a} type="button" className="wp-btn" onClick={() => swapTargets(a, b)}>Swap {labelOf(a)} and {labelOf(b)}</button>)}
-            </div>
-          </div>
-        )}
-
-        <div className="wps-card">
-        <h3>How it feels</h3>
-        <div className="wps-group">
-          {!isKeys && <Stepper label="Stick dead zone" value={Math.round((options.deadzone ?? 0.15) * 100)} text={pct(options.deadzone ?? 0.15)} min={0} max={60} step={5} onChange={(v) => void setOption({ deadzone: v / 100 })} />}
-          {!isKeys && <Stepper label="Press point" value={Math.round((options.threshold ?? 0.5) * 100)} text={pct(options.threshold ?? 0.5)} min={10} max={90} step={5} onChange={(v) => void setOption({ threshold: v / 100 })} />}
-          {!isKeys && !data.pad.sticks && <Toggle label="Left stick steers the D-pad too" on={options.stickDpad ?? true} onChange={(on) => void setOption({ stickDpad: on })} />}
-          {!isKeys && data.pad.sticks && <Toggle label="Left stick steers the D-pad too" on={options.stickDpad ?? false} onChange={(on) => void setOption({ stickDpad: on })} />}
-          {!isKeys && data.pad.aim && <Choice label="Stick that moves the pointer" value={options.pointerStick || 'right'} choices={[['right', 'Right stick'], ['left', 'Left stick'], ['off', 'Neither']]} onChange={(v) => void setOption({ pointerStick: v as 'left' | 'right' | 'off' })} />}
-          {!isKeys && data.pad.aim && (options.pointerStick || 'right') !== 'off' && <Stepper label="Pointer speed" value={Math.round((options.pointerSpeed ?? 1) * 100)} text={`${(options.pointerSpeed ?? 1).toFixed(2).replace(/\.?0+$/, '')}×`} min={25} max={400} step={25} onChange={(v) => void setOption({ pointerSpeed: v / 100 })} />}
-          {!isKeys && pad?.rumble && <Toggle label="Rumble" on={!options.noRumble} onChange={(on) => void setOption({ noRumble: !on })} />}
-          {!isKeys && pad?.rumble && <button type="button" className="wp-btn" onClick={() => input.testRumble(device as number)}>Try the rumble</button>}
-          {!isKeys && pad && (cal
-            ? <button type="button" className="wp-btn primary" onClick={finishCal}>Finish calibrating</button>
-            : <div className="wps-row">
-                <button type="button" className="wp-btn" onClick={startCal}>Calibrate sticks</button>
-                {options.calibration && <button type="button" className="wp-btn" onClick={() => { void setOption({ calibration: undefined }); say('Calibration forgotten') }}>Forget calibration</button>}
-              </div>)}
-        </div>
-        <fieldset className="wps-turbo">
-          <legend>Turbo: these repeat while held</legend>
-          {targets.filter((t) => t.id < 16 && (t.group === 'face' || t.group === 'shoulder')).map((t) => {
-            const on = !!options.turbo?.includes(t.id)
-            return <button key={t.id} type="button" aria-pressed={on} className={'wp-chip' + (on ? ' on' : '')} onClick={() => void setOption({ turbo: on ? (options.turbo || []).filter((x) => x !== t.id) : [...(options.turbo || []), t.id] })}>{t.label}</button>
-          })}
-          {!!options.turbo?.length && <Stepper label="Presses a second" value={options.turboHz ?? 12} min={2} max={30} step={2} onChange={(v) => void setOption({ turboHz: v })} />}
-        </fieldset>
-        </div>
-      </section>
-
-      <section className="wps-card wps-map-card" aria-label="Every button">
-        <h3>Every button</h3>
-        {list}
-      </section>
-    </div>
-  )
-}
-
-// ---- players ----
-
-function PlayersTab({ input, devices, setDevice, say }: Props & { say: (t: string) => void }) {
-  const [pads, setPads] = useState<PadInfo[]>(() => input.listPads())
-  const [, tick] = useState(0)
-  useEffect(() => {
-    const on = () => { setPads(input.listPads()); tick((x) => x + 1) }
-    const prev = input.onChange
-    input.onChange = () => { prev?.(); on() }
-    const iv = setInterval(on, 1000) // some browsers don't fire connection events
-    return () => { input.onChange = prev; clearInterval(iv) }
-  }, [input])
-  const players = Array.from({ length: MAX_PLAYERS }, (_, i) => i)
-  return (
-    <div className="wps-players">
-      <p className="wp-muted wps-para">Choosing a player that’s taken swaps the two controllers.</p>
-      <div className="wps-card">
-      <ul className="wp-list">
-        {pads.map((p) => (
-          <li key={p.index + p.id}>
-            <div className="wp-grow"><b>{p.name}</b>
-              <small className="wp-muted">{p.profile ? `Profile: ${p.profile.name}` : p.standing === 'unknown' ? 'Buttons not known: set them up on the Buttons tab.' : p.standing === 'known' ? 'Recognised' : 'Standard buttons'}</small></div>
-            <div className="wps-seats" role="group" aria-label={`${p.name}: which player`}>
-              {players.map((n) => <button key={n} type="button" aria-pressed={p.port === n} aria-label={`Player ${n + 1}`} className={'wp-chip wps-seat' + (p.port === n ? ' on' : '')} onClick={() => input.setPadPort(p.index, n)}>{n + 1}</button>)}
-            </div>
-            {p.rumble && <button type="button" className="wp-btn wps-small" onClick={() => input.testRumble(p.index)}>Which one?</button>}
-          </li>
-        ))}
-        {pads.length === 0 && <li className="wp-muted" role="status">{noPadWords()}</li>}
-        <li>
-          <div className="wp-grow"><b>Keyboard</b></div>
-          <div className="wps-seats" role="group" aria-label="Keyboard: which player">
-            {players.map((n) => <button key={n} type="button" aria-pressed={input.keyboardPlayer === n} aria-label={`Player ${n + 1}`} className={'wp-chip wps-seat' + (input.keyboardPlayer === n ? ' on' : '')} onClick={() => input.setKeyboardPort(n)}>{n + 1}</button>)}
-          </div>
-        </li>
-        <li>
-          <div className="wp-grow"><b>Touch controls</b></div>
-          <div className="wps-seats" role="group" aria-label="Touch controls: which player">
-            {players.map((n) => <button key={n} type="button" aria-pressed={input.touchPlayer === n} aria-label={`Player ${n + 1}`} className={'wp-chip wps-seat' + (input.touchPlayer === n ? ' on' : '')} onClick={() => input.setTouchPort(n)}>{n + 1}</button>)}
-          </div>
-        </li>
-      </ul>
-      </div>
-      {devices && devices.some((d) => d.types.length > 1) && (
-        <div className="wps-card">
-          <h3>What each player has plugged in</h3>
-          <p className="wp-muted wps-para">This game’s emulator offers a choice of controller for its ports.</p>
-          <ul className="wp-list">
-            {devices.filter((d) => d.types.length > 1).map((d) => (
-              <li key={d.port}>
-                <div className="wp-grow"><b>Player {d.port + 1}</b></div>
-                <div className="wps-seats" role="group" aria-label={`Player ${d.port + 1}: kind of controller`}>
-                  {d.types.map((t) => <button key={t.id} type="button" aria-pressed={d.current === t.id} className={'wp-chip' + (d.current === t.id ? ' on' : '')}
-                    onClick={() => void setDevice?.(d.port, t.id).catch((e) => say(e?.message || 'That didn’t work'))}>{t.name}</button>)}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        <ul className="wsc-profiles">
+          {mine.map((p) => (
+            <li key={p.id} className={profile?.id === p.id ? 'current' : ''}>
+              {renaming === p.id ? (
+                <form className="wsc-rename" onSubmit={(e) => { e.preventDefault(); const n = name.trim(); if (n) void save(p, { name: n.slice(0, 60) }); setRenaming(null) }}>
+                  <input className="wp-select" autoFocus maxLength={60} value={name} onChange={(e) => setName(e.target.value)} aria-label="Name" />
+                  <button type="submit" className="wp-btn primary wps-small">Save</button>
+                  <button type="button" className="wp-btn wps-small" onClick={() => setRenaming(null)}>Cancel</button>
+                </form>
+              ) : (
+                <div className="wsc-profile-text"><b>{p.name}</b><small className="wp-muted">{describeScope(p, props)}</small></div>
+              )}
+              <div className="wsc-profile-actions">
+                <Toggle label="In use" on={p.active} onChange={(on) => void ed.act(() => host.setActive(p.id, on), on ? `Using “${p.name}”` : 'No longer using it')} />
+                {!isKeys && !p.raw && pad && <Toggle label={`Only ${pad.name}`} on={!!p.controller} onChange={(on) => void save(p, { controller: on ? model : '', controllerName: on ? pad.name : undefined })} />}
+                <button type="button" className="wp-btn wps-small" onClick={() => { setRenaming(p.id); setName(p.name) }}>Rename</button>
+                <button type="button" className="wp-btn wps-small" onClick={() => void ed.act(async () => { const c = await host.copy(p.id); ed.setSelected(c.id) }, 'Copied')}>Copy</button>
+                {!tv && <button type="button" className="wp-btn wps-small" onClick={() => void exportProfiles([p.id])}>Export</button>}
+                <button type="button" className="wp-btn wps-small" onClick={() => { if (armed !== p.id) { setArmed(p.id); say(`Press Delete again to remove “${p.name}”`); return } setArmed(null); void ed.act(() => host.remove(p.id), 'Deleted') }}>{armed === p.id ? 'Delete, really' : 'Delete'}</button>
+              </div>
+            </li>
+          ))}
+          {!mine.length && <li className="wp-muted">No profiles yet. Change any button and one is made for you.</li>}
+        </ul>
+      </Card>
     </div>
   )
 }
 
 // ---- the background ----
 
-function PictureTab({ host, bg, setBg, refresh, say, data }: { host: ProfileHost; bg: Background; setBg: (b: Background) => void; refresh: () => Promise<void>; say: (t: string) => void; data: ControlsData; input: InputManager }) {
+function BackgroundSection({ host, bg, setBg, refresh, say, data }: { host: ProfileHost; bg: Background; setBg: (b: Background) => void; refresh: () => Promise<void>; say: (t: string) => void; data: ControlsData }) {
   const file = useRef<HTMLInputElement>(null)
   const hot = useRef(new Map<number, HTMLButtonElement>())
   const [busy, setBusy] = useState(false)
@@ -756,18 +974,19 @@ function PictureTab({ host, bg, setBg, refresh, say, data }: { host: ProfileHost
     try { setBg(await host.removeBackground()); await refresh(); say('Picture removed') } catch (e: any) { say(e?.message || 'That didn’t work') }
   }
   return (
-    <div className="wps-body-grid">
-      <section className="wps-left" aria-label="How it looks">
-        <div inert>
-          <Stage bg={bg} host={host}>
-            <ControllerPicture art={data.pad.art} targets={data.targets} active={null} describe={() => 'shown as an example'} refs={hot} onPick={() => {}} />
-          </Stage>
+    <div className="wsc-stack">
+      <Card title="Your own background">
+        <p className="wp-muted wps-para">A picture of your own behind the touch controls and this screen’s examples. It’s kept on the server for your account, and nobody else can see it. PNG, JPEG or WebP, up to 10 MB.</p>
+        <div className="wps-stage" inert>
+          {bg.version > 0 && (
+            <>
+              <img className="wps-bg" src={host.backgroundUrl(bg.version)} alt="" style={{ objectFit: bg.fit, objectPosition: `${bg.x}% ${bg.y}%` }} />
+              <div className="wps-dim" style={{ opacity: bg.dim / 100 }} />
+            </>
+          )}
+          <ControllerPicture art={data.pad.art} targets={data.targets} active={null} describe={() => 'shown as an example'} refs={hot} onPick={() => {}} />
         </div>
-      </section>
-      <section className="wps-right wps-card">
-        <h3>Your own background</h3>
-        <p className="wp-muted wps-para">A picture of your own behind the controller, on this screen only. It’s kept on the server for your account, and nobody else can see it. PNG, JPEG or WebP, up to 10 MB.</p>
-        <div className="wps-row wps-wrap">
+        <div className="wsc-card-actions">
           {!tv && <button type="button" className="wp-btn primary" disabled={busy} onClick={() => file.current?.click()}>{bg.version ? 'Choose another…' : 'Choose a picture…'}</button>}
           {tv && !bg.version && <p className="wp-muted wps-para">Add a picture from a computer or phone, and it follows you here.</p>}
           {bg.version > 0 && <button type="button" className="wp-btn" onClick={remove}>Remove it</button>}
@@ -781,7 +1000,7 @@ function PictureTab({ host, bg, setBg, refresh, say, data }: { host: ProfileHost
             <Stepper label="Dimming" value={bg.dim} text={`${bg.dim}%`} min={0} max={90} step={10} onChange={(dim) => change({ dim })} />
           </div>
         )}
-      </section>
+      </Card>
     </div>
   )
 }
