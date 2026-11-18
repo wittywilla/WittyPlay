@@ -495,6 +495,11 @@ func makeVKCallbacks() {
 	})
 }
 
+// vkMaxArg is VK_WHOLE_SIZE and UINT64_MAX as an argument. Vulkan's 64-bit arguments only fit
+// one machine word on 64-bit systems, so it's offered only there (vkProbe); on others this
+// compiles and goes unused.
+var vkMaxArg = ^uintptr(0)
+
 // ErrNoVulkan is why Vulkan couldn't be offered.
 var ErrNoVulkan = errors.New("no usable Vulkan device")
 
@@ -756,6 +761,9 @@ func (v *vkOut) setUp() error {
 
 // newVKOut makes a device for a core, or says why it can't.
 func newVKOut(neg *vkNegotiation) (*vkOut, error) {
+	if unsafe.Sizeof(uintptr(0)) != 8 {
+		return nil, fmt.Errorf("%w: offered on 64-bit systems only", ErrNoVulkan)
+	}
 	makeVKCallbacks()
 	v, err := loadVK()
 	if err != nil {
@@ -794,6 +802,9 @@ func newVKOut(neg *vkNegotiation) (*vkOut, error) {
 // vkProbe names the Vulkan card a core would be given, checked once, without making a device: an
 // instance and the list of cards.
 var vkProbe = sync.OnceValues(func() (string, error) {
+	if unsafe.Sizeof(uintptr(0)) != 8 {
+		return "", fmt.Errorf("%w: offered on 64-bit systems only", ErrNoVulkan)
+	}
 	v, err := loadVK()
 	if err != nil {
 		return "", err
@@ -837,7 +848,7 @@ func (v *vkOut) waitSyncIndex() {
 	fence, wait := s.fence, s.submitted
 	v.mu.Unlock()
 	if wait {
-		call(v.f.waitForFences, v.device, 1, uintptr(unsafe.Pointer(&fence)), 1, uintptr(vkTimeoutNever))
+		call(v.f.waitForFences, v.device, 1, uintptr(unsafe.Pointer(&fence)), 1, vkMaxArg)
 	}
 }
 
@@ -883,7 +894,7 @@ func (v *vkOut) ensureBuffer(s *vkSlot, n uint64) error {
 		return fmt.Errorf("vkAllocateMemory failed (%d)", int32(r))
 	}
 	call(v.f.bindBufferMemory, v.device, uintptr(s.buf), uintptr(s.bufMem), 0)
-	if r := call(v.f.mapMemory, v.device, uintptr(s.bufMem), 0, uintptr(vkWholeSize), 0, uintptr(unsafe.Pointer(&s.bufMapped))); int32(r) != vkSuccess {
+	if r := call(v.f.mapMemory, v.device, uintptr(s.bufMem), 0, vkMaxArg, 0, uintptr(unsafe.Pointer(&s.bufMapped))); int32(r) != vkSuccess {
 		return fmt.Errorf("vkMapMemory failed (%d)", int32(r))
 	}
 	s.bufSize = n
@@ -976,7 +987,7 @@ func (v *vkOut) startRead(w, h int) {
 	s := &v.slots[v.index]
 	// The slot's last frame went two frames ago; it has to be done before its buffer is reused.
 	if s.submitted {
-		call(v.f.waitForFences, v.device, 1, uintptr(unsafe.Pointer(&s.fence)), 1, uintptr(vkTimeoutNever))
+		call(v.f.waitForFences, v.device, 1, uintptr(unsafe.Pointer(&s.fence)), 1, vkMaxArg)
 	}
 	n := uint64(w) * uint64(h) * 4
 	if err := v.ensureBuffer(s, n); err != nil {
