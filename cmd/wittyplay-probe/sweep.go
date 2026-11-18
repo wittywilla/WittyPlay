@@ -94,9 +94,11 @@ func sweep(args []string) error {
 	label := fs.String("label", "", "a name for this run")
 	stamp := fs.Bool("stamp", false, "draw numbers into each picture, as the other measurements do")
 	exercise := fs.Bool("exercise", false, "also use what a player can: run-ahead, rewind, save slots, reset and fast forward")
+	onCard := fs.Bool("frames-on-card", true, "have frames converted for the encoder on the graphics card, as the server does by default")
 	state := fs.String("state", "", "a save state to start from, as a game resumed where someone left it")
 	_ = fs.Parse(args)
 	r := sweepResult{Label: *label, Console: g.console, Core: g.coreID, Game: filepath.Base(g.rom)}
+	framesOnCard = *onCard
 	err := playSweep(g, &r, *seconds, *ffmpeg, *encoders, *shots, *label, *state, *loadLimit, *stamp, *exercise)
 	if err != nil {
 		r.Error = err.Error()
@@ -117,6 +119,9 @@ func sweep(args []string) error {
 	}
 	return nil
 }
+
+// framesOnCard is sweep's -frames-on-card.
+var framesOnCard = true
 
 func sweepVerdict(r sweepResult) string {
 	switch {
@@ -223,7 +228,7 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	said := &tailLog{}
 	// Debug, as how a runner went when it was asked to go is only said at that level.
 	log := slog.New(slog.NewTextHandler(said, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	mgr := stream.NewManager(stream.Config{Runner: g.runner, FFmpeg: ffmpeg, HWEncoders: hw, GPUEncoders: hw, HaveEncoder: func(n string) bool { return slices.Contains(names, n) }, Log: log})
+	mgr := stream.NewManager(stream.Config{FramesOnCard: framesOnCard, Runner: g.runner, FFmpeg: ffmpeg, HWEncoders: hw, GPUEncoders: hw, HaveEncoder: func(n string) bool { return slices.Contains(names, n) }, Log: log})
 	load, runnerArgs := g.load()
 	gpu := g.coreID != "" && wittyplay.Traits(g.coreID).GPU && !g.noCard
 	ahead := ipc.RunAheadAuto

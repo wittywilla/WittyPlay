@@ -180,6 +180,7 @@ func (a *App) Configure(ctx context.Context) error {
 	rpc.Mgr.Configure(func(c *stream.Config) {
 		c.Runner, c.RunnerArgs, c.HWEncoders, c.GPUEncoders, c.MaxSessions, c.MaxGPU, c.UDPPort = runner, args, hw, gpuEnc, maxSessions, maxGPU, port
 		c.FFmpeg = tools.FFmpeg
+		c.FramesOnCard = a.configText(ctx, "gamingGpuFrames", "1") != "0"
 		c.HaveEncoder = func(n string) bool { return encoders[n] }
 		c.PublicIPs = splitNonEmpty(a.configText(ctx, "gamingPublicIp", ""))
 		c.STUN = splitNonEmpty(a.configText(ctx, "gamingStun", ""))

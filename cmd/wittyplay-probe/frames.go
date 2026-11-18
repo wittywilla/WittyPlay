@@ -251,6 +251,9 @@ func writePNG(name string, hdr ipc.VideoHeader, data []byte) error {
 func toImage(hdr ipc.VideoHeader, data []byte) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, hdr.Width, hdr.Height))
 	p := img.Pix
+	if hdr.Format == engine.FormatNV12 {
+		return stream.FrameRGBA(hdr, data)
+	}
 	switch hdr.Format {
 	case engine.FormatXRGB8888:
 		for i := 0; i+3 < len(data) && i+3 < len(p); i += 4 {

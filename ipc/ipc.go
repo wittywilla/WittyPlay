@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
+	"github.com/wittywilla/wittyplay/engine"
 )
 
 // Messages from the host.
@@ -357,14 +359,11 @@ func ParseVideo(p []byte) (VideoHeader, []byte, error) {
 		return VideoHeader{}, nil, errors.New("ipc: short video message")
 	}
 	h := VideoHeader{Width: int(binary.LittleEndian.Uint16(p)), Height: int(binary.LittleEndian.Uint16(p[2:])), Format: int(p[4])}
-	if h.Width == 0 || h.Height == 0 || h.Width > MaxDimension || h.Height > MaxDimension || h.Format > 2 {
+	if h.Width == 0 || h.Height == 0 || h.Width > MaxDimension || h.Height > MaxDimension || h.Format > engine.FormatNV12 ||
+		!engine.ValidSize(h.Format, h.Width, h.Height) {
 		return VideoHeader{}, nil, fmt.Errorf("ipc: bad video header %+v", h)
 	}
-	bpp := 2
-	if h.Format == 1 {
-		bpp = 4
-	}
-	if len(p)-VideoHeaderSize != h.Width*h.Height*bpp {
+	if len(p)-VideoHeaderSize != engine.FrameSize(h.Format, h.Width, h.Height) {
 		return VideoHeader{}, nil, errors.New("ipc: video frame size does not match its header")
 	}
 	return h, p[VideoHeaderSize:], nil

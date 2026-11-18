@@ -42,6 +42,7 @@ const (
 	vkStructCommandBufferAllocInfo  = 40
 	vkStructCommandBufferBeginInfo  = 42
 	vkStructImageMemoryBarrier      = 45
+	vkStructImageViewCreateInfo     = 15
 	vkQueueGraphicsBit              = 0x1
 	vkDeviceTypeIntegrated          = 1
 	vkDeviceTypeDiscrete            = 2
@@ -345,7 +346,7 @@ type vkFuncs struct {
 	getFenceStatus, createBuffer, destroyBuffer, getBufferMemoryRequirements               uintptr
 	allocateMemory, freeMemory, bindBufferMemory, mapMemory, unmapMemory                   uintptr
 	createImage, destroyImage, getImageMemoryRequirements, bindImageMemory                 uintptr
-	cmdCopyBufferToImage                                                                   uintptr // tests only
+	cmdCopyBufferToImage, createImageView, destroyImageView                                uintptr // tests only
 }
 
 func vkStr(s string) *byte { b := append([]byte(s), 0); return &b[0] }
@@ -364,6 +365,7 @@ type vkSlot struct {
 	blitW, blitH  uint32
 	blitFormat    uint32
 	w, h          int
+	format        int // engine.FormatXRGB8888, or FormatNV12 when converted on the card
 }
 
 // vkOut is a Vulkan device lent to a core, and its frames on their way back.
@@ -384,7 +386,9 @@ type vkOut struct {
 	surfaceExts bool           // the instance has the extensions a surface needs
 	renderer    string
 
-	iface vkInterface
+	iface       vkInterface
+	nv12        *vkNV12 // the conversion to NV12, where it could be made and is wanted
+	nv12Problem string  // why it couldn't be, for the log
 
 	queueMu sync.Mutex // the core's lock_queue, and every submission here
 
@@ -545,7 +549,7 @@ func (v *vkOut) loadDeviceFuncs() error {
 		"vkDestroyBuffer": &v.f.destroyBuffer, "vkGetBufferMemoryRequirements": &v.f.getBufferMemoryRequirements, "vkAllocateMemory": &v.f.allocateMemory,
 		"vkFreeMemory": &v.f.freeMemory, "vkBindBufferMemory": &v.f.bindBufferMemory, "vkMapMemory": &v.f.mapMemory, "vkUnmapMemory": &v.f.unmapMemory,
 		"vkCreateImage": &v.f.createImage, "vkDestroyImage": &v.f.destroyImage, "vkGetImageMemoryRequirements": &v.f.getImageMemoryRequirements,
-		"vkBindImageMemory": &v.f.bindImageMemory, "vkCmdCopyBufferToImage": &v.f.cmdCopyBufferToImage,
+		"vkBindImageMemory": &v.f.bindImageMemory, "vkCmdCopyBufferToImage": &v.f.cmdCopyBufferToImage, "vkCreateImageView": &v.f.createImageView, "vkDestroyImageView": &v.f.destroyImageView,
 	} {
 		if *slot = call(v.f.getDeviceProcAddr, v.device, uintptr(unsafe.Pointer(vkStr(name)))); *slot == 0 {
 			return fmt.Errorf("%w: the device has no %s", ErrNoVulkan, name)
@@ -788,6 +792,13 @@ func newVKOut(neg *vkNegotiation) (*vkOut, error) {
 	if err := v.setUp(); err != nil {
 		return fail(err)
 	}
+	if nv12Wanted {
+		if n, err := newVKNV12(v); err == nil {
+			v.nv12 = n
+		} else {
+			v.nv12Problem = err.Error()
+		}
+	}
 	return v, nil
 }
 
@@ -865,7 +876,7 @@ func (v *vkOut) ensureBuffer(s *vkSlot, n uint64) error {
 		return nil
 	}
 	v.freeBuffer(s)
-	bi := vkBufferCreateInfo{sType: vkStructBufferCreateInfo, size: n, usage: vkBufferUsageTransferDst, sharingMode: vkSharingExclusive}
+	bi := vkBufferCreateInfo{sType: vkStructBufferCreateInfo, size: n, usage: vkBufferUsageTransferDst | vkBufferUsageStorage, sharingMode: vkSharingExclusive}
 	if r := call(v.f.createBuffer, v.device, uintptr(unsafe.Pointer(&bi)), 0, uintptr(unsafe.Pointer(&s.buf))); int32(r) != vkSuccess {
 		return fmt.Errorf("vkCreateBuffer failed (%d)", int32(r))
 	}
@@ -953,6 +964,47 @@ func (v *vkOut) cmdBarrier(cmd uintptr, src, dst uint32, b *vkImageMemoryBarrier
 	call(v.f.cmdPipelineBarrier, cmd, uintptr(src), uintptr(dst), 0, 0, 0, 0, 0, 1, uintptr(unsafe.Pointer(b)))
 }
 
+// recordCopy records a frame's copy, as B8G8R8A8, into the slot's buffer.
+func (v *vkOut) recordCopy(cmd uintptr, s *vkSlot, img uint64, layout, format uint32, sr vkImageSubresourceRange, w, h int) bool {
+	src := img
+	if layout != vkLayoutGeneral {
+		b := barrier(img, sr, layout, vkLayoutTransferSrc, vkAccessColorAttachmentWrite|vkAccessMemoryWrite, vkAccessTransferRead)
+		v.cmdBarrier(cmd, vkStageAllCommands, vkStageTransfer, &b)
+	}
+	srcLayout := uint32(vkLayoutTransferSrc)
+	if layout == vkLayoutGeneral {
+		srcLayout = vkLayoutGeneral
+	}
+	layers := vkImageSubresourceLayers{vkAspectColor, sr.baseMipLevel, sr.baseArrayLayer, 1}
+	if format != vkFormatB8G8R8A8Unorm && format != vkFormatB8G8R8A8Srgb {
+		// The card converts to B8G8R8A8 by blitting into an image of that format: an sRGB frame into
+		// an sRGB one, so nothing changes but the order of the channels.
+		dstFormat := uint32(vkFormatB8G8R8A8Unorm)
+		if format == vkFormatR8G8B8A8Srgb {
+			dstFormat = vkFormatB8G8R8A8Srgb
+		}
+		if err := v.ensureBlit(s, uint32(w), uint32(h), dstFormat); err != nil {
+			return false
+		}
+		one := vkImageSubresourceRange{vkAspectColor, 0, 1, 0, 1}
+		b := barrier(s.blit, one, vkLayoutUndefined, vkLayoutTransferDst, 0, vkAccessTransferWrite)
+		v.cmdBarrier(cmd, vkStageTopOfPipe, vkStageTransfer, &b)
+		region := vkImageBlit{srcSubresource: layers, srcOffsets: [2]vkOffset3D{{0, 0, 0}, {int32(w), int32(h), 1}},
+			dstSubresource: vkImageSubresourceLayers{vkAspectColor, 0, 0, 1}, dstOffsets: [2]vkOffset3D{{0, 0, 0}, {int32(w), int32(h), 1}}}
+		call(v.f.cmdBlitImage, cmd, uintptr(img), uintptr(srcLayout), uintptr(s.blit), vkLayoutTransferDst, 1, uintptr(unsafe.Pointer(&region)), vkFilterNearest)
+		b = barrier(s.blit, one, vkLayoutTransferDst, vkLayoutTransferSrc, vkAccessTransferWrite, vkAccessTransferRead)
+		v.cmdBarrier(cmd, vkStageTransfer, vkStageTransfer, &b)
+		src, srcLayout, layers = s.blit, vkLayoutTransferSrc, vkImageSubresourceLayers{vkAspectColor, 0, 0, 1}
+	}
+	region := vkBufferImageCopy{imageSubresource: layers, imageExtent: vkExtent3D{uint32(w), uint32(h), 1}}
+	call(v.f.cmdCopyImageToBuffer, cmd, uintptr(src), uintptr(srcLayout), uintptr(s.buf), 1, uintptr(unsafe.Pointer(&region)))
+	if layout != vkLayoutGeneral {
+		b := barrier(img, sr, vkLayoutTransferSrc, layout, vkAccessTransferRead, vkAccessShaderRead|vkAccessColorAttachmentWrite)
+		v.cmdBarrier(cmd, vkStageTransfer, vkStageAllCommands, &b)
+	}
+	return true
+}
+
 // startRead copies the frame the core presented with set_image into the current sync index's
 // buffer, after whatever the core has submitted, and moves on to the next index. It waits for
 // nothing: the frame is handed over by collect. It can be called from whichever thread the core
@@ -978,50 +1030,24 @@ func (v *vkOut) startRead(w, h int) {
 	if s.submitted {
 		call(v.f.waitForFences, v.device, 1, uintptr(unsafe.Pointer(&s.fence)), 1, uintptr(vkTimeoutNever))
 	}
-	n := uint64(w) * uint64(h) * 4
-	if err := v.ensureBuffer(s, n); err != nil {
-		return
-	}
 	cmd := s.cmd
 	call(v.f.resetCommandBuffer, cmd, 0)
 	bi := vkCommandBufferBeginInfo{sType: vkStructCommandBufferBeginInfo, flags: vkCommandBufferOneTimeSubmit}
 	call(v.f.beginCommandBuffer, cmd, uintptr(unsafe.Pointer(&bi)))
-	src := img
-	if layout != vkLayoutGeneral {
-		b := barrier(img, sr, layout, vkLayoutTransferSrc, vkAccessColorAttachmentWrite|vkAccessMemoryWrite, vkAccessTransferRead)
-		v.cmdBarrier(cmd, vkStageAllCommands, vkStageTransfer, &b)
-	}
-	srcLayout := uint32(vkLayoutTransferSrc)
-	if layout == vkLayoutGeneral {
-		srcLayout = vkLayoutGeneral
-	}
-	layers := vkImageSubresourceLayers{vkAspectColor, sr.baseMipLevel, sr.baseArrayLayer, 1}
-	if format != vkFormatB8G8R8A8Unorm && format != vkFormatB8G8R8A8Srgb {
-		// The card converts to B8G8R8A8 by blitting into an image of that format: an sRGB frame into
-		// an sRGB one, so nothing changes but the order of the channels.
-		dstFormat := uint32(vkFormatB8G8R8A8Unorm)
-		if format == vkFormatR8G8B8A8Srgb {
-			dstFormat = vkFormatB8G8R8A8Srgb
+	outFormat, outW, outH := engine.FormatXRGB8888, w, h
+	recorded := false
+	// NV12 on the card where the shader could be made: a third of the bytes come back, as the
+	// encoder takes them (vk_nv12.go).
+	if v.nv12 != nil && v.image.imageView != 0 {
+		ow, oh := (w+3)&^3, (h+1)&^1
+		if v.ensureBuffer(s, uint64(engine.FrameSize(engine.FormatNV12, ow, oh))) == nil {
+			v.nv12.record(v, cmd, s, v.image, w, h, ow, oh)
+			outFormat, outW, outH, recorded = engine.FormatNV12, ow, oh, true
 		}
-		if err := v.ensureBlit(s, uint32(w), uint32(h), dstFormat); err != nil {
-			call(v.f.endCommandBuffer, cmd)
-			return
-		}
-		one := vkImageSubresourceRange{vkAspectColor, 0, 1, 0, 1}
-		b := barrier(s.blit, one, vkLayoutUndefined, vkLayoutTransferDst, 0, vkAccessTransferWrite)
-		v.cmdBarrier(cmd, vkStageTopOfPipe, vkStageTransfer, &b)
-		region := vkImageBlit{srcSubresource: layers, srcOffsets: [2]vkOffset3D{{0, 0, 0}, {int32(w), int32(h), 1}},
-			dstSubresource: vkImageSubresourceLayers{vkAspectColor, 0, 0, 1}, dstOffsets: [2]vkOffset3D{{0, 0, 0}, {int32(w), int32(h), 1}}}
-		call(v.f.cmdBlitImage, cmd, uintptr(img), uintptr(srcLayout), uintptr(s.blit), vkLayoutTransferDst, 1, uintptr(unsafe.Pointer(&region)), vkFilterNearest)
-		b = barrier(s.blit, one, vkLayoutTransferDst, vkLayoutTransferSrc, vkAccessTransferWrite, vkAccessTransferRead)
-		v.cmdBarrier(cmd, vkStageTransfer, vkStageTransfer, &b)
-		src, srcLayout, layers = s.blit, vkLayoutTransferSrc, vkImageSubresourceLayers{vkAspectColor, 0, 0, 1}
 	}
-	region := vkBufferImageCopy{imageSubresource: layers, imageExtent: vkExtent3D{uint32(w), uint32(h), 1}}
-	call(v.f.cmdCopyImageToBuffer, cmd, uintptr(src), uintptr(srcLayout), uintptr(s.buf), 1, uintptr(unsafe.Pointer(&region)))
-	if layout != vkLayoutGeneral {
-		b := barrier(img, sr, vkLayoutTransferSrc, layout, vkAccessTransferRead, vkAccessShaderRead|vkAccessColorAttachmentWrite)
-		v.cmdBarrier(cmd, vkStageTransfer, vkStageAllCommands, &b)
+	if !recorded && (v.ensureBuffer(s, uint64(w)*uint64(h)*4) != nil || !v.recordCopy(cmd, s, img, layout, format, sr, w, h)) {
+		call(v.f.endCommandBuffer, cmd)
+		return
 	}
 	call(v.f.endCommandBuffer, cmd)
 
@@ -1050,7 +1076,7 @@ func (v *vkOut) startRead(w, h int) {
 		return
 	}
 	v.seq++
-	s.submitted, s.pending, s.seq, s.w, s.h = true, true, v.seq, w, h
+	s.submitted, s.pending, s.seq, s.w, s.h, s.format = true, true, v.seq, outW, outH, outFormat
 	v.index = (v.index + 1) % vkSyncSlots
 }
 
@@ -1091,17 +1117,21 @@ func (v *vkOut) collect(h engine.Handlers, wait time.Duration) bool {
 				o.pending = false
 			}
 		}
-		n := s.w * s.h * 4
+		n := engine.FrameSize(s.format, s.w, s.h)
 		if cap(v.copied) < n {
 			v.copied = make([]byte, n)
 		}
 		// Out of the mapped memory now, so the slot can be reused as soon as the lock is let go.
 		data := v.copied[:n]
 		copy(data, unsafe.Slice((*byte)(ptr(s.bufMapped)), n))
-		w, ht := s.w, s.h
+		w, ht, format := s.w, s.h, s.format
 		v.mu.Unlock()
-		if h.Video != nil {
-			h.Video(data, w, ht, w*4, engine.FormatXRGB8888)
+		send := h.VideoReady
+		if send == nil {
+			send = h.Video
+		}
+		if send != nil {
+			send(data, w, ht, w*engine.BytesPerPixel(format), format)
 		}
 		return false
 	}
@@ -1118,6 +1148,10 @@ func (v *vkOut) destroy() {
 		v.queueMu.Lock()
 		call(v.f.deviceWaitIdle, v.device)
 		v.queueMu.Unlock()
+	}
+	if v.nv12 != nil {
+		v.nv12.destroy(v)
+		v.nv12 = nil
 	}
 	if v.device != 0 && v.f.destroyFence != 0 {
 		for i := range v.slots {

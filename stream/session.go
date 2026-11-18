@@ -43,7 +43,10 @@ type Config struct {
 	MaxGPU      int               // games drawn on the graphics card at once; 0 means 2
 	MemoryMB    int64             // 0 means 2048
 	GPUMemoryMB int64             // the same for a game with a graphics driver loaded; 0 means 8192
-	Log         *slog.Logger
+	// FramesOnCard has frames from a graphics card converted for the encoder there (the runner's
+	// -nv12): a third of the bytes come back, and the processor converts nothing.
+	FramesOnCard bool
+	Log          *slog.Logger
 
 	// WebRTC networking; all optional. A fixed UDP port is what a firewall or
 	// a container needs; the public address is what NAT needs.
@@ -565,6 +568,11 @@ func (s *Session) start() error {
 		s.opt.Notices = append(s.opt.Notices[:len(s.opt.Notices):len(s.opt.Notices)], "Memory cards won't work in this game this time, because the server couldn't set up a folder for them. Save slots still work.")
 	}
 	args, memory := append(append([]string(nil), s.cfg.RunnerArgs...), s.opt.RunnerArgs...), s.cfg.MemoryMB
+	// Not while frame stamps are drawn: they're colours a viewer reads back, drawn on the
+	// processor's copy of the frame.
+	if s.cfg.FramesOnCard && !s.opt.Stamp {
+		args = append(args, "-nv12")
+	}
 	if s.opt.GPU || slices.Contains(args, "-processor-gl") {
 		// A graphics driver needs what a software-rendered game never should, and OpenGL the
 		// processor runs is a graphics driver too: Dolphin with llvmpipe didn't fit the other.

@@ -292,6 +292,13 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
                 <input className="input" type="number" min={1} max={16} defaultValue={settings.gamingMaxGpuSessions || '2'} onBlur={(e) => put({ gamingMaxGpuSessions: e.target.value })} />
                 <small className="muted">For consoles that draw with a graphics card. More games share it, so each one has less.</small>
               </label>
+              <label>Convert frames on the graphics card
+                <select className="select" value={settings.gamingGpuFrames || '1'} onChange={(e) => put({ gamingGpuFrames: e.target.value })}>
+                  <option value="1">On: a third of the data comes back, and the processor converts nothing</option>
+                  <option value="0">Off: frames come back as they're drawn</option>
+                </select>
+                <small className="muted">For games drawn with Vulkan. Turn it off only to compare, or if colours look wrong.</small>
+              </label>
               <label>Internal resolution
                 <select className="select" value={settings.gamingResolution || ''} onChange={(e) => put({ gamingResolution: e.target.value })}>
                   <option value="">Automatic (twice native on most consoles)</option>
