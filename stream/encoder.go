@@ -258,6 +258,7 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 	ctx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx, s.cfg.FFmpeg, args...)
 	hideWindow(cmd)
+	encoderPriority(cmd)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		cancel()
@@ -810,6 +811,7 @@ func (s *Session) startOpusLocked() {
 		"-c:a", "libopus", "-ar", "48000", "-b:a", "96k", "-application", "lowdelay", "-frame_duration", "10",
 		"-flush_packets", "1", "-page_duration", "10000", "-f", "ogg", "pipe:1")
 	hideWindow(cmd)
+	encoderPriority(cmd)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		cancel()

@@ -239,8 +239,10 @@ func (r *runner) handlers() engine.Handlers {
 			r.sendFrame(ipc.MsgVideo, tm, r.video)
 		},
 		VideoFlipped: func(data []byte, w, h, stride, format int) {
+			// No check of dropVideo here: a frame from a graphics card can arrive during the next
+			// frame, and the engine has already left out any it was told nobody would see.
 			row := w * engine.BytesPerPixel(format)
-			if r.muted || r.ctl.dropVideo || w <= 0 || h <= 0 || row > stride || len(data) < stride*h {
+			if r.muted || w <= 0 || h <= 0 || row > stride || len(data) < stride*h {
 				return
 			}
 			tm := r.timing()
@@ -561,6 +563,7 @@ func (r *runner) run(in io.Reader, open Open) error {
 	}
 
 	defer r.frames.stop()
+	finisher, _ := eng.(engine.FrameFinisher)
 	for !r.stop {
 		if err := r.writeErr(); err != nil {
 			return err
@@ -629,6 +632,9 @@ func (r *runner) run(in io.Reader, open Open) error {
 		}
 		now := time.Now()
 		if paused { // a frame advanced by hand keeps to no schedule
+			if finisher != nil {
+				finisher.FinishFrame(time.Second)
+			}
 			next = now
 			continue
 		}
@@ -636,6 +642,14 @@ func (r *runner) run(in io.Reader, open Open) error {
 		next = next.Add(step + r.ctl.shift)
 		r.ctl.shift = 0
 		r.ctl.lag = 0
+		// A picture the graphics card is still finishing goes out in the time before the next
+		// frame is due, rather than holding the game up straight after its frame.
+		if finisher != nil {
+			if d := next.Sub(now); d > 0 {
+				finisher.FinishFrame(d)
+				now = time.Now()
+			}
+		}
 		if d := next.Sub(now); d > 0 {
 			r.waitForFrame(d, step)
 		} else if r.ctl.lag = -d; d < -5*frame {

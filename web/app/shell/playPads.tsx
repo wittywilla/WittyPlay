@@ -78,13 +78,16 @@ function LayoutIcon({ id }: { id: PlayLayout }) {
   return <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">{shapes}</svg>
 }
 
-// The quick switch at the end of the tab row: three buttons, the chosen one pressed.
-export function LayoutSwitch() {
+// The quick switch at the end of the tab row: three buttons, the chosen one pressed. A page that is one grid of games already (a
+// console's games, a search) offers only Grid and List, and shows Shelf as Grid, as it draws it.
+export function LayoutSwitch({ only }: { only?: PlayLayout[] } = {}) {
   const [layout, setLayout] = usePlayLayout()
+  const choices = only ? PLAY_LAYOUTS.filter((l) => only.includes(l.id)) : PLAY_LAYOUTS
+  const shown = choices.some((l) => l.id === layout) ? layout : choices[0]?.id
   return (
     <div className="wplay-layout-switch" role="group" aria-label="Layout">
-      {PLAY_LAYOUTS.map((l) => (
-        <button key={l.id} type="button" aria-pressed={layout === l.id} aria-label={l.label} title={l.label} onClick={() => setLayout(l.id)}><LayoutIcon id={l.id} /></button>
+      {choices.map((l) => (
+        <button key={l.id} type="button" aria-pressed={shown === l.id} aria-label={l.label} title={l.label} onClick={() => setLayout(l.id)}><LayoutIcon id={l.id} /></button>
       ))}
     </div>
   )
