@@ -10,7 +10,7 @@ import { useApp } from '@wms/app/state'
 import { ask, Notice, Switch } from '@wms/app/ui/index'
 import './settings.css'
 
-type ConsolePhotosState = { enabled: boolean; notice: string; wikidata: boolean }
+type ConsolePhotosState = { enabled: boolean; cutout: boolean; notice: string; wikidata: boolean }
 
 export function ConsolePhotosSetting({ heading = 'h2' }: { heading?: 'h2' | 'h3' }) {
   const { user } = useApp()
@@ -29,6 +29,13 @@ export function ConsolePhotosSetting({ heading = 'h2' }: { heading?: 'h2' | 'h3'
       setSaid(enabled ? 'Console photos are on. Each is downloaded the first time the Consoles page shows it.' : 'Console photos are off, and the ones downloaded are deleted.')
     } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
   }
+  const cutout = async (on: boolean) => {
+    setBusy(true); setErr(''); setSaid('')
+    try {
+      setS(await api.put<ConsolePhotosState>('/modules/wittyplay/games/console-photos', { cutout: on }))
+      setSaid(on ? 'Plain backgrounds are taken away from console photos.' : 'Console photos are shown as they were downloaded.')
+    } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
+  }
   const H = heading
   return (
     <section className="wplay-photos" id="console-photos" aria-labelledby={id}>
@@ -38,6 +45,12 @@ export function ConsolePhotosSetting({ heading = 'h2' }: { heading?: 'h2' | 'h3'
         <span id={id + 's'}>Download console photos from Wikimedia</span>
         <Switch checked={!!s?.enabled} disabled={busy || !s} labelledBy={id + 's'} onChange={(on) => void put(on)} />
       </div>
+      {s?.enabled && (
+        <div className="wplay-photos-switch">
+          <span id={id + 'c'}>Remove plain backgrounds<span className="muted"> · Takes away the plain white most photos are shot on, so the console stands on WittyPlay’s own background. The credit says so.</span></span>
+          <Switch checked={s.cutout} disabled={busy} labelledBy={id + 'c'} onChange={(on) => void cutout(on)} />
+        </div>
+      )}
       {s?.enabled && !s.wikidata && <p className="muted">Console photos are found through Wikidata, which is off in Settings, Game metadata, so none are fetched until it’s on again.</p>}
       {said && <p role="status">{said}</p>}
       {err && <p className="error" role="alert">{err}</p>}

@@ -62,7 +62,8 @@ export function useConsoleIndex(): ConsoleIndex {
   useEffect(() => { getConsoles().then(setList).catch(() => {}) }, [])
   return useMemo(() => {
     const byId = new Map(list.map((c) => [c.id, c]))
-    const byShort = new Map(list.map((c) => [c.short.toLowerCase(), c]))
+    // By its short name, and by its other ones (an NES's Famicom), so a card that names it either way finds it.
+    const byShort = new Map(list.flatMap((c) => [c.short, ...(c.also || [])].map((n) => [n.toLowerCase(), c] as const)))
     return { list, find: (k: string) => byId.get(k) || byShort.get(k.toLowerCase()) || byId.get(k.toLowerCase()) }
   }, [list])
 }
