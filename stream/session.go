@@ -329,6 +329,7 @@ func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, string, error)
 		connState: connState{began: time.Now()}, spawned: make(chan struct{}), viewers: map[*viewer]bool{}, stateWait: map[uint32]chan []byte{}, frameReady: make(chan struct{}, 1), lastInput: time.Now(), noViewerSince: time.Now(),
 		audioCh: make(chan []byte, 32), opusOut: make(chan []byte, 32), stderr: &tailWriter{max: 1 << 16}}
 	m.sessions[id] = s
+	gamesPlaying(len(m.sessions))
 	m.mu.Unlock()
 	if err := s.start(); err != nil {
 		m.remove(s)
@@ -377,6 +378,7 @@ func (m *Manager) remove(s *Session) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.sessions, s.id)
+	gamesPlaying(len(m.sessions))
 }
 
 const (
@@ -485,6 +487,7 @@ type Session struct {
 	rate          float64
 	turns         int
 	stats         EncodeStats
+	frameTimes    frameTimes
 
 	stopping  atomic.Bool  // Stop was called, so the runner ending is no surprise
 	lastFrame atomic.Int64 // when the runner last made a frame, in Unix nanoseconds
@@ -771,6 +774,9 @@ func (s *Session) readRunner(r io.Reader, ready chan<- error) {
 			s.frameHdr, s.frameFresh = hdr, true
 			s.frameTrace = frameTrace{FrameTiming: timing, ServerIn: now, InputServer: s.inputs.when(timing.InputSeq)}
 			s.frameMu.Unlock()
+			if timing.RunStart > 0 && timing.RunEnd >= timing.RunStart {
+				s.frameTimes.add(float64(timing.RunEnd-timing.RunStart)/1e6, float64(now-timing.RunEnd)/1e6)
+			}
 			s.lastFrame.Store(now)
 			s.stats.made.Add(1)
 			s.noteFrame(changed, hdr)

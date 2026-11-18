@@ -9,11 +9,18 @@ import "golang.org/x/sys/windows"
 func Confine(l Limits) error { return nil }
 
 // Apply does little on Windows: the server starts the host in a job object, with a
-// low-integrity token, at below-normal priority. A demanding game asks to go back to
-// normal priority, which a process may always do for itself.
+// low-integrity token, at below-normal priority. A demanding game asks for above-normal
+// priority, which a process may always do for itself.
+//
+// Normal wasn't enough. A game is someone playing, now, and any other program at normal
+// priority or above shared the processor with it equally: on a busy machine (browsers, which
+// raise themselves to above normal, a transcode, a library scan) a Wii game ran at 2 to 13
+// frames a second of its 60 while its own threads used a third of one processor thread,
+// waiting for a turn. Above normal still gives way to anything the system holds to be more
+// urgent, and a game uses a few threads at most, so the rest of the machine keeps going.
 func Apply(l Limits) error {
 	if l.Normal {
-		return windows.SetPriorityClass(windows.CurrentProcess(), windows.NORMAL_PRIORITY_CLASS)
+		return windows.SetPriorityClass(windows.CurrentProcess(), windows.ABOVE_NORMAL_PRIORITY_CLASS)
 	}
 	return nil
 }

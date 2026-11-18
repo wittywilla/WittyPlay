@@ -36,6 +36,7 @@ import (
 
 // sweepResult is what one game did on one core, in terms that can be compared.
 type sweepResult struct {
+	Label       string  `json:"label,omitempty"`
 	Console     string  `json:"console"`
 	Core        string  `json:"core"`
 	CoreName    string  `json:"coreName,omitempty"`
@@ -60,6 +61,19 @@ type sweepResult struct {
 	RunnerSaid  string  `json:"runnerSaid"`  // the end of what the runner printed
 	SpeedNote   string  `json:"speedNote"`   // what the numbers mean, when they're low
 	LoadAverage float64 `json:"loadAverage"` // how busy this machine was
+	// What it took, over the same last two thirds: the runner's and this program's (the
+	// server's part) processor time, as a percentage of one thread; how busy the whole machine
+	// was; an NVIDIA card's load and its encoder's (-1 when not sampled); the core's time on a
+	// frame, read-back included, the picture's way to the server, and the encoder's time.
+	RunnerCPU  float64 `json:"runnerCpu"`
+	ServerCPU  float64 `json:"serverCpu"`
+	MachineCPU float64 `json:"machineCpu"`
+	GPU        float64 `json:"gpu"`
+	GPUEncoder float64 `json:"gpuEncoder"`
+	CoreMs     float64 `json:"coreMs"`
+	CoreMs95   float64 `json:"coreMs95"`
+	TransitMs  float64 `json:"transitMs"`
+	EncodeMs   float64 `json:"encodeMs"`
 }
 
 // sweep plays one game through the path a real game takes: the session manager, the
@@ -78,7 +92,7 @@ func sweep(args []string) error {
 	stamp := fs.Bool("stamp", false, "draw numbers into each picture, as the other measurements do")
 	exercise := fs.Bool("exercise", false, "also use what a player can: run-ahead, rewind, save slots, reset and fast forward")
 	_ = fs.Parse(args)
-	r := sweepResult{Console: g.console, Core: g.coreID, Game: filepath.Base(g.rom)}
+	r := sweepResult{Label: *label, Console: g.console, Core: g.coreID, Game: filepath.Base(g.rom)}
 	err := playSweep(g, &r, *seconds, *ffmpeg, *encoders, *shots, *label, *loadLimit, *stamp, *exercise)
 	if err != nil {
 		r.Error = err.Error()
@@ -285,6 +299,14 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	tick := time.NewTicker(time.Second)
 	defer tick.Stop()
 	_ = sess.Stats()
+	gl := startGPULoad()
+	var cpuFrom struct {
+		at                 time.Time
+		runner, self, idle float64
+		total              float64
+		started            bool
+	}
+	var encMs []float64
 loop:
 	for i := 0; ; i++ {
 		select {
@@ -308,14 +330,36 @@ loop:
 		st := sess.Stats()
 		r.Size, r.Encoder = fmt.Sprintf("%dx%d", st.Width, st.Height), st.Encoder
 		if el > limit/3 { // the first third is for caches and first-launch stalls
+			if !cpuFrom.started {
+				cpuFrom.started, cpuFrom.at = true, time.Now()
+				cpuFrom.runner, cpuFrom.self = procCPU(sess.RunnerPID()), procCPU(os.Getpid())
+				cpuFrom.idle, cpuFrom.total = sysTimes()
+				gl.reset()
+				_ = sess.FrameTimes()
+			}
 			games = append(games, st.GameFPS)
 			encoded = append(encoded, st.EncodedFPS)
+			if st.EncodeMs > 0 {
+				encMs = append(encMs, st.EncodeMs)
+			}
 		}
 		if _, raw := sess.RawFrame(); raw != nil {
 			samples++
 			seen[sha256.Sum256(raw)] = true
 		}
 	}
+	if cpuFrom.started {
+		wall := time.Since(cpuFrom.at).Seconds()
+		r.RunnerCPU = 100 * (procCPU(sess.RunnerPID()) - cpuFrom.runner) / wall
+		r.ServerCPU = 100 * (procCPU(os.Getpid()) - cpuFrom.self) / wall
+		if idle, total := sysTimes(); total > cpuFrom.total {
+			r.MachineCPU = 100 * (1 - (idle-cpuFrom.idle)/(total-cpuFrom.total))
+		}
+		ft := sess.FrameTimes()
+		r.CoreMs, r.CoreMs95, r.TransitMs = ft.CoreP50, ft.CoreP95, ft.TransitP50
+	}
+	r.GPU, r.GPUEncoder = gl.stop()
+	r.EncodeMs = median(encMs)
 	info := sess.Info()
 	r.CoreName, r.Target, r.Renderer = info.Core, info.FPS, info.Renderer
 	r.GameFPS, r.EncodedFPS = median(games), median(encoded)

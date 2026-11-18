@@ -3,6 +3,13 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.4
+
+- **Games drawn on a graphics card no longer wait for it every frame (#68).** A frame's copy back from the card was asked for and then waited on straight after the core's frame, which held the game thread (Dolphin's video thread) for all of the card's drawing, and on a busy machine for as long again to be woken. Now two pixel buffers take turns: the frame goes on when the card has finished it, checked without waiting, or in the time before the next frame is due; waits look again every 0.2 ms rather than spin a processor thread in the driver; and frames nobody will see (skipped, or run ahead) aren't read back at all. Banjo-Kazooie went from 25 to 60 frames a second on a machine kept at 93 to 100% by other work, its frames from 8.5 ms (70 at worst) to 2.3 ms (4.3).
+- **Games come before background work on Windows.** Demanding games' runners ask for above-normal priority (they had normal), and WittyPlay's own process, which carries every frame to the encoder and the network, goes above normal while a game is playing and back afterwards (the server starts modules below normal). Game encoders start above normal. Browsers raise themselves above normal, and a game sharing the processor equally with them, a transcode or a scan ran at a fraction of its speed while using a fraction of a thread.
+- **The graphics card check says more,** and the log says what was found: the runner's `-probe-gpu` adds the driver's maker, its OpenGL version and, where NVIDIA's or AMD's driver says, the card's memory (`vendor`, `version` and `vramMb` beside `name` in the server's GPU status); WittyPlay logs the card, the processor threads, and the hardware and processor encoders it will use.
+- `wittyplay-probe sweep` measures what a game costs: the runner's and the server side's processor time, the whole machine's, an NVIDIA card's load and its encoder's, the core's time per frame (median and 95th percentile, read-back included), the picture's way to the server and the encode time; and it keeps the run's label in its results.
+
 ## 0.7.3
 
 - Tests: the emulator tests check Unix file modes only where there are any, so they pass on Windows (#48).

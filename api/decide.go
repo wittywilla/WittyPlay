@@ -169,6 +169,8 @@ func (a *App) Configure(ctx context.Context) error {
 		port = 0
 	}
 	encoders := tools.Encoders
+	a.Log.Info("wittyplay: game encoders", "cat", "games", "hardware", strings.Join(gpuEnc, ","), "switchedOn", strings.Join(hw, ","),
+		"software", softwareEncoders(encoders), "threads", runtime.NumCPU())
 	rpc.Mgr.Configure(func(c *stream.Config) {
 		c.Runner, c.RunnerArgs, c.HWEncoders, c.GPUEncoders, c.MaxSessions, c.MaxGPU, c.UDPPort = runner, args, hw, gpuEnc, maxSessions, maxGPU, port
 		c.FFmpeg = tools.FFmpeg
@@ -177,6 +179,17 @@ func (a *App) Configure(ctx context.Context) error {
 		c.STUN = splitNonEmpty(a.configText(ctx, "gamingStun", ""))
 	})
 	return nil
+}
+
+// softwareEncoders names the processor's video encoders this FFmpeg has, for the log.
+func softwareEncoders(have map[string]bool) string {
+	var out []string
+	for _, n := range []string{"libx264", "libopenh264", "libvpx"} {
+		if have[n] {
+			out = append(out, n)
+		}
+	}
+	return strings.Join(out, ",")
 }
 
 func splitNonEmpty(v string) []string {

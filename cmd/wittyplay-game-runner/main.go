@@ -80,12 +80,18 @@ func main() {
 			fmt.Fprintln(os.Stderr, "sandbox:", err)
 		}
 		if *probe {
-			name, err := libretro.ProbeGPU()
+			info, err := libretro.ProbeGPU()
 			if err != nil {
 				fmt.Fprintln(out, "none:", err)
 				return
 			}
-			fmt.Fprintln(out, "gpu:", name)
+			// The card's name first, on a line of its own, as older servers read only that.
+			fmt.Fprintln(out, "gpu:", info.Renderer)
+			fmt.Fprintln(out, "vendor:", info.Vendor)
+			fmt.Fprintln(out, "version:", info.Version)
+			if info.VRAMMB > 0 {
+				fmt.Fprintln(out, "vram-mb:", info.VRAMMB)
+			}
 			return
 		}
 		runErr = host.Run(os.Stdin, out, func(l ipc.Load, h engine.Handlers) (engine.Engine, error) {
