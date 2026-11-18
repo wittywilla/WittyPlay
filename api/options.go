@@ -101,13 +101,22 @@ func (a *App) gameLimits(ctx context.Context) wittyplay.Limits {
 	if runtime.NumCPU() < 4 {
 		speed, rewind = 2, 16
 	}
+	// Then the performance profile, then what an administrator set by hand.
+	p := a.profile(ctx)
+	if v, err := strconv.ParseFloat(p.Settings["gamingMaxSpeed"], 64); err == nil && v >= 1 {
+		speed = min(v, ipc.SpeedMax)
+	}
+	if v, err := strconv.ParseInt(p.Settings["gamingRewindMB"], 10, 64); err == nil && v >= 0 {
+		rewind = v
+	}
+	runAhead := p.Settings["gamingRunAhead"] != "0"
 	if v, ok := a.configNumber(ctx, "gamingMaxSpeed"); ok && v >= 1 {
 		speed = min(v, ipc.SpeedMax)
 	}
 	if v, ok := a.configNumber(ctx, "gamingRewindMB"); ok && v >= 0 {
 		rewind = min(int64(v), ipc.RewindBytesMax>>20)
 	}
-	return wittyplay.Limits{MaxSpeed: speed, RewindBytes: rewind << 20, RunAhead: a.configBool(ctx, "gamingRunAhead", true)}
+	return wittyplay.Limits{MaxSpeed: speed, RewindBytes: rewind << 20, RunAhead: a.configBool(ctx, "gamingRunAhead", runAhead)}
 }
 
 // serverGameLayer reads what an administrator set for everyone.
@@ -298,8 +307,7 @@ func (a *App) applyToRunningGame(ctx context.Context, userID int64, console stri
 	sess.SetAutoSave(res.Values["states.autoSave"] != false)
 	// What the game started with stays underneath, so a change doesn't put it back to the core's
 	// raw defaults.
-	var resolution string
-	_, _ = a.Config(ctx, "gamingResolution", &resolution)
+	resolution := resolutionFor(a.gamingSetting(ctx, "gamingResolution", ""), info.Console)
 	base := wittyplay.StartOptions(info.Console, sess.CoreID(), resolution, filepath.Join(a.Dir, "system"))
 	if err := sess.Apply(wittyplay.ControlFor(res.Values, a.gameLimits(ctx)), overOptions(base, res.CoreOptions)); err != nil {
 		a.Log.Debug("applying game settings", "cat", "games", "err", err)
