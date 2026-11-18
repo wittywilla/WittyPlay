@@ -124,12 +124,16 @@ type fakeWikimedia struct {
 	asked atomic.Int32
 }
 
-func (f *fakeWikimedia) ConsolePhoto(ctx context.Context, console, name string) (gamelogos.LogoCandidate, error) {
+func (f *fakeWikimedia) ConsolePhoto(ctx context.Context, console, name, variant string) (gamelogos.LogoCandidate, error) {
 	f.asked.Add(1)
 	if f.none {
 		return gamelogos.LogoCandidate{}, gamelogos.ErrNoPhoto
 	}
-	return gamelogos.LogoCandidate{SourceID: console + ".jpg", Credit: "Someone", License: "Public domain", PageURL: "https://commons.wikimedia.org/x"}, nil
+	file := console + ".jpg"
+	if v, ok := gamelogos.PhotoVariantOf(console, variant); ok {
+		file = v.File
+	}
+	return gamelogos.LogoCandidate{SourceID: file, Credit: "Someone", License: "Public domain", PageURL: "https://commons.wikimedia.org/x"}, nil
 }
 
 func (f *fakeWikimedia) Fetch(ctx context.Context, c gamelogos.LogoCandidate) ([]byte, error) {
