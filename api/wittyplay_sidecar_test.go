@@ -219,3 +219,64 @@ func TestSidecarEditorAPI(t *testing.T) {
 		t.Fatal("a temporary file was left behind")
 	}
 }
+
+// The server's conversion screen: counts, then gather as one of the server's tasks, retiring
+// what was gathered to .bak; then spread back out.
+func TestSetupConvertRoutes(t *testing.T) {
+	f := newGameFixture(t)
+	f.game(t, 7, "Made Up Quest (USA).sfc")
+	f.game(t, 8, "Lonely (USA).sfc")
+	nfo := filepath.Join(f.dir, "Made Up Quest (USA).nfo")
+	_ = os.WriteFile(nfo, []byte(`<game><title>Made Up Quest</title><plot>From the NFO.</plot></game>`), 0o644)
+	f.describe(t, nil, 7, 8)
+
+	if w := callRaw(t, f.h, "GET", "/convert/counts", 3, false, nil); w.Code != 403 {
+		t.Fatalf("a viewer: %d", w.Code)
+	}
+	w := callRaw(t, f.h, "GET", "/convert/counts", 1, true, nil)
+	if w.Code != 200 || strings.TrimSpace(w.Body.String()) != `{"games":2,"withInfo":0,"withMetadata":1}` {
+		t.Fatalf("counts: %d %s", w.Code, w.Body)
+	}
+	if w := callRaw(t, f.h, "POST", "/convert", 1, true, []byte(`{"direction":"sideways"}`)); w.Code != 400 {
+		t.Fatalf("a bad direction: %d", w.Code)
+	}
+	w = callRaw(t, f.h, "POST", "/convert", 1, true, []byte(`{"direction":"gather","retire":true,"subtitles":true}`))
+	var started struct{ Task string }
+	if w.Code != 202 || json.Unmarshal(w.Body.Bytes(), &started) != nil || !strings.HasPrefix(started.Task, "wittyplay/wittyplay-convert-") {
+		t.Fatalf("start: %d %s", w.Code, w.Body)
+	}
+	if s := waitConversion(t); s.State != "done" || s.Written != 1 || s.Skipped != 1 {
+		t.Fatalf("gather: %+v", s)
+	}
+	name := strings.TrimPrefix(started.Task, "wittyplay/")
+	f.host.titlesMu.Lock()
+	title := f.host.titles[name]
+	f.host.titlesMu.Unlock()
+	if title == "" {
+		t.Fatal("the conversion wasn't one of the server's tasks")
+	}
+	if _, err := os.Stat(nfo); !os.IsNotExist(err) {
+		t.Fatal("retire leaves the NFO as .bak, not where it was")
+	}
+	if _, err := os.Stat(nfo + ".bak"); err != nil {
+		t.Fatal("the NFO was not kept as .bak")
+	}
+	w = callRaw(t, f.h, "GET", "/convert/counts", 1, true, nil)
+	if strings.TrimSpace(w.Body.String()) != `{"games":2,"withInfo":1,"withMetadata":0}` {
+		t.Fatalf("after: %s", w.Body)
+	}
+
+	// Spread: the .wittyplay out to an NFO, and the .wittyplay kept as .bak.
+	if w := callRaw(t, f.h, "POST", "/convert", 1, true, []byte(`{"direction":"spread","retire":true}`)); w.Code != 202 {
+		t.Fatalf("spread: %d %s", w.Code, w.Body)
+	}
+	if s := waitConversion(t); s.State != "done" || s.Written != 1 {
+		t.Fatalf("spread: %+v", s)
+	}
+	if b, err := os.ReadFile(nfo); err != nil || !strings.Contains(string(b), "From the NFO.") {
+		t.Fatalf("written out: %v %s", err, b)
+	}
+	if _, err := os.Stat(filepath.Join(f.dir, "Made Up Quest (USA).wittyplay.bak")); err != nil {
+		t.Fatal("the .wittyplay was not kept as .bak")
+	}
+}

@@ -36,6 +36,10 @@ type Found struct {
 	Pictures []string `json:"pictures,omitempty"` // roles found, "screenshot" for each screenshot
 	Remap    bool     `json:"remap,omitempty"`
 	Config   bool     `json:"config,omitempty"`
+	// Sources are the game's own files that were read (its .nfo, .rmp, .cfg and pictures), for a
+	// caller that retires them once they're in a .wittyplay. A folder's gamelist.xml is shared by
+	// its games, so it is never one of them.
+	Sources []string `json:"-"`
 }
 
 // Any says something was found.
@@ -90,7 +94,11 @@ func Gather(gamePath string) (*wittyplayfile.Doc, Found, error) {
 			return false
 		}
 		seen[key] = true
-		return addPicture(d, role, p)
+		if !addPicture(d, role, p) {
+			return false
+		}
+		found.Sources = append(found.Sources, p)
+		return true
 	}
 	if e, ok := readGamelistEntry(dir, filepath.Base(gamePath)); ok {
 		found.Gamelist = true
@@ -103,6 +111,7 @@ func Gather(gamePath string) (*wittyplayfile.Doc, Found, error) {
 	}
 	if n, ok := readNFO(filepath.Join(dir, base+".nfo")); ok {
 		found.NFO = true
+		found.Sources = append(found.Sources, filepath.Join(dir, base+".nfo"))
 		n.into(d)
 	}
 	for role, paths := range picturesBeside(dir, base) {
@@ -117,6 +126,7 @@ func Gather(gamePath string) (*wittyplayfile.Doc, Found, error) {
 	}
 	if ps, dev, ok := readRemap(filepath.Join(dir, base+".rmp")); ok {
 		found.Remap = true
+		found.Sources = append(found.Sources, filepath.Join(dir, base+".rmp"))
 		set := ensureControls(d)
 		for _, p := range ps {
 			mergePlayer(set, p)
@@ -127,6 +137,7 @@ func Gather(gamePath string) (*wittyplayfile.Doc, Found, error) {
 	}
 	if cs, ok := readConfig(filepath.Join(dir, base+".cfg")); ok {
 		found.Config = true
+		found.Sources = append(found.Sources, filepath.Join(dir, base+".cfg"))
 		set := ensureControls(d)
 		*set = cs.Over(*set)
 	}

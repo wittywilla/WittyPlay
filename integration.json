@@ -1182,6 +1182,26 @@
       }
     },
     {
+      "path": "/convert/counts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/convert",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
       "path": "/games/wittyplay/convert",
       "methods": [
         "GET"
