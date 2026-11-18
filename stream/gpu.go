@@ -88,12 +88,17 @@ type EncodeStats struct {
 	frames  atomic.Int64
 	totalUS atomic.Int64
 	maxUS   atomic.Int64
+	// The same two, never reset: the player's numbers are taken as differences from these, and a
+	// log line taking the others mid-way made them go negative.
+	allFrames, allUS atomic.Int64
 }
 
 func (st *EncodeStats) encoded(took time.Duration) {
 	us := took.Microseconds()
 	st.frames.Add(1)
 	st.totalUS.Add(us)
+	st.allFrames.Add(1)
+	st.allUS.Add(us)
 	for {
 		m := st.maxUS.Load()
 		if us <= m || st.maxUS.CompareAndSwap(m, us) {

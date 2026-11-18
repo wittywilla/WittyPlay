@@ -51,6 +51,11 @@ type ProfileOptions struct {
 	Turbo     []int   `json:"turbo,omitempty"`     // buttons that repeat while held
 	TurboHz   int     `json:"turboHz,omitempty"`   // 2 to 30 presses a second
 	NoRumble  bool    `json:"noRumble,omitempty"`
+	// PointerStick is the stick that moves an aimed pointer (a Wii Remote's) instead of reaching
+	// the game: "left", "right" or "off"; empty is the console's default. PointerSpeed is how
+	// fast, 0.25 to 4 times the usual.
+	PointerStick string  `json:"pointerStick,omitempty"`
+	PointerSpeed float64 `json:"pointerSpeed,omitempty"`
 	// Calibration is, per axis, where it reads at its lowest, at rest and at its highest.
 	Calibration map[int][3]float64 `json:"calibration,omitempty"`
 }
@@ -216,7 +221,16 @@ func cleanOptions(o ProfileOptions) (ProfileOptions, error) {
 	if o.TurboHz != 0 && (o.TurboHz < 2 || o.TurboHz > 30) {
 		return o, errors.New("turbo must be between 2 and 30 presses a second")
 	}
-	out := ProfileOptions{Deadzone: o.Deadzone, Threshold: o.Threshold, StickDpad: o.StickDpad, TurboHz: o.TurboHz, NoRumble: o.NoRumble}
+	switch o.PointerStick {
+	case "", "off", "left", "right":
+	default:
+		return o, errors.New("the pointer moves with the left stick, the right stick or neither")
+	}
+	if bad(o.PointerSpeed) || (o.PointerSpeed != 0 && (o.PointerSpeed < 0.25 || o.PointerSpeed > 4)) {
+		return o, errors.New("the pointer's speed must be between 0.25 and 4")
+	}
+	out := ProfileOptions{Deadzone: o.Deadzone, Threshold: o.Threshold, StickDpad: o.StickDpad, TurboHz: o.TurboHz, NoRumble: o.NoRumble,
+		PointerStick: o.PointerStick, PointerSpeed: o.PointerSpeed}
 	seen := map[int]bool{}
 	for _, id := range o.Turbo {
 		if id < 0 || id >= retroButtons {
@@ -373,6 +387,12 @@ func EffectiveOptions(consoleID string, p *Profile) ProfileOptions {
 	if o.TurboHz != 0 {
 		out.TurboHz = o.TurboHz
 	}
+	if o.PointerStick != "" {
+		out.PointerStick = o.PointerStick
+	}
+	if o.PointerSpeed != 0 {
+		out.PointerSpeed = o.PointerSpeed
+	}
 	out.Turbo, out.NoRumble, out.Calibration = o.Turbo, o.NoRumble, o.Calibration
 	return out
 }
@@ -381,10 +401,16 @@ func EffectiveOptions(consoleID string, p *Profile) ProfileOptions {
 func ShortText(s string) string { return truncateRunes(tidyText(s), maxProfileName) }
 
 // DefaultOptions is how a console's controller behaves until someone changes it. A
-// console with no stick lets the left stick steer its D-pad.
+// console with no stick lets the left stick steer its D-pad, and one aimed with a pointer (the
+// Wii) lets the right stick move it, as a pad's right stick aims in the console's own emulator.
 func DefaultOptions(consoleID string) ProfileOptions {
-	dpad := !Pad(consoleID).Sticks
-	return ProfileOptions{Deadzone: 0.15, Threshold: 0.5, StickDpad: &dpad, TurboHz: 12}
+	pad := Pad(consoleID)
+	dpad := !pad.Sticks
+	o := ProfileOptions{Deadzone: 0.15, Threshold: 0.5, StickDpad: &dpad, TurboHz: 12}
+	if pad.Aim {
+		o.PointerStick, o.PointerSpeed = "right", 1
+	}
+	return o
 }
 
 // ProfileFile is an exported file.
