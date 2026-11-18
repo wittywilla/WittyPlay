@@ -7,6 +7,7 @@ import (
 	"context"
 	"log/slog"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -133,5 +134,29 @@ func TestTheCardCheckRunsInTheBackground(t *testing.T) {
 	}
 	if r := StartRefusal(nil, nil); r != nil {
 		t.Error("no failure, no refusal")
+	}
+}
+
+// Dolphin has no software renderer outside its debug builds, so with no card it's drawn through
+// the processor's OpenGL, which only Linux has, and only it gets the runner's -processor-gl.
+func TestDolphinWithNoCardOnlyOnLinux(t *testing.T) {
+	if cpuDrawingOn("dolphin", "linux") == nil || cpuDrawingOn("dolphin", "windows") != nil || cpuDrawingOn("dolphin", "darwin") != nil {
+		t.Fatal("Dolphin is drawn by the processor on Linux only")
+	}
+	if cpuDrawingOn("mupen64plus_next", "windows") == nil {
+		t.Fatal("a core with a software renderer of its own is drawn by the processor everywhere")
+	}
+	if draws, _ := drawsOn("dolphin", true, "linux", "none"); draws != drawsCPUFallback {
+		t.Errorf("Linux with no card: %s", draws)
+	}
+	if draws, _ := drawsOn("dolphin", true, "windows", "none"); draws != drawsNone {
+		t.Errorf("Windows with no card: %s", draws)
+	}
+	got := softwareArgs("dolphin", []string{"-gpu", "-normal-priority"})
+	if !slices.Equal(got, []string{"-normal-priority", "-processor-gl"}) {
+		t.Errorf("Dolphin's runner arguments: %v", got)
+	}
+	if got := softwareArgs("ppsspp", []string{"-gpu"}); len(got) != 0 {
+		t.Errorf("PPSSPP draws without OpenGL: %v", got)
 	}
 }

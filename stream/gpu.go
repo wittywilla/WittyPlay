@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -21,6 +22,9 @@ const NoGPUText = "no usable graphics card"
 // GPUProbe is what a runner found when asked which graphics card it would use.
 type GPUProbe struct {
 	Name     string `json:"name,omitempty"`
+	Vendor   string `json:"vendor,omitempty"`  // the driver's maker
+	Version  string `json:"version,omitempty"` // OpenGL's version, and the driver's
+	VRAMMB   int    `json:"vramMb,omitempty"`  // the card's own memory, where its driver says
 	Error    string `json:"error,omitempty"`
 	Checking bool   `json:"checking,omitempty"` // the answer isn't in yet
 	Again    bool   `json:"-"`                  // says nothing about the card, so ask again later
@@ -48,11 +52,31 @@ func ProbeGPU(runner, dir string, log *slog.Logger) GPUProbe {
 		log.Warn("checking for a graphics card", "err", err, "stderr", truncate(errOut.String(), 500))
 		return GPUProbe{Error: "the runner could not check: " + err.Error(), Again: true}
 	}
-	line := strings.TrimSpace(out.String())
-	if name, ok := strings.CutPrefix(line, "gpu: "); ok {
-		return GPUProbe{Name: name}
+	return parseGPUProbe(out.String())
+}
+
+// parseGPUProbe reads what the runner said: "gpu: <name>" and what it knows about the card on
+// lines of their own, or "none: <why>".
+func parseGPUProbe(said string) GPUProbe {
+	said = strings.TrimSpace(said)
+	if why, ok := strings.CutPrefix(said, "none: "); ok || !strings.HasPrefix(said, "gpu: ") {
+		return GPUProbe{Error: why}
 	}
-	return GPUProbe{Error: strings.TrimPrefix(line, "none: ")}
+	var p GPUProbe
+	for _, line := range strings.Split(said, "\n") {
+		k, v, _ := strings.Cut(strings.TrimSpace(line), ": ")
+		switch k {
+		case "gpu":
+			p.Name = v
+		case "vendor":
+			p.Vendor = v
+		case "version":
+			p.Version = v
+		case "vram-mb":
+			p.VRAMMB, _ = strconv.Atoi(v)
+		}
+	}
+	return p
 }
 
 // How long frames spend in the encoder, and how many come out: what the settings

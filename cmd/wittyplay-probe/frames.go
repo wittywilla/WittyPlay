@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -35,7 +36,7 @@ func frames(args []string) error {
 	pressList := fs.String("press", "", "buttons to press, as name@seconds, comma separated: start@40,a@45")
 	state := fs.String("state", "", "a save state to start from")
 	optionsOut := fs.String("options-out", "", "write the options the core offers to this file")
-	control := fs.String("control", "", "a file to watch for lines to act on: a button name, shot, or state FILE")
+	control := fs.String("control", "", "a file to watch for lines to act on: a button name (a tap), hold or release and a button name, shot, state FILE, load FILE, or option KEY=VALUE")
 	_ = fs.Parse(args)
 	if *out == "" {
 		return fmt.Errorf("-out is needed")
@@ -84,6 +85,7 @@ func frames(args []string) error {
 	wantShot := false
 	var stateTo string
 	var watched int
+	var held uint16 // buttons kept down by "hold", until "release"
 	lastLook := time.Now()
 	for time.Since(start).Seconds() < *seconds {
 		t, p, err := rd.Next()
@@ -109,6 +111,16 @@ func frames(args []string) error {
 						k, v, _ := strings.Cut(strings.TrimPrefix(line, "option "), "=")
 						b, _ := json.Marshal(ipc.OptionSet{Key: k, Value: v})
 						_ = ipc.Write(rn.Stdin, ipc.CmdOption, b)
+					case strings.HasPrefix(line, "hold "), strings.HasPrefix(line, "release "):
+						verb, name, _ := strings.Cut(line, " ")
+						if bn, ok := buttonNames[name]; ok {
+							if verb == "hold" {
+								held |= 1 << bn
+							} else {
+								held &^= 1 << bn
+							}
+							presses = append(presses, press{at: now, button: -1})
+						}
 					case strings.HasPrefix(line, "load "):
 						if b, err := os.ReadFile(strings.TrimPrefix(line, "load ")); err == nil {
 							_ = ipc.Write(rn.Stdin, ipc.CmdState, b)
@@ -186,9 +198,11 @@ func frames(args []string) error {
 			presses = presses[1:]
 			state := make([]byte, ipc.InputSizeFull)
 			state[0] = 0
-			if b.down {
-				binary.LittleEndian.PutUint16(state[1:], 1<<b.button)
+			buttons := held
+			if b.down && b.button >= 0 {
+				buttons |= 1 << b.button
 			}
+			binary.LittleEndian.PutUint16(state[1:], buttons)
 			_ = ipc.Write(rn.Stdin, ipc.CmdInput, state)
 		}
 	}
@@ -262,7 +276,7 @@ func toImage(hdr ipc.VideoHeader, data []byte) *image.RGBA {
 type gameFlags struct {
 	runner, core, rom, system, save, console, coreID, resolution, options string
 	mem                                                                   int64
-	verbose                                                               bool
+	verbose, noCard                                                       bool
 }
 
 func addGameFlags(fs *flag.FlagSet) *gameFlags {
@@ -278,6 +292,7 @@ func addGameFlags(fs *flag.FlagSet) *gameFlags {
 	fs.StringVar(&g.options, "options", "", "core options, key=value;key=value, replacing the defaults")
 	fs.Int64Var(&g.mem, "memory-mb", 0, "the runner's memory limit; 0 for what the server uses")
 	fs.BoolVar(&g.verbose, "v", false, "show what the runner prints")
+	fs.BoolVar(&g.noCard, "no-card", false, "start the runner as a server with no graphics card does: without -gpu, and with -processor-gl for a core drawn through the processor's OpenGL; give the core's options with -options")
 	return g
 }
 
@@ -297,6 +312,12 @@ func (g *gameFlags) load() (ipc.Load, []string) {
 	assets := ""
 	if g.coreID != "" {
 		args = wittyplay.RunnerArgs(g.coreID)
+		if g.noCard {
+			args = slices.DeleteFunc(args, func(a string) bool { return a == "-gpu" })
+			if g.coreID == "dolphin" {
+				args = append(args, "-processor-gl")
+			}
+		}
 		opts = wittyplay.StartOptions(g.console, g.coreID, g.resolution, g.system)
 		assets = wittyplay.Traits(g.coreID).Assets
 	}
