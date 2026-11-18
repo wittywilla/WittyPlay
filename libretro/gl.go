@@ -130,6 +130,11 @@ type glOut struct {
 	next     int
 	pending  int
 	renderer string
+	// nv12 converts frames for the encoder before they're read back (gl_nv12.go), where the
+	// context can and it's wanted; nv12Tried says it has been tried, and nv12Problem why not.
+	nv12        *glNV12
+	nv12Tried   bool
+	nv12Problem string
 }
 
 // glRead is one frame on its way back from the graphics card.
@@ -138,6 +143,7 @@ type glRead struct {
 	size         int // bytes allocated
 	fence        uintptr
 	readW, readH int
+	format       int // engine.FormatXRGB8888, or FormatNV12 when converted on the card
 }
 
 const maxFramebuffer = ipc.MaxDimension
@@ -275,21 +281,39 @@ func (o *glOut) startRead(h engine.Handlers, w, ht int) {
 
 	rd := &o.reads[o.next]
 	o.finishFence(rd)
-	call(f.bindFramebuffer, glReadFramebuffer, uintptr(o.fbo))
+	// NV12 where the card can convert it: the target holds it, a byte a pixel, top row first.
+	format, fb, rw, rh, glFmt, align1 := engine.FormatXRGB8888, o.fbo, w, ht, uint32(glBGRA), 4
+	outW, outH := w, ht
+	if nv12Wanted && !o.nv12Tried {
+		o.nv12Tried = true
+		if n, err := newGLNV12(o); err == nil {
+			o.nv12 = n
+		} else {
+			o.nv12Problem = err.Error()
+		}
+	}
+	if o.nv12 != nil {
+		ow, oh := (w+3)&^3, (ht+1)&^1
+		if o.nv12.render(o, w, ht, ow, oh) {
+			format, fb, rw, rh, glFmt, align1 = engine.FormatNV12, o.nv12.fbo, ow, oh*3/2, glRed, 1
+			outW, outH = ow, oh
+		}
+	}
+	call(f.bindFramebuffer, glReadFramebuffer, uintptr(fb))
 	call(f.bindBuffer, glPixelPackBuffer, uintptr(rd.pbo))
-	if n := w * ht * 4; n > rd.size {
+	if n := engine.FrameSize(format, outW, outH); n > rd.size {
 		call(f.bufferData, glPixelPackBuffer, uintptr(n), 0, glStreamRead)
 		rd.size = n
 	}
-	call(f.pixelStorei, glPackAlignment, 4)
+	call(f.pixelStorei, glPackAlignment, uintptr(align1))
 	call(f.pixelStorei, glPackRowLength, 0)
 	call(f.pixelStorei, glPackSkipRows, 0)
 	call(f.pixelStorei, glPackSkipPixels, 0)
-	call(f.readPixels, 0, 0, uintptr(w), uintptr(ht), glBGRA, glUnsignedByte, 0)
+	call(f.readPixels, 0, 0, uintptr(rw), uintptr(rh), uintptr(glFmt), glUnsignedByte, 0)
 	rd.fence = call(f.fenceSync, glSyncGPUDone, 0)
 	// On its way to the card now, so the fence can be waited on later without a flush.
 	call(f.flush)
-	rd.readW, rd.readH = w, ht
+	rd.readW, rd.readH, rd.format = outW, outH, format
 
 	call(f.pixelStorei, glPackAlignment, uintptr(align))
 	call(f.pixelStorei, glPackRowLength, uintptr(row))
@@ -364,7 +388,7 @@ func (o *glOut) hand(h engine.Handlers, rd *glRead) {
 	call(f.getIntegerv, glPixelPackBnd, uintptr(unsafe.Pointer(&oldPack)))
 	call(f.bindBuffer, glPixelPackBuffer, uintptr(rd.pbo))
 	w, ht := rd.readW, rd.readH
-	n := w * ht * 4
+	n := engine.FrameSize(rd.format, w, ht)
 	var data []byte
 	mapped := false
 	if !o.copyOnly {
@@ -385,9 +409,19 @@ func (o *glOut) hand(h engine.Handlers, rd *glRead) {
 		data = o.copied[:n]
 		call(f.getBufferSubData, glPixelPackBuffer, 0, uintptr(n), uintptr(unsafe.Pointer(&data[0])))
 	}
-	if o.flip && h.VideoFlipped != nil {
+	switch {
+	case rd.format == engine.FormatNV12:
+		// Already the right way up, and already chosen to be seen.
+		send := h.VideoReady
+		if send == nil {
+			send = h.Video
+		}
+		if send != nil {
+			send(data, w, ht, w, engine.FormatNV12)
+		}
+	case o.flip && h.VideoFlipped != nil:
 		h.VideoFlipped(data, w, ht, w*4, engine.FormatXRGB8888)
-	} else if h.Video != nil {
+	case h.Video != nil:
 		h.Video(data, w, ht, w*4, engine.FormatXRGB8888)
 	}
 	if mapped {
@@ -406,6 +440,10 @@ func (o *glOut) destroy() {
 		o.finishFence(&o.reads[i])
 	}
 	o.pending = -1
+	if o.nv12 != nil {
+		o.nv12.destroy(o)
+		o.nv12 = nil
+	}
 	if o.fbo != 0 {
 		call(f.deleteFramebuffers, 1, uintptr(unsafe.Pointer(&o.fbo)))
 		call(f.deleteTextures, 1, uintptr(unsafe.Pointer(&o.color)))
