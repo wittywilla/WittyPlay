@@ -131,7 +131,7 @@
 /* ---- sticks and triggers ---- */
 .wsc-sticks { display: flex; flex-wrap: wrap; gap: var(--sp-6, 24px); justify-content: center; }
 .wsc-stickview { margin: 0; display: flex; flex-direction: column; align-items: center; gap: var(--sp-2, 8px); }
-.wsc-stickview svg { width: 9.5rem; height: 9.5rem; }
+.wsc-stickview > svg { width: 9.5rem; height: 9.5rem; }
 .wsc-stickview figcaption { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: var(--text-sm, 13px); }
 .wsc-sv-ring { fill: var(--bg-3, rgba(127, 127, 127, .12)); stroke: var(--border-strong, rgba(127, 127, 127, .45)); stroke-width: 1.5; }
 .wsc-sv-dead { fill: color-mix(in srgb, var(--wp-muted) 28%, transparent); }

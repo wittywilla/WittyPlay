@@ -362,6 +362,16 @@ function ProfileBar({ ed, props, say, goProfiles }: { ed: Editor; props: Props; 
   const [open, setOpen] = useState(false)
   const [armed, setArmed] = useState(false)
   useEffect(() => { setArmed(false) }, [profile?.id])
+  // The menu closes on Esc or a press anywhere else, as a menu does.
+  const bar = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const away = (e: PointerEvent) => { if (!bar.current?.contains(e.target as Node)) setOpen(false) }
+    const esc = (e: KeyboardEvent) => { if (['Escape', 'GoBack', 'BrowserBack'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); setOpen(false) } }
+    window.addEventListener('pointerdown', away, true)
+    window.addEventListener('keydown', esc, true)
+    return () => { window.removeEventListener('pointerdown', away, true); window.removeEventListener('keydown', esc, true) }
+  }, [open])
   const scopes: [string, string][] = [...(props.gameId ? [['game', 'This game'] as [string, string]] : []), ['console', `All ${props.consoleName} games`], ['all', 'Every console']]
   const setScope = (s: string) => {
     const patch = { game: s === 'game' ? props.gameId : undefined, console: s === 'all' ? undefined : ed.consoleId }
@@ -386,7 +396,7 @@ function ProfileBar({ ed, props, say, goProfiles }: { ed: Editor; props: Props; 
     say('Every button is back as it was')
   }
   return (
-    <div className="wsc-profilebar">
+    <div ref={bar} className="wsc-profilebar">
       <div className="wsc-profile-pick">
         <span className="wsc-seg-label">Profile</span>
         <button type="button" className="wp-btn wsc-profile-btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
