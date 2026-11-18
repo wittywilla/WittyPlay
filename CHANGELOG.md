@@ -3,6 +3,10 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## Unreleased
+
+- **On a television, WittyPlay's console settings stay and its file and folder screens point to a computer (WittyMediaServer #469).** Game libraries, custom cores and importing game pictures show the server's card (use the WittyMediaClient app on a computer, or a web browser) in TV mode; controllers, mapping, game and console settings, cores and the store are unchanged. Needs a server with the web host feature `tvLevels`; on an older one nothing changes.
+
 ## 0.7.4
 
 - **Games drawn on a graphics card no longer wait for it every frame (#68).** A frame's copy back from the card was asked for and then waited on straight after the core's frame, which held the game thread (Dolphin's video thread) for all of the card's drawing, and on a busy machine for as long again to be woken. Now two pixel buffers take turns: the frame goes on when the card has finished it, checked without waiting, or in the time before the next frame is due; waits look again every 0.2 ms rather than spin a processor thread in the driver; and frames nobody will see (skipped, or run ahead) aren't read back at all. Banjo-Kazooie went from 25 to 60 frames a second on a machine kept at 93 to 100% by other work, its frames from 8.5 ms (70 at worst) to 2.3 ms (4.3). On an idle machine every game already kept its speed, and the runner now uses far less of the processor: PSP 66% of a thread to 16%, PlayStation 2 35% to 16%, Nintendo 64 40% to 13%.
