@@ -4,6 +4,7 @@
 package libretro
 
 import (
+	"errors"
 	"runtime"
 	"testing"
 	"time"
@@ -104,10 +105,13 @@ func TestPickGPU(t *testing.T) {
 func TestVulkanReadBack(t *testing.T) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
-	if err := vkUsable(); err != nil {
+	// The processor's Vulkan will do for this where there's no card (lavapipe on a Linux machine).
+	vkTestOnCPU = true
+	defer func() { vkTestOnCPU = false }()
+	v, err := newVKOut(nil)
+	if errors.Is(err, ErrNoVulkan) {
 		t.Skip(err)
 	}
-	v, err := newVKOut(nil)
 	if err != nil {
 		t.Fatal(err)
 	}

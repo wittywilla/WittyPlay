@@ -640,10 +640,18 @@ func (v *vkOut) gpus() []vkGPUInfo {
 	return out
 }
 
+// vkTestOnCPU lets the tests use the processor's Vulkan (lavapipe) where there's no card, so the
+// path is tested on machines without one. Nothing else sets it.
+var vkTestOnCPU bool
+
 // pickGPU chooses a card: one of its own first, then one built into the processor, never the
 // processor itself (lavapipe, SwiftShader): OpenGL keeps that case.
 func pickGPU(gpus []vkGPUInfo) (vkGPUInfo, bool) {
-	for _, want := range []uint32{vkDeviceTypeDiscrete, vkDeviceTypeIntegrated, vkDeviceTypeVirtual} {
+	kinds := []uint32{vkDeviceTypeDiscrete, vkDeviceTypeIntegrated, vkDeviceTypeVirtual}
+	if vkTestOnCPU {
+		kinds = append(kinds, vkDeviceTypeCPU)
+	}
+	for _, want := range kinds {
 		for _, g := range gpus {
 			if g.kind == want {
 				return g, true
