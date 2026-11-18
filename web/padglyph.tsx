@@ -58,7 +58,7 @@ export function PhysGlyph({ i, family, size = 'md' }: { i: number; family: PadFa
   const icon = text ? null : <Icon i={i} family={family} />
   const wide = !!text && text.length > 1
   return (
-    <span className={`wpg wpg-${size}` + (wide ? ' wpg-pill' : ' wpg-round') + (i >= 4 && i <= 7 ? ' wpg-shoulder' : '')} role="img" aria-label={name} title={name}>
+    <span className={`wsg wsg-${size}` + (wide ? ' wsg-pill' : ' wsg-round') + (i >= 4 && i <= 7 ? ' wsg-shoulder' : '')} role="img" aria-label={name} title={name}>
       {icon ? <svg viewBox="0 0 24 24" aria-hidden="true">{icon}</svg> : text}
     </span>
   )
@@ -68,7 +68,7 @@ export function PhysGlyph({ i, family, size = 'md' }: { i: number; family: PadFa
 export function StickGlyph({ right, size = 'md' }: { right: boolean; size?: 'sm' | 'md' | 'lg' }) {
   const name = right ? 'Right stick' : 'Left stick'
   return (
-    <span className={`wpg wpg-${size} wpg-round`} role="img" aria-label={name} title={name}>
+    <span className={`wsg wsg-${size} wsg-round`} role="img" aria-label={name} title={name}>
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle {...line} cx="12" cy="12" r="6.5" /><text x="12" y="12.5" textAnchor="middle" dominantBaseline="central" fill="currentColor" fontSize="8" fontWeight="700">{right ? 'R' : 'L'}</text></svg>
     </span>
   )
@@ -77,5 +77,5 @@ export function StickGlyph({ right, size = 'md' }: { right: boolean; size?: 'sm'
 // A keyboard key.
 export function KeyGlyph({ code, size = 'md' }: { code?: string; size?: 'sm' | 'md' | 'lg' }) {
   const text = !code ? '—' : code.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Arrow(\w+)/, (_, d) => ({ Up: '↑', Down: '↓', Left: '←', Right: '→' } as Record<string, string>)[d] || d).replace(/^(Shift|Control|Alt|Meta)(Left|Right)$/, '$2 $1').replace(/^Numpad/, 'Num ')
-  return <kbd className={`wpg wpg-${size} wpg-key`}>{text}</kbd>
+  return <kbd className={`wsg wsg-${size} wsg-key`}>{text}</kbd>
 }
