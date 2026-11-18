@@ -16,6 +16,7 @@ import (
 	"github.com/wittywilla/wittymodule/service"
 	"github.com/wittywilla/wittyplay"
 	"github.com/wittywilla/wittyplay/cores"
+	"github.com/wittywilla/wittyplay/gamelogos"
 	"github.com/wittywilla/wittyplay/ipc"
 	"github.com/wittywilla/wittyplay/rpc"
 	"github.com/wittywilla/wittyplay/stream"
@@ -59,6 +60,9 @@ func init() {
 // ConsoleView is a console with what this server has for it.
 type ConsoleView struct {
 	wittyplay.Console
+	// Also: the console's other short names (its usual one, and each version's, such as NES and
+	// Famicom), so a page that has a game's console by any of them finds it.
+	Also      []string     `json:"also,omitempty"`
 	Installed []cores.Core `json:"installed"`
 	NeedsGPU  bool         `json:"needsGpu,omitempty"` // every core on offer draws with a graphics card
 	GPUCores  []string     `json:"gpuCores,omitempty"`
@@ -135,7 +139,19 @@ func (a *App) ConsoleViews(ctx context.Context) []ConsoleView {
 		if c.Hidden && !testing {
 			continue
 		}
-		v := ConsoleView{Console: c, Installed: []cores.Core{}, Pad: wittyplay.Pad(c.ID), LogoName: consoleLogoName(c)}
+		v := ConsoleView{Console: shownConsole(c), Installed: []cores.Core{}, Pad: wittyplay.Pad(c.ID), LogoName: consoleLogoName(c)}
+		if vs := gamelogos.ConsolePhotoVariants(c.ID); len(vs) > 1 {
+			for _, n := range append([]string{c.Short}, func() (s []string) {
+				for _, x := range vs {
+					s = append(s, x.Short)
+				}
+				return
+			}()...) {
+				if n != "" && !slices.Contains(v.Also, n) {
+					v.Also = append(v.Also, n)
+				}
+			}
+		}
 		addTraits(&v)
 		if v.Cores == nil {
 			v.Cores = []wittyplay.Core{}

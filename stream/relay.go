@@ -301,7 +301,9 @@ func (r *Relay) Unwatched() time.Duration {
 	if since == 0 {
 		return 0
 	}
-	return time.Since(time.Unix(0, since))
+	// Never 0 here: a clock that hasn't ticked yet (Windows' wall clock moves in steps of
+	// a few milliseconds) or one set back would read as "someone is watching".
+	return max(time.Since(time.Unix(0, since)), time.Nanosecond)
 }
 
 // watchedLocked keeps Unwatched right as people come and go. Called with r.mu held.

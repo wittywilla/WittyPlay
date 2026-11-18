@@ -65,6 +65,11 @@ type PadLayout struct {
 	Meta     []PadButton `json:"meta"` // Select, Start and their relatives
 	Sticks   bool        `json:"sticks,omitempty"`
 	Pointer  bool        `json:"pointer,omitempty"` // has a touch screen: clients send pointer states
+	// Aim: the pointer is aimed, as a Wii Remote is, not a stylus: clients send where it points
+	// as it moves, not only while pressed, and a press is also AimPress, a button (a Wii
+	// Remote's A), so pointing and clicking chooses as it does with the remote.
+	Aim      bool `json:"aim,omitempty"`
+	AimPress *int `json:"aimPress,omitempty"`
 	// Extra buttons a gamepad can reach but an on-screen controller leaves out, such
 	// as stick clicks.
 	Extra []PadButton `json:"extra,omitempty"`
@@ -125,9 +130,14 @@ var pads = map[string]PadLayout{
 	// By position, as Dolphin's libretro core numbers them: A is the big button (RetroPad B).
 	"gc": {Art: "dual", Face: []PadButton{{RetroY, "B"}, {RetroX, "Y"}, {RetroB, "A"}, {RetroA, "X"}}, Shoulder: []PadButton{{RetroL2, "L"}, {RetroR2, "R"}, {RetroR, "Z"}},
 		Meta: startOnly, Sticks: true, Right: []PadButton{{StickLeftR, "C left"}, {StickRightR, "C right"}, {StickUpR, "C up"}, {StickDownR, "C down"}}},
-	// A Wii Remote held sideways, with the Nunchuk's stick: the way most Wii games play from a pad.
-	"wii": {Art: "dual", Face: []PadButton{{RetroY, "1"}, {RetroX, "2"}, {RetroB, "A"}, {RetroA, "B"}}, Shoulder: []PadButton{{RetroL, "C"}, {RetroR, "Z"}},
-		Meta: []PadButton{{RetroSelect, "−"}, {RetroStart, "+"}}, Sticks: true, Pointer: true,
+	// A Wii Remote with the Nunchuk's stick: the way most Wii games play from a pad. The buttons are
+	// where Dolphin's core reads them for that pair: the Wii Remote's A and B from the RetroPad's,
+	// C and Z from X and Y, 1 and 2 from Start and Select, − and + from L and R, Home from R3, and a
+	// shake of the Wii Remote or the Nunchuk from R2 or L2.
+	"wii": {Art: "dual", Face: []PadButton{{RetroY, "Z"}, {RetroX, "C"}, {RetroB, "B"}, {RetroA, "A"}},
+		Shoulder: []PadButton{{RetroL, "−"}, {RetroR, "+"}, {RetroL2, "Shake Nunchuk"}, {RetroR2, "Shake"}},
+		Meta:     []PadButton{{RetroSelect, "2"}, {RetroStart, "1"}}, Extra: []PadButton{{RetroR3, "Home"}},
+		Sticks: true, Pointer: true, Aim: true, AimPress: buttonID(RetroA),
 		// Dolphin's core plugs in an upright Wii Remote alone unless told otherwise, and then
 		// none of this layout's buttons are where it says.
 		PreferDevices: []string{"wiimote + nunchuk"}},
@@ -148,6 +158,9 @@ var pads = map[string]PadLayout{
 var fullPad = PadLayout{Art: "dual", Face: diamond, Shoulder: []PadButton{{RetroL, "L"}, {RetroR, "R"}, {RetroL2, "L2"}, {RetroR2, "R2"}}, Meta: selectStart, Sticks: true, Extra: stickClicks, Right: rightStick}
 
 // Pad is a console's controller; anything not listed gets a whole RetroPad.
+// buttonID is a button's id where a layout needs one that may be 0 (RetroB) or none.
+func buttonID(id int) *int { return &id }
+
 func Pad(consoleID string) PadLayout {
 	if p, ok := pads[consoleID]; ok {
 		return p

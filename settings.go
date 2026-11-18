@@ -117,6 +117,9 @@ var Settings = []Setting{
 	{Key: "display.bezelColor", Group: GroupDisplay, Section: "Around the picture", Label: "Colour", Kind: KindColor, Default: "#14161e"},
 	{Key: "display.bezelImage", Group: GroupDisplay, Section: "Around the picture", Label: "Image", Kind: KindBezel, Default: 0.0},
 	{Key: "display.bezelInset", Group: GroupDisplay, Section: "Around the picture", Label: "Picture size inside it", Help: "Makes room for what's around the picture.", Kind: KindSlider, Default: 0.0, Min: 0, Max: 45, Step: 1, Unit: "%"},
+	// The mouse's own crosshair over a game that takes a pointer. A game that draws its own (a Wii
+	// game's hand) may look better without it.
+	{Key: "display.crosshair", Group: GroupDisplay, Section: "Pointer", Label: "Crosshair over the game", Help: "Shows where the mouse is over games you point at. Turn it off for games that draw their own pointer.", Kind: KindToggle, Default: true},
 
 	// On-screen numbers: off until someone wants them, because they ask the server for a little.
 	{Key: "osd.on", Group: GroupOSD, Label: "Show numbers while playing", Kind: KindToggle, Default: false},

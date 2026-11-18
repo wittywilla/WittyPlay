@@ -18,7 +18,7 @@ export type Binding =
 export type PadMap = Record<number, Binding | null>
 export type KeyMap = Record<number, string>
 
-export type ProfileOptions = { deadzone?: number; threshold?: number; stickDpad?: boolean; turbo?: number[]; turboHz?: number; noRumble?: boolean; calibration?: Record<number, [number, number, number]> }
+export type ProfileOptions = { deadzone?: number; threshold?: number; stickDpad?: boolean; turbo?: number[]; turboHz?: number; noRumble?: boolean; calibration?: Record<number, [number, number, number]>; pointerStick?: '' | 'off' | 'left' | 'right'; pointerSpeed?: number }
 export type Profile = {
   id: number; name: string; kind: 'gamepad' | 'keyboard'; controller: string; controllerName?: string; console?: string; game?: number; gameTitle?: string
   raw?: boolean; active: boolean; map?: PadMap; keys?: KeyMap; options: ProfileOptions; updatedAt?: number
@@ -159,6 +159,8 @@ export type Compiled = {
   turboHz: number
   calibration: Record<number, [number, number, number]> | null
   noRumble: boolean
+  pointerStick: 0 | 1 | 2 // none, the left or the right stick moves an aimed pointer instead of reaching the game
+  pointerSpeed: number
   menu: (Source | null)[] // Select, Start and Home in standard numbers, for opening the menu
   prevMask: number // the last mask, for not flickering around the press point
 }
@@ -178,6 +180,7 @@ export function compile(pad: PadLike, map: PadMap, layout: RawLayout | null, o: 
   return {
     entries, deadzone: o.deadzone ?? 0.15, threshold: o.threshold ?? 0.5, stickDpad: o.stickDpad && x && y ? [x, y] : null,
     turbo, turboHz: o.turboHz ?? 12, calibration: o.calibration && Object.keys(o.calibration).length ? o.calibration : null, noRumble: !!o.noRumble,
+    pointerStick: o.pointerStick === 'left' ? 1 : o.pointerStick === 'right' ? 2 : 0, pointerSpeed: o.pointerSpeed || 1,
     menu: [menuSrc(8), menuSrc(9), menuSrc(16)], prevMask: 0,
   }
 }
@@ -392,7 +395,8 @@ export function effectiveKeys(defaults: KeyMap, known: Set<number>, p: Profile |
 export function effectiveOptions(defaults: ProfileOptions, p: Profile | null): ProfileOptions {
   if (!p) return defaults
   const o = p.options || {}
-  return { ...defaults, deadzone: o.deadzone || defaults.deadzone, threshold: o.threshold || defaults.threshold, stickDpad: o.stickDpad ?? defaults.stickDpad, turboHz: o.turboHz || defaults.turboHz, turbo: o.turbo, noRumble: o.noRumble, calibration: o.calibration }
+  return { ...defaults, deadzone: o.deadzone || defaults.deadzone, threshold: o.threshold || defaults.threshold, stickDpad: o.stickDpad ?? defaults.stickDpad, turboHz: o.turboHz || defaults.turboHz, turbo: o.turbo, noRumble: o.noRumble, calibration: o.calibration,
+    pointerStick: o.pointerStick || defaults.pointerStick, pointerSpeed: o.pointerSpeed || defaults.pointerSpeed }
 }
 
 // Which targets share a source: a button that does two things is allowed, but shown.

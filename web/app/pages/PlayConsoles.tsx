@@ -6,7 +6,7 @@
 // phone the panel is a sheet from the bottom, opened by choosing a console. A console's Settings page hosts the app's own parts for
 // it: its core and BIOS files (Consoles and cores), its game settings, its controls, and the libraries. The data is the app's own
 // /api/modules/wittyplay/games/consoles (pages/games/consoles.tsx getConsoles).
-import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api, mediaUrl } from '@wms/app/api'
 import type { GameConsole } from '../gameTypes'
@@ -31,17 +31,31 @@ const ControllersScreen = lazy(() => import('./Games').then((m) => ({ default: m
 
 // A console's picture of its hardware, from Wikimedia Commons by way of the server, which fetches and keeps it (GET
 // /api/modules/wittyplay/console-photos/{id}); none until an administrator opts in to console photos (Settings, Console photos), when Wikidata lookups are off, or when Commons has no free one.
-type ConsolePhoto = { imageUrl: string; credit?: string; license?: string; licenseUrl?: string; pageUrl?: string; source?: string }
+// A console sold in another shape elsewhere (an NES and a Famicom) has versions; variant is the one shown. changed says what
+// WittyPlay did to the photo (its plain background taken away), for the credit.
+type PhotoVariant = { id: string; label: string; name?: string; short?: string }
+type ConsolePhoto = { imageUrl: string; credit?: string; license?: string; licenseUrl?: string; pageUrl?: string; source?: string; changed?: string; variant?: string; variants?: PhotoVariant[]; keepNames?: boolean }
+// A console's names changed (another version chosen, or its usual names kept): the pages that list consoles ask again.
+const namesListeners = new Set<() => void>()
+const namesChanged = () => { void getConsoles(true).finally(() => namesListeners.forEach((l) => l())) }
+function useNamesChanged(f: () => void) { useEffect(() => { namesListeners.add(f); return () => { namesListeners.delete(f) } }, [f]) }
 const photos = new Map<string, Promise<ConsolePhoto | null>>()
+const photoListeners = new Set<() => void>()
+// A new answer for a console (another version chosen): every picture and credit of it shows the new one.
+function putPhoto(id: string, p: ConsolePhoto | null) {
+  photos.set(id, Promise.resolve(p))
+  photoListeners.forEach((l) => l())
+}
 function useConsolePhoto(id: string): ConsolePhoto | null {
   const [p, setP] = useState<ConsolePhoto | null>(null)
+  const [n, setN] = useState(0)
+  useEffect(() => { const l = () => setN((x) => x + 1); photoListeners.add(l); return () => { photoListeners.delete(l) } }, [])
   useEffect(() => {
     let on = true
-    setP(null)
-    if (!photos.has(id)) photos.set(id, api.get<ConsolePhoto>('/modules/wittyplay/console-photos/' + encodeURIComponent(id)).catch(() => null))
+    if (!photos.has(id)) { setP(null); photos.set(id, api.get<ConsolePhoto>('/modules/wittyplay/console-photos/' + encodeURIComponent(id)).catch(() => null)) }
     photos.get(id)!.then((x) => { if (on) setP(x) })
     return () => { on = false }
-  }, [id])
+  }, [id, n])
   return p
 }
 
@@ -58,7 +72,42 @@ function PhotoCredit({ id }: { id: string }) {
   const photo = useConsolePhoto(id)
   if (!photo) return null
   return (
-    <p className="wplay-photo-credit">Photo: {photo.credit || 'unknown author'}{photo.license ? <>, {photo.licenseUrl ? <a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer">{photo.license}</a> : photo.license}</> : null}, {photo.pageUrl ? <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer">Wikimedia Commons</a> : 'Wikimedia Commons'}</p>
+    <p className="wplay-photo-credit">Photo: {photo.credit || 'unknown author'}{photo.license ? <>, {photo.licenseUrl ? <a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer">{photo.license}</a> : photo.license}</> : null}, {photo.pageUrl ? <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer">Wikimedia Commons</a> : 'Wikimedia Commons'}{photo.changed ? `, ${photo.changed}` : ''}</p>
+  )
+}
+
+// Which version of the console the photo shows (an NES or a Famicom), for an administrator to choose, when it has versions.
+function PhotoVersions({ id }: { id: string }) {
+  const { user } = useApp()
+  const photo = useConsolePhoto(id)
+  const [busy, setBusy] = useState('')
+  const [err, setErr] = useState('')
+  const label = useId()
+  if (!user?.isAdmin || !photo?.variants || photo.variants.length < 2) return null
+  const choose = async (v: string) => {
+    if (v === photo.variant) return
+    setBusy(v); setErr('')
+    try { putPhoto(id, await api.put<ConsolePhoto>('/modules/wittyplay/console-photos/' + encodeURIComponent(id) + '/variant', { variant: v })); namesChanged() } catch (e: any) { setErr(e.message) } finally { setBusy('') }
+  }
+  const keep = async (kept: boolean) => {
+    setBusy('names'); setErr('')
+    try { putPhoto(id, await api.put<ConsolePhoto>('/modules/wittyplay/console-photos/' + encodeURIComponent(id) + '/variant', { keepNames: kept })); namesChanged() } catch (e: any) { setErr(e.message) } finally { setBusy('') }
+  }
+  const shown = photo.variants.find((v) => v.id === photo.variant)
+  return (
+    <div className="wplay-photo-versions">
+      <span id={label}>Photo of</span>
+      <div className="wplay-layout-switch" role="group" aria-labelledby={label} data-nav-group>
+        {photo.variants.map((v) => <button key={v.id} type="button" aria-pressed={v.id === photo.variant} disabled={!!busy} onClick={() => void choose(v.id)}>{busy === v.id ? '…' : v.label}</button>)}
+      </div>
+      {shown?.short && (
+        <label className="wplay-photo-names">
+          <input type="checkbox" checked={!photo.keepNames} disabled={!!busy} onChange={(e) => void keep(!e.target.checked)} />
+          <span>Call it {shown.short} everywhere<span className="muted"> · Its name on the Consoles tab, the library and game cards follows the photo. Off keeps its usual name.</span></span>
+        </label>
+      )}
+      {err && <p className="error" role="alert">{err}</p>}
+    </div>
   )
 }
 
@@ -105,6 +154,7 @@ function ConsolePanel({ c, sheet, onClose }: { c: GameConsole; sheet: boolean; o
       {sheet && <button ref={close} type="button" className="wplay-console-close" onClick={onClose}>Close</button>}
       <div className="wplay-console-mark"><ConsoleArt c={c} size="lg" /></div>
       <PhotoCredit id={c.id} />
+      <PhotoVersions id={c.id} />
       <h2 id={head}>{c.name}</h2>
       {facts.length > 0 && <p className="wplay-console-facts">{facts.join(' · ')}</p>}
       <dl className="wplay-console-stats">
@@ -125,6 +175,7 @@ export default function PlayConsoles() {
   const [list, setList] = useState<GameConsole[] | null>(null)
   const [failed, setFailed] = useState(false)
   useEffect(() => { getConsoles().then(setList).catch(() => setFailed(true)) }, [])
+  useNamesChanged(useCallback(() => { getConsoles().then(setList).catch(() => {}) }, []))
   const phone = useMedia('(max-width: 759px)')
   const shown = useMemo(() => {
     const all = list || []
@@ -175,6 +226,7 @@ export function PlayConsoleSettings() {
   const { user } = useApp()
   const [c, setC] = useState<GameConsole | null>(null)
   useEffect(() => { getConsoles().then((l) => setC(l.find((x) => x.id === id) || null)).catch(() => {}) }, [id])
+  useNamesChanged(useCallback(() => { getConsoles().then((l) => setC(l.find((x) => x.id === id) || null)).catch(() => {}) }, [id]))
   const parts = [
     ...(user?.isAdmin ? [{ id: 'core', label: 'Core and BIOS' }] : []),
     { id: 'games', label: 'Game settings' },
