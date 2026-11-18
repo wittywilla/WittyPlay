@@ -83,6 +83,10 @@ func Get() (*App, error) {
 		testCore.Store(hello.Machine["gamingTestCore"])
 	}
 	cancel()
+	// The names consoles are shown by, as the versions chosen for their photos say.
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	shared.refreshConsoleNames(ctx)
+	cancel()
 	return shared, nil
 }
 

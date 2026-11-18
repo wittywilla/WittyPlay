@@ -110,7 +110,7 @@ func (s *Session) Stats() Stats {
 	defer s.ctlMu.Unlock()
 	now := time.Now()
 	p := &s.statPrev
-	frames, enc, encNs, b := s.framesFed.Load(), s.stats.frames.Load(), s.stats.totalUS.Load()*1000, s.bytesOut.Load()
+	frames, enc, encNs, b := s.framesFed.Load(), s.stats.allFrames.Load(), s.stats.allUS.Load()*1000, s.bytesOut.Load()
 	if dt := now.Sub(p.at).Seconds(); dt >= 0.25 && !p.at.IsZero() {
 		p.fps = float64(enc-p.enc) / dt
 		p.kbps = float64(b-p.bytes) * 8 / 1000 / dt
