@@ -9,8 +9,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -228,30 +226,6 @@ func (a *App) visibleIDs(ctx context.Context, r *http.Request, ids []int64) (map
 		ids = ids[n:]
 	}
 	return out, nil
-}
-
-// sidecarLook reads the .wittyplay file beside a game, if there is one: "Game (USA).wittyplay" or
-// "Game (USA).sfc.wittyplay". It only ever reads. A file that can't be read or isn't a valid
-// .wittyplay counts as none.
-func sidecarLook(gamePath, console, title string) wittyplayfile.Look {
-	dir, name := filepath.Dir(gamePath), filepath.Base(gamePath)
-	for _, p := range []string{filepath.Join(dir, gameBaseName(name)+wittyplayfile.Ext), gamePath + wittyplayfile.Ext} {
-		st, err := os.Stat(p)
-		if err != nil || !st.Mode().IsRegular() || st.Size() > wittyplayfile.MaxSize {
-			continue
-		}
-		f, err := os.Open(p)
-		if err != nil {
-			continue
-		}
-		d, err := wittyplayfile.Read(f)
-		f.Close()
-		if err != nil {
-			continue
-		}
-		return d.For(0, console, name, title)
-	}
-	return wittyplayfile.Look{}
 }
 
 // readWittyplay reads a .wittyplay file sent as a request's body, refusing anything over the limit.

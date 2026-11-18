@@ -3,6 +3,35 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.6
+
+(0.7.5 is taken by #72, which hasn't merged yet.)
+
+- **A game's own `.wittyplay`, to keep beside it or to share (#75).** `.wittyplay` is now version 2, and a game's own file can carry everything WittyPlay knows or is told about the game. As an archive (a ZIP with `manifest.json` and its pictures) it holds:
+  - **details:** title, sort title, title in its own script, year and date, overview, genres, developer, publisher, series, players, rating, age ratings, regions, languages and other catalogues' ids;
+  - **pictures:** box front, back and spine, disc or cartridge, logo, marquee, banner, title screen, background, video still, icon and screenshots;
+  - **which dump it was made for:** the file's name, size, CRC32, MD5 and SHA-1, so a file for another region or revision is flagged rather than applied;
+  - **how it plays:** core, core options, shader, aspect ratio, video standard and starting disc;
+  - **controls, cheats, notes on its saves,** who made the file, and translations keyed by language tag, as a `.wittyinfo` has.
+
+  It is read as strictly as a `.wittyinfo`: limits on size, member count, packing and names; pictures must decode as what their names say; nothing is ever fetched or run; unknown fields are kept; and every problem is reported at once, with where it is. Version 1 files read as before, and a file with nothing new is still written as version 1. The spec and JSON Schema are in `docs/specs/` (CC0). `langtag` is the server's language-tag package.
+- **Controls in `.wittyplay`.** For every game, per console or for one game, a file can give:
+  - per-player button maps for gamepads, keyboards and mice, and the device in each port;
+  - remaps and turbo buttons;
+  - hotkeys: save and load state, slots, fast-forward, rewind, screenshot, menu and more, with a hold-to-enable button;
+  - turbo rate and mode, stick dead zone and sensitivity, trigger threshold and rumble.
+
+  A game's controls page now uses a file's player 1 maps as its defaults (`fromFile` has everything else). A person's own saved controls still come first.
+- **Scans read a game's `.wittyplay`.** Its look always applies. When the file was made for this dump, or can't tell, its details and box art stand over an NFO and the sources, and its core becomes the game's core if none was chosen. A file made for another dump is flagged and not used. What each scan found is kept (`wittyplay_sidecars`).
+- **Conversion both ways** (`gamefiles`): `gamelist.xml` entries, `.nfo` files, pictures in `media/` folders or named after the game, `.rmp` remaps and `.cfg` input overrides are gathered into `.wittyplay` files, and `.wittyplay` files are written back out to them. Writing out keeps every other entry, element and line, and replaces an `.nfo` or a picture only when asked. For the server's first-run setup and for administrators:
+  - `GET /games/wittyplay/convert`: counts.
+  - `POST /games/wittyplay/convert`: starts a conversion, `{direction: gather|writeout, source: files|library, overwrite, library}`.
+  - `GET /games/wittyplay/convert/status`: progress.
+  - `DELETE /games/wittyplay/convert`: stops it.
+
+  One conversion runs at a time, game by game.
+- **An editor for a game's `.wittyplay`** (`/wittyplay/game/{id}/file`, from a game's *Fix this game, files and advanced*), for administrators on a desktop or in a browser. It edits details, pictures, play choices, controls for each of eight players, hotkeys, cheats and save notes. Download shares the file; Import takes a shared one (one made for another dump is refused unless confirmed); Write out writes the standard files. In TV mode the page says that editing is on the desktop.
+
 ## 0.7.4
 
 - **Games drawn on a graphics card no longer wait for it every frame (#68).** A frame's copy back from the card was asked for and then waited on straight after the core's frame, which held the game thread (Dolphin's video thread) for all of the card's drawing, and on a busy machine for as long again to be woken. Now two pixel buffers take turns: the frame goes on when the card has finished it, checked without waiting, or in the time before the next frame is due; waits look again every 0.2 ms rather than spin a processor thread in the driver; and frames nobody will see (skipped, or run ahead) aren't read back at all. Banjo-Kazooie went from 25 to 60 frames a second on a machine kept at 93 to 100% by other work, its frames from 8.5 ms (70 at worst) to 2.3 ms (4.3). On an idle machine every game already kept its speed, and the runner now uses far less of the processor: PSP 66% of a thread to 16%, PlayStation 2 35% to 16%, Nintendo 64 40% to 13%.

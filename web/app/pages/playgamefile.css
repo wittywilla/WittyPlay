@@ -1,0 +1,42 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Copyright (C) 2026 WittyWilla and contributors */
+/* A game's .wittyplay editor (PlayGameFile.tsx). */
+.wgf { max-width: 1100px; margin: 0 auto; padding: 16px 16px 64px; }
+.wgf h1 { font-size: 1.5rem; margin: 4px 0; overflow-wrap: anywhere; }
+.wgf h2 { font-size: 1.15rem; margin: 0 0 12px; }
+.wgf h3 { font-size: 1rem; margin: 16px 0 8px; }
+.wgf-back { color: var(--muted, inherit); text-decoration: none; font-size: .9rem; }
+.wgf-head { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.wgf-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.wgf-section { background: var(--surface, rgba(127, 127, 127, .06)); border-radius: 12px; padding: 16px; margin: 0 0 16px; }
+.wgf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px 16px; }
+.wgf-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.wgf-field.wide { grid-column: 1 / -1; }
+.wgf-field > span:first-child { font-size: .85rem; color: var(--muted, inherit); }
+.wgf-field input:not([type=checkbox]):not([type=file]), .wgf-field select, .wgf-field textarea, .wgf-map input:not([type=checkbox]) { width: 100%; min-width: 0; box-sizing: border-box; }
+.wgf-field.bad input, .wgf-field.bad select, .wgf-field.bad textarea { outline: 2px solid var(--danger, #c33); }
+.wgf-field em { color: var(--danger, #c33); font-style: normal; font-size: .85rem; }
+.wgf-pair { display: flex; gap: 8px; align-items: center; }
+.wgf-pair input { width: 5em !important; }
+.wgf-problems, .wgf-problem { border-left: 4px solid var(--danger, #c33); padding: 8px 12px; margin: 0 0 16px; background: rgba(200, 50, 50, .08); border-radius: 6px; }
+.wgf-problems ul { margin: 6px 0 0; padding-left: 18px; }
+.wgf-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.wgf-pic { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.wgf-pic img { max-width: 100%; max-height: 140px; border-radius: 6px; object-fit: contain; background: rgba(127, 127, 127, .15); }
+.wgf-pic-empty { display: grid; place-items: center; width: 100%; height: 90px; border: 1px dashed rgba(127, 127, 127, .5); border-radius: 6px; font-size: .85rem; }
+.wgf-pic input[type=file] { max-width: 100%; font-size: .8rem; }
+.wgf-shots { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.wgf-shots .wgf-pic img { max-height: 100px; }
+.wgf-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.wgf-map { width: 100%; border-collapse: collapse; margin: 8px 0; display: block; overflow-x: auto; }
+.wgf-map th, .wgf-map td { padding: 4px 6px; text-align: left; vertical-align: middle; }
+.wgf-map th[scope=row] { font-weight: 500; white-space: nowrap; }
+.wgf-key { display: flex; gap: 4px; }
+.wgf-key input { min-width: 7em; }
+.wgf-key input.listening { outline: 2px solid var(--accent, #48f); }
+.wgf-cheat { display: grid; grid-template-columns: 1fr 2fr auto auto; gap: 8px; align-items: end; margin: 0 0 8px; }
+.wgf-check { display: flex; gap: 6px; align-items: center; padding-bottom: 6px; }
+.wgf-note { display: flex; gap: 8px; align-items: flex-start; }
+@media (max-width: 640px) {
+  .wgf-cheat { grid-template-columns: 1fr; }
+}
