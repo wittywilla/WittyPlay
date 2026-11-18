@@ -194,7 +194,7 @@ func (v *vkOut) testImage(t *testing.T, format uint32, w, h int) (img, mem uint6
 	bai := vkMemoryAllocateInfo{sType: vkStructMemoryAllocateInfo, allocationSize: breq.size, memoryTypeIndex: bt}
 	call(v.f.allocateMemory, v.device, uintptr(unsafe.Pointer(&bai)), 0, uintptr(unsafe.Pointer(&s.bufMem)))
 	call(v.f.bindBufferMemory, v.device, uintptr(s.buf), uintptr(s.bufMem), 0)
-	call(v.f.mapMemory, v.device, uintptr(s.bufMem), 0, uintptr(vkWholeSize), 0, uintptr(unsafe.Pointer(&s.bufMapped)))
+	call(v.f.mapMemory, v.device, uintptr(s.bufMem), 0, vkMaxArg, 0, uintptr(unsafe.Pointer(&s.bufMapped)))
 	s.bufSize = uint64(w * h * 4)
 	copy(unsafe.Slice((*byte)(ptr(s.bufMapped)), w*h*4), append([]byte(nil), px...))
 
@@ -213,7 +213,7 @@ func (v *vkOut) testImage(t *testing.T, format uint32, w, h int) (img, mem uint6
 	si := vkSubmitInfo{sType: vkStructSubmitInfo, commandBufferCount: 1, pCommandBuffers: uintptr(unsafe.Pointer(&cmd))}
 	call(v.f.resetFences, v.device, 1, uintptr(unsafe.Pointer(&s.fence)))
 	call(v.f.queueSubmit, v.queue, 1, uintptr(unsafe.Pointer(&si)), uintptr(s.fence))
-	call(v.f.waitForFences, v.device, 1, uintptr(unsafe.Pointer(&s.fence)), 1, uintptr(vkTimeoutNever))
+	call(v.f.waitForFences, v.device, 1, uintptr(unsafe.Pointer(&s.fence)), 1, vkMaxArg)
 	v.freeBuffer(s)
 	return img, mem
 }
