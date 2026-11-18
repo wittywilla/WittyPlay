@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/ebitengine/purego"
@@ -108,25 +109,35 @@ func call(fn uintptr, a ...uintptr) uintptr {
 // back. Reading back goes through a pixel buffer with a fence, so the game
 // thread never waits for more than the drawing it has just asked for.
 type glOut struct {
-	p      glPlatform
-	f      glFuncs
-	flip   bool
-	depth  bool
-	stenc  bool
-	fbo    uint32
-	color  uint32
-	ds     uint32
-	pbo    uint32
-	w, h   int // allocated size of the framebuffer
-	pboLen int
+	p     glPlatform
+	f     glFuncs
+	flip  bool
+	depth bool
+	stenc bool
+	fbo   uint32
+	color uint32
+	ds    uint32
+	w, h  int // allocated size of the framebuffer
 	// copyOnly: the driver wouldn't map the pixel buffer, so frames are copied out of it instead,
-	// into copied (see deliver).
+	// into copied (see hand).
 	copyOnly bool
 	copied   []byte
 
+	// Two pixel buffers take turns: a frame is copied into one while the one before may still
+	// be waiting to be collected. reads[next] is the one the next frame goes into; pending is
+	// the frame asked for and not yet handed over, -1 for none.
+	reads    [2]glRead
+	next     int
+	pending  int
+	renderer string
+}
+
+// glRead is one frame on its way back from the graphics card.
+type glRead struct {
+	pbo          uint32
+	size         int // bytes allocated
 	fence        uintptr
 	readW, readH int
-	renderer     string
 }
 
 const maxFramebuffer = ipc.MaxDimension
@@ -137,19 +148,30 @@ func newGLOut(req glRequest, depth, stencil, flip bool) (*glOut, error) {
 	if err != nil {
 		return nil, err
 	}
-	o := &glOut{p: p, flip: flip, depth: depth, stenc: stencil}
+	o := &glOut{p: p, flip: flip, depth: depth, stenc: stencil, pending: -1}
 	if err := o.f.load(p); err != nil {
 		p.destroy()
 		return nil, err
 	}
 	o.renderer = glString(call(o.f.getString, glRendererName))
-	if softwareRenderer(o.renderer) {
+	if softwareRenderer(o.renderer) && !(processorGL && o.renderer != "") {
 		name := o.renderer
 		p.destroy()
 		return nil, fmt.Errorf("%w (OpenGL here is only %s)", ErrNoGPU, name)
 	}
 	return o, nil
 }
+
+// processorGL lets a core draw with OpenGL that the processor runs (Mesa's llvmpipe), for a
+// server with no graphics card and a core with no other way to draw: Dolphin's software renderer
+// is only in its debug builds. It's set from the runner's -processor-gl, which the server adds only
+// then. Measured in a container with no card on an i7-12700H: Cars (GameCube) at 60 frames a
+// second on 1.1 threads, Mario Kart Wii at 60 on 3.5. Mupen64Plus-Next's OpenGL also kept 60, but
+// on 5.7 threads, against about one for angrylion, so cores with a renderer of their own keep it.
+var processorGL bool
+
+// AllowProcessorGL lets OpenGL drawn by the processor stand in for a graphics card.
+func AllowProcessorGL() { processorGL = true }
 
 // ErrNoGPU is why a core that needs a graphics card can't run here.
 var ErrNoGPU = errors.New("this server has no usable graphics card for this game")
@@ -199,7 +221,9 @@ func (o *glOut) resize(w, h int) error {
 		if o.depth || o.stenc {
 			call(f.genRenderbuffers, 1, uintptr(unsafe.Pointer(&o.ds)))
 		}
-		call(f.genBuffers, 1, uintptr(unsafe.Pointer(&o.pbo)))
+		for i := range o.reads {
+			call(f.genBuffers, 1, uintptr(unsafe.Pointer(&o.reads[i].pbo)))
+		}
 	}
 	call(f.bindTexture, glTexture2D, uintptr(o.color))
 	call(f.texParameteri, glTexture2D, glTexMinFilter, glNearest)
@@ -229,14 +253,17 @@ func (o *glOut) resize(w, h int) error {
 	return nil
 }
 
-// startRead asks for a frame to be copied into the pixel buffer, after whatever
-// the core has queued. It doesn't wait for anything.
-func (o *glOut) startRead(w, h int) {
-	if w <= 0 || h <= 0 || w > o.w || h > o.h {
+// startRead asks for a frame to be copied into a pixel buffer, after whatever the core has
+// queued, and doesn't wait for it: the copy happens on the graphics card while the game
+// carries on. Waiting for it straight after the core's frame held the game thread for all of
+// the card's drawing, every frame, and on a busy machine for however long the thread then
+// took to be woken. The frame is handed over by collect once the card is done with it.
+func (o *glOut) startRead(h engine.Handlers, w, ht int) {
+	if w <= 0 || ht <= 0 || w > o.w || ht > o.h {
 		return
 	}
+	o.haveRoom(h)
 	f := &o.f
-	o.finishFence()
 	var oldRead, oldPack int32
 	var align, row, skipR, skipP int32
 	call(f.getIntegerv, glReadFramebufferBnd, uintptr(unsafe.Pointer(&oldRead)))
@@ -246,20 +273,23 @@ func (o *glOut) startRead(w, h int) {
 	call(f.getIntegerv, glPackSkipRows, uintptr(unsafe.Pointer(&skipR)))
 	call(f.getIntegerv, glPackSkipPixels, uintptr(unsafe.Pointer(&skipP)))
 
+	rd := &o.reads[o.next]
+	o.finishFence(rd)
 	call(f.bindFramebuffer, glReadFramebuffer, uintptr(o.fbo))
-	call(f.bindBuffer, glPixelPackBuffer, uintptr(o.pbo))
-	if n := w * h * 4; n > o.pboLen {
+	call(f.bindBuffer, glPixelPackBuffer, uintptr(rd.pbo))
+	if n := w * ht * 4; n > rd.size {
 		call(f.bufferData, glPixelPackBuffer, uintptr(n), 0, glStreamRead)
-		o.pboLen = n
+		rd.size = n
 	}
 	call(f.pixelStorei, glPackAlignment, 4)
 	call(f.pixelStorei, glPackRowLength, 0)
 	call(f.pixelStorei, glPackSkipRows, 0)
 	call(f.pixelStorei, glPackSkipPixels, 0)
-	call(f.readPixels, 0, 0, uintptr(w), uintptr(h), glBGRA, glUnsignedByte, 0)
-	o.fence = call(f.fenceSync, glSyncGPUDone, 0)
+	call(f.readPixels, 0, 0, uintptr(w), uintptr(ht), glBGRA, glUnsignedByte, 0)
+	rd.fence = call(f.fenceSync, glSyncGPUDone, 0)
+	// On its way to the card now, so the fence can be waited on later without a flush.
 	call(f.flush)
-	o.readW, o.readH = w, h
+	rd.readW, rd.readH = w, ht
 
 	call(f.pixelStorei, glPackAlignment, uintptr(align))
 	call(f.pixelStorei, glPackRowLength, uintptr(row))
@@ -267,37 +297,73 @@ func (o *glOut) startRead(w, h int) {
 	call(f.pixelStorei, glPackSkipPixels, uintptr(skipP))
 	call(f.bindBuffer, glPixelPackBuffer, uintptr(uint32(oldPack)))
 	call(f.bindFramebuffer, glReadFramebuffer, uintptr(uint32(oldRead)))
+	o.pending, o.next = o.next, 1-o.next
 }
 
-func (o *glOut) finishFence() {
-	if o.fence != 0 {
-		call(o.f.deleteSync, o.fence)
-		o.fence = 0
+func (o *glOut) finishFence(rd *glRead) {
+	if rd.fence != 0 {
+		call(o.f.deleteSync, rd.fence)
+		rd.fence = 0
 	}
 }
 
-// deliver waits for the frame asked for by startRead and hands it over. The wait
-// is only for the GPU to finish this frame's own drawing.
-func (o *glOut) deliver(h engine.Handlers) {
-	if o.fence == 0 || o.readW == 0 {
-		return
+// How often a wait for the graphics card looks again. A driver's own wait can spin a whole
+// processor thread until the card is done, and on a small or busy machine that's a thread
+// the game's own threads needed.
+const glPollStep = 200 * time.Microsecond
+
+// collect hands over the frame startRead asked for once the graphics card has finished it,
+// waiting at most wait for that, and says whether it's still on its way.
+func (o *glOut) collect(h engine.Handlers, wait time.Duration) bool {
+	if o.pending < 0 {
+		return false
+	}
+	rd := &o.reads[o.pending]
+	if rd.fence == 0 || rd.readW == 0 {
+		o.pending = -1
+		return false
 	}
 	f := &o.f
+	deadline := time.Now().Add(wait)
 	for {
-		r := uint32(call(f.clientWaitSync, o.fence, glSyncFlushCommands, 50_000_000))
+		r := uint32(call(f.clientWaitSync, rd.fence, 0, 0))
+		if r == glWaitFailed {
+			o.finishFence(rd)
+			o.pending = -1
+			return false
+		}
 		if r != glTimeoutExpired {
-			if r == glWaitFailed {
-				o.finishFence()
-				return
-			}
 			break
 		}
+		if !time.Now().Before(deadline) {
+			return true
+		}
+		time.Sleep(glPollStep)
 	}
-	o.finishFence()
+	o.finishFence(rd)
+	o.pending = -1
+	o.hand(h, rd)
+	return false
+}
+
+// haveRoom hands over a frame still on its way before anything comes after it: frames go out
+// in order. The card is then a whole frame behind, so there's no avoiding the wait. The two
+// pixel buffers mean a new copy never goes into the one just read from, which some drivers
+// would make wait as well.
+func (o *glOut) haveRoom(h engine.Handlers) {
+	if o.pending >= 0 {
+		o.collect(h, 2*time.Second)
+		o.pending = -1 // a card that hasn't finished in that long has lost the frame
+	}
+}
+
+// hand maps a finished pixel buffer and passes the frame on.
+func (o *glOut) hand(h engine.Handlers, rd *glRead) {
+	f := &o.f
 	var oldPack int32
 	call(f.getIntegerv, glPixelPackBnd, uintptr(unsafe.Pointer(&oldPack)))
-	call(f.bindBuffer, glPixelPackBuffer, uintptr(o.pbo))
-	w, ht := o.readW, o.readH
+	call(f.bindBuffer, glPixelPackBuffer, uintptr(rd.pbo))
+	w, ht := rd.readW, rd.readH
 	n := w * ht * 4
 	var data []byte
 	mapped := false
@@ -328,7 +394,7 @@ func (o *glOut) deliver(h engine.Handlers) {
 		call(f.unmapBuffer, glPixelPackBuffer)
 	}
 	call(f.bindBuffer, glPixelPackBuffer, uintptr(uint32(oldPack)))
-	o.readW, o.readH = 0, 0
+	rd.readW, rd.readH = 0, 0
 }
 
 func (o *glOut) destroy() {
@@ -336,14 +402,19 @@ func (o *glOut) destroy() {
 	if o.p == nil {
 		return
 	}
-	o.finishFence()
+	for i := range o.reads {
+		o.finishFence(&o.reads[i])
+	}
+	o.pending = -1
 	if o.fbo != 0 {
 		call(f.deleteFramebuffers, 1, uintptr(unsafe.Pointer(&o.fbo)))
 		call(f.deleteTextures, 1, uintptr(unsafe.Pointer(&o.color)))
 		if o.ds != 0 {
 			call(f.deleteRenderbuffers, 1, uintptr(unsafe.Pointer(&o.ds)))
 		}
-		call(f.deleteBuffers, 1, uintptr(unsafe.Pointer(&o.pbo)))
+		for i := range o.reads {
+			call(f.deleteBuffers, 1, uintptr(unsafe.Pointer(&o.reads[i].pbo)))
+		}
 	}
 	o.p.destroy()
 	o.p = nil

@@ -37,3 +37,44 @@ func alive(pid int) bool {
 	}
 	return syscall.Kill(pid, 0) == nil
 }
+
+// procCPU is the processor time a process has used, in seconds, user and kernel together.
+func procCPU(pid int) float64 {
+	if pid == 0 {
+		return 0
+	}
+	b, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
+	if err != nil {
+		return 0
+	}
+	// The name in brackets may hold spaces; the fields after it are counted from there.
+	s := string(b)
+	if i := strings.LastIndexByte(s, ')'); i >= 0 {
+		s = s[i+1:]
+	}
+	f := strings.Fields(s)
+	if len(f) < 13 {
+		return 0
+	}
+	ut, _ := strconv.ParseFloat(f[11], 64)
+	st, _ := strconv.ParseFloat(f[12], 64)
+	return (ut + st) / 100 // USER_HZ, 100 on every Linux there is
+}
+
+// sysTimes is the whole machine's idle and total processor time so far, in ticks.
+func sysTimes() (idle, total float64) {
+	b, err := os.ReadFile("/proc/stat")
+	if err != nil {
+		return 0, 0
+	}
+	line, _, _ := strings.Cut(string(b), "\n")
+	f := strings.Fields(line)
+	for i, v := range f[1:] {
+		n, _ := strconv.ParseFloat(v, 64)
+		total += n
+		if i == 3 || i == 4 { // idle and iowait
+			idle += n
+		}
+	}
+	return idle, total
+}

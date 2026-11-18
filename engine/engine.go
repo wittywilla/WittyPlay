@@ -5,6 +5,8 @@
 // libretro core in production, a small built-in core in tests.
 package engine
 
+import "time"
+
 // Pixel formats, numbered as libretro numbers them.
 const (
 	Format0RGB1555 = 0
@@ -170,6 +172,13 @@ type Cheats interface {
 // skip drawing or mixing saves the work.
 type Output interface {
 	SetOutput(video, audio, fastForward bool)
+}
+
+// FrameFinisher is an engine whose pictures can still be on their way when Run returns: drawn
+// on a graphics card, and read back from it. FinishFrame hands over what has arrived within
+// wait and says whether anything is still to come. It's called when there's time to spare.
+type FrameFinisher interface {
+	FinishFrame(wait time.Duration) bool
 }
 
 // StateInto is an engine that can save a state into a buffer it's given, for taking

@@ -80,7 +80,9 @@ func newGLPlatform(req glRequest) (glPlatform, error) {
 	f.queryDevices = get("eglQueryDevicesEXT")
 
 	var tried []string
-	var fallback *eglPlatform
+	// fallback is an integrated card, taken if nothing better turns up; onCPU is OpenGL the
+	// processor runs, taken last of all and only where the core may use it (processorGL).
+	var fallback, onCPU *eglPlatform
 	try := func(dpy uintptr) *eglPlatform {
 		p, err := startEGL(f, lib, dpy, req)
 		if err != nil {
@@ -91,6 +93,10 @@ func newGLPlatform(req glRequest) (glPlatform, error) {
 		switch {
 		case softwareRenderer(name):
 			tried = append(tried, name)
+			if processorGL && name != "" && onCPU == nil {
+				onCPU = p
+				return nil
+			}
 			p.destroyContext()
 			return nil
 		case integratedGPU(name):
@@ -110,9 +116,7 @@ func newGLPlatform(req glRequest) (glPlatform, error) {
 			for _, d := range devs[:n] {
 				if dpy := call(f.getPlatformDisplay, eglPlatformDevice, d, 0); dpy != 0 {
 					if p := try(dpy); p != nil {
-						if fallback != nil {
-							fallback.destroyContext()
-						}
+						dropAll(fallback, onCPU)
 						return p, nil
 					}
 				}
@@ -123,20 +127,33 @@ func newGLPlatform(req glRequest) (glPlatform, error) {
 	if f.getPlatformDisplay != 0 {
 		if dpy := call(f.getPlatformDisplay, eglPlatformSurfaceless, 0, 0); dpy != 0 {
 			if p := try(dpy); p != nil {
-				if fallback != nil {
-					fallback.destroyContext()
-				}
+				dropAll(fallback, onCPU)
 				return p, nil
 			}
 		}
 	}
-	if fallback != nil {
-		if !fallback.makeCurrent() {
+	for _, p := range []*eglPlatform{fallback, onCPU} {
+		if p == nil {
+			continue
+		}
+		if p == fallback {
+			dropAll(onCPU)
+		}
+		if !p.makeCurrent() {
 			return nil, errors.New("the graphics driver would not make its context current")
 		}
-		return fallback, nil
+		return p, nil
 	}
 	return nil, fmt.Errorf("%w (tried: %s)", ErrNoGPU, strings.Join(tried, "; "))
+}
+
+// dropAll lets go of contexts kept in case nothing better turned up.
+func dropAll(ps ...*eglPlatform) {
+	for _, p := range ps {
+		if p != nil {
+			p.destroyContext()
+		}
+	}
 }
 
 // prepareGPU points the graphics library at the host's card under WSL, where the

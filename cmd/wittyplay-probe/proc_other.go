@@ -33,3 +33,23 @@ func alive(pid int) bool {
 	}
 	return syscall.Kill(pid, 0) == nil
 }
+
+// procCPU is the processor time a process has used, in seconds.
+func procCPU(pid int) float64 {
+	if pid == 0 {
+		return 0
+	}
+	out, err := exec.Command("ps", "-o", "time=", "-p", strconv.Itoa(pid)).Output()
+	if err != nil {
+		return 0
+	}
+	var secs float64
+	for _, part := range strings.Split(strings.TrimSpace(string(out)), ":") {
+		v, _ := strconv.ParseFloat(strings.ReplaceAll(part, "-", ""), 64)
+		secs = secs*60 + v
+	}
+	return secs
+}
+
+// sysTimes isn't measured here.
+func sysTimes() (idle, total float64) { return 0, 0 }

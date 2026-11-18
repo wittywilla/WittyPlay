@@ -317,8 +317,9 @@ func (c *Core) ProbeDetails() engine.ProbeDetails {
 	return engine.ProbeDetails{NoGame: c.noGame, HWRender: c.hwAsked, Options: len(c.vars)}
 }
 
-// Run advances the game one frame. A frame drawn on the graphics card arrives
-// after the core returns, so its reading back doesn't hold the core up.
+// Run advances the game one frame. A frame drawn on the graphics card is handed over once the
+// card has finished it: straight away if it already has, or else from FinishFrame, while the
+// runner would be waiting for the next frame anyway.
 func (c *Core) Run() {
 	if c.fnFrameTime != 0 {
 		now := time.Now()
@@ -331,8 +332,18 @@ func (c *Core) Run() {
 	}
 	purego.SyscallN(c.fnRun)
 	if c.hw != nil && c.hw.gl != nil {
-		c.hw.gl.deliver(c.h)
+		c.hw.gl.collect(c.h, 0)
 	}
+}
+
+// FinishFrame hands over a frame the graphics card is still finishing, waiting up to wait for
+// it, and says whether one is still on its way. The runner calls it before it waits for the
+// next frame, so the game thread never waits on the card while it has work of its own.
+func (c *Core) FinishFrame(wait time.Duration) bool {
+	if c.hw != nil && c.hw.gl != nil {
+		return c.hw.gl.collect(c.h, wait)
+	}
+	return false
 }
 
 // Reset is the console's reset button.
@@ -427,6 +438,9 @@ func onVideo(data, width, height, pitch uintptr) uintptr {
 	if c == nil {
 		return 0
 	}
+	if c.hw != nil && c.hw.gl != nil && data != hwFrameValid {
+		c.hw.gl.haveRoom(c.h) // what comes now comes after the frame still on its way
+	}
 	if data == 0 {
 		if c.h.Dupe != nil {
 			c.h.Dupe()
@@ -434,8 +448,9 @@ func onVideo(data, width, height, pitch uintptr) uintptr {
 		return 0
 	}
 	if data == hwFrameValid {
-		if c.hw != nil && c.hw.gl != nil {
-			c.hw.gl.startRead(int(uint32(width)), int(uint32(height)))
+		// A frame nobody will see (one skipped, or run ahead of the one shown) isn't read back.
+		if c.hw != nil && c.hw.gl != nil && !c.videoOff {
+			c.hw.gl.startRead(c.h, int(uint32(width)), int(uint32(height)))
 		}
 		return 0
 	}

@@ -68,3 +68,37 @@ func alive(pid int) bool {
 	}
 	return code == 259 // STILL_ACTIVE
 }
+
+// procCPU is the processor time a process has used, in seconds, user and kernel together.
+func procCPU(pid int) float64 {
+	if pid == 0 {
+		return 0
+	}
+	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
+	if err != nil {
+		return 0
+	}
+	defer windows.CloseHandle(h)
+	var c, e, k, u windows.Filetime
+	if windows.GetProcessTimes(h, &c, &e, &k, &u) != nil {
+		return 0
+	}
+	ft := func(f windows.Filetime) float64 {
+		return float64(uint64(f.HighDateTime)<<32|uint64(f.LowDateTime)) / 1e7
+	}
+	return ft(k) + ft(u)
+}
+
+var getSystemTimes = kernel32.NewProc("GetSystemTimes")
+
+// sysTimes is the whole machine's idle and total processor time so far, in seconds.
+func sysTimes() (idle, total float64) {
+	var i, k, u windows.Filetime
+	if r, _, _ := getSystemTimes.Call(uintptr(unsafe.Pointer(&i)), uintptr(unsafe.Pointer(&k)), uintptr(unsafe.Pointer(&u))); r == 0 {
+		return 0, 0
+	}
+	ft := func(f windows.Filetime) float64 {
+		return float64(uint64(f.HighDateTime)<<32|uint64(f.LowDateTime)) / 1e7
+	}
+	return ft(i), ft(k) + ft(u) // kernel time includes idle time
+}

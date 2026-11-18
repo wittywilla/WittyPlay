@@ -129,6 +129,9 @@ func (a *App) GPUStatus(ctx context.Context) stream.GPUProbe {
 			e.gpu, e.gpuAt, e.gpuChecking = got, time.Now(), false
 		}()
 		got = probeGPU(runner, filepath.Join(a.Dir, "probe"), a.Log.With("cat", "games"))
+		// What games here will draw with, once, for anyone reading the log about speed.
+		a.Log.Info("wittyplay: graphics card", "cat", "games", "gpu", got.Name, "vendor", got.Vendor, "version", got.Version, "vramMb", got.VRAMMB,
+			"none", got.Error, "threads", runtime.NumCPU(), "os", runtime.GOOS+"/"+runtime.GOARCH)
 	}()
 	return stream.GPUProbe{Checking: true}
 }
@@ -166,6 +169,29 @@ var cpuDrawing = map[string]map[string]string{
 	"ppsspp":           {"ppsspp_backend": "none"},
 	"pcsx2":            {"pcsx2_renderer": "Software (SW)"},
 	"azahar":           {"citra_graphics_api": "Software"},
+}
+
+// processorGL are cores in cpuDrawing with no software renderer of their own: the processor draws
+// them through OpenGL (Mesa's llvmpipe), which the runner allows with -processor-gl. Dolphin's
+// software renderer is only in its debug builds, so with no card this is the only way GameCube and
+// Wii games play. Linux only: elsewhere the system's own processor OpenGL stops at version 1.1
+// (Windows) or isn't there. Measured in an Ubuntu container with no card on an i7-12700H, through
+// the sandboxed runner as a server with no card starts it, with fast memory on (traits_fastmem.go):
+// Cars (GameCube) at 60 frames a second on 1.1 threads, Mario Kart Wii at 60 on 3.5.
+var processorGL = map[string]string{"dolphin": "linux"}
+
+func init() {
+	// The console's own resolution: every pixel more is the processor's work.
+	cpuDrawing["dolphin"] = map[string]string{"dolphin_efb_scale": "1"}
+}
+
+// cpuDrawingOn is cpuDrawing for one system: a core drawn through the processor's OpenGL only
+// where that exists.
+func cpuDrawingOn(id, goos string) map[string]string {
+	if only := processorGL[id]; only != "" && only != goos {
+		return nil
+	}
+	return cpuDrawing[id]
 }
 
 // softwareNotice is the speed caveat for a game the processor draws, shown before it starts and
@@ -240,7 +266,7 @@ func cpuOptions(c cores.Core) map[string]string {
 	if c.Source == cores.SourceCustom {
 		return nil
 	}
-	return cpuDrawing[c.ID]
+	return cpuDrawingOn(c.ID, hostOS)
 }
 
 // needsCard says a core can't run at all without a graphics card.
@@ -252,13 +278,22 @@ func withoutGPUArg(args []string) []string {
 	return slices.DeleteFunc(slices.Clone(args), func(a string) bool { return a == "-gpu" })
 }
 
+// softwareArgs are a runner's arguments for a core the processor draws.
+func softwareArgs(coreID string, args []string) []string {
+	args = withoutGPUArg(args)
+	if processorGL[coreID] != "" {
+		args = append(args, "-processor-gl")
+	}
+	return args
+}
+
 // allOfferedNeedCard says no core offered for a console could run without a graphics card.
 func allOfferedNeedCard(console *wittyplay.Console) bool {
 	if len(console.Cores) == 0 {
 		return false
 	}
 	for _, c := range console.Cores {
-		if !wittyplay.Traits(c.ID).GPU || cpuDrawing[c.ID] != nil {
+		if !wittyplay.Traits(c.ID).GPU || cpuDrawingOn(c.ID, hostOS) != nil {
 			return false
 		}
 	}
