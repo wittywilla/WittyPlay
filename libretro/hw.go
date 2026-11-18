@@ -166,15 +166,38 @@ func onGetProc(name uintptr) uintptr {
 // settings to pass it.
 func (c *Core) OptionList() []string { return c.traceOptions }
 
-// ProbeGPU makes an OpenGL context the way a game would and names the graphics
-// card behind it, or says why there isn't one.
-func ProbeGPU() (string, error) {
+// GPUInfo is what the graphics card a game would draw with says about itself.
+type GPUInfo struct {
+	Renderer string // the card, as its driver names it
+	Vendor   string // the driver's maker
+	Version  string // the OpenGL version and driver
+	VRAMMB   int    // its own memory, where the driver says; 0 when it doesn't
+}
+
+// ProbeGPU makes an OpenGL context the way a game would and describes the graphics card
+// behind it, or says why there isn't one.
+func ProbeGPU() (GPUInfo, error) {
 	o, err := newGLOut(glRequest{major: 3, minor: 3, core: true}, false, false, false)
 	if err != nil {
-		return "", err
+		return GPUInfo{}, err
 	}
 	defer o.destroy()
-	return o.renderer, nil
+	f := &o.f
+	info := GPUInfo{Renderer: o.renderer, Vendor: glString(call(f.getString, glVendor)), Version: glString(call(f.getString, glVersion))}
+	// NVIDIA's and AMD's extensions, in KiB; any other driver refuses the name, which only
+	// sets an error, cleared here.
+	var kb [4]int32
+	call(f.getIntegerv, 0x9047, uintptr(unsafe.Pointer(&kb[0]))) // GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX
+	if call(f.getError) == 0 && kb[0] > 0 {
+		info.VRAMMB = int(kb[0] / 1024)
+	} else {
+		kb = [4]int32{}
+		call(f.getIntegerv, 0x87FC, uintptr(unsafe.Pointer(&kb[0]))) // TEXTURE_FREE_MEMORY_ATI: what's free now
+		if call(f.getError) == 0 && kb[0] > 0 {
+			info.VRAMMB = int(kb[0] / 1024)
+		}
+	}
+	return info, nil
 }
 
 var errCoreThread = errors.New("the system would not start a thread for the core")

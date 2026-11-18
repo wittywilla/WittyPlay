@@ -102,7 +102,7 @@ html[data-wplay] body { font-family: var(--font); }
    that fades to nothing at its foot, so what passes under it never muddles it and there is no hard edge. */
 /* Its own layer: rows that scroll sideways get layers of their own, and would otherwise be painted over it. */
 .wplay .play-status { position: sticky; inset-block-start: 0; z-index: 4; transform: translateZ(0); will-change: transform; }
-.wplay[data-scrolled] .play-status { background: linear-gradient(180deg, rgb(16 14 52 / .97) 0%, rgb(16 14 52 / .94) 86%, rgb(16 14 52 / 0) 100%); }
+.wplay[data-scrolled] .play-status { background: linear-gradient(180deg, rgb(16 14 52 / .99) 0%, rgb(16 14 52 / .98) 86%, rgb(16 14 52 / 0) 100%); }
 /* Rows that scroll sideways keep below it: they are given a place in the stacking order under the status bar's. */
 .wplay :is(.wpg-shots, .wpl-line, .wpg-saves, .sdui-shelf .row) { position: relative; z-index: 0; }
 .wplay .play-avatar { inline-size: clamp(44px, 3.2vw, 60px); block-size: clamp(44px, 3.2vw, 60px); background: linear-gradient(135deg, #ff8aa3, #8a7bd8 55%, #5ff0d6); color: #13163f; font-size: clamp(1.1rem, 1.3vw, 1.6rem); font-weight: 900; box-shadow: 0 0 0 2px rgb(255 255 255 / .35); }
@@ -152,8 +152,8 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .sdui-shelf .card .poster::after { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1); background: linear-gradient(180deg, rgb(255 255 255 / .1), transparent 38%, rgb(6 8 30 / .62)); }
 .wplay .sdui-shelf .card .art-ph b { display: none; }
 .wplay .sdui-shelf.focus-grow .sdui-item.grown .card { width: calc(var(--wp-tile) * var(--wp-grow)); box-shadow: none; }
-.wplay .sdui-shelf.focus-grow .sdui-item.grown .card .poster { box-shadow: 0 0 0 5px var(--wp-ring), 0 0 0 10px #fff, 0 18px 40px rgb(4 6 24 / .55); }
-.wplay .sdui-shelf .card:focus-visible .poster { outline: none; transform: none; box-shadow: 0 0 0 5px var(--wp-ring), 0 0 0 10px var(--focus), 0 18px 40px rgb(4 6 24 / .55); }
+.wplay .sdui-shelf.focus-grow .sdui-item.grown .card .poster { box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px #fff, 0 18px 40px rgb(4 6 24 / .55); }
+.wplay .sdui-shelf .card:focus-visible .poster { outline: none; transform: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px var(--focus), 0 18px 40px rgb(4 6 24 / .55); }
 /* The title over the art, at its foot. */
 .wplay .sdui-shelf .card .title,
 .wplay .sdui-shelf.focus-grow.has-detail .sdui-item.grown .card .title { display: -webkit-box; position: absolute; inset-inline: 0; inset-block-end: 0; z-index: 3; margin: 0; padding: 0 clamp(10px, 1vw, 18px) clamp(10px, 1.1vw, 20px); color: #fff; font-size: clamp(1rem, 1.55vw, 1.85rem); font-weight: 900; line-height: 1.1; text-shadow: 0 2px 10px rgb(0 0 0 / .55); -webkit-line-clamp: 2; }
@@ -211,7 +211,7 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .play-dock-ic svg { inline-size: 42%; block-size: 42%; }
 .wplay .play-dock a:hover .play-dock-ic { background: var(--wp-chip-hover); }
 .wplay .play-dock a.on .play-dock-ic { inline-size: var(--wp-dock); block-size: var(--wp-dock); background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px #fff; transform: scale(1.12); }
-.wplay .play-dock a:focus-visible .play-dock-ic { outline: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px var(--focus); transform: scale(1.12); }
+.wplay .play-dock a:focus-visible .play-dock-ic { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); transform: scale(1.06); }
 /* Under its button, out of the row's flow, so a long name never pushes the buttons apart. */
 /* Under the current button, clear of its scaled ring (it reaches about 14px past the button), on a small dark pill so it reads over any scene. */
 .wplay .play-dock-label { position: absolute; inset-block-start: calc(100% + 18px); inset-inline-start: 50%; transform: translateX(-50%); white-space: nowrap; font-size: clamp(.85rem, .95vw, 1.1rem); font-weight: 800; padding: 2px 10px; border-radius: 999px; background: rgb(0 0 0 / .55); color: #fff; line-height: 1.4; }
@@ -281,7 +281,9 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay [data-sdui-tabs], .wplay-tabs-row { display: flex; align-items: center; gap: var(--sp-4); min-inline-size: 0; }
 .wplay [data-sdui-tabs] > .tabs, .wplay-tabs-row > .tabs { flex: 1; min-inline-size: 0; }
 .wplay-tabs-row .tabs { display: flex; gap: clamp(14px, 1.7vw, 34px); box-shadow: none; margin-block: clamp(4px, .8vw, 14px) clamp(6px, 1vw, 20px); padding-block-end: 6px; overflow-x: auto; scrollbar-width: none; }
-.wplay-tabs-row .tabs > a { position: relative; flex: none; padding: 4px 0; border-radius: 6px; color: var(--fg-2); font-size: clamp(1.15rem, 1.6vw, 1.9rem); font-weight: 800; text-decoration: none; white-space: nowrap; }
+/* No border of its own: WittyPlay draws the chosen tab's bar (::after). The app's .tabs gives the chosen link a bottom border, which
+   on this rounded link curved up at both ends and sat on top of the bar, a hook under the tab. */
+.wplay-tabs-row .tabs > a { position: relative; flex: none; padding: 4px 0; border: 0; border-radius: 6px; color: var(--fg-2); font-size: clamp(1.15rem, 1.6vw, 1.9rem); font-weight: 800; text-decoration: none; white-space: nowrap; }
 .wplay-tabs-row .tabs > a:hover, .wplay-tabs-row .tabs > a.active { color: var(--fg); }
 /* On a phone the tabs take a line of their own, and the size and layout switches go under them. */
 @media (max-width: 640px) {
@@ -314,12 +316,15 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail { grid-area: detail; position: sticky; inset-block-start: calc(var(--wp-bar) + 12px); padding: clamp(14px, 1.4vw, 26px); border-radius: clamp(14px, 1.3vw, 24px); background: var(--wp-chip); }
 .wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-detail-title { font-size: clamp(1.4rem, 2vw, 2.4rem); }
 .wplay .sdui-shelf:is(.layout-grid, .layout-list) .row { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding: 8px 12px calc(var(--wp-dock) + 80px); align-items: flex-start; }
-.wplay .sdui-shelf.layout-grid .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(170px, 16vw, 300px) * var(--wp-scale, 1)), 1fr)); gap: clamp(12px, 1.4vw, 26px); }
+.wplay .sdui-shelf.layout-grid .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(170px, 16vw, 300px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, 1.6vw, 28px); }
 .wplay .sdui-shelf.layout-grid .sdui-item .card, .wplay .sdui-shelf.layout-grid .sdui-item.grown .card { width: 100%; }
-.wplay .sdui-shelf.layout-grid .sdui-item.grown .card .poster { box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px #fff; }
+.wplay .sdui-shelf.layout-grid .sdui-item.grown .card .poster { box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; }
+/* The server's focus-grow makes the chosen card 25% bigger, for a shelf that makes room for it; in a grid or a list it covered the games
+   beside and under it, so there it stays its size and the ring shows which it is. */
+.wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-item:is(:focus-within, .grown) { transform: none; }
 .wplay .sdui-shelf.layout-grid .card .title, .wplay .sdui-shelf.layout-grid.has-detail .sdui-item.grown .card .title { font-size: clamp(.95rem, 1.15vw, 1.35rem); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; padding-block-end: 0; inset-block-end: clamp(10px, 1.1vw, 20px); }
 /* List: a dense row each, the art small at the start, the title and its line beside it. */
-.wplay .sdui-shelf.layout-list .row { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.wplay .sdui-shelf.layout-list .row { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .wplay .sdui-shelf.layout-list .sdui-item .card, .wplay .sdui-shelf.layout-list .sdui-item.grown .card { display: grid; grid-template-columns: clamp(52px, 4.4vw, 80px) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--sp-4); align-items: center; width: 100%; min-block-size: 64px; padding: 8px 14px 8px 8px; border-radius: 14px; background: var(--wp-chip); }
 .wplay .sdui-shelf.layout-list .sdui-item.grown .card { background: rgb(95 240 214 / .14); box-shadow: inset 0 0 0 3px #5ff0d6; }
 .wplay .sdui-shelf.layout-list .card:focus-visible { box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
@@ -327,6 +332,13 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .sdui-shelf.layout-list .card .poster .sdui-badges { display: none; }
 .wplay .sdui-shelf.layout-list .card .title, .wplay .sdui-shelf.layout-list.has-detail .sdui-item.grown .card .title { position: static; display: block; padding: 0; text-shadow: none; font-size: clamp(1rem, 1.25vw, 1.4rem); align-self: end; }
 .wplay .sdui-shelf.layout-list .card .sub, .wplay .sdui-shelf.layout-list.has-detail .sdui-item.grown .card .sub { display: block; align-self: start; margin: 0; color: var(--fg-2); font-size: clamp(.85rem, 1vw, 1.1rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A window between a phone and a full screen (a browser beside other windows, a small laptop): the details panel takes less of
+   the width and the grid's games are smaller, so two or more fit beside it instead of one huge one. */
+@media (min-width: 760px) and (max-width: 1199px) {
+  .wplay .sdui-shelf.layout-grid, .wplay .sdui-shelf.layout-list { grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); }
+  .wplay .sdui-shelf.layout-grid .row { grid-template-columns: repeat(auto-fill, minmax(calc(clamp(120px, 14vw, 170px) * var(--wp-scale, 1)), 1fr)); }
+  .wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-detail-title { font-size: clamp(1.2rem, 2.2vw, 1.6rem); }
+}
 @media (max-width: 759px) {
   .wplay .sdui-shelf.layout-grid, .wplay .sdui-shelf.layout-list { grid-template-columns: minmax(0, 1fr); grid-template-areas: "bar" "detail" "row"; }
   .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail { position: static; }
@@ -334,14 +346,15 @@ html[data-wplay] body { font-family: var(--font); }
 }
 
 /* ---- the Consoles tab: a grid of console buttons, and the chosen one shown off in a panel at the side (a sheet on a phone) ---- */
-.wplay-consoles-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem); gap: clamp(16px, 2vw, 40px); align-items: start; padding-block-end: calc(var(--wp-dock) + 80px); }
+/* Room under the tab row and its switches, so the console panel (and the list's heading level with it) doesn't touch them. */
+.wplay-consoles-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem); gap: clamp(16px, 2vw, 40px); align-items: start; margin-block-start: clamp(14px, 1.6vw, 28px); padding-block-end: calc(var(--wp-dock) + 80px); }
 .wplay-consoles.phone .wplay-consoles-body { grid-template-columns: minmax(0, 1fr); }
 .wplay-consoles-h { margin: 0 0 var(--sp-3); font-size: clamp(1.1rem, 1.5vw, 1.75rem); font-weight: 800; color: var(--fg-2); }
 .wplay-console-grid { list-style: none; margin: 0; padding: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(150px, 12vw, 230px), 1fr)); gap: clamp(10px, 1.2vw, 22px); }
 .wplay-console { position: relative; display: grid; justify-items: center; align-content: center; gap: 6px; inline-size: 100%; min-block-size: clamp(130px, 10vw, 190px); padding: var(--sp-4) var(--sp-3); border: 0; border-radius: clamp(16px, 1.4vw, 26px); background: var(--wp-chip); color: var(--fg); font: inherit; text-align: center; cursor: pointer; transition: background var(--dur-2), transform var(--dur-2) var(--ease-out); }
 .wplay-console:hover { background: var(--wp-chip-hover); }
 .wplay-console.on { background: rgb(95 240 214 / .14); box-shadow: inset 0 0 0 3px #5ff0d6; }
-.wplay-console:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px var(--focus); transform: scale(1.03); }
+.wplay-console:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wplay-console-art { display: grid; place-items: center; min-block-size: 3.2rem; }
 /* A console with no logo of its own: its name says it, once (the mark's text would only repeat it). */
 .wplay-console-art:has(.gc-mark-text), .wplay-console-mark:has(.gc-mark-text), .wplay-console-head .gc-mark-text { display: none; }
@@ -423,19 +436,21 @@ html[data-wplay] body { font-family: var(--font); }
 /* ---- a game's bio in the detail panel (GameBio.tsx): logo, console, makers, rating, pictures, and its RetroAchievements greyed ---- */
 .wplay .sdui-detail.has-bio { display: grid; gap: clamp(8px, .8vw, 14px); align-content: start; }
 .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail.has-bio { max-block-size: calc(100dvh - var(--wp-bar) - var(--wp-dock) - 7rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+/* A details panel scrolls its last buttons clear of the Dock, which floats over the bottom of the screen. */
+:is(.wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail.has-bio, .wpl-panel) { padding-block-end: calc(var(--wp-dock) + 48px); }
 .wplay-bio { display: grid; gap: clamp(8px, .8vw, 14px); min-inline-size: 0; }
-.wplay-bio-logo { display: block; max-inline-size: min(100%, 22rem); max-block-size: clamp(56px, 7vw, 120px); object-fit: contain; object-position: left center; filter: drop-shadow(0 2px 8px rgb(0 0 0 / .5)); }
+.wplay-bio-logo { display: block; justify-self: center; max-inline-size: min(100%, 22rem); max-block-size: clamp(56px, 7vw, 120px); object-fit: contain; object-position: center; filter: drop-shadow(0 2px 8px rgb(0 0 0 / .5)); }
 .wplay-bio-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1.05rem); font-weight: 700; }
 .wplay-bio-console { padding: 2px 10px; border-radius: 999px; background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); font-weight: 900; letter-spacing: .02em; }
 .wplay-bio-rating { padding: 1px 8px; border-radius: 6px; box-shadow: inset 0 0 0 1.5px currentColor; }
 .wplay-bio-makers, .wplay-bio-genres { margin: 0; color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1.05rem); }
 .wplay-bio-label { color: var(--fg); font-weight: 800; }
 .wplay-bio-about { margin: 0; color: var(--fg); font-size: clamp(.9rem, 1vw, 1.1rem); line-height: 1.45; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
-.wplay-bio-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.wplay-bio-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .wplay-bio-shot { display: block; padding: 0; border: 0; inline-size: 100%; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; background: rgb(0 0 0 / .3); cursor: zoom-in; transition: transform var(--dur-2) var(--ease-out); }
 .wplay-bio-shot img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
 .wplay-bio-shot:hover { transform: scale(1.04); }
-.wplay-bio-shot:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); transform: scale(1.04); }
+.wplay-bio-shot:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--wp-ring), 0 0 0 4px var(--focus); transform: none; }
 @media (prefers-reduced-motion: reduce) { .wplay-bio-shot, .wplay-bio-shot:hover, .wplay-bio-shot:focus-visible { transition: none; transform: none; } }
 /* A picture large (GameBio's ShotViewer). */
 .wplay-shot-view.modal { inline-size: min(96vw, 72rem); }
@@ -493,7 +508,7 @@ html[data-wplay] body { font-family: var(--font); }
 .wpg-btn.on svg { color: #ffd34d; }
 .wpg-btn.small { min-block-size: 44px; font-size: 1rem; justify-self: start; }
 .wpg-count { display: inline-grid; place-items: center; min-inline-size: 1.6em; block-size: 1.6em; padding: 0 .4em; border-radius: 999px; background: #5ff0d6; color: var(--accent-fg); font-size: .8em; font-weight: 900; }
-:is(.wpg, .wpg-saves-sheet) :is(.wpg-btn, .wpg-shot, .wpg-mini):focus-visible { outline: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px #fff; transform: scale(1.05); }
+:is(.wpg, .wpg-saves-sheet) :is(.wpg-btn, .wpg-shot, .wpg-mini):focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; transform: none; }
 /* rows a d-pad walks sideways */
 .wpg-row { display: grid; gap: 14px; min-inline-size: 0; }
 .wpg h2 { margin: 0; font-size: clamp(1.25rem, 1.7vw, 2rem); font-weight: 900; }
@@ -589,7 +604,7 @@ html[data-wplay] .wpg-saves-sheet .ui-sheet-body { padding: 4px clamp(20px, 2.4v
 .wpg-save-cue { display: inline-flex; align-items: center; gap: 6px; margin-block-start: 4px; padding: 6px 14px; border-radius: 999px; background: rgb(255 255 255 / .12); font-weight: 900; }
 .wpg-saves-sheet .resume .wpg-save-cue, .wpg-save:is(:hover, :focus-visible) .wpg-save-cue { background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
 .wpg-save:focus-visible { outline: none; }
-.wpg-save:focus-visible .wpg-save-pic { box-shadow: 0 0 0 4px #5ff0d6, 0 0 0 8px #fff; transform: scale(1.02); }
+.wpg-save:focus-visible .wpg-save-pic { box-shadow: 0 0 0 3px #5ff0d6, 0 0 0 6px #fff; transform: none; }
 .wpg-saves-sheet .wpg-mini { display: grid; place-items: center; inline-size: 48px; block-size: 48px; border: 0; border-radius: 50%; background: rgb(255 255 255 / .1); color: #fff; cursor: pointer; }
 .wpg-saves-sheet .wpg-mini:hover { background: rgb(255 255 255 / .2); }
 .wpg-saves-sheet .wpg-mini:focus-visible { outline: none; box-shadow: 0 0 0 3px #5ff0d6, 0 0 0 6px #fff; }
@@ -598,8 +613,6 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 /* ==== Game pictures: the drawings and choosers are styled in gameCase.css (imported by GameCase.tsx), so Setup can show them too. ==== */
 /* In the grid the chosen game lifts only a little, growing down from its top edge, so it never reaches the tabs above or the games
    beside it: its ring says which one it is. */
-.wplay .sdui .sdui-shelf.layout-grid .sdui-item.grown { transform: scale(1.04); transform-origin: 50% 0; }
-@media (prefers-reduced-motion: reduce) { .wplay .sdui .sdui-shelf.layout-grid .sdui-item.grown { transform: none; } }
 /* The console, year and rating line keeps its height while the game loads, so Play never jumps down under the cursor. */
 .wplay-bio-line { min-block-size: 1.9em; }
 /* Who made it keeps its line too, for the same reason. */
@@ -618,7 +631,7 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wpl-btn, .wpl-all { display: inline-flex; align-items: center; gap: 8px; min-block-size: 52px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--wp-chip); color: var(--fg); font: inherit; font-weight: 850; cursor: pointer; }
 .wpl-all { min-block-size: 44px; padding: 0 18px; }
 .wpl-btn:hover, .wpl-all:hover, .wpl-back:hover { background: var(--wp-chip-hover); }
-.wpl :is(.wpl-btn, .wpl-all, .wpl-back, .wpl-game):focus-visible { outline: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px #fff; }
+.wpl :is(.wpl-btn, .wpl-all, .wpl-back, .wpl-game):focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; }
 .wpl-row { display: grid; gap: 10px; min-inline-size: 0; }
 .wpl-row-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .wpl-row-head h2 { margin: 0; display: flex; align-items: baseline; gap: 10px; font-size: clamp(1.2rem, 1.6vw, 1.8rem); font-weight: 900; }
@@ -626,6 +639,15 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wpl-line::-webkit-scrollbar { display: none; }
 .wpl-line > .wpl-game { flex: none; inline-size: calc(clamp(140px, 13vw, 240px) * var(--wp-scale, 1)); scroll-snap-align: start; }
 .wpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(150px, 14vw, 260px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, 1.6vw, 28px); padding: 12px; margin-inline: -12px; }
+/* A shelf runs to the edge of the screen, so a game slides off the edge instead of being cut inside the page's margin. */
+.wpl-line.layout-shelf { margin-inline: calc(-1 * var(--wp-gutter)); padding-inline: var(--wp-gutter); scroll-padding-inline: var(--wp-gutter); }
+/* All games follows the layout switch, as Recent does: Grid wraps each console's games, List lays every game out on a line of its own. */
+.wpl-line.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(150px, 14vw, 260px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, 1.6vw, 28px); overflow: visible; scroll-snap-type: none; }
+.wpl :is(.wpl-line, .wpl-grid).layout-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; overflow: visible; scroll-snap-type: none; }
+.wpl :is(.wpl-line.layout-grid, .wpl-line.layout-list, .wpl-grid.layout-list) > .wpl-game { inline-size: auto; }
+.wpl :is(.wpl-line, .wpl-grid).layout-list > .wpl-game { grid-template-columns: calc(clamp(52px, 4.4vw, 80px) * var(--wp-scale, 1)) minmax(0, 1fr); grid-template-rows: auto; align-items: center; column-gap: var(--sp-4); padding: 8px 14px 8px 8px; border-radius: 14px; background: var(--wp-chip); }
+.wpl .layout-list .wpl-game-name { text-align: start; min-block-size: 0; }
+.wpl .layout-list > .wpl-game:hover, .wpl .layout-list > .wpl-game:focus-visible { transform: none; }
 .wpl-game { display: grid; grid-template-rows: auto auto; align-content: start; align-self: start; gap: 8px; color: var(--fg); text-decoration: none; border-radius: 14px; transition: transform var(--dur-2) var(--ease-out); }
 .wpl-game:hover, .wpl-game:focus-visible { transform: translateY(-3px); }
 .wpl-game-art { position: relative; display: grid; place-items: center; inline-size: 100%; aspect-ratio: 1 / 1; border-radius: 12px; overflow: visible; }
@@ -659,6 +681,15 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wplay-size-switch button[aria-pressed="true"] { background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
 .wplay-size-switch button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wplay-switches { flex: none; display: inline-flex; align-items: center; gap: 10px; }
+.wpl-head > .wpl-switches { margin-inline-start: auto; }
+.wpl-body.with-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 26rem); column-gap: clamp(16px, 2vw, 40px); align-items: start; }
+.wpl-games { display: grid; gap: clamp(18px, 2.2vw, 36px); min-inline-size: 0; }
+.wpl-body.with-panel .wpl-line.layout-shelf { margin-inline-end: 0; padding-inline-end: 12px; }
+.wpl-panel { position: sticky; inset-block-start: calc(var(--wp-bar) + 12px); max-block-size: calc(100dvh - var(--wp-bar) - var(--wp-dock) - 7rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: clamp(14px, 1.4vw, 26px); border-radius: clamp(14px, 1.3vw, 24px); background: var(--wp-chip); }
+.wpl-panel .sdui-detail-title { display: block; font-size: clamp(1.2rem, 2vw, 2.2rem); line-height: 1.2; }
+.wpl-panel-empty { margin: 0; color: var(--fg-2); }
+@media (min-width: 760px) and (max-width: 1199px) { .wpl-body.with-panel { grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); } }
+@media (max-width: 759px) { .wpl-body.with-panel { display: block; } .wpl-panel, .wpl-panel-switch { display: none; } }
 /* The game page's cards keep their contents their own size, however tall the row makes the card: buttons stay buttons, a console's
    button names stay a row of chips. */
 .wpg .gm-panel, .wpg-card { align-content: start; }

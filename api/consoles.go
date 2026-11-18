@@ -250,7 +250,7 @@ func (a *App) ConsoleViews(ctx context.Context) []ConsoleView {
 // those installed for it, or with none installed, those on offer.
 func canDrawOnCPU(v *ConsoleView) bool {
 	if len(v.Installed) == 0 {
-		return slices.ContainsFunc(v.Cores, func(c wittyplay.Core) bool { return cpuDrawing[c.ID] != nil })
+		return slices.ContainsFunc(v.Cores, func(c wittyplay.Core) bool { return cpuDrawingOn(c.ID, hostOS) != nil })
 	}
 	return slices.ContainsFunc(v.Installed, func(c cores.Core) bool { return cpuOptions(c) != nil })
 }

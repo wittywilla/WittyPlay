@@ -36,6 +36,7 @@ import (
 
 // sweepResult is what one game did on one core, in terms that can be compared.
 type sweepResult struct {
+	Label       string  `json:"label,omitempty"`
 	Console     string  `json:"console"`
 	Core        string  `json:"core"`
 	CoreName    string  `json:"coreName,omitempty"`
@@ -60,6 +61,22 @@ type sweepResult struct {
 	RunnerSaid  string  `json:"runnerSaid"`  // the end of what the runner printed
 	SpeedNote   string  `json:"speedNote"`   // what the numbers mean, when they're low
 	LoadAverage float64 `json:"loadAverage"` // how busy this machine was
+	// What it took, over the same last two thirds: the runner's and this program's (the
+	// server's part) processor time, as a percentage of one thread; how busy the whole machine
+	// was; an NVIDIA card's load and its encoder's (-1 when not sampled); the core's time on a
+	// frame, read-back included, the picture's way to the server, and the encoder's time.
+	RunnerCPU  float64 `json:"runnerCpu"`
+	ServerCPU  float64 `json:"serverCpu"`
+	MachineCPU float64 `json:"machineCpu"`
+	GPU        float64 `json:"gpu"`
+	GPUEncoder float64 `json:"gpuEncoder"`
+	CoreMs     float64 `json:"coreMs"`
+	CoreMs95   float64 `json:"coreMs95"`
+	TransitMs  float64 `json:"transitMs"`
+	GapMs99    float64 `json:"gapMs99"`  // between pictures, 99th percentile: stutters
+	GapMsMax   float64 `json:"gapMsMax"` // and the longest
+	Hitches    int     `json:"hitches"`  // gaps over twice the usual, in the whole time measured
+	EncodeMs   float64 `json:"encodeMs"`
 }
 
 // sweep plays one game through the path a real game takes: the session manager, the
@@ -77,9 +94,10 @@ func sweep(args []string) error {
 	label := fs.String("label", "", "a name for this run")
 	stamp := fs.Bool("stamp", false, "draw numbers into each picture, as the other measurements do")
 	exercise := fs.Bool("exercise", false, "also use what a player can: run-ahead, rewind, save slots, reset and fast forward")
+	state := fs.String("state", "", "a save state to start from, as a game resumed where someone left it")
 	_ = fs.Parse(args)
-	r := sweepResult{Console: g.console, Core: g.coreID, Game: filepath.Base(g.rom)}
-	err := playSweep(g, &r, *seconds, *ffmpeg, *encoders, *shots, *label, *loadLimit, *stamp, *exercise)
+	r := sweepResult{Label: *label, Console: g.console, Core: g.coreID, Game: filepath.Base(g.rom)}
+	err := playSweep(g, &r, *seconds, *ffmpeg, *encoders, *shots, *label, *state, *loadLimit, *stamp, *exercise)
 	if err != nil {
 		r.Error = err.Error()
 	}
@@ -154,9 +172,18 @@ func cleanExit(said string) bool {
 	return strings.Contains(line, "err=<nil>")
 }
 
-func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shots, label string, loadLimit time.Duration, stamp, exercise bool) error {
+func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shots, label, state string, loadLimit time.Duration, stamp, exercise bool) error {
 	if err := os.MkdirAll(g.save, 0o755); err != nil {
 		return err
+	}
+	if state != "" {
+		b, err := os.ReadFile(state)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(g.save, "auto.state"), b, 0o644); err != nil {
+			return err
+		}
 	}
 	coreID := g.coreID
 	if coreID == "" && g.core != "" {
@@ -198,10 +225,10 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	log := slog.New(slog.NewTextHandler(said, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	mgr := stream.NewManager(stream.Config{Runner: g.runner, FFmpeg: ffmpeg, HWEncoders: hw, GPUEncoders: hw, HaveEncoder: func(n string) bool { return slices.Contains(names, n) }, Log: log})
 	load, runnerArgs := g.load()
-	gpu := g.coreID != "" && wittyplay.Traits(g.coreID).GPU
+	gpu := g.coreID != "" && wittyplay.Traits(g.coreID).GPU && !g.noCard
 	ahead := ipc.RunAheadAuto
 	began := time.Now()
-	sess, err := mgr.Start(stream.Options{Control: &ipc.Control{RunAhead: &ahead}, UserID: 1, ItemID: 1, Title: filepath.Base(g.rom), Console: g.console, Core: g.core, ROM: g.rom, SystemDir: g.system, SaveDir: g.save,
+	sess, err := mgr.Start(stream.Options{Control: &ipc.Control{RunAhead: &ahead}, Resume: state != "", UserID: 1, ItemID: 1, Title: filepath.Base(g.rom), Console: g.console, Core: g.core, ROM: g.rom, SystemDir: g.system, SaveDir: g.save,
 		GPU: gpu, RunnerArgs: runnerArgs, CoreID: g.coreID, CoreOptions: load.Options, CoreAssets: load.Assets, LoadLimit: loadLimit, NoAutoSave: true, Stamp: stamp, PreferDevices: wittyplay.Pad(g.console).PreferDevices})
 	if err != nil {
 		r.RunnerSaid = tail(said.String(), 3000)
@@ -285,6 +312,15 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	tick := time.NewTicker(time.Second)
 	defer tick.Stop()
 	_ = sess.Stats()
+	gl := startGPULoad()
+	var cpuFrom struct {
+		at                 time.Time
+		runner, self, idle float64
+		total              float64
+		started            bool
+	}
+	var encMs, coreMs, coreMs95, gap99 []float64
+	var gapMax float64
 loop:
 	for i := 0; ; i++ {
 		select {
@@ -297,7 +333,7 @@ loop:
 		if el >= limit {
 			break
 		}
-		if i%4 == 1 {
+		if i%4 == 1 && state == "" { // a game resumed mid-play is left to play: Start would pause it
 			id := buttons[(i/4)%len(buttons)]
 			press(id, true)
 			time.AfterFunc(150*time.Millisecond, func() { press(id, false) })
@@ -308,14 +344,52 @@ loop:
 		st := sess.Stats()
 		r.Size, r.Encoder = fmt.Sprintf("%dx%d", st.Width, st.Height), st.Encoder
 		if el > limit/3 { // the first third is for caches and first-launch stalls
+			if !cpuFrom.started {
+				cpuFrom.started, cpuFrom.at = true, time.Now()
+				cpuFrom.runner, cpuFrom.self = procCPU(sess.RunnerPID()), procCPU(os.Getpid())
+				cpuFrom.idle, cpuFrom.total = sysTimes()
+				gl.reset()
+				_ = sess.FrameTimes()
+			}
 			games = append(games, st.GameFPS)
 			encoded = append(encoded, st.EncodedFPS)
+			if st.EncodeMs > 0 {
+				encMs = append(encMs, st.EncodeMs)
+			}
+			// Every second, as the times kept cover only the last few hundred frames.
+			if ft := sess.FrameTimes(); ft.Frames > 0 && cpuFrom.at.Before(time.Now().Add(-time.Second/2)) {
+				coreMs, coreMs95, gap99 = append(coreMs, ft.CoreP50), append(coreMs95, ft.CoreP95), append(gap99, ft.GapP99)
+				gapMax = max(gapMax, ft.GapMax)
+				r.Hitches += ft.Hitches
+			}
 		}
 		if _, raw := sess.RawFrame(); raw != nil {
 			samples++
 			seen[sha256.Sum256(raw)] = true
 		}
 	}
+	if cpuFrom.started {
+		wall := time.Since(cpuFrom.at).Seconds()
+		r.RunnerCPU = 100 * (procCPU(sess.RunnerPID()) - cpuFrom.runner) / wall
+		r.ServerCPU = 100 * (procCPU(os.Getpid()) - cpuFrom.self) / wall
+		if idle, total := sysTimes(); total > cpuFrom.total {
+			r.MachineCPU = 100 * (1 - (idle-cpuFrom.idle)/(total-cpuFrom.total))
+		}
+		ft := sess.FrameTimes()
+		r.TransitMs = ft.TransitP50
+		if ft.Frames > 0 {
+			coreMs, coreMs95, gap99 = append(coreMs, ft.CoreP50), append(coreMs95, ft.CoreP95), append(gap99, ft.GapP99)
+			gapMax = max(gapMax, ft.GapMax)
+			r.Hitches += ft.Hitches
+		}
+		// The median second's median, the worst second's 95th and 99th percentiles, the longest gap.
+		r.CoreMs, r.GapMsMax = median(coreMs), gapMax
+		if len(coreMs95) > 0 {
+			r.CoreMs95, r.GapMs99 = slices.Max(coreMs95), slices.Max(gap99)
+		}
+	}
+	r.GPU, r.GPUEncoder = gl.stop()
+	r.EncodeMs = median(encMs)
 	info := sess.Info()
 	r.CoreName, r.Target, r.Renderer = info.Core, info.FPS, info.Renderer
 	r.GameFPS, r.EncodedFPS = median(games), median(encoded)

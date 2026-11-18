@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 	"unsafe"
 
 	"github.com/ebitengine/purego"
@@ -56,12 +57,12 @@ func TestHardwareFrameComesBack(t *testing.T) {
 	call(o.f.bindTexture, glTexture2D, uintptr(o.color))
 	call(sub, glTexture2D, 0, 0, 0, 32, 8, glRGBA, glUnsignedByte, uintptr(unsafe.Pointer(&pixels[0])))
 
-	o.startRead(16, 8)
+	o.startRead(engine.Handlers{}, 16, 8)
 	var got []byte
 	var w, h, stride, format int
-	o.deliver(engine.Handlers{VideoFlipped: func(d []byte, fw, fh, s, f int) {
+	o.collect(engine.Handlers{VideoFlipped: func(d []byte, fw, fh, s, f int) {
 		got, w, h, stride, format = append([]byte(nil), d...), fw, fh, s, f
-	}})
+	}}, 2*time.Second)
 	if got == nil {
 		t.Fatal("no frame came back")
 	}
@@ -81,11 +82,11 @@ func TestHardwareFrameComesBack(t *testing.T) {
 	// Where the driver won't map the pixel buffer, as a Mac's won't once PPSSPP's OpenGL renderer
 	// has run, the frame is copied out of it instead, the same.
 	o.copyOnly = true
-	o.startRead(16, 8)
+	o.startRead(engine.Handlers{}, 16, 8)
 	got = nil
-	o.deliver(engine.Handlers{VideoFlipped: func(d []byte, fw, fh, s, f int) {
+	o.collect(engine.Handlers{VideoFlipped: func(d []byte, fw, fh, s, f int) {
 		got, w, h, stride = append([]byte(nil), d...), fw, fh, s
-	}})
+	}}, 2*time.Second)
 	if got == nil || w != 16 || h != 8 || stride != 64 {
 		t.Fatalf("copied: frame %dx%d stride %d, %d bytes", w, h, stride, len(got))
 	}
@@ -98,9 +99,26 @@ func TestHardwareFrameComesBack(t *testing.T) {
 	if e := call(o.f.getError); e != 0 {
 		t.Errorf("copying: OpenGL reported error %#x", e)
 	}
+	// A frame asked for while the one before is still waiting goes after it: the first is handed
+	// over before the second is read.
+	o.copyOnly = false
+	var order []int
+	keep := engine.Handlers{VideoFlipped: func(d []byte, fw, fh, s, f int) { order = append(order, fw) }}
+	o.startRead(keep, 16, 8)
+	o.startRead(keep, 8, 8)
+	if len(order) != 1 || order[0] != 16 {
+		t.Fatalf("handed over before the second read: %v, want [16]", order)
+	}
+	o.collect(keep, 2*time.Second)
+	if len(order) != 2 || order[1] != 8 {
+		t.Fatalf("handed over: %v, want [16 8]", order)
+	}
+	if o.collect(keep, 0) || len(order) != 2 {
+		t.Fatal("nothing should be left to hand over")
+	}
 	// A size the framebuffer doesn't have is ignored, not read out of bounds.
-	o.startRead(4096, 4096)
-	if o.fence != 0 {
+	o.startRead(engine.Handlers{}, 4096, 4096)
+	if o.pending >= 0 {
 		t.Error("an impossible read should be refused")
 	}
 }
@@ -108,16 +126,20 @@ func TestHardwareFrameComesBack(t *testing.T) {
 func TestProbeGPU(t *testing.T) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
-	name, err := ProbeGPU()
+	info, err := ProbeGPU()
 	if errors.Is(err, ErrNoGPU) {
 		t.Skip(err)
 	}
 	if err != nil {
 		t.Fatal(err)
 	}
-	if name == "" || softwareRenderer(name) {
-		t.Errorf("probe named %q", name)
+	if info.Renderer == "" || softwareRenderer(info.Renderer) {
+		t.Errorf("probe named %q", info.Renderer)
 	}
+	if info.Vendor == "" || info.Version == "" {
+		t.Errorf("the driver should name itself and its version: %+v", info)
+	}
+	t.Logf("%+v", info)
 }
 
 func TestSoftwareRendererSpotted(t *testing.T) {
