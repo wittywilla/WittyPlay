@@ -60,6 +60,7 @@ type engine struct {
 	gpu         stream.GPUProbe
 	gpuAt       time.Time // when the last answer came in
 	gpuChecking bool
+	gpuNoneOnce bool // a check found no card, which counts once a second check agrees
 
 	bios   biosFinder
 	offers standaloneOffers
