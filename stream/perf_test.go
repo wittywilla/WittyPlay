@@ -6,8 +6,8 @@ package stream
 import "testing"
 
 func TestParseGPUProbe(t *testing.T) {
-	p := parseGPUProbe("gpu: A card/PCIe\nvendor: A maker\nversion: 4.6.0 A driver 1.2\nvram-mb: 8192\n")
-	if p.Name != "A card/PCIe" || p.Vendor != "A maker" || p.Version != "4.6.0 A driver 1.2" || p.VRAMMB != 8192 || p.Error != "" {
+	p := parseGPUProbe("gpu: A card/PCIe\nvendor: A maker\nversion: 4.6.0 A driver 1.2\nvram-mb: 8192\nvulkan: A card\n")
+	if p.Name != "A card/PCIe" || p.Vendor != "A maker" || p.Version != "4.6.0 A driver 1.2" || p.VRAMMB != 8192 || p.Vulkan != "A card" || p.Error != "" {
 		t.Fatalf("got %+v", p)
 	}
 	// What an older runner says: the name alone.
