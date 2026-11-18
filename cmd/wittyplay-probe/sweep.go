@@ -212,7 +212,7 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	log := slog.New(slog.NewTextHandler(said, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	mgr := stream.NewManager(stream.Config{Runner: g.runner, FFmpeg: ffmpeg, HWEncoders: hw, GPUEncoders: hw, HaveEncoder: func(n string) bool { return slices.Contains(names, n) }, Log: log})
 	load, runnerArgs := g.load()
-	gpu := g.coreID != "" && wittyplay.Traits(g.coreID).GPU
+	gpu := g.coreID != "" && wittyplay.Traits(g.coreID).GPU && !g.noCard
 	ahead := ipc.RunAheadAuto
 	began := time.Now()
 	sess, err := mgr.Start(stream.Options{Control: &ipc.Control{RunAhead: &ahead}, UserID: 1, ItemID: 1, Title: filepath.Base(g.rom), Console: g.console, Core: g.core, ROM: g.rom, SystemDir: g.system, SaveDir: g.save,

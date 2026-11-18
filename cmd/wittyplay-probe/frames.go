@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -262,7 +263,7 @@ func toImage(hdr ipc.VideoHeader, data []byte) *image.RGBA {
 type gameFlags struct {
 	runner, core, rom, system, save, console, coreID, resolution, options string
 	mem                                                                   int64
-	verbose                                                               bool
+	verbose, noCard                                                       bool
 }
 
 func addGameFlags(fs *flag.FlagSet) *gameFlags {
@@ -278,6 +279,7 @@ func addGameFlags(fs *flag.FlagSet) *gameFlags {
 	fs.StringVar(&g.options, "options", "", "core options, key=value;key=value, replacing the defaults")
 	fs.Int64Var(&g.mem, "memory-mb", 0, "the runner's memory limit; 0 for what the server uses")
 	fs.BoolVar(&g.verbose, "v", false, "show what the runner prints")
+	fs.BoolVar(&g.noCard, "no-card", false, "start the runner as a server with no graphics card does: without -gpu, and with -processor-gl for a core drawn through the processor's OpenGL; give the core's options with -options")
 	return g
 }
 
@@ -297,6 +299,12 @@ func (g *gameFlags) load() (ipc.Load, []string) {
 	assets := ""
 	if g.coreID != "" {
 		args = wittyplay.RunnerArgs(g.coreID)
+		if g.noCard {
+			args = slices.DeleteFunc(args, func(a string) bool { return a == "-gpu" })
+			if g.coreID == "dolphin" {
+				args = append(args, "-processor-gl")
+			}
+		}
 		opts = wittyplay.StartOptions(g.console, g.coreID, g.resolution, g.system)
 		assets = wittyplay.Traits(g.coreID).Assets
 	}

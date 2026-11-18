@@ -121,9 +121,12 @@ func (a *App) Runner(ctx context.Context) (path string, args []string) {
 }
 
 // hwEncoder is one hardware encoder in the server's tools: whether it worked when tried.
+// hwEncoder is one hardware encoder as the server's shared probe found it, by a real test
+// encode: whether it works, and if not, why.
 type hwEncoder struct {
 	Name    string `json:"name"`
 	Working bool   `json:"working"`
+	Reason  string `json:"reason,omitempty"`
 }
 
 func hardwareEncoders(t host.Tools) []hwEncoder {
@@ -153,8 +156,11 @@ func (a *App) Configure(ctx context.Context) error {
 	for _, n := range strings.Split(a.configText(ctx, "hwEncoders", ""), ",") {
 		enabled[strings.TrimSpace(n)] = true
 	}
-	var hw, gpuEnc []string
+	var hw, gpuEnc, notWorking []string
 	for _, e := range hardwareEncoders(tools) {
+		if !e.Working {
+			notWorking = append(notWorking, e.Name+": "+e.Reason)
+		}
 		if e.Working && enabled[e.Name] {
 			hw = append(hw, e.Name)
 		}
@@ -170,7 +176,7 @@ func (a *App) Configure(ctx context.Context) error {
 	}
 	encoders := tools.Encoders
 	a.Log.Info("wittyplay: game encoders", "cat", "games", "hardware", strings.Join(gpuEnc, ","), "switchedOn", strings.Join(hw, ","),
-		"software", softwareEncoders(encoders), "threads", runtime.NumCPU())
+		"notWorking", strings.Join(notWorking, "; "), "software", softwareEncoders(encoders), "threads", runtime.NumCPU())
 	rpc.Mgr.Configure(func(c *stream.Config) {
 		c.Runner, c.RunnerArgs, c.HWEncoders, c.GPUEncoders, c.MaxSessions, c.MaxGPU, c.UDPPort = runner, args, hw, gpuEnc, maxSessions, maxGPU, port
 		c.FFmpeg = tools.FFmpeg
@@ -485,7 +491,7 @@ func (a *App) PlanGame(ctx context.Context, it *service.Item) (*Plan, *Refusal) 
 			if cpu == nil {
 				continue
 			}
-			next.Options, next.GPU, next.RunnerArgs = overOptions(next.Options, cpu), false, withoutGPUArg(next.RunnerArgs)
+			next.Options, next.GPU, next.RunnerArgs = overOptions(next.Options, cpu), false, softwareArgs(other.ID, next.RunnerArgs)
 		}
 		p.Fallbacks = append(p.Fallbacks, next)
 	}
@@ -501,8 +507,8 @@ func (a *App) planOn(ctx context.Context, p *Plan, core cores.Core, software boo
 	p.RunnerArgs = wittyplay.RunnerArgs(core.ID)
 	p.CPUOptions = nil
 	if software {
-		p.RunnerArgs = withoutGPUArg(p.RunnerArgs)
-		p.CPUOptions = cpuDrawing[core.ID]
+		p.RunnerArgs = softwareArgs(core.ID, p.RunnerArgs)
+		p.CPUOptions = cpuDrawingOn(core.ID, hostOS)
 	}
 	p.CoreOptions = a.StartOptions(ctx, p.Console.ID, core.ID)
 	p.CoreAssets, p.LoadLimit = "", 0

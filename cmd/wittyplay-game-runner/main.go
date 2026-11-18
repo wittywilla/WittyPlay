@@ -54,12 +54,19 @@ func main() {
 	largeAddresses := flag.Bool("large-address-space", false, "this core reserves far more address space than it uses, so allow that")
 	_ = flag.Bool("own-home", false, "this core has its save folder as a home folder, which whoever starts this sets up")
 	probe := flag.Bool("probe-gpu", false, "say which graphics card games would draw with, and stop")
+	processorGL := flag.Bool("processor-gl", false, "this server has no graphics card, and this core can draw with OpenGL the processor runs")
 	flag.Parse()
 	if flag.NArg() > 0 {
 		fmt.Fprintln(os.Stderr, "wittyplay-game-runner is started by WittyMediaServer")
 		os.Exit(2)
 	}
-	limits := hostsandbox.Limits{SaveDir: *saveDir, MemoryMB: *memory, GPU: *gpu || *probe, Normal: *normal, SharedMemory: *sharedMemory, LargeAddressSpace: *largeAddresses}
+	// OpenGL the processor runs is still a graphics driver, with a driver's appetite for address
+	// space, so it gets the limits a card's driver gets (hostsandbox.Limits.GPU): without them
+	// Dolphin, its fast memory and llvmpipe couldn't fit, and the game shut itself down.
+	if *processorGL {
+		libretro.AllowProcessorGL()
+	}
+	limits := hostsandbox.Limits{SaveDir: *saveDir, MemoryMB: *memory, GPU: *gpu || *probe || *processorGL, Normal: *normal, SharedMemory: *sharedMemory, LargeAddressSpace: *largeAddresses}
 	// This starts the program again, so it comes before anything that can't happen twice.
 	if err := hostsandbox.Confine(limits); err != nil {
 		fmt.Fprintln(os.Stderr, "sandbox:", err)

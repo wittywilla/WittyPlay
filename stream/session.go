@@ -20,6 +20,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -564,8 +565,9 @@ func (s *Session) start() error {
 		s.opt.Notices = append(s.opt.Notices[:len(s.opt.Notices):len(s.opt.Notices)], "Memory cards won't work in this game this time, because the server couldn't set up a folder for them. Save slots still work.")
 	}
 	args, memory := append(append([]string(nil), s.cfg.RunnerArgs...), s.opt.RunnerArgs...), s.cfg.MemoryMB
-	if s.opt.GPU {
-		// A graphics driver needs what a software-rendered game never should.
+	if s.opt.GPU || slices.Contains(args, "-processor-gl") {
+		// A graphics driver needs what a software-rendered game never should, and OpenGL the
+		// processor runs is a graphics driver too: Dolphin with llvmpipe didn't fit the other.
 		memory = s.cfg.GPUMemoryMB
 	}
 	rn, err := StartRunner(s.cfg.Runner, args, s.opt.SaveDir, memory, s.log)

@@ -122,6 +122,7 @@ var cpuSpeedNotes = map[string]string{
 	"parallel_n64":     "Full speed on an Apple M3 Pro, on about one processor core.",
 	"ppsspp":           "Mostly full speed on an Apple M3 Pro, with dips in heavy scenes, on three to five processor cores.",
 	"pcsx2":            "Mostly full speed on an Apple M3 Pro, slower in places.",
+	"dolphin":          "Through the processor's OpenGL: a GameCube game at full speed on about one processor core, a Wii game on three or four (Intel i7-12700H).",
 }
 
 // platformSupport is how a core runs on one server platform.
@@ -162,7 +163,7 @@ func drawsOn(id string, gpuCore bool, goos, noGPU string) (string, string) {
 	case noGPU == "" && gpuOS(goos):
 		// A Mac's card draws some cores wrongly: those the processor draws there (cardFaults).
 		if why := cardFaults[goos][id]; why != "" {
-			if cpuDrawing[id] == nil {
+			if cpuDrawingOn(id, goos) == nil {
 				return drawsNone, "Needs a graphics card, and " + why + "."
 			}
 			note := cpuSpeedNotes[id]
@@ -172,7 +173,7 @@ func drawsOn(id string, gpuCore bool, goos, noGPU string) (string, string) {
 			return drawsCPUFallback, "Drawn by the processor, as " + why + ". " + note
 		}
 		return drawsGPU, "Needs a graphics card in the server."
-	case cpuDrawing[id] != nil:
+	case cpuDrawingOn(id, goos) != nil:
 		note := cpuSpeedNotes[id]
 		if note == "" {
 			note = "Slower than on a graphics card."
@@ -187,7 +188,7 @@ func drawsOn(id string, gpuCore bool, goos, noGPU string) (string, string) {
 // processor draw it (cardFaults).
 func drawsHere(id string, gpuCore bool, noGPU string) (string, string) {
 	if gpuCore && noGPU == "" {
-		if why := cardFaults[hostOS][id]; why != "" && cpuDrawing[id] != nil {
+		if why := cardFaults[hostOS][id]; why != "" && cpuDrawingOn(id, hostOS) != nil {
 			note := cpuSpeedNotes[id]
 			if note == "" {
 				note = "Slower than on a graphics card."

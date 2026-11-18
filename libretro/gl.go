@@ -154,13 +154,24 @@ func newGLOut(req glRequest, depth, stencil, flip bool) (*glOut, error) {
 		return nil, err
 	}
 	o.renderer = glString(call(o.f.getString, glRendererName))
-	if softwareRenderer(o.renderer) {
+	if softwareRenderer(o.renderer) && !(processorGL && o.renderer != "") {
 		name := o.renderer
 		p.destroy()
 		return nil, fmt.Errorf("%w (OpenGL here is only %s)", ErrNoGPU, name)
 	}
 	return o, nil
 }
+
+// processorGL lets a core draw with OpenGL that the processor runs (Mesa's llvmpipe), for a
+// server with no graphics card and a core with no other way to draw: Dolphin's software renderer
+// is only in its debug builds. It's set from the runner's -processor-gl, which the server adds only
+// then. Measured in a container with no card on an i7-12700H: Cars (GameCube) at 60 frames a
+// second on 1.1 threads, Mario Kart Wii at 60 on 3.5. Mupen64Plus-Next's OpenGL also kept 60, but
+// on 5.7 threads, against about one for angrylion, so cores with a renderer of their own keep it.
+var processorGL bool
+
+// AllowProcessorGL lets OpenGL drawn by the processor stand in for a graphics card.
+func AllowProcessorGL() { processorGL = true }
 
 // ErrNoGPU is why a core that needs a graphics card can't run here.
 var ErrNoGPU = errors.New("this server has no usable graphics card for this game")
