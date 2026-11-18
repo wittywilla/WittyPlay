@@ -71,6 +71,7 @@ export function PadPicture({ family, extraButton, device, describe, onPick, pick
   const nBottom = list.filter((c) => c.side === 'b').length
   const parts = useRef(new Map<number, SVGElement>())
   const nubs = useRef<(SVGCircleElement | null)[]>([null, null])
+  const pressed = useRef<string | null>(null) // a callout chosen on its press, whose click then comes too
 
   // Lighting up, sixty times a second, without React.
   useEffect(() => {
@@ -139,7 +140,11 @@ export function PadPicture({ family, extraButton, device, describe, onPick, pick
         return (
           <button key={c.key} type="button" className={`wpp-call wpp-${c.side}` + (d.none ? ' none' : '') + (d.changed ? ' changed' : '') + (picking === c.key ? ' on' : '')}
             style={{ left: `${(b.x / W) * 100}%`, top: `${(b.y / H) * 100}%`, width: `${(b.w / W) * 100}%`, height: `${(b.h / H) * 100}%` }}
-            onClick={() => onPick(c)} aria-haspopup={c.stick === undefined ? 'dialog' : undefined}>
+            // Chosen on the press, not the click: the first mouse press after a controller was used
+            // makes the app's text smaller again, the drawing moves under the pointer, and the
+            // click would land on whatever is there by the time the button comes up.
+            onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); pressed.current = c.key; setTimeout(() => { if (pressed.current === c.key) pressed.current = null }, 800); onPick(c) }}
+            onClick={() => { if (pressed.current === c.key) { pressed.current = null; return } onPick(c) }} aria-haspopup={c.stick === undefined ? 'dialog' : undefined}>
             {glyph}<span className="wpp-what">{d.text}</span>
           </button>
         )
