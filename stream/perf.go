@@ -16,13 +16,21 @@ type frameTimes struct {
 	mu      sync.Mutex
 	core    [512]float64
 	transit [512]float64
+	gap     [512]float64 // from one picture being ready to the next
 	n       int
+	lastEnd int64
 }
 
-func (f *frameTimes) add(coreMS, transitMS float64) {
+// add takes one picture: the core's time on it, its way to the server, and when it was ready.
+func (f *frameTimes) add(coreMS, transitMS float64, end int64) {
 	f.mu.Lock()
 	i := f.n % len(f.core)
 	f.core[i], f.transit[i] = coreMS, transitMS
+	f.gap[i] = 0
+	if f.lastEnd > 0 && end > f.lastEnd {
+		f.gap[i] = float64(end-f.lastEnd) / 1e6
+	}
+	f.lastEnd = end
 	f.n++
 	f.mu.Unlock()
 }
@@ -32,7 +40,12 @@ func (f *frameTimes) add(coreMS, transitMS float64) {
 type FrameTimes struct {
 	CoreP50, CoreP95       float64
 	TransitP50, TransitP95 float64
-	Frames                 int
+	// The gaps between pictures: the 99th percentile and the longest, which is where a stutter
+	// shows that a median hides.
+	GapP99, GapMax float64
+	// Hitches counts the gaps longer than twice the median one: frames a player sees stutter.
+	Hitches int
+	Frames  int
 }
 
 func (f *frameTimes) take() FrameTimes {
@@ -40,6 +53,7 @@ func (f *frameTimes) take() FrameTimes {
 	n := min(f.n, len(f.core))
 	core := slices.Clone(f.core[:n])
 	transit := slices.Clone(f.transit[:n])
+	gap := slices.DeleteFunc(slices.Clone(f.gap[:n]), func(v float64) bool { return v == 0 })
 	f.n = 0
 	f.mu.Unlock()
 	if n == 0 {
@@ -47,8 +61,24 @@ func (f *frameTimes) take() FrameTimes {
 	}
 	slices.Sort(core)
 	slices.Sort(transit)
-	at := func(v []float64, q float64) float64 { return v[min(len(v)-1, int(float64(len(v))*q))] }
-	return FrameTimes{CoreP50: at(core, 0.5), CoreP95: at(core, 0.95), TransitP50: at(transit, 0.5), TransitP95: at(transit, 0.95), Frames: n}
+	slices.Sort(gap)
+	at := func(v []float64, q float64) float64 {
+		if len(v) == 0 {
+			return 0
+		}
+		return v[min(len(v)-1, int(float64(len(v))*q))]
+	}
+	out := FrameTimes{CoreP50: at(core, 0.5), CoreP95: at(core, 0.95), TransitP50: at(transit, 0.5), TransitP95: at(transit, 0.95), GapP99: at(gap, 0.99), Frames: n}
+	if len(gap) > 0 {
+		out.GapMax = gap[len(gap)-1]
+		limit := 2 * at(gap, 0.5)
+		for _, g := range gap {
+			if g > limit {
+				out.Hitches++
+			}
+		}
+	}
+	return out
 }
 
 // FrameTimes says how long the newest frames took in the core and on their way to the server,

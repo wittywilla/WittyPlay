@@ -36,7 +36,7 @@ func frames(args []string) error {
 	pressList := fs.String("press", "", "buttons to press, as name@seconds, comma separated: start@40,a@45")
 	state := fs.String("state", "", "a save state to start from")
 	optionsOut := fs.String("options-out", "", "write the options the core offers to this file")
-	control := fs.String("control", "", "a file to watch for lines to act on: a button name, shot, or state FILE")
+	control := fs.String("control", "", "a file to watch for lines to act on: a button name (a tap), hold or release and a button name, shot, state FILE, load FILE, or option KEY=VALUE")
 	_ = fs.Parse(args)
 	if *out == "" {
 		return fmt.Errorf("-out is needed")
@@ -85,6 +85,7 @@ func frames(args []string) error {
 	wantShot := false
 	var stateTo string
 	var watched int
+	var held uint16 // buttons kept down by "hold", until "release"
 	lastLook := time.Now()
 	for time.Since(start).Seconds() < *seconds {
 		t, p, err := rd.Next()
@@ -110,6 +111,16 @@ func frames(args []string) error {
 						k, v, _ := strings.Cut(strings.TrimPrefix(line, "option "), "=")
 						b, _ := json.Marshal(ipc.OptionSet{Key: k, Value: v})
 						_ = ipc.Write(rn.Stdin, ipc.CmdOption, b)
+					case strings.HasPrefix(line, "hold "), strings.HasPrefix(line, "release "):
+						verb, name, _ := strings.Cut(line, " ")
+						if bn, ok := buttonNames[name]; ok {
+							if verb == "hold" {
+								held |= 1 << bn
+							} else {
+								held &^= 1 << bn
+							}
+							presses = append(presses, press{at: now, button: -1})
+						}
 					case strings.HasPrefix(line, "load "):
 						if b, err := os.ReadFile(strings.TrimPrefix(line, "load ")); err == nil {
 							_ = ipc.Write(rn.Stdin, ipc.CmdState, b)
@@ -187,9 +198,11 @@ func frames(args []string) error {
 			presses = presses[1:]
 			state := make([]byte, ipc.InputSizeFull)
 			state[0] = 0
-			if b.down {
-				binary.LittleEndian.PutUint16(state[1:], 1<<b.button)
+			buttons := held
+			if b.down && b.button >= 0 {
+				buttons |= 1 << b.button
 			}
+			binary.LittleEndian.PutUint16(state[1:], buttons)
 			_ = ipc.Write(rn.Stdin, ipc.CmdInput, state)
 		}
 	}

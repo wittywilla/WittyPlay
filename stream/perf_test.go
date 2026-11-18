@@ -28,10 +28,10 @@ func TestFrameTimes(t *testing.T) {
 		t.Fatalf("empty: %+v", got)
 	}
 	for i := 1; i <= 100; i++ {
-		f.add(float64(i), 1)
+		f.add(float64(i), 1, int64(i)*16_000_000+int64(i/50)*84_000_000)
 	}
 	got := f.take()
-	if got.Frames != 100 || got.CoreP50 != 51 || got.CoreP95 != 96 || got.TransitP50 != 1 {
+	if got.Frames != 100 || got.CoreP50 != 51 || got.CoreP95 != 96 || got.TransitP50 != 1 || got.GapMax != 100 || got.GapP99 != 100 {
 		t.Fatalf("got %+v", got)
 	}
 	if again := f.take(); again.Frames != 0 {

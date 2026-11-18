@@ -73,6 +73,9 @@ type sweepResult struct {
 	CoreMs     float64 `json:"coreMs"`
 	CoreMs95   float64 `json:"coreMs95"`
 	TransitMs  float64 `json:"transitMs"`
+	GapMs99    float64 `json:"gapMs99"`  // between pictures, 99th percentile: stutters
+	GapMsMax   float64 `json:"gapMsMax"` // and the longest
+	Hitches    int     `json:"hitches"`  // gaps over twice the usual, in the whole time measured
 	EncodeMs   float64 `json:"encodeMs"`
 }
 
@@ -91,9 +94,10 @@ func sweep(args []string) error {
 	label := fs.String("label", "", "a name for this run")
 	stamp := fs.Bool("stamp", false, "draw numbers into each picture, as the other measurements do")
 	exercise := fs.Bool("exercise", false, "also use what a player can: run-ahead, rewind, save slots, reset and fast forward")
+	state := fs.String("state", "", "a save state to start from, as a game resumed where someone left it")
 	_ = fs.Parse(args)
 	r := sweepResult{Label: *label, Console: g.console, Core: g.coreID, Game: filepath.Base(g.rom)}
-	err := playSweep(g, &r, *seconds, *ffmpeg, *encoders, *shots, *label, *loadLimit, *stamp, *exercise)
+	err := playSweep(g, &r, *seconds, *ffmpeg, *encoders, *shots, *label, *state, *loadLimit, *stamp, *exercise)
 	if err != nil {
 		r.Error = err.Error()
 	}
@@ -168,9 +172,18 @@ func cleanExit(said string) bool {
 	return strings.Contains(line, "err=<nil>")
 }
 
-func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shots, label string, loadLimit time.Duration, stamp, exercise bool) error {
+func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shots, label, state string, loadLimit time.Duration, stamp, exercise bool) error {
 	if err := os.MkdirAll(g.save, 0o755); err != nil {
 		return err
+	}
+	if state != "" {
+		b, err := os.ReadFile(state)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(g.save, "auto.state"), b, 0o644); err != nil {
+			return err
+		}
 	}
 	coreID := g.coreID
 	if coreID == "" && g.core != "" {
@@ -215,7 +228,7 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 	gpu := g.coreID != "" && wittyplay.Traits(g.coreID).GPU && !g.noCard
 	ahead := ipc.RunAheadAuto
 	began := time.Now()
-	sess, err := mgr.Start(stream.Options{Control: &ipc.Control{RunAhead: &ahead}, UserID: 1, ItemID: 1, Title: filepath.Base(g.rom), Console: g.console, Core: g.core, ROM: g.rom, SystemDir: g.system, SaveDir: g.save,
+	sess, err := mgr.Start(stream.Options{Control: &ipc.Control{RunAhead: &ahead}, Resume: state != "", UserID: 1, ItemID: 1, Title: filepath.Base(g.rom), Console: g.console, Core: g.core, ROM: g.rom, SystemDir: g.system, SaveDir: g.save,
 		GPU: gpu, RunnerArgs: runnerArgs, CoreID: g.coreID, CoreOptions: load.Options, CoreAssets: load.Assets, LoadLimit: loadLimit, NoAutoSave: true, Stamp: stamp, PreferDevices: wittyplay.Pad(g.console).PreferDevices})
 	if err != nil {
 		r.RunnerSaid = tail(said.String(), 3000)
@@ -306,7 +319,8 @@ func playSweep(g *gameFlags, r *sweepResult, seconds int, ffmpeg, encoders, shot
 		total              float64
 		started            bool
 	}
-	var encMs []float64
+	var encMs, coreMs, coreMs95, gap99 []float64
+	var gapMax float64
 loop:
 	for i := 0; ; i++ {
 		select {
@@ -319,7 +333,7 @@ loop:
 		if el >= limit {
 			break
 		}
-		if i%4 == 1 {
+		if i%4 == 1 && state == "" { // a game resumed mid-play is left to play: Start would pause it
 			id := buttons[(i/4)%len(buttons)]
 			press(id, true)
 			time.AfterFunc(150*time.Millisecond, func() { press(id, false) })
@@ -342,6 +356,12 @@ loop:
 			if st.EncodeMs > 0 {
 				encMs = append(encMs, st.EncodeMs)
 			}
+			// Every second, as the times kept cover only the last few hundred frames.
+			if ft := sess.FrameTimes(); ft.Frames > 0 && cpuFrom.at.Before(time.Now().Add(-time.Second/2)) {
+				coreMs, coreMs95, gap99 = append(coreMs, ft.CoreP50), append(coreMs95, ft.CoreP95), append(gap99, ft.GapP99)
+				gapMax = max(gapMax, ft.GapMax)
+				r.Hitches += ft.Hitches
+			}
 		}
 		if _, raw := sess.RawFrame(); raw != nil {
 			samples++
@@ -356,7 +376,17 @@ loop:
 			r.MachineCPU = 100 * (1 - (idle-cpuFrom.idle)/(total-cpuFrom.total))
 		}
 		ft := sess.FrameTimes()
-		r.CoreMs, r.CoreMs95, r.TransitMs = ft.CoreP50, ft.CoreP95, ft.TransitP50
+		r.TransitMs = ft.TransitP50
+		if ft.Frames > 0 {
+			coreMs, coreMs95, gap99 = append(coreMs, ft.CoreP50), append(coreMs95, ft.CoreP95), append(gap99, ft.GapP99)
+			gapMax = max(gapMax, ft.GapMax)
+			r.Hitches += ft.Hitches
+		}
+		// The median second's median, the worst second's 95th and 99th percentiles, the longest gap.
+		r.CoreMs, r.GapMsMax = median(coreMs), gapMax
+		if len(coreMs95) > 0 {
+			r.CoreMs95, r.GapMs99 = slices.Max(coreMs95), slices.Max(gap99)
+		}
 	}
 	r.GPU, r.GPUEncoder = gl.stop()
 	r.EncodeMs = median(encMs)

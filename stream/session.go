@@ -777,7 +777,7 @@ func (s *Session) readRunner(r io.Reader, ready chan<- error) {
 			s.frameTrace = frameTrace{FrameTiming: timing, ServerIn: now, InputServer: s.inputs.when(timing.InputSeq)}
 			s.frameMu.Unlock()
 			if timing.RunStart > 0 && timing.RunEnd >= timing.RunStart {
-				s.frameTimes.add(float64(timing.RunEnd-timing.RunStart)/1e6, float64(now-timing.RunEnd)/1e6)
+				s.frameTimes.add(float64(timing.RunEnd-timing.RunStart)/1e6, float64(now-timing.RunEnd)/1e6, timing.RunEnd)
 			}
 			s.lastFrame.Store(now)
 			s.stats.made.Add(1)

@@ -176,7 +176,7 @@ var cpuDrawing = map[string]map[string]string{
 // software renderer is only in its debug builds, so with no card this is the only way GameCube and
 // Wii games play. Linux only: elsewhere the system's own processor OpenGL stops at version 1.1
 // (Windows) or isn't there. Measured in an Ubuntu container with no card on an i7-12700H, through
-// the sandboxed runner as a server with no card starts it, with fast memory on (traits_linux.go):
+// the sandboxed runner as a server with no card starts it, with fast memory on (traits_fastmem.go):
 // Cars (GameCube) at 60 frames a second on 1.1 threads, Mario Kart Wii at 60 on 3.5.
 var processorGL = map[string]string{"dolphin": "linux"}
 
