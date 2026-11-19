@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 WittyWilla and contributors
 
-// Package wittyplayfile reads and writes .wittyplay files: a small, open JSON format that says how
-// games are pictured in WittyPlay (box art fitted or filled, or drawn in a cartridge or case, which
-// case, and what goes on its label), for everything, per console and per game. The format's open
+// Package wittyplayfile reads and writes .wittyplay files, an open format for games. Version 1 is
+// a small JSON file that says how games are pictured in WittyPlay (box art fitted or filled, or
+// drawn in a cartridge or case, which case, and what goes on its label), for everything, per
+// console and per game. Version 2 adds controls (controls.go) and makes a .wittyplay a game's own
+// shareable file: its details, pictures, the dump it was made for, how it is played, cheats and
+// notes on its saves, in a ZIP archive with manifest.json (game.go, archive.go). The format's open
 // specification is docs/specs/wittyplay-file.md (CC0) with its JSON Schema beside it.
 //
 // A reader keeps what it doesn't know: unknown fields, at any level, are carried through a read and
@@ -24,13 +27,15 @@ import (
 
 // The format's identity.
 const (
-	// Version is the one version this reader understands; a file says it in its "wittyplay" field.
-	Version = 1
+	// Version is the newest version this reader understands; a file says its version in its
+	// "wittyplay" field. Writers write the lowest version that holds what they write (MinVersion).
+	Version = 2
 	// Ext is the file extension, MediaType its registered-style media type.
 	Ext       = ".wittyplay"
 	MediaType = "application/vnd.wittyplay+json"
-	// MaxSize is the largest file read, in bytes.
-	MaxSize = 64 << 10
+	// MaxSize is the largest bare JSON file read, and the largest manifest in an archive, in bytes.
+	// (Version 1 files are at most 64 KiB; version 2 ones may carry a game's details and controls.)
+	MaxSize = 1 << 20
 	// Limits on what one file holds.
 	MaxGames    = 2000
 	MaxConsoles = 200
@@ -109,7 +114,7 @@ var (
 
 // Errors a caller can tell apart.
 var (
-	ErrTooBig = fmt.Errorf("a .wittyplay file is at most %d KB", MaxSize>>10)
+	ErrTooBig = fmt.Errorf("a .wittyplay file is at most %d KB, or %d MB as an archive", MaxSize>>10, MaxFile>>20)
 	ErrNewer  = errors.New("this .wittyplay file was made for a newer version of the format")
 )
 
@@ -181,20 +186,67 @@ type Doc struct {
 	Default     *Look           `json:"default,omitempty"`
 	Consoles    map[string]Look `json:"consoles,omitempty"`
 	Games       []Game          `json:"games,omitempty"`
-	Extra       Extra           `json:"-"`
+	// Version 2. Controls: how games are played, by default and per console (controls.go). Game:
+	// everything about the one game a game's own file is for (game.go). Authorship: who made the
+	// file. Language and Translations: the language its text is in, and that text in others
+	// (lang.go). Extensions: anything a program wants kept, under a name of its own ("tool.key").
+	Controls     *Controls                  `json:"controls,omitempty"`
+	Game         *About                     `json:"game,omitempty"`
+	Authorship   *Authorship                `json:"authorship,omitempty"`
+	Language     string                     `json:"language,omitempty"`
+	Translations map[string]*Translation    `json:"translations,omitempty"`
+	Extensions   map[string]json.RawMessage `json:"extensions,omitempty"`
+	Extra        Extra                      `json:"-"`
+	// Files: an archive's other members by name ("images/boxfront.png"), checked.
+	Files map[string][]byte `json:"-"`
 }
 
-// Read reads one file from r, refusing anything over MaxSize.
+// Read reads one file from r, archive or bare JSON, refusing anything over MaxFile.
 func Read(r io.Reader) (*Doc, error) {
-	b, err := io.ReadAll(io.LimitReader(r, MaxSize+1))
+	b, err := io.ReadAll(io.LimitReader(r, MaxFile+1))
 	if err != nil {
 		return nil, err
 	}
 	return Parse(b)
 }
 
-// Parse reads and checks a file's bytes.
+// Parse reads and checks a file's bytes: an archive (a game's own file, with its pictures) or a
+// bare JSON file. A file with anything wrong gives an error and no Doc; the parts version 2 added
+// are checked all at once, and their problems come as an *Error listing every one.
 func Parse(b []byte) (*Doc, error) {
+	if IsArchive(b) {
+		if len(b) > MaxFile {
+			return nil, ErrTooBig
+		}
+		man, files, err := readArchive(b)
+		if err != nil {
+			return nil, err
+		}
+		d, err := parseJSON(man)
+		if err != nil {
+			return nil, err
+		}
+		d.Files = files
+		if err := d.Validate(); err != nil {
+			return nil, err
+		}
+		return d, nil
+	}
+	d, err := parseJSON(b)
+	if err != nil {
+		return nil, err
+	}
+	if err := d.Validate(); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+// ParseManifest reads a bare JSON document without checking it, for a program that will add
+// pictures to it before writing it (EncodeAny checks it all then).
+func ParseManifest(b []byte) (*Doc, error) { return parseJSON(b) }
+
+func parseJSON(b []byte) (*Doc, error) {
 	if len(b) > MaxSize {
 		return nil, ErrTooBig
 	}
@@ -206,14 +258,49 @@ func Parse(b []byte) (*Doc, error) {
 	if err := json.Unmarshal(b, &top); err != nil || top == nil {
 		return nil, errors.New("a .wittyplay file is one JSON object")
 	}
+	if err := checkDepth(b, 24); err != nil {
+		return nil, err
+	}
 	d := &Doc{}
 	if err := d.fromFields(top); err != nil {
 		return nil, err
 	}
-	if err := d.Validate(); err != nil {
-		return nil, err
-	}
 	return d, nil
+}
+
+// checkDepth refuses JSON nested deeper than max.
+func checkDepth(b []byte, max int) error {
+	depth, inStr, esc := 0, false, false
+	for _, c := range b {
+		switch {
+		case inStr:
+			if esc {
+				esc = false
+			} else if c == '\\' {
+				esc = true
+			} else if c == '"' {
+				inStr = false
+			}
+		case c == '"':
+			inStr = true
+		case c == '{' || c == '[':
+			if depth++; depth > max {
+				return fmt.Errorf("a .wittyplay file is nested at most %d deep", max)
+			}
+		case c == '}' || c == ']':
+			depth--
+		}
+	}
+	return nil
+}
+
+// MinVersion is the lowest version that holds what the document says: 1 unless it uses a part
+// version 2 added.
+func (d *Doc) MinVersion() int {
+	if d.Controls != nil || d.Game != nil || d.Authorship != nil || d.Language != "" || len(d.Translations) > 0 || len(d.Extensions) > 0 {
+		return 2
+	}
+	return 1
 }
 
 // Validate checks a document against the format's rules.
@@ -222,7 +309,7 @@ func (d *Doc) Validate() error {
 	case d.Version > Version:
 		return ErrNewer
 	case d.Version < 1:
-		return errors.New(`"wittyplay" must be 1`)
+		return errors.New(`"wittyplay" must be 1 or 2`)
 	}
 	if utf8.RuneCountInString(d.Name) > MaxName {
 		return fmt.Errorf(`"name" is at most %d characters`, MaxName)
@@ -257,6 +344,11 @@ func (d *Doc) Validate() error {
 		if err := g.Look.check(where); err != nil {
 			return err
 		}
+	}
+	c := &checker{}
+	d.checkV2(c)
+	if len(c.problems) > 0 {
+		return &Error{Problems: c.problems}
 	}
 	return nil
 }
@@ -365,6 +457,26 @@ func take[T any](f map[string]json.RawMessage, key string, into *T) error {
 	return nil
 }
 
+// takeExplained is take, saying where in the part decoding failed.
+func takeExplained(f map[string]json.RawMessage, key string, into any) error {
+	raw, ok := f[key]
+	if !ok {
+		return nil
+	}
+	delete(f, key)
+	if string(raw) == "null" {
+		return nil
+	}
+	if err := json.Unmarshal(raw, into); err != nil {
+		var te *json.UnmarshalTypeError
+		if errors.As(err, &te) && te.Field != "" {
+			return refuse(key, "%s has the wrong kind of value", te.Field)
+		}
+		return refuse(key, "can't be read: %v", err)
+	}
+	return nil
+}
+
 func rest(f map[string]json.RawMessage) Extra {
 	if len(f) == 0 {
 		return nil
@@ -411,6 +523,15 @@ func (d *Doc) fromFields(f map[string]json.RawMessage) error {
 	}
 	if err := take(f, "games", &d.Games); err != nil {
 		return err
+	}
+	for _, k := range []struct {
+		key string
+		to  any
+	}{{"controls", &d.Controls}, {"game", &d.Game}, {"authorship", &d.Authorship}, {"language", &d.Language},
+		{"translations", &d.Translations}, {"extensions", &d.Extensions}} {
+		if err := takeExplained(f, k.key, k.to); err != nil {
+			return err
+		}
 	}
 	d.Extra = rest(f)
 	return nil
@@ -530,11 +651,27 @@ func (d Doc) MarshalJSON() ([]byte, error) {
 	if len(d.Games) > 0 {
 		out["games"] = d.Games
 	}
+	if d.Controls != nil {
+		out["controls"] = d.Controls
+	}
+	if d.Game != nil {
+		out["game"] = d.Game
+	}
+	if d.Authorship != nil {
+		out["authorship"] = d.Authorship
+	}
+	put(out, "language", d.Language)
+	if len(d.Translations) > 0 {
+		out["translations"] = d.Translations
+	}
+	if len(d.Extensions) > 0 {
+		out["extensions"] = d.Extensions
+	}
 	body, err := marshalSorted(out)
 	if err != nil {
 		return nil, err
 	}
-	head := fmt.Sprintf(`{"wittyplay":%d`, d.Version)
+	head := fmt.Sprintf(`{"wittyplay":%d`, d.MinVersion())
 	if len(body) > 2 {
 		return []byte(head + "," + string(body[1:])), nil
 	}

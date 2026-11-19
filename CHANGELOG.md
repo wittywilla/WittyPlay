@@ -3,6 +3,33 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.8
+
+- **A game's own `.wittyplay`, to keep beside it or to share (#75).** `.wittyplay` is now version 2, and a game's own file can carry everything WittyPlay knows or is told about the game. As an archive (a ZIP with `manifest.json` and its pictures) it holds:
+  - **details:** title, sort title, title in its own script, year and date, overview, genres, developer, publisher, series, players, rating, age ratings, regions, languages and other catalogues' ids;
+  - **pictures:** box front, back and spine, disc or cartridge, logo, marquee, banner, title screen, background, video still, icon and screenshots;
+  - **which dump it was made for:** the file's name, size, CRC32, MD5 and SHA-1, so a file for another region or revision is flagged rather than applied;
+  - **how it plays:** core, core options, shader, aspect ratio, video standard and starting disc;
+  - **controls, cheats, notes on its saves,** who made the file, and translations keyed by language tag, as a `.wittyinfo` has.
+
+  It is read as strictly as a `.wittyinfo`: limits on size, member count, packing and names; pictures must decode as what their names say; nothing is ever fetched or run; unknown fields are kept; and every problem is reported at once, with where it is. Version 1 files read as before, and a file with nothing new is still written as version 1. The spec and JSON Schema are in `docs/specs/` (CC0). `langtag` is the server's language-tag package.
+- **Controls in `.wittyplay`.** For every game, per console or for one game, a file can give:
+  - per-player button maps for gamepads, keyboards and mice, and the device in each port;
+  - remaps and turbo buttons;
+  - hotkeys: save and load state, slots, fast-forward, rewind, screenshot, menu and more, with a hold-to-enable button;
+  - turbo rate and mode, stick dead zone and sensitivity, trigger threshold and rumble.
+
+  A game's controls page now uses a file's player 1 maps as its defaults (`fromFile` has everything else). A person's own saved controls still come first.
+- **Scans read a game's `.wittyplay`.** Its look always applies. When the file was made for this dump, or can't tell, its details and box art stand over an NFO and the sources, and its core becomes the game's core if none was chosen. A file made for another dump is flagged and not used. What each scan found is kept (`wittyplay_sidecars`).
+- **Conversion both ways** (`gamefiles`): `gamelist.xml` entries, `.nfo` files, pictures in `media/` folders or named after the game, `.rmp` remaps and `.cfg` input overrides are gathered into `.wittyplay` files, and `.wittyplay` files are written back out to them. Writing out keeps every other entry, element and line, and replaces an `.nfo` or a picture only when asked. For the server's first-run setup and for administrators:
+  - `GET /games/wittyplay/convert`: counts.
+  - `POST /games/wittyplay/convert`: starts a conversion, `{direction: gather|writeout, source: files|library, overwrite, library}`.
+  - `GET /games/wittyplay/convert/status`: progress.
+  - `DELETE /games/wittyplay/convert`: stops it.
+
+  One conversion runs at a time, game by game.
+- **An editor for a game's `.wittyplay`** (`/wittyplay/game/{id}/file`, from a game's *Fix this game, files and advanced*), for administrators on a desktop or in a browser. It edits details, pictures, play choices, controls for each of eight players, hotkeys, cheats and save notes. Download shares the file; Import takes a shared one (one made for another dump is refused unless confirmed); Write out writes the standard files. In TV mode the page says that editing is on the desktop.
+
 ## 0.7.7
 
 - **Performance profiles: one standard for what every emulator starts with (#78).** WittyPlay's first-run step (on every app and in the web wizard's Games step) and Settings, Games ask how strong the server is: **Very light** (Raspberry Pi 4 or 5, Intel N100, Celeron or Atom mini PCs, dual-core laptops, no graphics card), **Light** (four cores with built-in graphics, such as a Core i5-3470 or i5-7200U with Intel UHD 620/630 or Radeon Vega 8), **Balanced** (six cores and a mid-range card, such as a Ryzen 5 3600 or Core i5-8400 with a GTX 1650 or RX 570) or **High quality** (eight or more cores and a strong card, such as a Ryzen 7 5800X or Core i7-12700 with an RTX 3060 or RX 6700 XT). The profile sets each core's internal resolution (native on the light ones, a step above each console's usual on High quality), run-ahead, rewind memory, fast-forward limit, picture quality and how many games play at once. It only fills in what an administrator hasn't set by hand, and one console's core is changed on top of it in My game settings (Everyone, that console). With none chosen, games start as Balanced, as before; the step suggests one from the processor threads and graphics card it finds, and says why (`GET /gaming/profiles`, `PUT /gaming/profiles/{id}`, `gamingProfile`).
