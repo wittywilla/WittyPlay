@@ -25,6 +25,7 @@ type GPUProbe struct {
 	Vendor   string `json:"vendor,omitempty"`  // the driver's maker
 	Version  string `json:"version,omitempty"` // OpenGL's version, and the driver's
 	VRAMMB   int    `json:"vramMb,omitempty"`  // the card's own memory, where its driver says
+	Vulkan   string `json:"vulkan,omitempty"`  // the card cores drawing with Vulkan get, or "none: " and why
 	Error    string `json:"error,omitempty"`
 	Checking bool   `json:"checking,omitempty"` // the answer isn't in yet
 	Again    bool   `json:"-"`                  // says nothing about the card, so ask again later
@@ -74,6 +75,8 @@ func parseGPUProbe(said string) GPUProbe {
 			p.Version = v
 		case "vram-mb":
 			p.VRAMMB, _ = strconv.Atoi(v)
+		case "vulkan":
+			p.Vulkan = v
 		}
 	}
 	return p
