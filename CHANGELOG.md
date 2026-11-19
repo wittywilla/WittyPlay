@@ -5,6 +5,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## 0.7.10
 
+This is the first WittyPlay published since 0.7.2. What 0.7.3 to 0.7.9 held is listed in full under their own headings below; those versions were never published on their own and come out in this one.
+
 - **PlayStation games draw with Vulkan (#84).** SwanStation and Beetle PSX HW now take their automatic renderers, which follow the context the runner prefers: Vulkan where the card can make a device, OpenGL where it can't. Final Fantasy VII's opening on an RTX 3070, in pairs, Vulkan against OpenGL: SwanStation's 95th percentile 3.5 to 4.4 ms against 12.8 to 17.4; Beetle PSX HW's 10.4 to 13.0 against 24.9 to 53.1, on 19 to 34% of a thread against 46 to 75%. Pictures are right through the card's NV12 conversion.
 - **Nintendo 64: ParaLLEl-RDP can be chosen.** Mupen64Plus-Next and ParaLLEl N64 are offered Vulkan, which GLideN64, their default, leaves alone; choosing ParaLLEl-RDP in a core's options now plays (the console's own drawing, on the card), with the internal resolution setting as its upscaling. It isn't the default: with its low-level RSP, Banjo-Kazooie took 50 to 67% of a thread against GLideN64's 14%.
 - PSP stays on OpenGL: PPSSPP's Vulkan renderer measured slower (95th percentile 9.3 to 10.3 ms against 7.1 to 7.6). The 3DS couldn't be compared here.
@@ -14,10 +16,55 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - **Several pictures of each kind in a `.wittyplay`, and its version said out loud (#85).** Each artwork role in a `.wittyplay` holds one picture or a list of up to 32, the first shown: box art from several regions, several fan arts. A role with one picture is still written as a plain name. Gathering picks up numbered extras (`media/box2dfront/Game-2.png`, `Game-boxart-2.png`) after the first; writing out puts them back as `Game-02.png`... and never over a file already there. The spec gains a *Versions* section: a file from a newer version of the format is now read for what WittyPlay knows rather than refused, keeps the rest when saved, and is flagged (`newer: true`, and a note in the editor); a writer never lowers a file's version.
 - **The `.wittyplay` editor adds more pictures of a kind, takes any one out, and shows another first.** It notes when a file follows a newer version of the format.
 
+From 0.7.3 to 0.7.9, in short:
+
+- Core fixes: the runner corrects what a core gets, on this machine, as it runs (#76) (0.7.9).
+- GameCube and Wii draw with Vulkan (0.7.9).
+- `wittyplay-probe frames -nv12` has frames converted on the card, as the server does (0.7.9).
+- On a television, WittyPlay's console settings stay and its file and folder screens point to a computer (WittyMediaServer #469) (0.7.9).
+- A game's own `.wittyplay`, to keep beside it or to share (#75) (0.7.8).
+- Controls in `.wittyplay` (0.7.8).
+- Scans read a game's `.wittyplay` (0.7.8).
+- Conversion both ways (0.7.8).
+- An editor for a game's `.wittyplay` (0.7.8).
+- Performance profiles: one standard for what every emulator starts with (#78) (0.7.7).
+- Settings, Games no longer saves a number box that was only left, so leaving one doesn't pin the profile's value (0.7.7).
+- Frames come back from the graphics card as NV12, converted there (#74) (0.7.6).
+- A frame from a graphics card goes through a new `VideoReady` handler, so one handed over while the next frame is running isn't taken for that frame's and dropped (0.7.6).
+- PlayStation 2 games draw with Vulkan where the graphics card can (#72) (0.7.5).
+- Dolphin stays on OpenGL (0.7.5).
+- The graphics card check names the Vulkan card cores would get (`vulkan` in the GPU status), and `wittyplay-probe -vulkan` offers Vulkan to any core, to measure it (0.7.5).
+- Games drawn on a graphics card no longer wait for it every frame (#68) (0.7.4).
+- Games come before background work on Windows (0.7.4).
+- GameCube and Wii at full speed: Dolphin's fast memory is on for Windows and Linux (0.7.4).
+- GameCube and Wii play on a Linux server with no graphics card (0.7.4).
+- The graphics card check says more (0.7.4).
+- `wittyplay-probe sweep` measures what a game costs (0.7.4).
+- All games follows the layout switch (0.7.3).
+- A details panel beside the games (0.7.3).
+- Highlights stay off the next game (0.7.3).
+- Narrower windows read better (0.7.3).
+- Console photos without their white box (0.7.3).
+- Background removal that leaves light plastic alone (0.7.3).
+- Fixed photos for the Wii, Switch and Switch 2 (0.7.3).
+- A console's name follows its version (0.7.3).
+- A console's version, for its photo (0.7.3).
+- Smoother games on Windows (0.7.3).
+- The Wii Remote's pointer works from a browser (0.7.3).
+- The emulator tests pass on Windows (0.7.3).
+
+## 0.7.9
+
+_Never published on its own: it came out in 0.7.10._
+
 - **Core fixes: the runner corrects what a core gets, on this machine, as it runs (#76).** A core looks up every Vulkan function it uses through the runner, so the runner can hand it a corrected one (`libretro/vk_fixes.go`, listed in `corefixes.go`): nothing in a core's file is changed and no core is built here. On unless **Settings, Games, Advanced, Core fixes** is off (`gamingCoreFixes`), which lists each fix; off, every core gets what it would from any other frontend. `GET /gaming/core-fixes` lists them.
 - **The first: GameCube and Wii draw with Vulkan.** Dolphin builds its stand-in swapchain at the size its glue asks for, then holds it to the surface's smallest and largest sizes. The runner's surface on Windows is a hidden window, which Windows makes 120 by 0 pixels, so every picture was 0 pixels high and every frame black (found by the runner's new `-vk-trace`, which logs what a core asks of Vulkan). The fix reports that surface as taking any size, as a server's headless surface does, and Dolphin draws at its real size. Dolphin is now offered Vulkan where the card can make a device, with core fixes on (the `VulkanWithFixes` trait); with them off, or with no card, it draws with OpenGL as before. On an RTX 3070 with the machine busy with other work, measured in pairs, Vulkan against OpenGL: Cars in a race, at native resolution, about as fast in the middle (5.9 against 4.8 ms, 5.8 against 8.4) and steadier at the slow end (the 95th percentile 11.6 against 13.4 ms, 12.0 against 17.6), the card 15% busy against 21%, and, as Dolphin on Vulkan hands over only new pictures, 30 encoded a second against 60 repeated; Mario Kart Wii at 3x (1920x1584): the 95th percentile 31 against 37 ms and 12.8 against 23.8, stutters 5 against 7 and 1 against 3, the runner on 44 to 55% of a thread against 39 to 44%. Its 10-bit pictures go through the card's NV12 conversion correctly.
 - `wittyplay-probe frames -nv12` has frames converted on the card, as the server does.
 - **On a television, WittyPlay's console settings stay and its file and folder screens point to a computer (WittyMediaServer #469).** Game libraries, custom cores and importing game pictures show the server's card (use the WittyMediaClient app on a computer, or a web browser) in TV mode; controllers, mapping, game and console settings, cores and the store are unchanged. Needs a server with the web host feature `tvLevels`; on an older one nothing changes.
+
+## 0.7.8
+
+_Never published on its own: it came out in 0.7.10._
 
 - **A game's own `.wittyplay`, to keep beside it or to share (#75).** `.wittyplay` is now version 2, and a game's own file can carry everything WittyPlay knows or is told about the game. As an archive (a ZIP with `manifest.json` and its pictures) it holds:
   - **details:** title, sort title, title in its own script, year and date, overview, genres, developer, publisher, series, players, rating, age ratings, regions, languages and other catalogues' ids;
@@ -44,15 +91,30 @@ What changed in WittyPlay, newest first. What changed before it had a repository
   One conversion runs at a time, game by game.
 - **An editor for a game's `.wittyplay`** (`/wittyplay/game/{id}/file`, from a game's *Fix this game, files and advanced*), for administrators on a desktop or in a browser. It edits details, pictures, play choices, controls for each of eight players, hotkeys, cheats and save notes. Download shares the file; Import takes a shared one (one made for another dump is refused unless confirmed); Write out writes the standard files. In TV mode the page says that editing is on the desktop.
 
+## 0.7.7
+
+_Never published on its own: it came out in 0.7.10._
+
 - **Performance profiles: one standard for what every emulator starts with (#78).** WittyPlay's first-run step (on every app and in the web wizard's Games step) and Settings, Games ask how strong the server is: **Very light** (Raspberry Pi 4 or 5, Intel N100, Celeron or Atom mini PCs, dual-core laptops, no graphics card), **Light** (four cores with built-in graphics, such as a Core i5-3470 or i5-7200U with Intel UHD 620/630 or Radeon Vega 8), **Balanced** (six cores and a mid-range card, such as a Ryzen 5 3600 or Core i5-8400 with a GTX 1650 or RX 570) or **High quality** (eight or more cores and a strong card, such as a Ryzen 7 5800X or Core i7-12700 with an RTX 3060 or RX 6700 XT). The profile sets each core's internal resolution (native on the light ones, a step above each console's usual on High quality), run-ahead, rewind memory, fast-forward limit, picture quality and how many games play at once. It only fills in what an administrator hasn't set by hand, and one console's core is changed on top of it in My game settings (Everyone, that console). With none chosen, games start as Balanced, as before; the step suggests one from the processor threads and graphics card it finds, and says why (`GET /gaming/profiles`, `PUT /gaming/profiles/{id}`, `gamingProfile`).
 - Settings, Games no longer saves a number box that was only left, so leaving one doesn't pin the profile's value.
+
+## 0.7.6
+
+_Never published on its own: it came out in 0.7.10._
 
 - **Frames come back from the graphics card as NV12, converted there (#74).** A frame drawn with Vulkan goes through a compute shader (`libretro/shaders/nv12.comp`, embedded as SPIR-V), one drawn with OpenGL through a fragment shader, into NV12, BT.709, limited range, which is what the encoders take: a third of the bytes of BGRA come back, cross the pipes and go into FFmpeg, which then has nothing to convert (its filter is `null`). VP8 and OpenH264 get yuv420p, VP8 in BT.601, as before. Screenshots and the JPEG stream some viewers fall back on convert it back on the processor. On by default; **Settings, Games, Advanced, Convert frames on the graphics card** turns it off (`gamingGpuFrames`), and it's off while frame stamps are drawn for measuring. OpenGL contexts older than 3.0 (ES 3) keep sending BGRA. Gran Turismo 4 at 4x internal resolution (2560x1792) on an RTX 3070: 60 frames a second against 45, the picture at the server in 1.6 ms against 5.0, the server side on 21% of a thread against 39%; Banjo-Kazooie at 1280x960: the server side 6% against 14%, encoding 7.4 ms against 8.9.
 - A frame from a graphics card goes through a new `VideoReady` handler, so one handed over while the next frame is running isn't taken for that frame's and dropped.
 
+## 0.7.5
+
+_Never published on its own: it came out in 0.7.10._
+
 - **PlayStation 2 games draw with Vulkan where the graphics card can (#72).** The runner can now offer a core a Vulkan context (`RETRO_HW_CONTEXT_VULKAN`), through the system's Vulkan loader, with no window: an instance, a surface on a hidden window (Windows) or a headless one (Linux) for cores that want one, a device made by the runner or by the core through its context negotiation interface (v1 and v2), and libretro's Vulkan interface. Each frame is copied into memory the processor reads, converted to B8G8R8A8 on the card first where it's in another format, and handed over without waiting, as OpenGL's frames are since 0.7.4. Cores whose traits ask for it (`Vulkan`, the runner's `-vulkan`) are offered it only where a real card can make a device, and `GET_PREFERRED_HW_RENDER` says so; anywhere else they have OpenGL, as before, and with no card at all the processor draws them. LRPS2's renderer is now "Auto", which follows that. Gran Turismo 4 in a race, from a saved state, on an RTX 3070: the core's time on a frame 11.4 to 12.8 ms against 15 to 17 on OpenGL, its 95th percentile 18 to 20 ms against 23 to 60, stutters 0 against 7 to 67, the card 41% busy against 63%, the runner 1.4 to 1.5 threads against 1.8 to 1.9.
 - Dolphin stays on OpenGL: through this interface its Vulkan backend ran but handed over black frames (its own presentation, not the copy, which the tests check with its 10-bit format), and on OpenGL with fast memory GameCube already plays at full speed on a third of a thread.
 - The graphics card check names the Vulkan card cores would get (`vulkan` in the GPU status), and `wittyplay-probe -vulkan` offers Vulkan to any core, to measure it.
+## 0.7.4
+
+_Never published on its own: it came out in 0.7.10._
 
 - **Games drawn on a graphics card no longer wait for it every frame (#68).** A frame's copy back from the card was asked for and then waited on straight after the core's frame, which held the game thread (Dolphin's video thread) for all of the card's drawing, and on a busy machine for as long again to be woken. Now two pixel buffers take turns: the frame goes on when the card has finished it, checked without waiting, or in the time before the next frame is due; waits look again every 0.2 ms rather than spin a processor thread in the driver; and frames nobody will see (skipped, or run ahead) aren't read back at all. Banjo-Kazooie went from 25 to 60 frames a second on a machine kept at 93 to 100% by other work, its frames from 8.5 ms (70 at worst) to 2.3 ms (4.3). On an idle machine every game already kept its speed, and the runner now uses far less of the processor: PSP 66% of a thread to 16%, PlayStation 2 35% to 16%, Nintendo 64 40% to 13%.
 - **Games come before background work on Windows.** Demanding games' runners ask for above-normal priority (they had normal), and WittyPlay's own process, which carries every frame to the encoder and the network, goes above normal while a game is playing and back afterwards (the server starts modules below normal). Game encoders start above normal. Browsers raise themselves above normal, and a game sharing the processor equally with them, a transcode or a scan ran at a fraction of its speed while using a fraction of a thread.
@@ -60,6 +122,10 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - **GameCube and Wii play on a Linux server with no graphics card**, drawn through the processor's OpenGL (Mesa's llvmpipe) at the console's own resolution: Dolphin's software renderer is only in its debug builds, so before this they couldn't play at all there. Only Dolphin, and only where the server has no card it can use, gets the runner's new `-processor-gl`; every other core still refuses processor-drawn OpenGL, which is far too slow for them (Mupen64Plus-Next's OpenGL took 5.7 threads, angrylion about one). In an Ubuntu container with no card on an i7-12700H, through the sandboxed runner: Cars at 60 frames a second on 1.1 threads, Mario Kart Wii at 60 on 3.5. Such a runner gets a graphics driver's sandbox limits and memory, which llvmpipe needs too, and the Linux runner takes llvmpipe only after every real card, integrated ones included. Settings says so, with the speed measured.
 - **The graphics card check says more,** and the log says what was found: the runner's `-probe-gpu` adds the driver's maker, its OpenGL version and, where NVIDIA's or AMD's driver says, the card's memory (`vendor`, `version` and `vramMb` beside `name` in the server's GPU status); WittyPlay logs the card, the processor threads, and the hardware and processor encoders it will use.
 - `wittyplay-probe sweep` measures what a game costs: the runner's and the server side's processor time, the whole machine's, an NVIDIA card's load and its encoder's, the core's time per frame (median and 95th percentile, read-back included), the picture's way to the server and the encode time; and it keeps the run's label in its results. `-no-card` starts a game as a server with no graphics card would.
+
+## 0.7.3
+
+_Never published on its own: it came out in 0.7.10._
 
 - **All games follows the layout switch** (#59): Grid lays each console's games out as a grid and List as a list, as on Recent. A console's games (from Consoles or All) and a search have the size and layout switches too, with Grid and List. Each console's shelf runs to the edge of the screen, so its pictures slide off the edge instead of being cut inside the page's margin.
 - **A details panel beside the games** (#59) on All games, a console's games and a search, as on Recent's grid and list: the game pointed at or moved to, with its cover, logo, Play and its page, and what's known of it. A switch beside the layout buttons hides it, per profile; it's on to begin with, and not drawn under 760 pixels wide.
