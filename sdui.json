@@ -2145,7 +2145,7 @@
     {
       "type": "wittyplay.recent",
       "label": "Games you played",
-      "description": "The games this profile played, newest first, each with its era, how many can play, how long it has been played and its latest save.",
+      "description": "The games this profile played, newest first, each with its era, how many can play, how long it has been played and its latest save. While a games library is being scanned and has no game listed yet, a card (view) says how many it has found so far.",
       "icon": "history",
       "category": "",
       "params": [
@@ -2160,7 +2160,8 @@
         }
       ],
       "yields": [
-        "game"
+        "game",
+        "view"
       ],
       "cardStyle": "game",
       "paged": false,
@@ -2170,7 +2171,7 @@
     {
       "type": "wittyplay.collections",
       "label": "Classics by era",
-      "description": "The games this profile may play, by era, with how many each has. With an era, that era's games.",
+      "description": "The games this profile may play, by era, with how many each has. With an era, that era's games. While a games library is being scanned and has no game listed yet, a card (view) says how many it has found so far.",
       "icon": "game",
       "category": "",
       "params": [
@@ -2223,7 +2224,8 @@
       ],
       "yields": [
         "collection",
-        "game"
+        "game",
+        "view"
       ],
       "cardStyle": "tile",
       "paged": true,
@@ -2459,7 +2461,7 @@
     {
       "type": "wittyplay.library",
       "label": "Games by console",
-      "description": "With a console, that console's games by title, in one games library ($library) or every one; with every, all of its games, following the page's filters when filterable. Otherwise, the consoles that have games there, each with how many, opening the library that holds them.",
+      "description": "With a console, that console's games by title, in one games library ($library) or every one; with every, all of its games, following the page's filters when filterable. Otherwise, the consoles that have games there, each with how many, opening the library that holds them. While a scan goes on, a console it has sorted games into shows before they are listed, with how many so far; with none yet, a card saying how far the scan has got.",
       "icon": "game",
       "category": "",
       "params": [

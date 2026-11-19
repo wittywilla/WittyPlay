@@ -706,6 +706,13 @@
       "auth": "user"
     },
     {
+      "path": "/games/scanning",
+      "methods": [
+        "GET"
+      ],
+      "auth": "user"
+    },
+    {
       "path": "/games/modes",
       "methods": [
         "GET"

@@ -15,6 +15,7 @@ This is the first WittyPlay published since 0.7.2. What 0.7.3 to 0.7.9 held is l
 
 - **Several pictures of each kind in a `.wittyplay`, and its version said out loud (#85).** Each artwork role in a `.wittyplay` holds one picture or a list of up to 32, the first shown: box art from several regions, several fan arts. A role with one picture is still written as a plain name. Gathering picks up numbered extras (`media/box2dfront/Game-2.png`, `Game-boxart-2.png`) after the first; writing out puts them back as `Game-02.png`... and never over a file already there. The spec gains a *Versions* section: a file from a newer version of the format is now read for what WittyPlay knows rather than refused, keeps the rest when saved, and is flagged (`newer: true`, and a note in the editor); a writer never lowers a file's version.
 - **The `.wittyplay` editor adds more pictures of a kind, takes any one out, and shows another first.** It notes when a file follows a newer version of the format.
+- **A games library being scanned says so (#88).** Consoles show as the scan sorts games into them ("Finding games: 120 so far"), not only once the scan ends, and Consoles, Recent, Classics, a library's page and TV mode say "Finding your games: 1,204 found so far in Games" instead of that there's no games library. The scan's progress names the console it's sorting, and with WittyMediaServer 0.8.1-alpha each later step shows in its own words rather than sitting at "12,709 of 12,709 files".
 
 From 0.7.3 to 0.7.9, in short:
 

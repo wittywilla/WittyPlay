@@ -84,7 +84,7 @@ func TestScanReportsAsItMoves(t *testing.T) {
 	lib := wittymodule.ScanLibrary{ID: 1, Kind: "games", Facet: "auto", Paths: []string{root}}
 	s := Begin(testDB(t), "report", lib)
 	var got [][2]int
-	s.Report = func(done, total int) { got = append(got, [2]int{done, total}) }
+	s.Report = func(done, total int, _ string) { got = append(got, [2]int{done, total}) }
 	files := walk(root)
 	ctx := context.Background()
 	if err := s.Add(ctx, files[:2], len(files)); err != nil {
@@ -111,5 +111,34 @@ func TestScanReportsAsItMoves(t *testing.T) {
 		if got[i][0] < got[i-1][0] && i != adding {
 			t.Fatalf("progress went back: %v", got)
 		}
+	}
+}
+
+// While a scan's batches come in, it counts the games it has sorted for each console, and its
+// reports name the console it's on: the pages show consoles before the scan ends (#88).
+func TestScanCountsConsolesAsItSorts(t *testing.T) {
+	root := t.TempDir()
+	writeFiles(t, root, "a.sfc", "b.sfc", "c.gba", "readme.txt")
+	lib := wittymodule.ScanLibrary{ID: 1, Kind: "games", Facet: "auto", Paths: []string{root}}
+	s := Begin(testDB(t), "found", lib)
+	if by, n := s.Found(); n != 0 || len(by) != 0 {
+		t.Fatalf("found %v before any file came", by)
+	}
+	var said []string
+	s.Report = func(_, _ int, console string) { said = append(said, console) }
+	files := walk(root)
+	if err := s.Add(context.Background(), files, len(files)); err != nil {
+		t.Fatal(err)
+	}
+	by, n := s.Found()
+	if n != 3 || by["snes"] != 2 || by["gba"] != 1 {
+		t.Fatalf("found %v (%d in all)", by, n)
+	}
+	if len(said) == 0 || said[len(said)-1] == "" {
+		t.Fatalf("reports named no console: %q", said)
+	}
+	out, err := s.Finish(context.Background(), nil)
+	if err != nil || len(out.Items) != 3 {
+		t.Fatalf("finished with %d items, %v", len(out.Items), err)
 	}
 }

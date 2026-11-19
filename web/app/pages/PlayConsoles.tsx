@@ -20,6 +20,7 @@ import { LayoutSwitch, usePlayTabs } from '../shell/playPads'
 import { arrangeTabs } from '../sdui/playModel'
 import { libraryFor, PLAY_CONSOLES, PLAY_LIBRARY, PLAY_TABS, tabRoute, yearsWords } from '../shell/playPaths'
 import { getConsoles } from './games/consoles'
+import { findingDetail, findingWords, foundFor, useGamesScan } from './games/scanning'
 import PlayLibraryView from './PlayLibraryView'
 import { TileSizeSwitch } from '../shell/GamePictureArt'
 import { ERA_NAMES } from './games/Shelves'
@@ -111,8 +112,11 @@ function PhotoVersions({ id }: { id: string }) {
   )
 }
 
+// sorting: no game of it is listed yet, but a scan going on has sorted this many into it (totalGames), so it shows now.
+type ShownConsole = GameConsole & { sorting?: boolean }
 const gamesOf = (c: GameConsole) => c.totalGames ?? c.count ?? 0
 const gamesWords = (n: number) => `${n.toLocaleString()} ${n === 1 ? 'game' : 'games'}`
+const countWords = (c: ShownConsole) => c.sorting ? `${gamesOf(c).toLocaleString()} found so far` : gamesWords(gamesOf(c))
 
 // The home's tab row, here with Consoles chosen: the same words and places as the server's page, and the layout switch at its end.
 export function PlayTabsRow({ current }: { current: string }) {
@@ -138,7 +142,7 @@ function coreLine(c: GameConsole): { core: string; state: 'ready' | 'setup' | 'n
   return { core: core || 'No core yet', state: 'setup', note }
 }
 
-function ConsolePanel({ c, sheet, onClose }: { c: GameConsole; sheet: boolean; onClose: () => void }) {
+function ConsolePanel({ c, sheet, onClose }: { c: ShownConsole; sheet: boolean; onClose: () => void }) {
   const { libraries } = useApp()
   const head = useId()
   const lib = libraryFor(libraries, c.id)
@@ -158,13 +162,13 @@ function ConsolePanel({ c, sheet, onClose }: { c: GameConsole; sheet: boolean; o
       <h2 id={head}>{c.name}</h2>
       {facts.length > 0 && <p className="wplay-console-facts">{facts.join(' · ')}</p>}
       <dl className="wplay-console-stats">
-        <div><dt>In your library</dt><dd>{gamesWords(n)}</dd></div>
+        <div><dt>In your library</dt><dd>{countWords(c)}</dd></div>
         <div><dt>Plays on</dt><dd>{how.core}</dd></div>
         <div><dt>Ready</dt><dd className={'state ' + how.state}>{how.state === 'ready' ? <><IconCheck size={18} /> Plays here</> : how.state === 'setup' ? <><IconInfo size={18} /> Once set up</> : <><IconInfo size={18} /> Not on this server</>}</dd></div>
       </dl>
       {how.note && <p className="wplay-console-note">{how.note}</p>}
       <div className="wplay-console-actions">
-        {lib && n > 0 && <Link className="btn primary" to={`${PLAY_LIBRARY}/${lib.id}?console=${encodeURIComponent(c.id)}`}><IconGamepad /> Browse games</Link>}
+        {lib && n > 0 && !c.sorting && <Link className="btn primary" to={`${PLAY_LIBRARY}/${lib.id}?console=${encodeURIComponent(c.id)}`}><IconGamepad /> Browse games</Link>}
         <Link className="btn" to={`${PLAY_CONSOLES}/${encodeURIComponent(c.id)}?console=${encodeURIComponent(c.id)}`}><IconSettings /> Settings</Link>
       </div>
     </aside>
@@ -176,12 +180,16 @@ export default function PlayConsoles() {
   const [failed, setFailed] = useState(false)
   useEffect(() => { getConsoles().then(setList).catch(() => setFailed(true)) }, [])
   useNamesChanged(useCallback(() => { getConsoles().then(setList).catch(() => {}) }, []))
+  // A games library being scanned: its consoles show as the scan sorts games into them, and when it ends the page
+  // reads what the server now holds.
+  const finding = useGamesScan(useCallback(() => { getConsoles(true).then(setList).catch(() => {}) }, []))
+  const sorted = useMemo(() => foundFor(finding), [finding])
   const phone = useMedia('(max-width: 759px)')
-  const shown = useMemo(() => {
-    const all = list || []
+  const shown = useMemo<ShownConsole[]>(() => {
+    const all: ShownConsole[] = (list || []).map((c) => gamesOf(c) > 0 || !sorted.get(c.id) ? c : { ...c, totalGames: sorted.get(c.id), sorting: true })
     const had = all.filter((c) => gamesOf(c) > 0).sort((a, b) => gamesOf(b) - gamesOf(a) || a.short.localeCompare(b.short))
-    return had.length ? had : all.filter((c) => c.ready)
-  }, [list])
+    return had.length || finding.length ? had : all.filter((c) => c.ready)
+  }, [list, sorted, finding.length])
   const [at, setAt] = useState('')
   const [sheet, setSheet] = useState(false)
   const current = shown.find((c) => c.id === at) || shown[0]
@@ -192,10 +200,13 @@ export default function PlayConsoles() {
       <h1 className="sr-only">Consoles</h1>
       <PlayTabsRow current="consoles" />
       {failed ? <p className="wplay-empty">The consoles couldn’t be read. Try again in a moment.</p> : !list ? <Spinner /> : !shown.length ? (
-        <p className="wplay-empty">No console has games here yet. An administrator adds a games library in Settings.</p>
+        finding.length ? (
+          <div className="wplay-empty" role="status">{finding.map((f) => <p key={f.library}>{findingWords(f)}<br /><small>{findingDetail(f)}</small></p>)}</div>
+        ) : <p className="wplay-empty">No console has games here yet. An administrator adds a games library in Settings.</p>
       ) : (
         <div className="wplay-consoles-body">
           <section aria-labelledby={head}>
+            {finding.length > 0 && <p className="wplay-finding" role="status">{finding.map((f) => findingWords(f)).join(' · ')}</p>}
             <h2 id={head} className="wplay-consoles-h">{shown.some((c) => gamesOf(c) > 0) ? 'Consoles with games' : 'Consoles that play here'}</h2>
             <ul className="wplay-console-grid" data-nav-group>
               {shown.map((c) => (
@@ -204,7 +215,7 @@ export default function PlayConsoles() {
                     onFocus={() => !phone && setAt(c.id)} onPointerEnter={() => !phone && setAt(c.id)} onClick={() => pick(c.id, true)}>
                     <span className="wplay-console-art"><ConsoleArt c={c} size="md" /></span>
                     <b>{c.short}</b>
-                    <span className="wplay-console-count">{gamesWords(gamesOf(c))}</span>
+                    <span className="wplay-console-count">{countWords(c)}</span>
                     <i className={'wplay-console-dot ' + coreLine(c).state} aria-hidden="true" />
                   </button>
                 </li>

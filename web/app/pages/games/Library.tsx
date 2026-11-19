@@ -24,6 +24,7 @@ import { CollectionBand, GamesDock, OnTheGo, ResumeCard, Shelf, useShelfView, Vi
 import { ConsoleCores } from './ConsoleCores'
 import { GameName, useGameName } from './GameName'
 import { RefreshLibraryDetails } from './RefreshDetails'
+import { findingDetail, findingWords, useGamesScan } from './scanning'
 import './games-ui.css'
 
 // The games home: covers at the top, what's being played, the consoles, shelves, then every
@@ -208,6 +209,9 @@ export default function GamesLibrary({ lib }: { lib: Library }) {
   useEffect(() => { void loadHome() }, [loadHome])
   useEffect(() => { api.get<GameFacets>(`/modules/wittyplay/games/facets?library=${lib.id}&console=${encodeURIComponent(consoleId)}`).then(setFacets).catch(() => {}) }, [lib.id, consoleId, version])
   useEffect(() => { const t = typed.trim(); if (t === q) return; const id = setTimeout(() => set('q', t), 300); return () => clearTimeout(id) }, [typed]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // While WittyPlay sorts this library's files, before the server keeps any game: how many it has found so far.
+  const finding = useGamesScan().find((f) => f.library === lib.id)
 
   // A scan may be running, or just started. Follow it, so games appear as they're found.
   useEffect(() => {
@@ -445,6 +449,7 @@ export default function GamesLibrary({ lib }: { lib: Library }) {
           failed={(retry) => <LoadError what="This library" onRetry={retry} />}
           empty={narrowed
             ? <EmptyState icon={<IconGamepad />} title="No games match" text={q ? `Nothing here matches “${q}”.` : 'No games here match those filters.'} action={<button type="button" className="btn" onClick={clear}>Show all games</button>} />
+            : finding ? <EmptyState icon={<IconGamepad />} title={findingWords(finding)} text={findingDetail(finding)} />
             : <EmptyState icon={<IconGamepad />} title="No games here yet" text="Put your own game files in this library’s folder and scan it. Zipped games and multi-disc sets work too." />} />
       </section>
       <LegalNote kind="games" />

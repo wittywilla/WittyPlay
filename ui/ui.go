@@ -81,7 +81,7 @@ const ConsolePhotoNotice = "Off until you turn it on. Then this server sends eac
 func tvSources() []sdui.SourceSpec {
 	return []sdui.SourceSpec{
 		{Type: SourceLibrary, Label: "Games by console", Icon: "game", Title: "Games",
-			Description: "With a console, that console's games by title, in one games library ($library) or every one; with every, all of its games, following the page's filters when filterable. Otherwise, the consoles that have games there, each with how many, opening the library that holds them.",
+			Description: "With a console, that console's games by title, in one games library ($library) or every one; with every, all of its games, following the page's filters when filterable. Otherwise, the consoles that have games there, each with how many, opening the library that holds them. While a scan goes on, a console it has sorted games into shows before they are listed, with how many so far; with none yet, a card saying how far the scan has got.",
 			Params: []sdui.PropSpec{
 				{Name: "library", Type: "library", Label: "Library", Help: "$library on a games library's page; empty for every games library."},
 				{Name: "console", Type: "string", Label: "Console", Help: "A console's ID, such as snes. Empty: the consoles themselves.", MaxLength: 40},
@@ -139,15 +139,15 @@ func onlineSources() []sdui.SourceSpec {
 	}
 	return []sdui.SourceSpec{
 		{Type: SourceRecent, Label: "Games you played", Icon: "history", Title: "Recent",
-			Description: "The games this profile played, newest first, each with its era, how many can play, how long it has been played and its latest save.",
-			Params:      []sdui.PropSpec{limit(20, 60)}, Yields: []string{"game"}, CardStyle: "game"},
+			Description: "The games this profile played, newest first, each with its era, how many can play, how long it has been played and its latest save. While a games library is being scanned and has no game listed yet, a card (view) says how many it has found so far.",
+			Params:      []sdui.PropSpec{limit(20, 60)}, Yields: []string{"game", "view"}, CardStyle: "game"},
 		{Type: SourceCollections, Label: "Classics by era", Icon: "game", Title: "Classics",
-			Description: "The games this profile may play, by era, with how many each has. With an era, that era's games.",
+			Description: "The games this profile may play, by era, with how many each has. With an era, that era's games. While a games library is being scanned and has no game listed yet, a card (view) says how many it has found so far.",
 			Params: []sdui.PropSpec{{Name: "era", Type: "enum", Label: "Era", Default: "",
 				Options: []sdui.EnumOption{{Value: "", Label: "Every era, as collections"}, {Value: "first", Label: "First era"}, {Value: "8-bit", Label: "8-bit"},
 					{Value: "16-bit", Label: "16-bit"}, {Value: "early-3d", Label: "3D era"}, {Value: "disc", Label: "Disc era"}, {Value: "pocket", Label: "Handheld"}}},
 				limit(40, 500)},
-			Yields: []string{"collection", "game"}, CardStyle: "tile", Paged: true},
+			Yields: []string{"collection", "game", "view"}, CardStyle: "tile", Paged: true},
 		{Type: SourceFriends, Label: "Friends", Icon: "users", Title: "Friends",
 			Description: "The other profiles of this server this profile may see, playing first, with what each is doing as far as it shares. A Kids profile sees only the friends an administrator chose.",
 			Params:      []sdui.PropSpec{limit(20, 100)}, Yields: []string{"person"}, CardStyle: "person"},

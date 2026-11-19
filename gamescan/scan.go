@@ -118,6 +118,8 @@ type archiveIndex struct {
 
 	// onFile, when set, is told how many files of the batch add is taking in are done.
 	onFile func(done int)
+	// onGame, when set, is told the console of each file add judges to be a game.
+	onGame func(console string)
 }
 
 func newArchiveIndex(db *sql.DB, libraryID int64) *archiveIndex {
@@ -291,6 +293,9 @@ func (ix *archiveIndex) add(ctx context.Context, console string, files []wittymo
 			continue // part of a sheet already seen
 		}
 		ix.judgeScanned(s, console)
+		if ix.onGame != nil && s.judged && s.v.isGame() {
+			ix.onGame(s.v.Console)
+		}
 	}
 	return nil
 }
@@ -589,10 +594,11 @@ type Scan struct {
 	Started time.Time
 
 	// Report, when set, is told how far the scan has got whenever that moves: the files of
-	// a batch judged, of the scan's total, and then Finish's work, also counted in files. It's
-	// called often, from the call's goroutine, and has to be quick (it's for the server's
-	// progress and its watch for a stuck scan: see api/scan_progress.go).
-	Report func(done, total int)
+	// a batch judged, of the scan's total, and then Finish's work, also counted in files; with
+	// the name of the console it's sorting games into now, or "". It's called often, from the
+	// call's goroutine, and has to be quick (it's for the server's progress and its watch for a
+	// stuck scan: see api/scan_progress.go).
+	Report func(done, total int, console string)
 
 	mu       sync.Mutex
 	ix       *archiveIndex
@@ -601,6 +607,13 @@ type Scan struct {
 	received atomic.Int64
 	current  atomic.Value // string
 	last     time.Time
+
+	// What the files judged so far are: how many games for each console, and the console of the
+	// latest. Kept apart from mu, which a batch holds the whole time it's judged, so the pages
+	// can show the consoles as they're found.
+	foundMu sync.Mutex
+	found   map[string]int
+	sorting string
 }
 
 // Begin starts a scan of a library. db may be nil: nothing is remembered past the scan.
@@ -609,6 +622,15 @@ func Begin(db *sql.DB, id string, lib wittymodule.ScanLibrary) *Scan {
 	ix := newArchiveIndex(db, lib.ID)
 	s := &Scan{ID: id, Library: lib, Started: time.Now(), ix: ix, db: db, last: time.Now()}
 	ix.reading = func(path string) { s.current.Store(filepath.Base(path)) }
+	ix.onGame = func(console string) {
+		s.foundMu.Lock()
+		if s.found == nil {
+			s.found = map[string]int{}
+		}
+		s.found[console]++
+		s.sorting = console
+		s.foundMu.Unlock()
+	}
 	return s
 }
 
@@ -632,15 +654,40 @@ func (s *Scan) Add(ctx context.Context, files []wittymodule.ScanFile, total int)
 	base := int(s.received.Load())
 	all := max(int(s.total.Load()), base+len(files))
 	if s.Report != nil {
-		s.ix.onFile = func(done int) { s.Report(base+done, all) }
+		s.ix.onFile = func(done int) { s.Report(base+done, all, s.sortingName()) }
 		defer func() { s.ix.onFile = nil }()
 	}
 	err := s.ix.add(ctx, s.libraryConsole(), files)
 	s.received.Add(int64(len(files)))
 	if s.Report != nil && err == nil {
-		s.Report(base+len(files), all)
+		s.Report(base+len(files), all, s.sortingName())
 	}
 	return err
+}
+
+// Found is how many games the files judged so far hold for each console, and in all: a count
+// for the pages to show while the scan goes on, before the games are put together (a game on
+// several discs counts once for each until then).
+func (s *Scan) Found() (byConsole map[string]int, all int) {
+	s.foundMu.Lock()
+	defer s.foundMu.Unlock()
+	byConsole = make(map[string]int, len(s.found))
+	for c, n := range s.found {
+		byConsole[c] = n
+		all += n
+	}
+	return byConsole, all
+}
+
+// sortingName is the name of the console the latest game judged is for, or "".
+func (s *Scan) sortingName() string {
+	s.foundMu.Lock()
+	c := s.sorting
+	s.foundMu.Unlock()
+	if c == "" {
+		return ""
+	}
+	return consoleName(c)
 }
 
 // finishing counts Finish's work in files, for Report: each file looked at as games are put
@@ -648,14 +695,14 @@ func (s *Scan) Add(ctx context.Context, files []wittymodule.ScanFile, total int)
 // a while over. The second count is only known once the first is done, and is added to the
 // total then.
 type finishing struct {
-	report      func(done, total int)
+	report      func(done, total int, console string)
 	done, total int
 }
 
 func (f *finishing) step() {
 	f.done++
 	if f.report != nil {
-		f.report(f.done, f.total)
+		f.report(f.done, f.total, "")
 	}
 }
 
@@ -760,7 +807,7 @@ func (s *Scan) Finish(ctx context.Context, offline []string) (wittymodule.ScanId
 	}
 	out.Result = s.result(ctx, games)
 	if s.Report != nil {
-		s.Report(prog.total, prog.total)
+		s.Report(prog.total, prog.total, "")
 	}
 	return out, nil
 }
