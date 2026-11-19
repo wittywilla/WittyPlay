@@ -10,6 +10,7 @@ import { toast } from '@wms/app/state'
 import { Dialog } from '@wms/app/ui/index'
 import { getConsoles } from '../games/consoles'
 import CustomCoresSection, { licenseText } from './GamingCustom'
+import { TvPart } from '../../shell/tvLevels'
 import RegionOrder from './RegionOrder'
 import { PerformanceSetting, type ProfilesState } from './Performance'
 import { PageHead, Section } from '@wms/app/pages/settings/ui'
@@ -374,7 +375,7 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
           </details>
         </Section>
       )}
-      <CustomCoresSection onChanged={refresh} />
+      <TvPart id="wittyplay.custom-cores"><CustomCoresSection onChanged={refresh} /></TvPart>
       <LegalNote kind="cores" className="set-legal" />
       </>}
       {picker && <Suspense fallback={null}><CorePicker scope={picker} onClose={() => { setPicker(null); void refresh() }} /></Suspense>}
