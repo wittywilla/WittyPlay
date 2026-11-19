@@ -86,6 +86,18 @@ func pick(key string, choices ...string) func(int) map[string]string {
 	}
 }
 
+// both sets the resolution through two options at once: for a core with two renderers that each
+// read their own.
+func both(a, b func(int) map[string]string) func(int) map[string]string {
+	return func(times int) map[string]string {
+		out := a(times)
+		for k, v := range b(times) {
+			out[k] = v
+		}
+		return out
+	}
+}
+
 // The file name and size of a PlayStation 2 BIOS image, whichever console it came from.
 var ps2BIOS = &BIOSRule{
 	Folder:  "pcsx2/bios",
@@ -108,10 +120,17 @@ var lynxBIOS = &BIOSRule{
 
 var traits = map[string]CoreTraits{
 	"mednafen_lynx": {RequiredBIOS: lynxBIOS},
-	"mupen64plus_next": {GPU: true, Options: map[string]string{"mupen64plus-rdp-plugin": "gliden64", "mupen64plus-rsp-plugin": "hle"},
-		Resolution: pick("mupen64plus-43screensize", "640x480", "1280x960", "1920x1440", "2560x1920")},
-	"parallel_n64": {GPU: true, Options: map[string]string{"parallel-n64-gfxplugin": "gliden64"},
-		Resolution: pick("parallel-n64-screensize", "640x480", "1280x960", "1920x1440", "2880x2160")},
+	// Both Nintendo 64 cores draw with GLideN64 on OpenGL. They're offered Vulkan as well, which
+	// GLideN64 leaves alone, so that ParaLLEl-RDP, chosen in the core's options, can draw: the
+	// console's own drawing, done on the card, the most faithful there is. It isn't the default:
+	// it needs ParaLLEl's RSP as well, emulated low-level, and Banjo-Kazooie took 50 to 67% of a
+	// thread on an i7-12700H against GLideN64's 14%.
+	"mupen64plus_next": {GPU: true, Vulkan: true, Options: map[string]string{"mupen64plus-rdp-plugin": "gliden64", "mupen64plus-rsp-plugin": "hle"},
+		Resolution: both(pick("mupen64plus-43screensize", "640x480", "1280x960", "1920x1440", "2560x1920"),
+			pick("mupen64plus-parallel-rdp-upscaling", "1x", "2x", "4x", "4x"))},
+	"parallel_n64": {GPU: true, Vulkan: true, Options: map[string]string{"parallel-n64-gfxplugin": "gliden64"},
+		Resolution: both(pick("parallel-n64-screensize", "640x480", "1280x960", "1920x1440", "2880x2160"),
+			pick("parallel-n64-upscaling", "1x", "2x", "4x", "4x"))},
 	"pcsx2": {GPU: true, Vulkan: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards", CacheIn: "pcsx2/cache", SharedMemory: true,
 		// Waiting for the graphics card at every read-back, and running VU1 on the game's own
 		// thread, held a real game to 41 frames a second where it can do 60. The core's own
@@ -133,10 +152,14 @@ var traits = map[string]CoreTraits{
 	"flycast": {GPU: true, SharedMemory: true, Options: map[string]string{"reicast_alpha_sorting": "per-triangle (normal)", "reicast_per_content_vmus": "All VMUs"},
 		Resolution: pick("reicast_internal_resolution", "640x480", "1280x960", "1920x1440", "2560x1920")},
 	// SwanStation lays out the PlayStation's memory through shared memory, and can't start
-	// without it.
-	"swanstation": {GPU: true, SharedMemory: true, Options: map[string]string{"swanstation_GPU_Renderer": "OpenGL"},
+	// without it. Both PlayStation cores draw with Vulkan where the card can make a device, and
+	// with OpenGL where it can't: their automatic renderers follow the context the runner
+	// prefers (-vulkan). Final Fantasy VII's opening on an RTX 3070, in pairs, Vulkan against
+	// OpenGL: SwanStation's 95th percentile 3.5 to 4.4 ms against 12.8 to 17.4; Beetle PSX HW's
+	// 10.4 to 13.0 against 24.9 to 53.1, on 19 to 34% of a thread against 46 to 75%.
+	"swanstation": {GPU: true, Vulkan: true, SharedMemory: true, Options: map[string]string{"swanstation_GPU_Renderer": "Auto"},
 		Resolution: pick("swanstation_GPU_ResolutionScale", "1", "2", "3", "4")},
-	"mednafen_psx_hw": {GPU: true, Options: map[string]string{"beetle_psx_hw_renderer": "hardware_gl"},
+	"mednafen_psx_hw": {GPU: true, Vulkan: true, Options: map[string]string{"beetle_psx_hw_renderer": "hardware"},
 		Resolution: pick("beetle_psx_hw_internal_resolution", "1x(native)", "2x", "4x", "4x")},
 	// The DS cores read the stylus from the pointer device. Their software renderers
 	// are all a DS needs, so these need no graphics card at all. melonDS's fast memory

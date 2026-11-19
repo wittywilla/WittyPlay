@@ -426,12 +426,18 @@ func makeVKCallbacks() {
 	vkCallbacks.once.Do(func() {
 		cb := &vkCallbacks
 		cb.setImage = purego.NewCallback(func(handle, image, numSems, sems, srcFamily uintptr) uintptr {
+			if vkTraceOn() {
+				vkTraceCall("setImage")
+			}
 			if v := currentVK(); v != nil {
 				v.setImage((*vkRetroImage)(ptr(image)), uint32(numSems), sems)
 			}
 			return 0
 		})
 		cb.getSyncIndex = purego.NewCallback(func(handle uintptr) uintptr {
+			if vkTraceOn() {
+				vkTraceCall("getSyncIndex")
+			}
 			if v := currentVK(); v != nil {
 				v.mu.Lock()
 				defer v.mu.Unlock()
@@ -441,6 +447,9 @@ func makeVKCallbacks() {
 		})
 		cb.getSyncIndexMask = purego.NewCallback(func(handle uintptr) uintptr { return 1<<vkSyncSlots - 1 })
 		cb.setCommandBuffers = purego.NewCallback(func(handle, num, cmds uintptr) uintptr {
+			if vkTraceOn() {
+				vkTraceCall("setCommandBuffers")
+			}
 			if v := currentVK(); v != nil && num > 0 && cmds != 0 {
 				v.mu.Lock()
 				v.cmds = append(v.cmds[:0], unsafe.Slice((*uintptr)(ptr(cmds)), int(num))...)
@@ -449,24 +458,36 @@ func makeVKCallbacks() {
 			return 0
 		})
 		cb.waitSyncIndex = purego.NewCallback(func(handle uintptr) uintptr {
+			if vkTraceOn() {
+				vkTraceCall("waitSyncIndex")
+			}
 			if v := currentVK(); v != nil {
 				v.waitSyncIndex()
 			}
 			return 0
 		})
 		cb.lockQueue = purego.NewCallback(func(handle uintptr) uintptr {
+			if vkTraceOn() {
+				vkTraceCall("lockQueue")
+			}
 			if v := currentVK(); v != nil {
 				v.queueMu.Lock()
 			}
 			return 0
 		})
 		cb.unlockQueue = purego.NewCallback(func(handle uintptr) uintptr {
+			if vkTraceOn() {
+				vkTraceCall("unlockQueue")
+			}
 			if v := currentVK(); v != nil {
 				v.queueMu.Unlock()
 			}
 			return 0
 		})
 		cb.setSignalSemaphore = purego.NewCallback(func(handle, sem uintptr) uintptr {
+			if vkTraceOn() {
+				vkTraceCall("setSignalSemaphore")
+			}
 			if v := currentVK(); v != nil {
 				v.mu.Lock()
 				v.signal = uint64(sem)
@@ -475,6 +496,9 @@ func makeVKCallbacks() {
 			return 0
 		})
 		cb.instanceWrapper = purego.NewCallback(func(opaque, info uintptr) uintptr {
+			if vkTraceOn() {
+				vkTraceCall("instanceWrapper")
+			}
 			v := currentVK()
 			if v == nil || info == 0 {
 				return 0
@@ -486,6 +510,9 @@ func makeVKCallbacks() {
 			return inst
 		})
 		cb.deviceWrapper = purego.NewCallback(func(gpu, opaque, info uintptr) uintptr {
+			if vkTraceOn() {
+				vkTraceCall("deviceWrapper")
+			}
 			v := currentVK()
 			if v == nil || info == 0 {
 				return 0
@@ -690,14 +717,20 @@ func (v *vkOut) graphicsFamily(gpu uintptr) (uint32, bool) {
 // gets the extensions and features it needs, or here.
 func (v *vkOut) createDevice(neg *vkNegotiation, g vkGPUInfo) error {
 	v.gpu = g.handle
-	var ctx vkRetroContext
+	// On the heap: the core calls back into the runner while it fills this in, which can move
+	// the stack under it.
+	ctx := new(vkRetroContext)
 	switch {
 	case neg != nil && neg.interfaceVersion >= 2 && neg.createDevice2 != 0:
-		if call(neg.createDevice2, uintptr(unsafe.Pointer(&ctx)), v.instance, g.handle, uintptr(v.surface), vkShimFor(v.f.getInstanceProcAddr), vkCallbacks.deviceWrapper, 0)&0xff == 0 {
+		if call(neg.createDevice2, uintptr(unsafe.Pointer(ctx)), v.instance, g.handle, uintptr(v.surface), vkShimFor(v.f.getInstanceProcAddr), vkCallbacks.deviceWrapper, 0)&0xff == 0 {
 			return fmt.Errorf("%w: the core could not make its Vulkan device", ErrNoVulkan)
 		}
 	case neg != nil && neg.createDevice != 0:
-		if call(neg.createDevice, uintptr(unsafe.Pointer(&ctx)), v.instance, g.handle, uintptr(v.surface), vkShimFor(v.f.getInstanceProcAddr), 0, 0, 0, 0, 0)&0xff == 0 {
+		// As RetroArch calls it: empty lists of extensions and layers, and features with none
+		// asked for, which some cores (Mupen64Plus-Next's ParaLLEl-RDP) read without looking.
+		none := new(vkCreateDeviceV1Args)
+		if call(neg.createDevice, uintptr(unsafe.Pointer(ctx)), v.instance, g.handle, uintptr(v.surface), vkShimFor(v.f.getInstanceProcAddr),
+			uintptr(unsafe.Pointer(&none.names[0])), 0, uintptr(unsafe.Pointer(&none.names[0])), 0, uintptr(unsafe.Pointer(&none.features[0])))&0xff == 0 {
 			return fmt.Errorf("%w: the core could not make its Vulkan device", ErrNoVulkan)
 		}
 	default:
@@ -733,6 +766,12 @@ func (v *vkOut) createDevice(neg *vkNegotiation, g vkGPUInfo) error {
 	}
 	call(v.f.getPhysicalDeviceMemoryProperties, v.gpu, uintptr(unsafe.Pointer(&v.memProps[0])))
 	return nil
+}
+
+// vkCreateDeviceV1Args are the empty lists and features create_device is handed.
+type vkCreateDeviceV1Args struct {
+	names    [1]uintptr
+	features [vkPhysicalDeviceFeaturesSize]byte
 }
 
 // setUp makes the per-frame objects: a command buffer and a fence for each sync index.

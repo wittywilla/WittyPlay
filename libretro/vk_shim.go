@@ -270,3 +270,13 @@ func (s *vkShimState) makeTracers() {
 		return 0
 	})
 }
+
+// vkTraceCall notes a call from the core, with the thread it came on, the first few times.
+func vkTraceCall(name string) {
+	n := vkCallsSeen.Add(1)
+	if n <= 60 {
+		vkTracef("call %s thread=%d", name, currentThreadID())
+	}
+}
+
+var vkCallsSeen atomic.Int64
