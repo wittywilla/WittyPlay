@@ -752,6 +752,27 @@
       "auth": "admin"
     },
     {
+      "path": "/gaming/profiles",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "45s"
+      }
+    },
+    {
+      "path": "/gaming/profiles/{id}",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB",
+        "time": "45s"
+      }
+    },
+    {
       "path": "/gaming/cores/{id}/install",
       "methods": [
         "GET",
