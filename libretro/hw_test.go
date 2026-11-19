@@ -232,3 +232,64 @@ func playRealGPUCore(t *testing.T, core, rom string) {
 		t.Errorf("%d frames, %d not blank", frames, lit)
 	}
 }
+
+// A frame drawn with OpenGL comes back as NV12 when it's wanted, the right way up, with BT.709
+// limited-range values, and the core's own state as it left it.
+func TestHardwareFrameAsNV12(t *testing.T) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	nv12Wanted = true
+	defer func() { nv12Wanted = false }()
+	o, err := newGLOut(glRequest{major: 3, minor: 3, core: true}, true, true, true)
+	if errors.Is(err, ErrNoGPU) {
+		t.Skip(err)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer o.destroy()
+	if err := o.resize(16, 8); err != nil {
+		t.Fatal(err)
+	}
+	// Red in the bottom row as OpenGL counts rows, blue above it.
+	pixels := make([]byte, 16*8*4)
+	for i := 0; i < len(pixels); i += 4 {
+		if i < 16*4 {
+			pixels[i], pixels[i+3] = 0xff, 0xff
+		} else {
+			pixels[i+2], pixels[i+3] = 0xff, 0xff
+		}
+	}
+	call(o.f.bindTexture, glTexture2D, uintptr(o.color))
+	call(o.p.proc("glTexSubImage2D"), glTexture2D, 0, 0, 0, 16, 8, glRGBA, glUnsignedByte, uintptr(unsafe.Pointer(&pixels[0])))
+	call(o.f.viewport, 1, 2, 3, 4)
+
+	o.startRead(engine.Handlers{}, 16, 8)
+	if o.nv12 == nil {
+		t.Fatalf("no conversion: %s", o.nv12Problem)
+	}
+	var got []byte
+	var w, h, format int
+	o.collect(engine.Handlers{VideoReady: func(d []byte, fw, fh, s, f int) { got, w, h, format = append([]byte(nil), d...), fw, fh, f }}, 2*time.Second)
+	if got == nil || format != engine.FormatNV12 || w != 16 || h != 8 || len(got) != engine.FrameSize(engine.FormatNV12, 16, 8) {
+		t.Fatalf("format %d, %dx%d, %d bytes", format, w, h, len(got))
+	}
+	near := func(v byte, want int) bool { return int(v) >= want-2 && int(v) <= want+2 }
+	if y := got[0]; !near(y, 32) {
+		t.Errorf("the top row's luma %d, want blue's 32", y)
+	}
+	if y := got[7*16]; !near(y, 63) {
+		t.Errorf("the bottom row's luma %d, want red's 63", y)
+	}
+	if u, v := got[16*8], got[16*8+1]; !near(u, 240) || !near(v, 118) {
+		t.Errorf("the top block's chroma %d,%d, want blue's 240,118", u, v)
+	}
+	var vp [4]int32
+	call(o.f.getIntegerv, glViewport, uintptr(unsafe.Pointer(&vp[0])))
+	if vp != [4]int32{1, 2, 3, 4} {
+		t.Errorf("the core's viewport became %v", vp)
+	}
+	if e := call(o.f.getError); e != 0 {
+		t.Errorf("OpenGL reported error %#x", e)
+	}
+}

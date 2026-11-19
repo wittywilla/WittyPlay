@@ -14,11 +14,12 @@ package wittyplay
 //
 // Measured on an i7-12700H with an RTX 3070, Cars (GameCube) in a race, from a saved state: 25 to
 // 28 frames a second of 60 with the emulation thread using a whole core, against 60 using a third
-// of one. In WSL, on the card: 35 against 60.
+// of one. In WSL, on the card: 35 against 60. Mario Kart Wii in a race (#65, which had these for
+// Windows alone): 26 to 28 against 60, using under half a core, with the sound no longer breaking up.
 //
 // Shaders compile in the background, with Dolphin's uber shaders drawing until each is ready
 // ("Async (UberShaders)", 2): the default compiles every new one before the frame goes on, which
-// stutters a game whenever it shows something new. #65 sets the same on Windows.
+// stutters a game whenever it shows something new.
 func init() {
 	o := traits["dolphin"].Options
 	o["dolphin_fastmem"] = "enabled"

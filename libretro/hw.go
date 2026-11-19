@@ -6,6 +6,7 @@ package libretro
 import (
 	"errors"
 	"fmt"
+	"time"
 	"unsafe"
 
 	"github.com/ebitengine/purego"
@@ -58,12 +59,39 @@ type hwState struct {
 	reset   uintptr
 	destroy uintptr
 	gl      *glOut
+	vk      *vkOut // a Vulkan context instead of gl
+}
+
+// vulkanAllowed lets a core have a Vulkan context, where this machine has a card that can make
+// one. It's set by the runner's -vulkan, which the server gives cores whose Vulkan renderer is
+// known to do better here than OpenGL. Elsewhere they keep OpenGL, as before.
+var vulkanAllowed bool
+
+// AllowVulkan lets cores draw with Vulkan.
+func AllowVulkan() { vulkanAllowed = true }
+
+// vulkanOffered says whether a core asking for Vulkan gets it here, or why not.
+func vulkanOffered() error {
+	if !vulkanAllowed {
+		return errors.New("Vulkan isn't offered to this core")
+	}
+	return vkUsable()
 }
 
 func (c *Core) setHWRender(data unsafe.Pointer) bool {
 	req := (*hwRenderC)(data)
 	switch req.contextType {
 	case hwOpenGL, hwOpenGLCore, hwGLES2, hwGLES3, hwGLESVersion:
+	case hwVulkan:
+		// Refused where no card can make a device, so a core goes on to OpenGL (LRPS2 and Dolphin
+		// both try it next) rather than load expecting a context that never comes.
+		if why := vulkanOffered(); why != nil {
+			c.hwRefused = true
+			c.logf(2, "Vulkan: %v", why)
+			return false
+		}
+		c.hw = &hwState{req: req, reset: req.contextReset, destroy: req.contextDestroy}
+		return true
 	default:
 		c.hwRefused = true
 		c.logf(2, "this runner can't offer hardware context type %d", req.contextType)
@@ -90,6 +118,18 @@ func (c *Core) startHW(maxW, maxH int) error {
 		return nil
 	}
 	req := c.hw.req
+	if req.contextType == hwVulkan {
+		v, err := newVKOut(c.vkNeg)
+		if err != nil {
+			return err
+		}
+		c.hw.vk = v
+		c.logf(2, "drawing with %s", v.renderer)
+		if c.hw.reset != 0 {
+			purego.SyscallN(c.hw.reset)
+		}
+		return nil
+	}
 	gr := glRequest{major: int(req.versionMajor), minor: int(req.versionMinor), debug: req.debugContext}
 	switch req.contextType {
 	case hwOpenGLCore:
@@ -122,13 +162,16 @@ func (c *Core) Renderer() string {
 	if c.hw != nil && c.hw.gl != nil {
 		return c.hw.gl.renderer
 	}
+	if c.hw != nil && c.hw.vk != nil {
+		return c.hw.vk.renderer
+	}
 	return ""
 }
 
 // stopCoreHW tells the core its context is going away. Unloading comes after this,
 // and the context itself after that, because a core may still touch it.
 func (c *Core) stopCoreHW() {
-	if c.hw != nil && c.hw.gl != nil && c.hw.destroy != 0 {
+	if c.hw != nil && (c.hw.gl != nil || c.hw.vk != nil) && c.hw.destroy != 0 {
 		purego.SyscallN(c.hw.destroy)
 		c.hw.destroy = 0
 	}
@@ -139,6 +182,34 @@ func (c *Core) stopHW() {
 		c.hw.gl.destroy()
 		c.hw.gl = nil
 	}
+	if c.hw != nil && c.hw.vk != nil {
+		c.hw.vk.destroy()
+		c.hw.vk = nil
+	}
+}
+
+// startHWRead begins bringing back a frame the core drew on the card.
+func (c *Core) startHWRead(w, h int) {
+	switch {
+	case c.hw == nil:
+	case c.hw.gl != nil:
+		c.hw.gl.startRead(c.h, w, h)
+	case c.hw.vk != nil:
+		c.hw.vk.startRead(w, h)
+	}
+}
+
+// collectHW hands over a frame the card has finished, waiting at most wait, and says whether one
+// is still on its way.
+func (c *Core) collectHW(wait time.Duration) bool {
+	switch {
+	case c.hw == nil:
+	case c.hw.gl != nil:
+		return c.hw.gl.collect(c.h, wait)
+	case c.hw.vk != nil:
+		return c.hw.vk.collect(c.h, wait)
+	}
+	return false
 }
 
 func (c *Core) logf(level int, format string, a ...any) {
@@ -172,6 +243,7 @@ type GPUInfo struct {
 	Vendor   string // the driver's maker
 	Version  string // the OpenGL version and driver
 	VRAMMB   int    // its own memory, where the driver says; 0 when it doesn't
+	Vulkan   string // the card cores that draw with Vulkan get, or why there's none
 }
 
 // ProbeGPU makes an OpenGL context the way a game would and describes the graphics card
@@ -183,7 +255,11 @@ func ProbeGPU() (GPUInfo, error) {
 	}
 	defer o.destroy()
 	f := &o.f
-	info := GPUInfo{Renderer: o.renderer, Vendor: glString(call(f.getString, glVendor)), Version: glString(call(f.getString, glVersion))}
+	vk, vkErr := vkProbe()
+	if vkErr != nil {
+		vk = "none: " + vkErr.Error()
+	}
+	info := GPUInfo{Vulkan: vk, Renderer: o.renderer, Vendor: glString(call(f.getString, glVendor)), Version: glString(call(f.getString, glVersion))}
 	// NVIDIA's and AMD's extensions, in KiB; any other driver refuses the name, which only
 	// sets an error, cleared here.
 	var kb [4]int32

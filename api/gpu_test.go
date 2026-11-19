@@ -118,12 +118,26 @@ func TestTheCardCheckRunsInTheBackground(t *testing.T) {
 		t.Fatalf("the first answer: %+v", p)
 	}
 	<-asked
+	// One check that finds no card isn't believed: it can land on Windows' basic OpenGL while
+	// the card isn't to be had for a moment. Asking about it again checks again, and a second
+	// check that agrees is final.
+	if p, final, _, _ := a.eng().gpuAnswer(); final && p.Error != "" {
+		t.Errorf("one check was believed: %+v", p)
+	}
 	deadline := time.Now().Add(5 * time.Second)
 	for a.GPUStatus(context.Background()).Checking && time.Now().Before(deadline) {
 		time.Sleep(10 * time.Millisecond)
 	}
+	select {
+	case <-asked:
+	case <-time.After(5 * time.Second):
+		t.Fatal("not asked a second time")
+	}
+	for a.GPUStatus(context.Background()).Checking && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
 	if got := a.GPUMissing(context.Background()); got != "OpenGL here is only llvmpipe" {
-		t.Errorf("after the check: %q", got)
+		t.Errorf("after the second check: %q", got)
 	}
 	// Final: not asked again.
 	_ = a.GPUStatus(context.Background())

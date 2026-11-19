@@ -298,6 +298,7 @@ func gameItem(g fullGame) sdui.Item {
 // consoleShort is a console's short name (SNES, Mega Drive), for the home row's console bar; its id when it has none.
 func consoleShort(id string) string {
 	if c := wittyplay.ByID(id); c != nil {
+		c := shownConsole(*c)
 		if c.Short != "" {
 			return c.Short
 		}

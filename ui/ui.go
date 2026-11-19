@@ -63,7 +63,13 @@ const (
 	// console photos from Wikimedia.
 	SourceRefresh       = Module + ".refresh"
 	SourceConsolePhotos = Module + ".consolePhotos"
+	// For administrators: the performance profile every emulator starts from.
+	SourcePerformance = Module + ".performance"
 )
+
+// PerformanceNotice is what an administrator is told beside the performance profiles. At most
+// 400 characters: a Notice's text.
+const PerformanceNotice = "Choose how strong this server is. Every emulator starts from this one standard: resolution, run-ahead, rewind, picture quality and how many games at once. Set it first; then change one console's core in WittyPlay's Settings, Consoles & cores, on top of it. Anything you set by hand in Settings still wins."
 
 // ConsolePhotoNotice is what an administrator is told before opting in to console photos: what is
 // fetched, from where, and under which licences. Every app shows these same words beside the switch:
@@ -104,6 +110,17 @@ func tvSources() []sdui.SourceSpec {
 		{Type: SourceConsolePhotos, Label: "Console photos from Wikimedia", Icon: "photo", Title: "Console photos",
 			Description: "For an administrator: the switch that opts in to (or out of) photos of each console's hardware from Wikimedia Commons, which are off until then, with what it means now. Show ConsolePhotoNotice's words beside it. Nothing for anyone else.",
 			Yields:      []string{"view"}, CardStyle: "tile"},
+		{Type: SourcePerformance, Label: "Performance profile", Icon: "chart", Title: "Performance",
+			Description: "For an administrator: the performance profiles (Very light, Light, Balanced, High quality), each with the hardware it suits; the one in use is checked and the one this server's hardware suggests says so. Choosing one sets what every emulator starts with. Show PerformanceNotice's words beside it. Nothing for anyone else.",
+			Yields:      []string{"view"}, CardStyle: "tile"},
+	}
+}
+
+// performanceSections are the performance profiles: the notice, then one row each.
+func performanceSections(when *sdui.Condition) []sdui.Section {
+	return []sdui.Section{
+		withWhen(sdui.Sec("performance-notice", "Notice", sdui.Props("tone", "info", "title", "How strong is this server?", "text", PerformanceNotice), nil), when),
+		withWhen(sdui.Sec("performance", "List", sdui.Props("title", "Performance profile", "focusable", true), sdui.Src(SourcePerformance)), when),
 	}
 }
 
@@ -440,6 +457,7 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 	}
 	// The opt-in to console photos, on Settings and on the first-run step.
 	photos := consolePhotoSections(forAdmins)
+	perf := performanceSections(forAdmins)
 	set := page(PageSettings, "Settings", "settings",
 		sdui.Sec("you", "List", sdui.Props("title", "For you"), nil,
 			item("privacy", "Friends and what you play", "Who sees you online and what you are playing", "users", "to", "/page/"+PagePrivacy),
@@ -448,6 +466,7 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 		withWhen(sdui.Sec("server", "List", sdui.Props("title", "This server"), nil,
 			item("store", "Cores & emulators", "Consoles and their cores, BIOS files and standalone emulators: install, update, choose and remove", "disc", "to", "/page/"+PageStore),
 			item("plays", "What this server plays", "Every console, and whether its games play here", "game", "to", "/page/"+Module)), forAdmins),
+		perf[0], perf[1],
 		photos[0], photos[1],
 		sdui.Sec("computer", "List", sdui.Props("title", "On a computer", "focusable", true), nil,
 			item("look", "On a computer: how WittyPlay looks and plays", "Layout, tabs and buttons, game pictures, controller mapping and my game settings are in WittyPlay's Settings in a browser.", "info")),
@@ -492,6 +511,7 @@ func addTVPages(m *sdui.Module, page func(id, title, icon string, sections ...sd
 			item("store", "Cores & emulators", "Install the cores your consoles need, and add BIOS files where a console wants them", "disc", "to", "/page/"+PageStore),
 			item("plays", "What this server plays", "Every console, and whether its games play here yet", "game", "to", "/page/"+Module),
 			item("options", "WittyPlay options", "In this app's Settings, Modules, Games", "settings", "native", "settings")), forAdmins),
+		perf[0], perf[1],
 		withWhen(sdui.Sec("computer", "List", sdui.Props("title", "On a computer", "focusable", true), nil,
 			item("more", "Game titles, pictures and more details", "How game titles are written, how games are pictured, and optional sources of scores and box art are chosen in WittyPlay's Settings in a browser.", "info")), forAdmins),
 		photos[0], photos[1],
@@ -525,6 +545,8 @@ const (
 	// The opt-in to console photos from Wikimedia, on and off.
 	CommandConsolePhotosOn  = Module + ".consolePhotos.on"
 	CommandConsolePhotosOff = Module + ".consolePhotos.off"
+	// The performance profile every emulator starts from (item: its ID).
+	CommandPerformanceSet = Module + ".performance.set"
 )
 
 // Commands are WittyPlay's own commands, as sdui.json declares them.
@@ -565,6 +587,8 @@ func Commands() []core.CommandSpec {
 			Description: "Administrators: opts in to photos of each console's hardware from Wikimedia Commons, having been shown what is fetched, from where, and the licences."},
 		{Op: CommandConsolePhotosOff, Label: "Turn off console photos", Method: "PUT", Path: routes + "/games/console-photos", Body: `{"enabled":false}`,
 			Description: "Administrators: stops console photos and deletes every one downloaded."},
+		{Op: CommandPerformanceSet, Label: "Use this profile", Method: "PUT", Path: routes + "/gaming/profiles/{item}",
+			Description: "Administrators: the performance profile every emulator starts from (item: lightest, light, balanced or high; auto for the default). Settings set by hand still win."},
 	}
 }
 

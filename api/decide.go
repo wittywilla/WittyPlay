@@ -168,8 +168,8 @@ func (a *App) Configure(ctx context.Context) error {
 			gpuEnc = append(gpuEnc, e.Name)
 		}
 	}
-	maxSessions, _ := strconv.Atoi(a.configText(ctx, "gamingMaxSessions", "2"))
-	maxGPU, _ := strconv.Atoi(a.configText(ctx, "gamingMaxGpuSessions", "2"))
+	maxSessions, _ := strconv.Atoi(a.gamingSetting(ctx, "gamingMaxSessions", "2"))
+	maxGPU, _ := strconv.Atoi(a.gamingSetting(ctx, "gamingMaxGpuSessions", "2"))
 	port, _ := strconv.Atoi(a.configText(ctx, "gamingUdpPort", "0"))
 	if port < 0 || port > 65535 {
 		port = 0
@@ -180,6 +180,7 @@ func (a *App) Configure(ctx context.Context) error {
 	rpc.Mgr.Configure(func(c *stream.Config) {
 		c.Runner, c.RunnerArgs, c.HWEncoders, c.GPUEncoders, c.MaxSessions, c.MaxGPU, c.UDPPort = runner, args, hw, gpuEnc, maxSessions, maxGPU, port
 		c.FFmpeg = tools.FFmpeg
+		c.FramesOnCard = a.configText(ctx, "gamingGpuFrames", "1") != "0"
 		c.HaveEncoder = func(n string) bool { return encoders[n] }
 		c.PublicIPs = splitNonEmpty(a.configText(ctx, "gamingPublicIp", ""))
 		c.STUN = splitNonEmpty(a.configText(ctx, "gamingStun", ""))
@@ -211,7 +212,7 @@ func splitNonEmpty(v string) []string {
 // StartOptions are the options a core starts a console's games with here: WittyPlay's own for it,
 // at the resolution an administrator chose.
 func (a *App) StartOptions(ctx context.Context, consoleID, coreID string) map[string]string {
-	return wittyplay.StartOptions(consoleID, coreID, a.configText(ctx, "gamingResolution", ""), a.SystemDir())
+	return wittyplay.StartOptions(consoleID, coreID, resolutionFor(a.gamingSetting(ctx, "gamingResolution", ""), consoleID), a.SystemDir())
 }
 
 // ---- which core ----

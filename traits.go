@@ -22,6 +22,9 @@ type CoreTraits struct {
 	// GPU cores draw with a graphics card. They count against the GPU limit and
 	// their runner gets what a graphics driver needs. docs/GAMING.md has the list.
 	GPU bool
+	// Vulkan cores are offered a Vulkan context (the runner's -vulkan), where the card can make
+	// one, as their renderer does better here than through OpenGL; elsewhere they have OpenGL.
+	Vulkan bool
 	// Demanding cores can't play at low priority on a machine doing anything else.
 	// Everything drawn on a graphics card is, as well as these.
 	Demanding bool
@@ -106,11 +109,13 @@ var traits = map[string]CoreTraits{
 		Resolution: pick("mupen64plus-43screensize", "640x480", "1280x960", "1920x1440", "2560x1920")},
 	"parallel_n64": {GPU: true, Options: map[string]string{"parallel-n64-gfxplugin": "gliden64"},
 		Resolution: pick("parallel-n64-screensize", "640x480", "1280x960", "1920x1440", "2880x2160")},
-	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards", CacheIn: "pcsx2/cache", SharedMemory: true,
+	"pcsx2": {GPU: true, Vulkan: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards", CacheIn: "pcsx2/cache", SharedMemory: true,
 		// Waiting for the graphics card at every read-back, and running VU1 on the game's own
 		// thread, held a real game to 41 frames a second where it can do 60. The core's own
 		// database still turns VU1's thread off for the games known to hang with it.
-		Options:    map[string]string{"pcsx2_renderer": "OpenGL", "pcsx2_hw_download_mode": "Unsynchronized"},
+		// "Auto" takes the context the runner prefers: Vulkan where the card can make one, and
+		// OpenGL where it can't (the runner's -vulkan, Vulkan above).
+		Options:    map[string]string{"pcsx2_renderer": "Auto", "pcsx2_hw_download_mode": "Unsynchronized"},
 		Threaded:   map[string]string{"pcsx2_mtvu": "enabled"},
 		Resolution: pick("pcsx2_upscale_multiplier", "1x (Native)", "2x", "4x", "4x")},
 	// Play! keeps its settings and memory cards under the home folder, and stops if it
@@ -152,7 +157,18 @@ var traits = map[string]CoreTraits{
 			"dolphin_log_boot_enabled": "disabled", "dolphin_log_core_enabled": "disabled", "dolphin_log_video_enabled": "disabled", "dolphin_log_common_enabled": "disabled",
 			// Its on-screen messages are for someone at the machine: here they'd sit over a
 			// player's picture, warning about the server's graphics driver.
-			"dolphin_osd_enabled": "disabled"},
+			"dolphin_osd_enabled": "disabled",
+			// The Wii Remote points where the player's mouse or finger is. With "IR passthrough" the
+			// runner draws the sensor bar as the Wii Remote's camera would see it for that spot
+			// (libretro/sensorbar.go), so nothing hangs on the angles and the bar's height the core
+			// would otherwise work it out from. The pointer mode, "Mouse controls pointer" (2; its
+			// values are codes, its labels only shown), is what it falls back on.
+			"dolphin_ir_mode": "2", "dolphin_ir_passthrough": "enabled",
+			// Shaders compiled while drawing, with Dolphin's uber shaders standing in until each is
+			// ready (2, "Async (UberShaders)"): the default compiles each new one before the frame
+			// goes on, which stutters a game every time it shows something new. The uber shaders
+			// cost the graphics card a little, which a card that runs Dolphin has.
+			"dolphin_shader_compilation_mode": "2"},
 		Resolution: pick("dolphin_efb_scale", "1", "2", "3", "4")},
 }
 
@@ -178,6 +194,9 @@ func RunnerArgs(coreID string) []string {
 	}
 	if t.GPU || t.Demanding {
 		out = append(out, "-normal-priority")
+	}
+	if t.Vulkan {
+		out = append(out, "-vulkan")
 	}
 	if t.SharedMemory {
 		out = append(out, "-shared-memory")

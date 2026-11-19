@@ -7,19 +7,42 @@ package engine
 
 import "time"
 
-// Pixel formats, numbered as libretro numbers them.
+// Pixel formats, numbered as libretro numbers them, and NV12, which libretro doesn't have.
 const (
 	Format0RGB1555 = 0
 	FormatXRGB8888 = 1
 	FormatRGB565   = 2
+	// FormatNV12 is a frame converted on the graphics card for the encoder: a plane of luma, a
+	// byte a pixel, then a plane of chroma at half the size each way, U and V interleaved; BT.709,
+	// limited range. Its width is a multiple of 4 and its height is even; its rows are packed.
+	FormatNV12 = 3
 )
 
-// BytesPerPixel for a pixel format.
+// BytesPerPixel for a pixel format: for NV12, of its luma plane.
 func BytesPerPixel(format int) int {
-	if format == FormatXRGB8888 {
+	switch format {
+	case FormatXRGB8888:
 		return 4
+	case FormatNV12:
+		return 1
 	}
 	return 2
+}
+
+// FrameSize is how many bytes a packed frame of this format and size takes.
+func FrameSize(format, width, height int) int {
+	if format == FormatNV12 {
+		return width*height + width*(height/2)
+	}
+	return width * height * BytesPerPixel(format)
+}
+
+// ValidSize says whether a frame of this format can have this size.
+func ValidSize(format, width, height int) bool {
+	if format == FormatNV12 {
+		return width%4 == 0 && height%2 == 0
+	}
+	return true
 }
 
 // MaxPorts is how many players the protocol carries input for.
@@ -73,11 +96,14 @@ type Handlers struct {
 	// VideoFlipped is Video for a frame whose first row in memory is the bottom
 	// of the picture, as OpenGL reads them.
 	VideoFlipped func(data []byte, width, height, stride, format int)
-	Dupe         func() // the previous frame again
-	Audio        func(stereo []int16)
-	Input        func() *[MaxPorts]PadState // once a frame
-	Pointer      func() PointerState        // once a frame
-	Touches      func() []PointerState      // every finger on a touch screen, once a frame; the first is Pointer's
+	// VideoReady is Video for a frame the engine has already decided someone will see: one from a
+	// graphics card, which can arrive after the next frame has begun. Nil means Video.
+	VideoReady func(data []byte, width, height, stride, format int)
+	Dupe       func() // the previous frame again
+	Audio      func(stereo []int16)
+	Input      func() *[MaxPorts]PadState // once a frame
+	Pointer    func() PointerState        // once a frame
+	Touches    func() []PointerState      // every finger on a touch screen, once a frame; the first is Pointer's
 	// Motion, for a game that reads a device's movement. MotionOffered says the engine can read it
 	// at all; MotionWanted that the game wants it from this player now, or no longer, and how often.
 	MotionOffered func()

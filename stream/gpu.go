@@ -25,6 +25,7 @@ type GPUProbe struct {
 	Vendor   string `json:"vendor,omitempty"`  // the driver's maker
 	Version  string `json:"version,omitempty"` // OpenGL's version, and the driver's
 	VRAMMB   int    `json:"vramMb,omitempty"`  // the card's own memory, where its driver says
+	Vulkan   string `json:"vulkan,omitempty"`  // the card cores drawing with Vulkan get, or "none: " and why
 	Error    string `json:"error,omitempty"`
 	Checking bool   `json:"checking,omitempty"` // the answer isn't in yet
 	Again    bool   `json:"-"`                  // says nothing about the card, so ask again later
@@ -74,6 +75,8 @@ func parseGPUProbe(said string) GPUProbe {
 			p.Version = v
 		case "vram-mb":
 			p.VRAMMB, _ = strconv.Atoi(v)
+		case "vulkan":
+			p.Vulkan = v
 		}
 	}
 	return p
@@ -88,12 +91,17 @@ type EncodeStats struct {
 	frames  atomic.Int64
 	totalUS atomic.Int64
 	maxUS   atomic.Int64
+	// The same two, never reset: the player's numbers are taken as differences from these, and a
+	// log line taking the others mid-way made them go negative.
+	allFrames, allUS atomic.Int64
 }
 
 func (st *EncodeStats) encoded(took time.Duration) {
 	us := took.Microseconds()
 	st.frames.Add(1)
 	st.totalUS.Add(us)
+	st.allFrames.Add(1)
+	st.allUS.Add(us)
 	for {
 		m := st.maxUS.Load()
 		if us <= m || st.maxUS.CompareAndSwap(m, us) {
