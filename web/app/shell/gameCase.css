@@ -114,6 +114,8 @@
 .gpic-choice:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
 .gpic-choice-text { display: grid; gap: 2px; }
 .gpic-choice-text span { font-size: .85em; opacity: .85; }
+/* On the chosen card the line under the name is in full colour: dimmed, it falls short of 4.5:1 on some themes' accent. */
+.gpic-choice.on .gpic-choice-text span { opacity: 1; }
 .gpic-choice-art { position: relative; flex: none; inline-size: 44px; block-size: 44px; }
 .gpic-choice-art .gcase-fit { inset: 0; }
 .gpic-sub { margin: 16px 0 8px; font-size: 1rem; font-weight: 800; }
