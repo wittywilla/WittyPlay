@@ -12,6 +12,7 @@ import { Spinner, PageSkeleton } from '@wms/app/components/common'
 import { shapeFor } from '@wms/app/ui/Surface'
 import { PageHead } from '@wms/app/pages/settings/ui'
 import { PlayFrame } from './shell/PlayChrome'
+import { rememberTvHost } from './shell/tvLevels'
 import { MainGames } from './shell/MainGames'
 import { GamePage, ControllersScreen } from './pages/Games'
 import { GameTitlesSetting } from './pages/games/GameTitlesSetting'
@@ -91,6 +92,8 @@ function Settings({ children }: { children: ReactNode }) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function register(_host: unknown): any {
+  // The server's television levels (shell/tvLevels.tsx), for the screens of WittyPlay's own frame.
+  rememberTvHost(_host)
   return {
     routes: {
       '/wittyplay/*': Frame,

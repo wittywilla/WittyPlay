@@ -486,7 +486,7 @@ func (a *App) PlanGame(ctx context.Context, it *service.Item) (*Plan, *Refusal) 
 		if other.Source == cores.SourceCustom || wittyplay.MissingBIOS(other.ID, systemDir) != "" {
 			continue
 		}
-		next := stream.CoreChoice{Core: other.Path, CoreID: other.ID, RunnerArgs: wittyplay.RunnerArgs(other.ID), GPU: wittyplay.Traits(other.ID).GPU, Options: a.StartOptions(ctx, c.ID, other.ID)}
+		next := stream.CoreChoice{Core: other.Path, CoreID: other.ID, RunnerArgs: wittyplay.RunnerArgsWith(other.ID, a.coreFixesOn(ctx)), GPU: wittyplay.Traits(other.ID).GPU, Options: a.StartOptions(ctx, c.ID, other.ID)}
 		if a.coreDrawsOnGPU(other) && (noGPU != "" || drawsWrongHere(other) != "") {
 			cpu := cpuOptions(other)
 			if cpu == nil {
@@ -505,7 +505,7 @@ func (a *App) planOn(ctx context.Context, p *Plan, core cores.Core, software boo
 	p.Core, p.CorePath, p.CoreID = &c, core.Path, core.ID
 	p.Software = software
 	p.GPU = !software && (wittyplay.Traits(core.ID).GPU || (core.Source == cores.SourceCustom && core.WantsGPU))
-	p.RunnerArgs = wittyplay.RunnerArgs(core.ID)
+	p.RunnerArgs = wittyplay.RunnerArgsWith(core.ID, a.coreFixesOn(ctx))
 	p.CPUOptions = nil
 	if software {
 		p.RunnerArgs = softwareArgs(core.ID, p.RunnerArgs)

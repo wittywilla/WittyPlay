@@ -18,6 +18,7 @@ import {
 } from '../shell/gamePictures'
 import { logoImageUrl } from '@wms/app/components/BrandLogo'
 import { PageHead } from '@wms/app/pages/settings/ui'
+import { TvPart } from '../shell/tvLevels'
 
 // Made-up covers for the previews, drawn here: one tall, one wide, one square, so every choice shows what it does with each shape.
 function cover(w: number, h: number, a: string, b: string, mark: string) {
@@ -235,8 +236,10 @@ function Share({ scope, pref, setPref, onSaid, onErr }: { scope: Scope; pref: Pi
       <p className="wplay-console-note">A <code>{WITTYPLAY_EXT}</code> file holds these choices and nothing else: no pictures, nothing about you. Its format is open, for any program to use. A <code>{WITTYPLAY_EXT}</code> file beside a game, with the game’s name, is read when the library is scanned.</p>
       <div className="gpic-share">
         <Button onClick={() => void exportMine()} disabled={busy}>Export…</Button>
-        <Button onClick={() => input.current?.click()} disabled={busy}>Import…</Button>
-        <input ref={input} hidden type="file" accept={WITTYPLAY_EXT + ',' + WITTYPLAY_TYPE + ',application/json'} aria-label="Import a .wittyplay file" onChange={(e) => { void importFile(e.target.files?.[0]); e.target.value = '' }} />
+        <TvPart id="wittyplay.picture-import">
+          <Button onClick={() => input.current?.click()} disabled={busy}>Import…</Button>
+          <input ref={input} hidden type="file" accept={WITTYPLAY_EXT + ',' + WITTYPLAY_TYPE + ',application/json'} aria-label="Import a .wittyplay file" onChange={(e) => { void importFile(e.target.files?.[0]); e.target.value = '' }} />
+        </TvPart>
       </div>
     </section>
   )

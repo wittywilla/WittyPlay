@@ -279,7 +279,7 @@ func toImage(hdr ipc.VideoHeader, data []byte) *image.RGBA {
 type gameFlags struct {
 	runner, core, rom, system, save, console, coreID, resolution, options string
 	mem                                                                   int64
-	verbose, noCard, vulkan                                               bool
+	verbose, noCard, vulkan, nv12                                         bool
 }
 
 func addGameFlags(fs *flag.FlagSet) *gameFlags {
@@ -295,6 +295,7 @@ func addGameFlags(fs *flag.FlagSet) *gameFlags {
 	fs.StringVar(&g.options, "options", "", "core options, key=value;key=value, replacing the defaults")
 	fs.Int64Var(&g.mem, "memory-mb", 0, "the runner's memory limit; 0 for what the server uses")
 	fs.BoolVar(&g.verbose, "v", false, "show what the runner prints")
+	fs.BoolVar(&g.nv12, "nv12", false, "have frames converted to NV12 on the graphics card (the runner's -nv12), as the server does by default")
 	fs.BoolVar(&g.vulkan, "vulkan", false, "offer the core Vulkan (the runner's -vulkan) even if its traits don't")
 	fs.BoolVar(&g.noCard, "no-card", false, "start the runner as a server with no graphics card does: without -gpu, and with -processor-gl for a core drawn through the processor's OpenGL; give the core's options with -options")
 	return g
@@ -318,6 +319,15 @@ func (g *gameFlags) load() (ipc.Load, []string) {
 		args = wittyplay.RunnerArgs(g.coreID)
 		if g.vulkan && !slices.Contains(args, "-vulkan") {
 			args = append(args, "-vulkan")
+		}
+		if g.nv12 {
+			args = append(args, "-nv12")
+		}
+		if os.Getenv("WITTYPLAY_VK_TRACE") == "1" {
+			args = append(args, "-vk-trace")
+		}
+		if os.Getenv("WITTYPLAY_CORE_FIXES") == "1" {
+			args = append(args, "-core-fixes")
 		}
 		if g.noCard {
 			args = slices.DeleteFunc(args, func(a string) bool { return a == "-gpu" })
