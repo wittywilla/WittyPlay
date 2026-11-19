@@ -3,7 +3,7 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
-## 0.7.10
+## Unreleased
 
 - **PlayStation games draw with Vulkan (#84).** SwanStation and Beetle PSX HW now take their automatic renderers, which follow the context the runner prefers: Vulkan where the card can make a device, OpenGL where it can't. Final Fantasy VII's opening on an RTX 3070, in pairs, Vulkan against OpenGL: SwanStation's 95th percentile 3.5 to 4.4 ms against 12.8 to 17.4; Beetle PSX HW's 10.4 to 13.0 against 24.9 to 53.1, on 19 to 34% of a thread against 46 to 75%. Pictures are right through the card's NV12 conversion.
 - **Nintendo 64: ParaLLEl-RDP can be chosen.** Mupen64Plus-Next and ParaLLEl N64 are offered Vulkan, which GLideN64, their default, leaves alone; choosing ParaLLEl-RDP in a core's options now plays (the console's own drawing, on the card), with the internal resolution setting as its upscaling. It isn't the default: with its low-level RSP, Banjo-Kazooie took 50 to 67% of a thread against GLideN64's 14%.
