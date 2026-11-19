@@ -29,7 +29,7 @@ type Details = {
 }
 type Doc = {
   wittyplay: number; language?: string
-  game?: { details?: Details; identity?: Record<string, unknown>; artwork?: Record<string, string>; screenshots?: string[]
+  game?: { details?: Details; identity?: Record<string, unknown>; artwork?: Record<string, string | string[]>; screenshots?: string[]
     play?: { core?: string; shader?: string; aspectRatio?: string; videoStandard?: string; disc?: number }
     cheats?: Cheat[]; saves?: { kind?: string; memoryCard?: string; notes?: string }; notes?: string }
   controls?: { default?: ControlSet; consoles?: Record<string, ControlSet> }
@@ -38,8 +38,12 @@ type Doc = {
 type View = {
   exists: boolean; name: string; draft?: boolean; verdict?: string; console: string
   state?: { problem?: string; verdict?: string }; doc: Doc; pictures: Record<string, string>
-  limits: { artworkRoles: string[]; targets: string[]; hotkeyActions: string[]; devices: string[]; maxImage: number }
+  limits: { artworkRoles: string[]; targets: string[]; hotkeyActions: string[]; devices: string[]; maxImage: number; maxPerRole?: number }
+  version?: number; newer?: boolean
 }
+
+// A role's pictures, the one shown first: one name or a list in the file.
+const listOf = (v?: string | string[]) => (v === undefined ? [] : Array.isArray(v) ? v : [v])
 
 const ROLE_NAMES: Record<string, string> = {
   boxfront: 'Box front', boxback: 'Box back', boxspine: 'Box spine', boxfull: 'Whole box', media: 'Disc or cartridge', logo: 'Logo',
@@ -93,7 +97,7 @@ export default function PlayGameFile() {
   const [doc, setDoc] = useState<Doc | null>(null)
   const [failed, setFailed] = useState('')
   const [problems, setProblems] = useState<Problem[]>([])
-  const [images, setImages] = useState<Record<string, string>>({}) // role -> new picture, as a data address
+  const [adds, setAdds] = useState<Record<string, string[]>>({}) // role -> new pictures, as data addresses, after the role's others
   const [shots, setShots] = useState<string[]>([]) // new screenshots
   const [saving, setSaving] = useState(false)
   const [player, setPlayer] = useState(1)
@@ -103,7 +107,7 @@ export default function PlayGameFile() {
     try {
       setIt(await api.get<Item>(`/items/${id}`))
       const v = await api.get<View>(`/modules/wittyplay/games/${id}/wittyplay`)
-      setView(v); setDoc(v.doc); setImages({}); setShots([]); setProblems([]); setFailed('')
+      setView(v); setDoc(v.doc); setAdds({}); setShots([]); setProblems([]); setFailed('')
     } catch (e: any) {
       if (e?.data?.problems) { setProblems(e.data.problems); if (e.data.view) { setView(e.data.view); setDoc({ wittyplay: 2 }) } }
       setFailed(e?.message || 'This game’s file can’t be opened')
@@ -140,7 +144,7 @@ export default function PlayGameFile() {
     if (!doc) return
     setSaving(true); setProblems([])
     try {
-      const r = await api.put<{ saved: string; verdict: string }>(`/modules/wittyplay/games/${id}/wittyplay`, { doc, images, screenshots: shots })
+      const r = await api.put<{ saved: string; verdict: string }>(`/modules/wittyplay/games/${id}/wittyplay`, { doc, add: adds, screenshots: shots })
       toast(`Saved ${r.saved}. The game’s details and pictures change at the next scan of its library.`)
       void load()
     } catch (e: any) {
@@ -176,7 +180,12 @@ export default function PlayGameFile() {
   if (!user?.isAdmin) return <div className="wgf"><p className="wgf-note">Only an administrator can edit a game’s .wittyplay file.</p></div>
   if (!view || !doc) return failed ? <LoadError what={failed} onRetry={() => { void load() }} /> : <Spinner />
 
-  const pic = (role: string) => images[role] || (g.artwork?.[role] ? view.pictures[g.artwork[role]] : '')
+  const maxPerRole = view.limits.maxPerRole || 32
+  const setRole = (role: string, names: string[]) => {
+    const a = { ...(g.artwork || {}) }
+    if (!names.length) delete a[role]; else a[role] = names.length === 1 ? names[0] : names
+    setGame({ artwork: a })
+  }
   const targets = view.limits.targets
   return (
     <div className="wgf">
@@ -190,6 +199,7 @@ export default function PlayGameFile() {
             {view.verdict === 'other' && ' It was made for another dump of this game, so it isn’t used.'}
           </p>
           {view.state?.problem && <p className="wgf-problem" role="alert">{view.state.problem}</p>}
+          {view.newer && <p className="wgf-note" role="note"><IconInfo size={16} /> This file follows a newer version of the .wittyplay format ({doc.wittyplay}) than this WittyPlay knows ({view.version}). You can edit what’s shown here; everything else in it is kept as it is when you save.</p>}
         </div>
         <div className="wgf-actions">
           <button type="button" className="btn primary" disabled={saving} onClick={() => void save()}>{saving ? 'Saving…' : 'Save'}</button>
@@ -235,16 +245,52 @@ export default function PlayGameFile() {
       <section className="wgf-section">
         <h2>Pictures</h2>
         <div className="wgf-pics">
-          {view.limits.artworkRoles.map((role) => (
-            <Field key={role} label={ROLE_NAMES[role] || role} where={'game.artwork.' + role} problems={problems}>
-              <span className="wgf-pic">
-                {pic(role) ? <img src={pic(role)} alt="" /> : <span className="wgf-pic-empty">None</span>}
-                <input type="file" accept="image/png,image/jpeg,image/webp" aria-label={`Choose the ${ROLE_NAMES[role] || role}`}
-                  onChange={async (e) => { const f = e.target.files?.[0]; if (f) { if (f.size > view.limits.maxImage) { toast('That picture is too large.'); return } const u = await readAsDataURL(f); setImages((m) => ({ ...m, [role]: u })) } }} />
-                {pic(role) && <button type="button" className="btn sm ghost" aria-label="Remove" onClick={() => { setImages((m) => { const n = { ...m }; delete n[role]; return n }); const a = { ...(g.artwork || {}) }; delete a[role]; setGame({ artwork: a }) }}><IconTrash size={14} /></button>}
-              </span>
-            </Field>
-          ))}
+          {view.limits.artworkRoles.map((role) => {
+            const names = listOf(g.artwork?.[role])
+            const added = adds[role] || []
+            const room = maxPerRole - names.length - added.length
+            const label = ROLE_NAMES[role] || role
+            const mine = problems.filter((x) => x.where === 'game.artwork.' + role || x.where.startsWith('game.artwork.' + role + '['))
+            return (
+              <div key={role} className={'wgf-field wgf-role' + (mine.length ? ' bad' : '')} role="group" aria-label={label}>
+                <span>{label}{names.length + added.length > 1 && <span className="muted"> ({names.length + added.length})</span>}</span>
+                <span className="wgf-role-pics">
+                  {!names.length && !added.length && <span className="wgf-pic-empty">None</span>}
+                  {names.map((n, i) => (
+                    <span key={n} className={'wgf-pic' + (i === 0 ? ' first' : '')}>
+                      <img src={view.pictures[n]} alt={i === 0 ? `${label}, shown first` : `${label} ${i + 1}`} />
+                      <span className="wgf-pic-tools">
+                        {i === 0 ? <span className="wgf-pic-tag">Shown</span>
+                          : <button type="button" className="btn sm ghost" onClick={() => setRole(role, [n, ...names.filter((x) => x !== n)])}>Show first</button>}
+                        <button type="button" className="btn sm ghost" aria-label={`Remove ${label} ${i + 1}`} onClick={() => setRole(role, names.filter((x) => x !== n))}><IconTrash size={14} /></button>
+                      </span>
+                    </span>
+                  ))}
+                  {added.map((u, i) => (
+                    <span key={'new' + i} className={'wgf-pic' + (!names.length && i === 0 ? ' first' : '')}>
+                      <img src={u} alt={`New ${label}`} />
+                      <span className="wgf-pic-tools">
+                        <span className="wgf-pic-tag">New</span>
+                        <button type="button" className="btn sm ghost" aria-label={`Remove the new ${label}`} onClick={() => setAdds((m) => ({ ...m, [role]: added.filter((_, j) => j !== i) }))}><IconTrash size={14} /></button>
+                      </span>
+                    </span>
+                  ))}
+                </span>
+                {room > 0 && (
+                  <label className="btn sm">{names.length + added.length ? 'Add more…' : 'Add…'}
+                    <input type="file" hidden multiple accept="image/png,image/jpeg,image/webp" aria-label={`Add a ${label}`}
+                      onChange={async (e) => {
+                        const fs = Array.from(e.target.files || []).slice(0, room); e.target.value = ''
+                        if (fs.some((f) => f.size > view.limits.maxImage)) { toast('A picture is too large.'); return }
+                        const urls = await Promise.all(fs.map(readAsDataURL))
+                        setAdds((m) => ({ ...m, [role]: [...(m[role] || []), ...urls] }))
+                      }} />
+                  </label>
+                )}
+                {mine.map((x) => <em key={x.where + x.what} role="alert">{x.what}</em>)}
+              </div>
+            )
+          })}
         </div>
         <h3>Screenshots</h3>
         <div className="wgf-shots">

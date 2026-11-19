@@ -263,7 +263,7 @@ func (c *checker) controlSet(w string, s *ControlSet) {
 			c.bad(pw+".player", "player %d is given twice", p.Player)
 		}
 		seen[p.Player] = true
-		if p.Device != "" && !oneOfList(p.Device, Devices) {
+		if p.Device != "" && !oneOfList(p.Device, Devices) && !c.newer {
 			c.bad(pw+".device", "%q is not one of %s", p.Device, strings.Join(Devices, ", "))
 		}
 		maps := func(name string, m map[string]string, valid func(k, v string) bool, what string) {
@@ -276,7 +276,7 @@ func (c *checker) controlSet(w string, s *ControlSet) {
 				}
 			}
 		}
-		target := func(k string) bool { return TargetID(k) >= 0 }
+		target := func(k string) bool { return TargetID(k) >= 0 || c.newer && simpleName.MatchString(k) }
 		maps("gamepad", p.Gamepad, func(k, v string) bool { _, ok := ParseGamepad(v); return target(k) && ok },
 			`maps a button name (b, a, up, l2, lstick-left...) to "button:0", "axis:1-" or "hat:0:up"`)
 		maps("keyboard", p.Keyboard, func(k, v string) bool { return target(k) && keyRe.MatchString(v) },
@@ -311,7 +311,7 @@ func (c *checker) controlSet(w string, s *ControlSet) {
 			hk(w+".hotkeys.enable", *h.Enable)
 		}
 		for _, k := range sortedKeys(h.Actions) {
-			if !oneOfList(k, HotkeyActions) {
+			if !oneOfList(k, HotkeyActions) && !c.newer {
 				c.bad(w+".hotkeys.actions."+k, "%q is not a hotkey action", k)
 			}
 			hk(w+".hotkeys.actions."+k, h.Actions[k])

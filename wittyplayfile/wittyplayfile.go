@@ -115,7 +115,6 @@ var (
 // Errors a caller can tell apart.
 var (
 	ErrTooBig = fmt.Errorf("a .wittyplay file is at most %d KB, or %d MB as an archive", MaxSize>>10, MaxFile>>20)
-	ErrNewer  = errors.New("this .wittyplay file was made for a newer version of the format")
 )
 
 // Extra holds the fields a reader didn't know, as they were.
@@ -199,6 +198,9 @@ type Doc struct {
 	Extra        Extra                      `json:"-"`
 	// Files: an archive's other members by name ("images/boxfront.png"), checked.
 	Files map[string][]byte `json:"-"`
+
+	// read is the version the file said when it was parsed: a write never says a lower one.
+	read int
 }
 
 // Read reads one file from r, archive or bare JSON, refusing anything over MaxFile.
@@ -303,13 +305,27 @@ func (d *Doc) MinVersion() int {
 	return 1
 }
 
+// Newer says the file follows a later version of the format than this package knows. Such a
+// file is read for what this version knows; everything else is kept and written back as it was.
+func (d *Doc) Newer() bool { return d.Version > Version || d.read > Version }
+
+// writeVersion is the version a write says: the lowest that holds the content, but never lower
+// than the version the file was read at.
+func (d *Doc) writeVersion() int {
+	v := d.MinVersion()
+	if d.read > v {
+		v = d.read
+	}
+	if d.Version > Version && d.Version > v {
+		v = d.Version
+	}
+	return v
+}
+
 // Validate checks a document against the format's rules.
 func (d *Doc) Validate() error {
-	switch {
-	case d.Version > Version:
-		return ErrNewer
-	case d.Version < 1:
-		return errors.New(`"wittyplay" must be 1 or 2`)
+	if d.Version < 1 {
+		return errors.New(`"wittyplay" is the format's version, 1 or more`)
 	}
 	if utf8.RuneCountInString(d.Name) > MaxName {
 		return fmt.Errorf(`"name" is at most %d characters`, MaxName)
@@ -345,7 +361,7 @@ func (d *Doc) Validate() error {
 			return err
 		}
 	}
-	c := &checker{}
+	c := &checker{newer: d.Newer()}
 	d.checkV2(c)
 	if len(c.problems) > 0 {
 		return &Error{Problems: c.problems}
@@ -503,10 +519,11 @@ func (d *Doc) fromFields(f map[string]json.RawMessage) error {
 		return errors.New(`"wittyplay" is a whole number`)
 	}
 	delete(f, "wittyplay")
-	d.Version = int(n)
-	if d.Version > Version {
-		return ErrNewer
+	if n < 1 {
+		return errors.New(`"wittyplay" is the format's version, 1 or more`)
 	}
+	d.Version = int(n)
+	d.read = d.Version
 	for _, k := range []struct {
 		key string
 		to  *string
@@ -671,7 +688,7 @@ func (d Doc) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	head := fmt.Sprintf(`{"wittyplay":%d`, d.MinVersion())
+	head := fmt.Sprintf(`{"wittyplay":%d`, d.writeVersion())
 	if len(body) > 2 {
 		return []byte(head + "," + string(body[1:])), nil
 	}

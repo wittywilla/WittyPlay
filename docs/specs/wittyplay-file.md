@@ -62,16 +62,38 @@ form ever holds anything that identifies a person, saves, or the game itself.
 }
 ```
 
-## Versioning
+## Versions
 
-The top-level `"wittyplay"` field is the format's version, a whole number, and is required. This document describes
-version **2**. Version 1 files are read as they always were.
+Every file says which version of the format it follows, as a whole number in the top-level `"wittyplay"` field. The
+field is required, and writers put it first:
+
+```json
+{ "wittyplay": 2 }
+```
+
+| Version | What it is |
+|---|---|
+| `1` | How games are pictured: `default`, `consoles` and `games` looks (pictures, labels, cases). First released with WittyMediaServer 0.8.0-alpha. |
+| `2` | Adds `controls` and a game's own file: the `game` part (details, identity, artwork with a list of pictures for each role, screenshots, play choices, cheats, saves notes), `authorship`, `language`, `translations`, `extensions`, and the archive form. First released with WittyPlay 0.7.8 (WittyMediaServer 0.8.1-alpha). |
+
+How readers and writers treat it:
+
+- A file without `wittyplay`, or with `0` or less, isn't read.
+- A reader takes a file of its own version or an older one in full.
+- A reader takes a **newer** file for what it knows. It keeps everything else as it is when it writes the file again,
+  so nothing is lost by opening a file in an older program. Values it doesn't know in a field it does know (a new
+  artwork role, button name, hotkey action or device) are kept, not refused. It says the file is newer: WittyPlay's
+  editor shows a note, and its answers carry `"newer": true`.
+- A writer writes the lowest version that holds what it writes, but **never lowers** the version a file already
+  says. A version 2 file that now holds only looks is still written as version 2.
+
+Changing the format:
 
 - New optional fields, and new values of `case`, may be added without changing the version. A reader ignores what it
-  does not know (see below).
-- The version goes up only for a change an older reader would get wrong. A reader refuses a file whose version is
-  higher than the highest it knows, and says so ("made for a newer version"), rather than guess.
-- A writer writes the lowest version that holds what it writes.
+  does not know (see *Unknown fields*).
+- A change an older reader would get wrong, such as a field whose meaning changes, raises the version. So do new
+  artwork roles, button names, hotkey actions and devices, because a reader of the same version refuses values it
+  doesn't know.
 
 ## Fields
 
@@ -248,7 +270,7 @@ Every field is optional.
 |---|---|---|
 | `details` | details | The game's facts. These replace what a program's sources found. |
 | `identity` | identity | Which dump the file was made for. |
-| `artwork` | object: role → member | A picture per role: `boxfront`, `boxback`, `boxspine`, `boxfull`, `media` (the disc or cartridge), `logo`, `marquee`, `banner`, `titlescreen`, `fanart`, `snapshot` (a still from the game's video), `icon`. Each value names a member under `images/`. |
+| `artwork` | object: role → member or list | The pictures for each role: `boxfront`, `boxback`, `boxspine`, `boxfull`, `media` (the disc or cartridge), `logo`, `marquee`, `banner`, `titlescreen`, `fanart`, `snapshot` (a still from the game's video), `icon`. A value names a member under `images/`, or is a list of them with the one shown first: box art from several regions, several pieces of fan art. At most 32 a role, each named once. A writer writes a role with one picture as a plain name, so files with one picture a role read as they always have. |
 | `screenshots` | array of members, ≤ 50 | Screenshots, in order. |
 | `play` | play | How the game is best played. |
 | `cheats` | array, ≤ 500 | Cheat codes: `id`, `label` (≤ 120), `code` (≤ 2048: letters, digits, space and `+ - : ; , . = ? _` only), `enabled`. |
@@ -359,8 +381,8 @@ given a meaning by this specification.
 
 ### Example of a game's own file
 
-This is the `manifest.json` of `Made Up Quest (USA).wittyplay`, an archive that also holds `images/boxfront.png` and
-`images/screenshots/01.png`:
+This is the `manifest.json` of `Made Up Quest (USA).wittyplay`, an archive that also holds `images/boxfront.png`,
+`images/boxfront-2.png` (the box from another region) and `images/screenshots/01.png`:
 
 ```json
 {
@@ -378,7 +400,7 @@ This is the `manifest.json` of `Made Up Quest (USA).wittyplay`, an archive that 
       "regions": ["USA"]
     },
     "identity": { "fileName": "Made Up Quest (USA).sfc", "size": 1048576, "crc32": "1a2b3c4d" },
-    "artwork": { "boxfront": "images/boxfront.png" },
+    "artwork": { "boxfront": ["images/boxfront.png", "images/boxfront-2.png"] },
     "screenshots": ["images/screenshots/01.png"],
     "play": { "core": "snes9x", "aspectRatio": "8:7" },
     "cheats": [{ "id": "cheat-1", "label": "Infinite lives", "code": "7E0DBE:09", "enabled": false }],
@@ -406,12 +428,13 @@ files:
 |---|---|
 | `gamelist.xml` in the game's folder (one `<game>` entry per game, keyed by `<path>`) | `name`, `sortname`, `desc`, `releasedate`, `developer`, `publisher`, `genre`, `players`, `rating` (0–1), `region`, `lang`, `md5`, `crc32`, and the picture paths `image`, `thumbnail`, `marquee` and `fanart` |
 | `<game>.nfo` (a `<game>` document) | `title`, `originaltitle`, `sorttitle`, `plot`, `year`, `releasedate`, `genre`, `developer`, `publisher`, `players`, `rating`, `region` |
-| `media/<kind>/<game>.<ext>` and `<game>-<kind>.<ext>` | Pictures, by the usual folder names: `box2dfront`, `box2dback`, `box2dside`, `box3d`, `physicalmedia`, `wheel`, `marquee`, `screenshot`, `titlescreen`, `fanart`, `miximage` |
+| `media/<kind>/<game>.<ext>` and `<game>-<kind>.<ext>` | Pictures, by the usual folder names: `box2dfront`, `box2dback`, `box2dside`, `box3d`, `physicalmedia`, `wheel`, `marquee`, `screenshot`, `titlescreen`, `fanart`, `miximage`. Further pictures of a kind are numbered: `media/<kind>/<game>-2.<ext>` (or `-02`), and `<game>-<kind>-2.<ext>` beside the game (`<game>-boxart-2.png`). They are looked for only when the first is there, and come after it. Writing out puts the first at `media/<kind>/<game>.<ext>` and the others at `<game>-02.<ext>`, `<game>-03.<ext>`... |
 | `<game>.rmp` | `input_playerN_btn_<button> = "<id>"` lines: the player's `remap` |
 | `<game>.cfg` | Per-game input lines: `input_playerN_<button>` keys, `input_playerN_<button>_btn` and `_axis` gamepad bindings, hotkeys (`input_save_state`, `input_load_state`, `input_toggle_fast_forward`, `input_hold_fast_forward`, `input_rewind`, `input_screenshot`, `input_menu_toggle`, `input_pause_toggle`, `input_reset`, `input_enable_hotkey`), `input_analog_deadzone`, `input_analog_sensitivity` and `input_turbo_period` |
 
 Gathering never overwrites a `.wittyplay` that is already there unless the person asks. Writing out never removes a
-file, and changes only a `gamelist.xml` entry for the same game.
+file, never writes a numbered picture over a file already there, and changes only a `gamelist.xml` entry for the same
+game.
 
 ## Precedence
 
@@ -443,22 +466,24 @@ A reader refuses a file that:
 
 - is larger than 1 MiB bare (or, as an archive, breaks any of the archive's limits), is not UTF-8, is not a single
   JSON object, or is nested more than 24 deep;
-- has no `wittyplay`, or one that is not a whole number of at least 1 (a higher number than it knows is refused as
-  *newer*);
+- has no `wittyplay`, or one that is not a whole number of at least 1 (a higher number than it knows is read as
+  *newer*: see *Versions*);
 - gives a known field the wrong type, or `picture` or `label` a value not listed here;
 - gives `case`, or a key or value of `cases`, something that is not an id (`^[a-z0-9][a-z0-9-]{0,39}$`), or `cases`
   more than 64 entries;
 - gives a console id that does not fit its pattern;
 - has a game with no usable `match`, a `file` containing `/` or `\`, or an `item` below 1;
 - has more than 200 consoles or 2000 games, or text longer than its limit;
-- in version 2: names a picture that is not in the archive or not under `images/`, gives a checksum of the wrong
+- in version 2: names a picture that is not in the archive or not under `images/`, names one twice in a role or more
+  than 32 in a role, gives a checksum of the wrong
   length, a control binding, key or hotkey action not described here, a cheat code with other characters, or a
   language tag that is not one.
 
 A reader reports every problem it finds in the version 2 parts at once, each with where it is (a path such as
 `game.details.year` or an archive member) and what is wrong.
 
-The JSON Schema says the same, apart from the size limit and refusing newer versions, which a reader checks itself.
+The JSON Schema says the same, apart from the size limit and what a newer version may hold, which a reader checks
+itself.
 
 ## Security and privacy
 

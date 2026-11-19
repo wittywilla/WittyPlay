@@ -70,10 +70,14 @@ func TestGamePicturesAPI(t *testing.T) {
 	if !strings.Contains(w.Body.String(), `"x-mine":1`) {
 		t.Errorf("an unknown field was lost: %s", w.Body)
 	}
-	for name, bad := range map[string][]byte{"not json": []byte("nope"), "bad value": []byte(`{"wittyplay":1,"default":{"picture":"stretched"}}`), "newer": []byte(`{"wittyplay":9}`)} {
+	for name, bad := range map[string][]byte{"not json": []byte("nope"), "bad value": []byte(`{"wittyplay":1,"default":{"picture":"stretched"}}`)} {
 		if w := callRaw(t, f.h, "PUT", "/games/pictures", 1, true, bad); w.Code != http.StatusBadRequest {
 			t.Errorf("%s: %d", name, w.Code)
 		}
+	}
+	// A file from a later version of the format is read for what's known, not refused.
+	if w := callRaw(t, f.h, "POST", "/games/pictures/check", 1, true, []byte(`{"wittyplay":9,"default":{"picture":"case"}}`)); w.Code != http.StatusOK {
+		t.Errorf("newer: %d %s", w.Code, w.Body)
 	}
 	big := []byte(`{"wittyplay":1,"x":"` + strings.Repeat("y", wittyplayfile.MaxSize) + `"}`)
 	if w := callRaw(t, f.h, "POST", "/games/pictures/check", 3, false, big); w.Code != http.StatusRequestEntityTooLarge {
