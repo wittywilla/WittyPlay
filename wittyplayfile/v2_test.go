@@ -465,21 +465,27 @@ func TestSpecGameExample(t *testing.T) {
 		t.Fatal(err)
 	}
 	parts := bytes.Split(spec, []byte("```json\n"))
-	if len(parts) < 3 {
+	var ex []byte
+	for _, p := range parts[1:] {
+		if p = p[:bytes.Index(p, []byte("```"))]; bytes.Contains(p, []byte(`"details"`)) {
+			ex = p
+			break
+		}
+	}
+	if ex == nil {
 		t.Fatal("the spec has no game example")
 	}
-	ex := parts[2][:bytes.Index(parts[2], []byte("```"))]
 	var man map[string]json.RawMessage
 	if err := json.Unmarshal(ex, &man); err != nil {
 		t.Fatal(err)
 	}
 	pic := pngBytes(t, 8, 8)
-	b := zipOf(t, map[string][]byte{ManifestName: ex, "images/boxfront.png": pic, "images/screenshots/01.png": pic})
+	b := zipOf(t, map[string][]byte{ManifestName: ex, "images/boxfront.png": pic, "images/boxfront-2.png": pic, "images/screenshots/01.png": pic})
 	d, err := Parse(b)
 	if err != nil {
 		t.Fatalf("the spec's game example doesn't read: %v", err)
 	}
-	if d.Game.Details.Title != "Made Up Quest" || d.Controls.For("snes").Player(1).Keyboard["a"] != "KeyX" {
+	if d.Game.Details.Title != "Made Up Quest" || len(d.Game.Artwork["boxfront"]) != 2 || d.Controls.For("snes").Player(1).Keyboard["a"] != "KeyX" {
 		t.Fatal("read wrongly")
 	}
 }

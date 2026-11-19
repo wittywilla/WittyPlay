@@ -3,6 +3,11 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.10
+
+- **Several pictures of each kind in a `.wittyplay`, and its version said out loud (#85).** Each artwork role in a `.wittyplay` holds one picture or a list of up to 32, the first shown: box art from several regions, several fan arts. A role with one picture is still written as a plain name. Gathering picks up numbered extras (`media/box2dfront/Game-2.png`, `Game-boxart-2.png`) after the first; writing out puts them back as `Game-02.png`... and never over a file already there. The spec gains a *Versions* section: a file from a newer version of the format is now read for what WittyPlay knows rather than refused, keeps the rest when saved, and is flagged (`newer: true`, and a note in the editor); a writer never lowers a file's version.
+- **The `.wittyplay` editor adds more pictures of a kind, takes any one out, and shows another first.** It notes when a file follows a newer version of the format.
+
 ## 0.7.9
 
 - **Core fixes: the runner corrects what a core gets, on this machine, as it runs (#76).** A core looks up every Vulkan function it uses through the runner, so the runner can hand it a corrected one (`libretro/vk_fixes.go`, listed in `corefixes.go`): nothing in a core's file is changed and no core is built here. On unless **Settings, Games, Advanced, Core fixes** is off (`gamingCoreFixes`), which lists each fix; off, every core gets what it would from any other frontend. `GET /gaming/core-fixes` lists them.
@@ -35,8 +40,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
   - `DELETE /games/wittyplay/convert`: stops it.
 
   One conversion runs at a time, game by game.
-- **Several pictures of each kind, and the version said out loud.** Each artwork role in a `.wittyplay` holds one picture or a list of up to 32, the first shown: box art from several regions, several fan arts. A role with one picture is still written as a plain name. Gathering picks up numbered extras (`media/box2dfront/Game-2.png`, `Game-boxart-2.png`) after the first; writing out puts them back as `Game-02.png`... and never over a file already there. The spec gains a *Versions* section: a file from a newer version of the format is now read for what WittyPlay knows rather than refused, keeps the rest when saved, and is flagged (`newer: true`, and a note in the editor); a writer never lowers a file's version.
-- **An editor for a game's `.wittyplay`** (`/wittyplay/game/{id}/file`, from a game's *Fix this game, files and advanced*), for administrators on a desktop or in a browser. It edits details, pictures (adding more of a kind, taking any out, or showing another first), play choices, controls for each of eight players, hotkeys, cheats and save notes. Download shares the file; Import takes a shared one (one made for another dump is refused unless confirmed); Write out writes the standard files. In TV mode the page says that editing is on the desktop.
+- **An editor for a game's `.wittyplay`** (`/wittyplay/game/{id}/file`, from a game's *Fix this game, files and advanced*), for administrators on a desktop or in a browser. It edits details, pictures, play choices, controls for each of eight players, hotkeys, cheats and save notes. Download shares the file; Import takes a shared one (one made for another dump is refused unless confirmed); Write out writes the standard files. In TV mode the page says that editing is on the desktop.
 
 ## 0.7.7
 

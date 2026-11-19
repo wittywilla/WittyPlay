@@ -381,8 +381,8 @@ given a meaning by this specification.
 
 ### Example of a game's own file
 
-This is the `manifest.json` of `Made Up Quest (USA).wittyplay`, an archive that also holds `images/boxfront.png` and
-`images/screenshots/01.png`:
+This is the `manifest.json` of `Made Up Quest (USA).wittyplay`, an archive that also holds `images/boxfront.png`,
+`images/boxfront-2.png` (the box from another region) and `images/screenshots/01.png`:
 
 ```json
 {
@@ -400,7 +400,7 @@ This is the `manifest.json` of `Made Up Quest (USA).wittyplay`, an archive that 
       "regions": ["USA"]
     },
     "identity": { "fileName": "Made Up Quest (USA).sfc", "size": 1048576, "crc32": "1a2b3c4d" },
-    "artwork": { "boxfront": "images/boxfront.png" },
+    "artwork": { "boxfront": ["images/boxfront.png", "images/boxfront-2.png"] },
     "screenshots": ["images/screenshots/01.png"],
     "play": { "core": "snes9x", "aspectRatio": "8:7" },
     "cheats": [{ "id": "cheat-1", "label": "Infinite lives", "code": "7E0DBE:09", "enabled": false }],
