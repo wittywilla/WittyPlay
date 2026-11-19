@@ -20,7 +20,9 @@ import (
 // named scan-<library>. The server takes that as the scan's progress, shows it, and doesn't count
 // the scan as stuck while it keeps moving. A report goes only when the work has moved, at most
 // once a second for a library, and never more than one at a time: a server that's slow to
-// answer one doesn't hold the scan up, and one that doesn't know these reports drops them.
+// answer one doesn't hold the scan up, and one that doesn't know these reports drops them. Its
+// title is the console being sorted, which the server shows beside the count (0.8.1-alpha on;
+// an older server ignores it).
 //
 // Kind: the server's host libraries say, for a library with a scan running or waiting to carry
 // on, {"scan": {"mode": "changes" | "full", "since"}}. A full rescan works out every file again
@@ -44,8 +46,9 @@ var scanReporters = struct {
 func scanTaskName(library int64) string { return "scan-" + strconv.FormatInt(library, 10) }
 
 // reportScan returns what to tell how far a scan of this library has got: done of total, in the
-// call's own terms. nil without a server to tell.
-func (a *App) reportScan(library int64) func(done, total int) {
+// call's own terms, and the console it's sorting games into ("" for none). nil without a server
+// to tell.
+func (a *App) reportScan(library int64) func(done, total int, console string) {
 	if a == nil || a.Host == nil {
 		return nil
 	}
@@ -58,7 +61,7 @@ func (a *App) reportScan(library int64) func(done, total int) {
 	scanReporters.Unlock()
 	c := a.Host
 	name := scanTaskName(library)
-	return func(done, total int) {
+	return func(done, total int, console string) {
 		r.mu.Lock()
 		if r.busy || time.Since(r.last) < scanReportEvery {
 			r.mu.Unlock()
@@ -69,7 +72,11 @@ func (a *App) reportScan(library int64) func(done, total int) {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			_ = c.Task(ctx, name, done, total, nil) // only progress: nothing to do if it's lost
+			body := map[string]any{"done": done, "total": total}
+			if console != "" {
+				body["title"] = console
+			}
+			_ = c.Do(ctx, host.On{}, "POST", "/tasks/"+name, body, nil) // only progress: nothing to do if it's lost
 			r.mu.Lock()
 			r.busy = false
 			r.mu.Unlock()

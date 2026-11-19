@@ -218,18 +218,35 @@ func (a *App) libraryConsoles(ctx context.Context, on host.On, library int64) ([
 			}
 		}
 	}
+	// A scan going on: each console it has sorted games into shows now, with how many so far,
+	// rather than only once the scan ends.
+	var finding []gamesFinding
+	for _, f := range a.findingGames(ctx, on) {
+		if library <= 0 || f.Library == library {
+			finding = append(finding, f)
+		}
+	}
+	sorted, sortedIn := foundConsoles(finding)
 	var out []sdui.Item
 	for _, c := range wittyplay.All() {
 		n := total[c.ID]
-		if c.Hidden || n == 0 {
+		if c.Hidden || n == 0 && sorted[c.ID] == 0 {
 			continue
 		}
-		it := sdui.Item{ID: c.ID, Kind: "view", Title: consoleShort(c.ID), Subtitle: fmt.Sprintf("%d %s", n, plural(n, "game", "games")), Count: n, Icon: "game",
+		sub := fmt.Sprintf("%d %s", n, plural(n, "game", "games"))
+		if n == 0 {
+			n, home[c.ID] = sorted[c.ID], sortedIn[c.ID]
+			sub = fmt.Sprintf("Finding games: %s so far", countWords(n))
+		}
+		it := sdui.Item{ID: c.ID, Kind: "view", Title: consoleShort(c.ID), Subtitle: sub, Count: n, Icon: "game",
 			Route: "/library/" + strconv.FormatInt(home[c.ID], 10) + "?tab=consoles"}
 		if l, ok := eraLabels[consoleEra(c.ID)]; ok {
 			it.Badges = []string{l.badge}
 		}
 		out = append(out, it)
+	}
+	if len(out) == 0 {
+		return findingItems(finding), nil
 	}
 	return out, nil
 }

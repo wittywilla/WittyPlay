@@ -408,6 +408,8 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay-parts button.active { background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
 .wplay-parts button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wplay-empty { color: var(--fg-2); font-size: clamp(1rem, 1.3vw, 1.5rem); }
+.wplay-empty small { font-size: .8em; }
+.wplay-finding { margin: 0 0 var(--sp-3); color: var(--fg-2); font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .wplay-console, .wplay-console-panel, .wplay-console-panel.sheet { animation: none; transition: none; } .wplay-console:focus-visible { transform: none; } }
 
 /* A phone: one column, the clock and pads wrap under the name, smaller tiles and dock. */

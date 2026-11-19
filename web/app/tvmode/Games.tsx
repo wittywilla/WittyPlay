@@ -13,6 +13,7 @@ import { consoleMap, GameLinksContext, type GameLinks } from '../pages/games/dat
 import '../pages/games/games-ui.css'
 import { useApp } from '@wms/app/state'
 import { featureOff, useMyLimits } from '@wms/app/myLimits'
+import { findingWords, useGamesScan } from '../pages/games/scanning'
 
 // Games: WittyPlay's couch library, with the existing games pages until WittyPlay's own TV look replaces
 // them. One games library opens straight in; several are a shelf each, as Home's rows are.
@@ -34,10 +35,13 @@ function useGameLibraries() {
 function Shelf({ lib }: { lib: Library }) {
   const [games, setGames] = useState<Item[] | null>(null)
   const [consoles, setConsoles] = useState<Map<string, GameConsole>>(new Map())
+  // A scan going on: how many it has found so far; when it ends, the shelf is read again.
+  const [ended, setEnded] = useState(0)
+  const finding = useGamesScan(useCallback(() => setEnded((n) => n + 1), [])).find((f) => f.library === lib.id)
   useEffect(() => {
     api.get<{ items: Item[] }>(`/items?library=${lib.id}&kind=game&sort=rating&desc=1&limit=20`).then((r) => setGames(r.items || [])).catch(() => setGames([]))
     api.get<GameConsole[]>(`/modules/wittyplay/games/consoles?library=${lib.id}`).then((c) => setConsoles(consoleMap(c))).catch(() => {})
-  }, [lib.id])
+  }, [lib.id, ended])
   return (
     <section className="hub tvm-shelf" aria-label={lib.name}>
       <div className="hub-head">
@@ -45,7 +49,7 @@ function Shelf({ lib }: { lib: Library }) {
         <Link className="btn tvm-all" to={links.library(lib.id)}>All games <IconRight /></Link>
       </div>
       {games === null ? <div className="tvm-shelf-wait"><Spinner /></div>
-        : games.length === 0 ? <p className="muted">No games in this library yet.</p>
+        : games.length === 0 ? <p className="muted" role={finding ? 'status' : undefined}>{finding ? findingWords(finding) : 'No games in this library yet.'}</p>
         : <CardRow>{games.map((g) => <GameCard key={g.id} item={g} console={consoles.get(g.console || '')} />)}</CardRow>}
     </section>
   )

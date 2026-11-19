@@ -116,7 +116,7 @@ func (a *App) onlineItems(ctx context.Context, req sdui.ItemsRequest) (sdui.Item
 	case srcPlayRecent:
 		all, err = q.recent()
 	case srcPlayCollections:
-		all, err = q.collections()
+		all, err = q.orFinding(q.collections())
 	case srcPlayFriends:
 		all, err = q.friends()
 	case srcPlayRooms:
@@ -459,9 +459,19 @@ func (q *sduiAsk) recent() ([]sdui.Item, error) {
 	// Nothing played yet: the home row is never empty while there are games. It shows the
 	// classics, by title, in the same large tiles, so the first game is one press away.
 	if len(out) == 0 && q.req.Offset == 0 {
-		return q.classicsRow()
+		return q.orFinding(q.classicsRow())
 	}
 	return out, nil
+}
+
+// orFinding is a shelf's games or, when it has none while a games library is being scanned, a
+// card saying how far that has got: the shelf says games are on their way, not that there's no
+// library.
+func (q *sduiAsk) orFinding(out []sdui.Item, err error) ([]sdui.Item, error) {
+	if err != nil || len(out) > 0 || q.req.Offset > 0 {
+		return out, err
+	}
+	return findingItems(q.a.findingGames(q.ctx, q.on)), nil
 }
 
 // classicsRow is every game this profile may see, by era then title, each with its era's badge,

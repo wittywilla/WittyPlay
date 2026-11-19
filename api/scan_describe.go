@@ -51,7 +51,7 @@ func describeGames(ctx context.Context, a *App, args wittymodule.ScanDescribeArg
 			return out, err
 		}
 		if report != nil && i > 0 {
-			report(i, len(args.Items))
+			report(i, len(args.Items), "")
 		}
 		if it.Kind != "game" || len(it.Files) == 0 {
 			continue

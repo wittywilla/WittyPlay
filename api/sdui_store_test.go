@@ -20,11 +20,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/wittywilla/wittymodule"
 	"github.com/wittywilla/wittymodule/host"
 	"github.com/wittywilla/wittymodule/sdui"
 	"github.com/wittywilla/wittymodule/service"
 	"github.com/wittywilla/wittyplay/cores"
 	"github.com/wittywilla/wittyplay/emulators"
+	"github.com/wittywilla/wittyplay/gameid/fixture"
+	"github.com/wittywilla/wittyplay/gamescan"
 	"github.com/wittywilla/wittyplay/rpc"
 	"github.com/wittywilla/wittyplay/stream"
 )
@@ -531,7 +534,7 @@ func libraryHost(t *testing.T) *host.Client {
 // consoles a library (or every games library) has games for, opening the library that holds them.
 func TestLibrarySource(t *testing.T) {
 	ui := readModuleUI(t)
-	testApp(t, libraryHost(t))
+	a, _ := testApp(t, libraryHost(t))
 	alex := sdui.Viewer{User: 2, ProfileKind: "adult", FormFactor: "tv"}
 	sam := sdui.Viewer{User: 3, ProfileKind: "adult", FormFactor: "tv"}
 
@@ -574,6 +577,44 @@ func TestLibrarySource(t *testing.T) {
 		if got := rows(t, ui, v, srcPlayLibrary, "library", "1", "console", "nes"); len(got) != 0 {
 			t.Errorf("%s: %d", name, len(got))
 		}
+	}
+
+	// A scan of library 1 going on: a console it has sorted games into shows before the server
+	// keeps them, saying they're being found; and the scan says how far it has got (#88).
+	root := t.TempDir()
+	for _, f := range []string{"a.gba", "b.gba"} {
+		if err := os.WriteFile(filepath.Join(root, f), fixture.GBA("MADE UP", "AXXE"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	s := gamescan.Begin(nil, "scan-1", wittymodule.ScanLibrary{ID: 1, Kind: "games", Facet: "auto", Paths: []string{root}})
+	files := []wittymodule.ScanFile{{Path: filepath.Join(root, "a.gba"), Root: root}, {Path: filepath.Join(root, "b.gba"), Root: root}}
+	if err := s.Add(context.Background(), files, 10); err != nil {
+		t.Fatal(err)
+	}
+	if by, n := s.Found(); n != 2 {
+		t.Fatalf("the scan found %v", by)
+	}
+	scans.Lock()
+	scans.m["scan-1"] = s
+	scans.Unlock()
+	t.Cleanup(func() { scans.Lock(); delete(scans.m, "scan-1"); scans.Unlock() })
+	tiles = rows(t, ui, alex, srcPlayLibrary)
+	var gba *sdui.Item
+	for i := range tiles {
+		if tiles[i].ID == "gba" {
+			gba = &tiles[i]
+		}
+	}
+	if len(tiles) != 3 || gba == nil || gba.Count != 2 || gba.Subtitle != "Finding games: 2 so far" || gba.Route != "/library/1?tab=consoles" {
+		t.Fatalf("a console the scan has sorted games into: %+v", tiles)
+	}
+	if got := rows(t, ui, alex, srcPlayLibrary, "library", "2"); len(got) != 1 {
+		t.Errorf("another library's consoles have none of the scan's: %+v", got)
+	}
+	cards := findingItems(a.findingGames(context.Background(), host.On{User: 2}))
+	if len(cards) != 1 || cards[0].Title != "Finding your games" || cards[0].Subtitle != "2 found so far in Games" || cards[0].Route != "/library/1" {
+		t.Errorf("the card for an empty shelf: %+v", cards)
 	}
 }
 
