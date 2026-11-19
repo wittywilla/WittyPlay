@@ -221,23 +221,44 @@ func (r *runner) event(e ipc.Event) {
 	r.write(ipc.MsgEvent, b)
 }
 
+// videoFrame sends a picture. NV12 comes packed, its planes one after the other.
+func (r *runner) videoFrame(data []byte, w, h, stride, format int) {
+	if r.muted || w <= 0 || h <= 0 || !engine.ValidSize(format, w, h) {
+		return
+	}
+	r.video = ipc.VideoHeader{Width: w, Height: h, Format: format}.Append(r.video[:0])
+	if format == engine.FormatNV12 {
+		n := engine.FrameSize(format, w, h)
+		if len(data) < n {
+			return
+		}
+		r.video = append(r.video, data[:n]...)
+	} else {
+		row := w * engine.BytesPerPixel(format)
+		if row > stride || len(data) < stride*h {
+			return
+		}
+		for y := 0; y < h; y++ {
+			r.video = append(r.video, data[y*stride:y*stride+row]...)
+		}
+	}
+	tm := r.timing()
+	if r.stamp && format != engine.FormatNV12 {
+		stampFrame(r.video[ipc.VideoHeaderSize:], w, h, format, tm)
+	}
+	r.sendFrame(ipc.MsgVideo, tm, r.video)
+}
+
 func (r *runner) handlers() engine.Handlers {
 	return r.ctl.wrap(engine.Handlers{
 		Video: func(data []byte, w, h, stride, format int) {
-			row := w * engine.BytesPerPixel(format)
-			if r.muted || r.ctl.dropVideo || w <= 0 || h <= 0 || row > stride || len(data) < stride*h {
-				return
+			if !r.ctl.dropVideo {
+				r.videoFrame(data, w, h, stride, format)
 			}
-			r.video = ipc.VideoHeader{Width: w, Height: h, Format: format}.Append(r.video[:0])
-			for y := 0; y < h; y++ {
-				r.video = append(r.video, data[y*stride:y*stride+row]...)
-			}
-			tm := r.timing()
-			if r.stamp {
-				stampFrame(r.video[ipc.VideoHeaderSize:], w, h, format, tm)
-			}
-			r.sendFrame(ipc.MsgVideo, tm, r.video)
 		},
+		// A frame from a graphics card can arrive during the next frame, and the engine has
+		// already left out any it was told nobody would see.
+		VideoReady: r.videoFrame,
 		VideoFlipped: func(data []byte, w, h, stride, format int) {
 			// No check of dropVideo here: a frame from a graphics card can arrive during the next
 			// frame, and the engine has already left out any it was told nobody would see.

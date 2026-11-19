@@ -148,7 +148,7 @@ func TestVulkanReadBack(t *testing.T) {
 func (v *vkOut) testImage(t *testing.T, format uint32, w, h int) (img, mem uint64) {
 	t.Helper()
 	ii := vkImageCreateInfo{sType: vkStructImageCreateInfo, imageType: vkImageType2D, format: format, extent: vkExtent3D{uint32(w), uint32(h), 1}, mipLevels: 1, arrayLayers: 1,
-		samples: vkSampleCount1, tiling: vkTilingOptimal, usage: vkImageUsageTransferSrc | vkImageUsageTransferDst, sharingMode: vkSharingExclusive}
+		samples: vkSampleCount1, tiling: vkTilingOptimal, usage: vkImageUsageTransferSrc | vkImageUsageTransferDst | 0x4 /* SAMPLED, as libretro asks of a core's */, sharingMode: vkSharingExclusive}
 	if r := call(v.f.createImage, v.device, uintptr(unsafe.Pointer(&ii)), 0, uintptr(unsafe.Pointer(&img))); int32(r) != vkSuccess {
 		t.Fatalf("vkCreateImage: %d", int32(r))
 	}
@@ -216,4 +216,73 @@ func (v *vkOut) testImage(t *testing.T, format uint32, w, h int) (img, mem uint6
 	call(v.f.waitForFences, v.device, 1, uintptr(unsafe.Pointer(&s.fence)), 1, vkMaxArg)
 	v.freeBuffer(s)
 	return img, mem
+}
+
+// Frames converted to NV12 on the card come out with BT.709 limited-range values, padded to a
+// width that's a multiple of 4 and an even height. Needs a Vulkan device; the processor's will do.
+func TestVulkanNV12(t *testing.T) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	vkTestOnCPU, nv12Wanted = true, true
+	defer func() { vkTestOnCPU, nv12Wanted = false, false }()
+	v, err := newVKOut(nil)
+	if errors.Is(err, ErrNoVulkan) {
+		t.Skip(err)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer v.destroy()
+	if v.nv12 == nil {
+		t.Fatalf("no NV12 pipeline: %s", v.nv12Problem)
+	}
+	near := func(got byte, want int) bool { return int(got) >= want-2 && int(got) <= want+2 }
+	for _, size := range [][2]int{{32, 16}, {30, 14}} {
+		w, h := size[0], size[1]
+		img, mem := v.testImage(t, 37, w, h)
+		view := v.testView(t, img, 37)
+		v.setImage(&vkRetroImage{imageView: view, layout: vkLayoutGeneral, createInfo: vkImageViewCreateInfo{image: img, format: 37,
+			subresourceRange: vkImageSubresourceRange{vkAspectColor, 0, 1, 0, 1}}}, 0, 0)
+		v.startRead(w, h)
+		var got []byte
+		var gw, gh, gf int
+		deadline := time.Now().Add(5 * time.Second)
+		for got == nil && time.Now().Before(deadline) {
+			v.collect(engine.Handlers{VideoReady: func(d []byte, fw, fh, s, f int) { got, gw, gh, gf = append([]byte(nil), d...), fw, fh, f }}, time.Second)
+		}
+		ow, oh := (w+3)&^3, (h+1)&^1
+		if got == nil || gf != engine.FormatNV12 || gw != ow || gh != oh || len(got) != engine.FrameSize(engine.FormatNV12, ow, oh) {
+			t.Fatalf("%dx%d: format %d, %dx%d, %d bytes", w, h, gf, gw, gh, len(got))
+		}
+		// Red above the middle, blue below.
+		if y := got[0]; !near(y, 63) {
+			t.Errorf("%dx%d: red's luma %d, want 63", w, h, y)
+		}
+		if y := got[(oh-1)*ow]; !near(y, 32) {
+			t.Errorf("%dx%d: blue's luma %d, want 32", w, h, y)
+		}
+		uv := got[ow*oh:]
+		if u, vv := uv[0], uv[1]; !near(u, 102) || !near(vv, 240) {
+			t.Errorf("%dx%d: red's chroma %d,%d, want 102,240", w, h, u, vv)
+		}
+		last := uv[(oh/2-1)*ow:]
+		if u, vv := last[0], last[1]; !near(u, 240) || !near(vv, 118) {
+			t.Errorf("%dx%d: blue's chroma %d,%d, want 240,118", w, h, u, vv)
+		}
+		call(v.f.destroyImageView, v.device, uintptr(view), 0)
+		call(v.f.destroyImage, v.device, uintptr(img), 0)
+		call(v.f.freeMemory, v.device, uintptr(mem), 0)
+	}
+}
+
+// testView makes a view of a test image, as a core hands one over.
+func (v *vkOut) testView(t *testing.T, img uint64, format uint32) uint64 {
+	t.Helper()
+	ci := vkImageViewCreateInfo{sType: vkStructImageViewCreateInfo, image: img, viewType: 1, format: format,
+		subresourceRange: vkImageSubresourceRange{vkAspectColor, 0, 1, 0, 1}}
+	var view uint64
+	if r := call(v.f.createImageView, v.device, uintptr(unsafe.Pointer(&ci)), 0, uintptr(unsafe.Pointer(&view))); int32(r) != vkSuccess {
+		t.Fatalf("vkCreateImageView: %d", int32(r))
+	}
+	return view
 }
