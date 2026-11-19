@@ -11,6 +11,7 @@ import { Dialog } from '@wms/app/ui/index'
 import { getConsoles } from '../games/consoles'
 import CustomCoresSection, { licenseText } from './GamingCustom'
 import RegionOrder from './RegionOrder'
+import { PerformanceSetting, type ProfilesState } from './Performance'
 import { PageHead, Section } from '@wms/app/pages/settings/ui'
 import LegalNote from '@wms/app/components/LegalNote'
 import '../games/games-ui.css'
@@ -67,6 +68,10 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
   const [picker, setPicker] = useState<CorePickerScope | null>(null)
   const [settings, setSettings] = useState<Record<string, string> | null>(null)
   const [failed, setFailed] = useState(false)
+  // What the performance profile fills in for settings nobody set by hand.
+  const [profile, setProfile] = useState<Record<string, string>>({})
+  const fromProfile = (k: string, def: string) => { const v = profile[k]; return v === undefined ? def : v }
+  const onProfile = (s: ProfilesState) => setProfile(s.profiles.find((p) => p.id === s.inUse)?.settings || {})
   const load = () => api.get<Status>('/modules/wittyplay/gaming').then(setSt).catch(() => setFailed(true))
   useEffect(() => { void load(); api.get<Record<string, string>>('/modules/wittyplay/gaming/settings').then(setSettings).catch(() => {}) }, [])
   const emptyUnpacked = async () => {
@@ -271,16 +276,17 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
 
       {settings && (
         <Section title="How games play" desc="The defaults suit most homes. Someone’s own picture, sound and controls are in My game settings, and a game’s own page can change anything for just that game.">
+          <PerformanceSetting onChange={onProfile} />
           <div className="set-form gaming-form">
             <label>Picture quality
               <select className="select" value={settings.gamingQuality || ''} onChange={(e) => put({ gamingQuality: e.target.value })}>
-                <option value="">Automatic</option>
+                <option value="">{({ low: 'From the profile: data saver', high: 'From the profile: high' } as Record<string, string>)[fromProfile('gamingQuality', '')] || 'Automatic'}</option>
                 <option value="low">Data saver</option>
                 <option value="high">High</option>
               </select>
             </label>
             <label>Games at once
-              <input className="input" type="number" min={1} max={16} defaultValue={settings.gamingMaxSessions || '2'} onBlur={(e) => put({ gamingMaxSessions: e.target.value })} />
+              <input className="input" type="number" min={1} max={16} defaultValue={settings.gamingMaxSessions} placeholder={fromProfile('gamingMaxSessions', '2')} onBlur={(e) => { if (e.target.value !== (settings.gamingMaxSessions || '')) void put({ gamingMaxSessions: e.target.value }) }} />
               <small className="muted">Each game takes one CPU core or more. Two is a safe start.</small>
             </label>
           </div>
@@ -289,7 +295,7 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
             <summary>Advanced</summary>
             <div className="set-form gaming-form">
               <label>Games on the graphics card at once
-                <input className="input" type="number" min={1} max={16} defaultValue={settings.gamingMaxGpuSessions || '2'} onBlur={(e) => put({ gamingMaxGpuSessions: e.target.value })} />
+                <input className="input" type="number" min={1} max={16} defaultValue={settings.gamingMaxGpuSessions} placeholder={fromProfile('gamingMaxGpuSessions', '2')} onBlur={(e) => { if (e.target.value !== (settings.gamingMaxGpuSessions || '')) void put({ gamingMaxGpuSessions: e.target.value }) }} />
                 <small className="muted">For consoles that draw with a graphics card. More games share it, so each one has less.</small>
               </label>
               <label>Convert frames on the graphics card
@@ -301,7 +307,7 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
               </label>
               <label>Internal resolution
                 <select className="select" value={settings.gamingResolution || ''} onChange={(e) => put({ gamingResolution: e.target.value })}>
-                  <option value="">Automatic (twice native on most consoles)</option>
+                  <option value="">{({ native: 'From the profile: native', up: 'From the profile: a step above each console’s usual' } as Record<string, string>)[fromProfile('gamingResolution', '')] || 'Automatic (each console’s usual: native, or twice on N64, PS1, PSP and Dreamcast)'}</option>
                   <option value="1">Native: fastest, works on any graphics card</option>
                   <option value="2">2×</option>
                   <option value="3">3×</option>
@@ -310,15 +316,16 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
                 <small className="muted">How sharply hardware-rendered games are drawn. Applies the next time a game starts.</small>
               </label>
               <label>Fastest fast-forward
-                <input className="input" type="number" min={1} max={16} step={0.5} defaultValue={settings.gamingMaxSpeed || ''} placeholder="Automatic" onBlur={(e) => put({ gamingMaxSpeed: e.target.value })} />
-                <small className="muted">Times normal speed, for everyone. Automatic is 4×, or 2× on a machine with few CPU threads. 1 turns it off.</small>
+                <input className="input" type="number" min={1} max={16} step={0.5} defaultValue={settings.gamingMaxSpeed || ''} placeholder={fromProfile('gamingMaxSpeed', 'Automatic')} onBlur={(e) => { if (e.target.value !== (settings.gamingMaxSpeed || '')) void put({ gamingMaxSpeed: e.target.value }) }} />
+                <small className="muted">Times normal speed, for everyone. Empty follows the performance profile (Balanced: 4×, or 2× with few CPU threads). 1 turns it off.</small>
               </label>
               <label>Memory for rewind, per game
-                <input className="input" type="number" min={0} max={512} defaultValue={settings.gamingRewindMB || ''} placeholder="Automatic" onBlur={(e) => put({ gamingRewindMB: e.target.value })} />
-                <small className="muted">In MB. Automatic is 32, or 16 on a machine with few CPU threads. 0 turns rewind off for everyone.</small>
+                <input className="input" type="number" min={0} max={512} defaultValue={settings.gamingRewindMB || ''} placeholder={fromProfile('gamingRewindMB', 'Automatic')} onBlur={(e) => { if (e.target.value !== (settings.gamingRewindMB || '')) void put({ gamingRewindMB: e.target.value }) }} />
+                <small className="muted">In MB. Empty follows the performance profile (Balanced: 32, or 16 with few CPU threads). 0 turns rewind off for everyone.</small>
               </label>
               <label>Run-ahead
-                <select className="select" value={settings.gamingRunAhead === '0' ? '0' : '1'} onChange={(e) => put({ gamingRunAhead: e.target.value })}>
+                <select className="select" value={settings.gamingRunAhead || ''} onChange={(e) => put({ gamingRunAhead: e.target.value })}>
+                  <option value="">{fromProfile('gamingRunAhead', '1') === '0' ? 'From the profile: not allowed' : 'From the profile: allowed'}</option>
                   <option value="1">Allowed</option>
                   <option value="0">Not allowed</option>
                 </select>

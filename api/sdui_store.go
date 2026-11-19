@@ -46,6 +46,7 @@ const (
 	srcPlaySetup         = ui.SourceSetup
 	srcPlayRefresh       = ui.SourceRefresh
 	srcConsolePhotos     = ui.SourceConsolePhotos
+	srcPerformance       = ui.SourcePerformance
 
 	opCoreInstall    = ui.CommandCoreInstall
 	opCoreRemove     = ui.CommandCoreRemove
@@ -57,7 +58,7 @@ const (
 )
 
 // storeSources are the sources only an administrator is given rows of.
-var storeSources = []string{srcPlayStoreConsoles, srcPlayStoreEmus, srcPlaySetup, srcPlayRefresh, srcConsolePhotos}
+var storeSources = []string{srcPlayStoreConsoles, srcPlayStoreEmus, srcPlaySetup, srcPlayRefresh, srcConsolePhotos, srcPerformance}
 
 // tvItems answers the library and the store; ok is false for a source that isn't one of them.
 func tvItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, bool, error) {
@@ -116,6 +117,8 @@ func tvItems(req sdui.ItemsRequest) (sdui.ItemsAnswer, bool, error) {
 		all, err = a.refreshRows(ctx, int64(srcInt(req.Source, "library")), int64(srcInt(req.Source, "item")))
 	case srcConsolePhotos:
 		all = a.consolePhotoRows(ctx)
+	case srcPerformance:
+		all = a.performanceRows(ctx)
 	case srcPlayStoreEmus:
 		var entries []rpc.CatalogEntry
 		if entries, err = rpc.Docker.Catalog(); err == nil {

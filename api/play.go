@@ -473,7 +473,7 @@ func handleGamePrepare(a *App, w http.ResponseWriter, r *http.Request) {
 // own game doesn't count, since starting another ends it. It's only there so that nobody unpacks
 // or patches a game with nowhere to run it: the manager's own limits are still checked as it starts.
 func (a *App) gamesFull(ctx context.Context, userID int64) bool {
-	limit, err := strconv.Atoi(a.configText(ctx, "gamingMaxSessions", "2"))
+	limit, err := strconv.Atoi(a.gamingSetting(ctx, "gamingMaxSessions", "2"))
 	if err != nil {
 		limit = 2
 	}
@@ -637,7 +637,7 @@ func handleGamePlay(a *App, w http.ResponseWriter, r *http.Request) {
 	opts := stream.Options{
 		UserID: user, ItemID: it.ID, Title: it.Title, Console: c.ID, Core: plan.CorePath, ROM: rom, SystemDir: plan.SystemDir,
 		CoreAssets: plan.CoreAssets, LoadLimit: plan.LoadLimit,
-		SaveDir: a.saveDir(user, it.ID), Resume: b.Resume, Quality: a.configText(ctx, "gamingQuality", ""), Cleanup: cleanup,
+		SaveDir: a.saveDir(user, it.ID), Resume: b.Resume, Quality: a.gamingSetting(ctx, "gamingQuality", ""), Cleanup: cleanup,
 		GPU: plan.GPU, RunnerArgs: plan.RunnerArgs, CoreID: plan.CoreID, CoreOptions: plan.CoreOptions, Fallbacks: plan.Fallbacks,
 		PreferDevices: wittyplay.Pad(c.ID).PreferDevices,
 	}
