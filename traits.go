@@ -25,6 +25,9 @@ type CoreTraits struct {
 	// Vulkan cores are offered a Vulkan context (the runner's -vulkan), where the card can make
 	// one, as their renderer does better here than through OpenGL; elsewhere they have OpenGL.
 	Vulkan bool
+	// VulkanWithFixes cores are offered Vulkan only with the runner's core fixes on
+	// (corefixes.go), which their Vulkan renderer needs here.
+	VulkanWithFixes bool
 	// Demanding cores can't play at low priority on a machine doing anything else.
 	// Everything drawn on a graphics card is, as well as these.
 	Demanding bool
@@ -149,7 +152,9 @@ var traits = map[string]CoreTraits{
 	// this runner's process can't recover from, so it's off; its JIT reserves a large address
 	// space either way. Saves (memory cards, the Wii's NAND) live under its User folder, which
 	// a running core can't write in the shared system folder.
-	"dolphin": {GPU: true, Assets: "Dolphin", LargeAddressSpace: true, SharedMemory: true, SavesIn: "dolphin-emu/User", CacheIn: "dolphin-emu/User/Cache",
+	// It draws with Vulkan where the card can, with the runner's core fixes on (corefixes.go): its
+	// stand-in swapchain needs a surface that takes any size.
+	"dolphin": {GPU: true, VulkanWithFixes: true, Assets: "Dolphin", LargeAddressSpace: true, SharedMemory: true, SavesIn: "dolphin-emu/User", CacheIn: "dolphin-emu/User/Cache",
 		// Its own logging is on by default and goes through the frontend's log callback for every
 		// line: off, as the runner keeps none of it. Checked against the core's own option list
 		// on a Mac (2609.0.169): efb_scale is 1 to 8 times native.
@@ -186,7 +191,10 @@ func Traits(id string) CoreTraits {
 
 // RunnerArgs are what a runner is told about the core it will load, before it loads
 // it. A core nobody knows gets the same as a demanding one.
-func RunnerArgs(coreID string) []string {
+func RunnerArgs(coreID string) []string { return RunnerArgsWith(coreID, true) }
+
+// RunnerArgsWith is RunnerArgs with the runner's core fixes (corefixes.go) on or off.
+func RunnerArgsWith(coreID string, fixes bool) []string {
 	t := Traits(coreID)
 	var out []string
 	if t.GPU {
@@ -195,8 +203,11 @@ func RunnerArgs(coreID string) []string {
 	if t.GPU || t.Demanding {
 		out = append(out, "-normal-priority")
 	}
-	if t.Vulkan {
+	if t.Vulkan || (fixes && t.VulkanWithFixes) {
 		out = append(out, "-vulkan")
+	}
+	if fixes && len(FixesFor(coreID)) > 0 {
+		out = append(out, "-core-fixes")
 	}
 	if t.SharedMemory {
 		out = append(out, "-shared-memory")

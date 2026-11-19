@@ -319,6 +319,12 @@ func (g *gameFlags) load() (ipc.Load, []string) {
 		if g.vulkan && !slices.Contains(args, "-vulkan") {
 			args = append(args, "-vulkan")
 		}
+		if os.Getenv("WITTYPLAY_VK_TRACE") == "1" {
+			args = append(args, "-vk-trace")
+		}
+		if os.Getenv("WITTYPLAY_CORE_FIXES") == "1" {
+			args = append(args, "-core-fixes")
+		}
 		if g.noCard {
 			args = slices.DeleteFunc(args, func(a string) bool { return a == "-gpu" })
 			if g.coreID == "dolphin" {

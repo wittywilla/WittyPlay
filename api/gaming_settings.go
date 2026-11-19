@@ -41,6 +41,7 @@ var gamingSettings = map[string]func(string) bool{
 	"gamingRewindMB":       intIn(0, 512),
 	"gamingRunAhead":       oneOf("0", "1"),
 	"gamingGpuFrames":      oneOf("0", "1"), // frames converted on the graphics card; on unless "0"
+	"gamingCoreFixes":      oneOf("0", "1"), // the runner's core fixes (corefixes.go); on unless "0"
 	"gamingRunner":         oneOf("auto", "builtin", "retroarch"),
 	"gamingUnpackGB":       intIn(1, 100000),
 	"gamingUdpPort":        intIn(0, 65535),

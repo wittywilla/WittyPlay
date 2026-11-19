@@ -745,6 +745,13 @@
       "auth": "admin"
     },
     {
+      "path": "/gaming/core-fixes",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin"
+    },
+    {
       "path": "/gaming/cores/{id}/install",
       "methods": [
         "GET",
