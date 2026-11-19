@@ -68,6 +68,9 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
   const [confirm, setConfirm] = useState<{ id: string; name: string; license: string }[] | null>(null)
   const [picker, setPicker] = useState<CorePickerScope | null>(null)
   const [settings, setSettings] = useState<Record<string, string> | null>(null)
+  // The runner's fixes to what cores get (GET /gaming/core-fixes), listed under Core fixes.
+  const [fixes, setFixes] = useState<{ id: string; title: string; about: string; cores: string[] }[]>([])
+  useEffect(() => { api.get<{ fixes: typeof fixes }>('/modules/wittyplay/gaming/core-fixes').then((r) => setFixes(r.fixes || [])).catch(() => {}) }, [])
   const [failed, setFailed] = useState(false)
   // What the performance profile fills in for settings nobody set by hand.
   const [profile, setProfile] = useState<Record<string, string>>({})
@@ -305,6 +308,14 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
                   <option value="0">Off: frames come back as they're drawn</option>
                 </select>
                 <small className="muted">For games drawn with Vulkan. Turn it off only to compare, or if colours look wrong.</small>
+              </label>
+              <label>Core fixes
+                <select className="select" value={settings.gamingCoreFixes || '1'} onChange={(e) => put({ gamingCoreFixes: e.target.value })}>
+                  <option value="1">On: this server corrects what some cores get, as they run</option>
+                  <option value="0">Off: every core gets what it would anywhere else</option>
+                </select>
+                <small className="muted">Nothing in a core is changed or rebuilt: the server hands it corrected graphics functions. Applies the next time a game starts. Turn it off only to compare, or if a game looks wrong.</small>
+                {fixes.length > 0 && <ul className="gm-fixes">{fixes.map((f) => <li key={f.id}><b>{f.title}</b> <small className="muted">{f.about}</small></li>)}</ul>}
               </label>
               <label>Internal resolution
                 <select className="select" value={settings.gamingResolution || ''} onChange={(e) => put({ gamingResolution: e.target.value })}>

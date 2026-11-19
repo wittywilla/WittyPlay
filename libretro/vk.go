@@ -693,11 +693,11 @@ func (v *vkOut) createDevice(neg *vkNegotiation, g vkGPUInfo) error {
 	var ctx vkRetroContext
 	switch {
 	case neg != nil && neg.interfaceVersion >= 2 && neg.createDevice2 != 0:
-		if call(neg.createDevice2, uintptr(unsafe.Pointer(&ctx)), v.instance, g.handle, uintptr(v.surface), v.f.getInstanceProcAddr, vkCallbacks.deviceWrapper, 0)&0xff == 0 {
+		if call(neg.createDevice2, uintptr(unsafe.Pointer(&ctx)), v.instance, g.handle, uintptr(v.surface), vkShimFor(v.f.getInstanceProcAddr), vkCallbacks.deviceWrapper, 0)&0xff == 0 {
 			return fmt.Errorf("%w: the core could not make its Vulkan device", ErrNoVulkan)
 		}
 	case neg != nil && neg.createDevice != 0:
-		if call(neg.createDevice, uintptr(unsafe.Pointer(&ctx)), v.instance, g.handle, uintptr(v.surface), v.f.getInstanceProcAddr, 0, 0, 0, 0, 0)&0xff == 0 {
+		if call(neg.createDevice, uintptr(unsafe.Pointer(&ctx)), v.instance, g.handle, uintptr(v.surface), vkShimFor(v.f.getInstanceProcAddr), 0, 0, 0, 0, 0)&0xff == 0 {
 			return fmt.Errorf("%w: the core could not make its Vulkan device", ErrNoVulkan)
 		}
 	default:
@@ -756,7 +756,7 @@ func (v *vkOut) setUp() error {
 	makeVKCallbacks()
 	cb := &vkCallbacks
 	v.iface = vkInterface{interfaceType: vkHWRenderInterfaceVulkan, interfaceVersion: vkHWRenderInterfaceVersion, handle: 1,
-		instance: v.instance, gpu: v.gpu, device: v.device, getDeviceProcAddr: v.f.getDeviceProcAddr, getInstanceProcAddr: v.f.getInstanceProcAddr,
+		instance: v.instance, gpu: v.gpu, device: v.device, getDeviceProcAddr: v.f.getDeviceProcAddr, getInstanceProcAddr: vkShimFor(v.f.getInstanceProcAddr),
 		queue: v.queue, queueIndex: v.family, setImage: cb.setImage, getSyncIndex: cb.getSyncIndex, getSyncIndexMask: cb.getSyncIndexMask,
 		setCommandBuffers: cb.setCommandBuffers, waitSyncIndex: cb.waitSyncIndex, lockQueue: cb.lockQueue, unlockQueue: cb.unlockQueue,
 		setSignalSemaphore: cb.setSignalSemaphore}
@@ -845,6 +845,9 @@ func (v *vkOut) setImage(img *vkRetroImage, numSems uint32, sems uintptr) {
 		return
 	}
 	v.imageCopy = *img
+	if vkTraceOn() {
+		vkShim.noteSetImage(img)
+	}
 	v.image = &v.imageCopy
 	v.waitSems = v.waitSems[:0]
 	if numSems > 0 && sems != 0 {

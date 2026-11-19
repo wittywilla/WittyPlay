@@ -55,6 +55,8 @@ func main() {
 	_ = flag.Bool("own-home", false, "this core has its save folder as a home folder, which whoever starts this sets up")
 	probe := flag.Bool("probe-gpu", false, "say which graphics card games would draw with, and stop")
 	nv12 := flag.Bool("nv12", false, "convert frames drawn on the graphics card to NV12 there, for the encoder")
+	vkTrace := flag.Bool("vk-trace", false, "log what the core asks of Vulkan")
+	coreFixes := flag.Bool("core-fixes", false, "make the runner's fixes to what cores get (libretro/vk_fixes.go)")
 	vulkan := flag.Bool("vulkan", false, "this core may draw with Vulkan, where the graphics card can make a device")
 	processorGL := flag.Bool("processor-gl", false, "this server has no graphics card, and this core can draw with OpenGL the processor runs")
 	flag.Parse()
@@ -68,6 +70,8 @@ func main() {
 	if *processorGL {
 		libretro.AllowProcessorGL()
 	}
+	libretro.TraceVulkan(*vkTrace)
+	libretro.FixCores(*coreFixes)
 	if *vulkan {
 		libretro.AllowVulkan()
 	}
