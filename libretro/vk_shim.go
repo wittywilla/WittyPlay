@@ -5,18 +5,17 @@ package libretro
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"sync"
 	"sync/atomic"
-	"unsafe"
 
 	"github.com/ebitengine/purego"
 )
 
 // The core's Vulkan functions come from the runner: it looks every one up through the
 // get_instance_proc_addr it's handed. The shim stands in for the loader's, so that the runner can
-// watch (WITTYPLAY_VK_TRACE=1) or change what a core asks of Vulkan without touching the core.
+// watch (the runner's -vk-trace) or correct (its -core-fixes, vk_fixes.go) what a core asks of
+// Vulkan without touching the core. Without either, the core gets the loader's own.
 
 type vkShimState struct {
 	once       sync.Once
@@ -270,6 +269,4 @@ func (s *vkShimState) makeTracers() {
 		call(s.real("vkCmdPipelineBarrier"), cmd, src, dst, dep, nMem, mem, nBuf, buf, nImg, imgs)
 		return 0
 	})
-	_ = math.Pi
-	_ = unsafe.Pointer(nil)
 }
