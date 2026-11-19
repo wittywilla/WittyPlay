@@ -1,0 +1,1220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wittywilla.github.io/specs/wittyplay.schema.json",
+  "title": ".wittyplay file, version 2",
+  "description": "An open format for games: how they are pictured, how they are played (controls), and, in a game's own file, everything about the game: details, artwork, the dump it was made for, play choices, cheats and notes on its saves. A bare file is this JSON; a game's own file may instead be a ZIP archive holding it as manifest.json beside its pictures. Open specification: docs/specs/wittyplay-file.md. This schema is dedicated to the public domain (CC0 1.0).",
+  "type": "object",
+  "required": [
+    "wittyplay"
+  ],
+  "properties": {
+    "wittyplay": {
+      "description": "The format's version: 1 or 2. Writers write the lowest that holds what they write.",
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "generator": {
+      "description": "The program that wrote the file, for people reading it.",
+      "type": "string",
+      "maxLength": 200
+    },
+    "default": {
+      "$ref": "#/$defs/look"
+    },
+    "consoles": {
+      "description": "A look per console, by console id.",
+      "type": "object",
+      "maxProperties": 200,
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/look"
+      }
+    },
+    "games": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/look"
+          }
+        ],
+        "type": "object",
+        "required": [
+          "match"
+        ],
+        "properties": {
+          "match": {
+            "$ref": "#/$defs/match"
+          }
+        }
+      }
+    },
+    "controls": {
+      "$ref": "#/$defs/controls"
+    },
+    "game": {
+      "$ref": "#/$defs/game"
+    },
+    "authorship": {
+      "$ref": "#/$defs/authorship"
+    },
+    "language": {
+      "type": "string",
+      "description": "A language tag: ISO 639-1/2/3 or BCP 47 (en, deu, pt-BR, zh-Hant).",
+      "pattern": "^[A-Za-z]{2,3}([_-][A-Za-z0-9]{1,8})*$",
+      "maxLength": 35
+    },
+    "translations": {
+      "description": "The file's text in other languages, by language tag.",
+      "type": "object",
+      "maxProperties": 200,
+      "additionalProperties": {
+        "$ref": "#/$defs/translation"
+      }
+    },
+    "extensions": {
+      "description": "Anything a program wants kept, under a name of its own (tool.key). Never given a meaning here.",
+      "type": "object",
+      "maxProperties": 100
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "look": {
+      "description": "How pictures are shown at one level. Every field is optional; an absent one is decided by the level above.",
+      "type": "object",
+      "properties": {
+        "picture": {
+          "description": "fitted: the whole box art over a blurred, dimmed copy of itself; filled: the box art fills the tile, cropped; case: drawn in a cartridge, disc case or the like.",
+          "enum": [
+            "fitted",
+            "filled",
+            "case"
+          ]
+        },
+        "case": {
+          "description": "The case style for these games themselves, when picture is case; it counts before cases. auto lets the medium decide. A reader that doesn't know a style passes it over.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+          "examples": [
+            "auto",
+            "cart-nes",
+            "cart-atari",
+            "cart-super",
+            "cart-64",
+            "cart-mega",
+            "cart-pocket",
+            "cart-advance",
+            "card-slim",
+            "card-hu",
+            "cart-nes-angled",
+            "cart-atari-angled",
+            "cart-super-angled",
+            "cart-64-angled",
+            "cart-mega-angled",
+            "cart-pocket-angled",
+            "cart-advance-angled",
+            "card-slim-angled",
+            "box-cart",
+            "box-cart-wide",
+            "box-small",
+            "box-big",
+            "case-clamshell",
+            "case-card",
+            "case-jewel",
+            "case-keep",
+            "case-keep-angled",
+            "case-blu",
+            "case-blu-angled",
+            "case-mini",
+            "disc-bare",
+            "disc-gd",
+            "disc-mini",
+            "umd-bare",
+            "case-umd",
+            "disk-floppy",
+            "disk-525",
+            "tape-cassette",
+            "case-tape",
+            "arcade-marquee",
+            "arcade-pcb",
+            "digital-tile",
+            "generic-box",
+            "cart-nes-gold",
+            "cart-nes-gold-angled",
+            "cart-nes-dark",
+            "cart-nes-dark-angled",
+            "cart-nes-clear",
+            "cart-nes-clear-angled",
+            "cart-atari-wood",
+            "cart-atari-wood-angled",
+            "cart-atari-gold",
+            "cart-atari-gold-angled",
+            "cart-atari-clear",
+            "cart-atari-clear-angled",
+            "cart-super-gold",
+            "cart-super-gold-angled",
+            "cart-super-dark",
+            "cart-super-dark-angled",
+            "cart-super-clear",
+            "cart-super-clear-angled",
+            "cart-64-gold",
+            "cart-64-gold-angled",
+            "cart-64-red",
+            "cart-64-red-angled",
+            "cart-64-blue",
+            "cart-64-blue-angled",
+            "cart-64-clear",
+            "cart-64-clear-angled",
+            "cart-mega-gold",
+            "cart-mega-gold-angled",
+            "cart-mega-red",
+            "cart-mega-red-angled",
+            "cart-mega-clear",
+            "cart-mega-clear-angled",
+            "cart-pocket-red",
+            "cart-pocket-red-angled",
+            "cart-pocket-blue",
+            "cart-pocket-blue-angled",
+            "cart-pocket-green",
+            "cart-pocket-green-angled",
+            "cart-pocket-gold",
+            "cart-pocket-gold-angled",
+            "cart-pocket-clear",
+            "cart-pocket-clear-angled",
+            "cart-advance-clear",
+            "cart-advance-clear-angled",
+            "cart-advance-gold",
+            "cart-advance-gold-angled",
+            "cart-advance-blue",
+            "cart-advance-blue-angled",
+            "card-slim-red",
+            "card-slim-red-angled",
+            "card-slim-blue",
+            "card-slim-blue-angled",
+            "card-slim-green",
+            "card-slim-green-angled",
+            "card-slim-white",
+            "card-slim-white-angled",
+            "case-jewel-angled",
+            "case-jewel-white",
+            "case-jewel-white-angled",
+            "case-jewel-clear",
+            "case-jewel-clear-angled",
+            "case-keep-white",
+            "case-keep-white-angled",
+            "case-keep-green",
+            "case-keep-green-angled",
+            "case-keep-blue",
+            "case-keep-blue-angled",
+            "case-keep-red",
+            "case-keep-red-angled",
+            "case-blu-dark",
+            "case-blu-dark-angled",
+            "case-blu-white",
+            "case-blu-white-angled",
+            "case-blu-green",
+            "case-blu-green-angled",
+            "case-mini-angled",
+            "case-mini-white",
+            "case-mini-white-angled",
+            "case-mini-dark",
+            "case-mini-dark-angled",
+            "case-clamshell-angled",
+            "case-clamshell-white",
+            "case-clamshell-white-angled",
+            "case-clamshell-clear",
+            "case-clamshell-clear-angled",
+            "case-card-angled",
+            "case-card-dark",
+            "case-card-dark-angled",
+            "case-card-red",
+            "case-card-red-angled",
+            "case-card-blue",
+            "case-card-blue-angled",
+            "case-umd-angled",
+            "case-umd-dark",
+            "case-umd-dark-angled",
+            "case-umd-blue",
+            "case-umd-blue-angled",
+            "case-tape-angled",
+            "case-tape-white",
+            "case-tape-white-angled",
+            "case-tape-dark",
+            "case-tape-dark-angled",
+            "box-tall",
+            "box-flip",
+            "box-cart-white",
+            "box-cart-dark",
+            "box-cart-wide-white",
+            "box-cart-wide-dark",
+            "box-small-white",
+            "box-small-dark",
+            "box-big-white",
+            "box-big-dark",
+            "box-tall-white",
+            "box-tall-dark",
+            "box-flip-white",
+            "box-flip-dark",
+            "card-hu-dark",
+            "card-hu-gold",
+            "card-hu-blue",
+            "disc-bd",
+            "disc-dark",
+            "disc-mini-dark",
+            "disc-sleeve",
+            "disc-sleeve-gd",
+            "umd-bare-angled",
+            "umd-bare-clear",
+            "umd-bare-blue",
+            "disk-floppy-blue",
+            "disk-floppy-red",
+            "disk-floppy-green",
+            "disk-floppy-white",
+            "disk-525-blue",
+            "disk-525-red",
+            "disk-525-clear",
+            "tape-cassette-angled",
+            "tape-cassette-white",
+            "tape-cassette-dark",
+            "tape-cassette-clear",
+            "arcade-cabinet",
+            "arcade-cabinet-angled",
+            "arcade-cabinet-red",
+            "arcade-cabinet-blue",
+            "arcade-marquee-red",
+            "arcade-marquee-blue",
+            "arcade-marquee-green",
+            "digital-poster",
+            "digital-banner",
+            "digital-window",
+            "digital-tile-red",
+            "digital-tile-blue",
+            "digital-tile-green",
+            "digital-tile-gold",
+            "digital-tile-dark"
+          ]
+        },
+        "cases": {
+          "description": "A case style per kind of medium: every game of that medium the look covers is shown in it. Keys are medium ids, values case style ids.",
+          "type": "object",
+          "maxProperties": 64,
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+            "examples": [
+              "cart-8bit",
+              "cart-early",
+              "cart-16bit",
+              "cart-mega",
+              "cart-64",
+              "cart-pocket",
+              "cart-advance",
+              "card",
+              "hucard",
+              "cd",
+              "gd",
+              "dvd",
+              "bluray",
+              "minidisc",
+              "umd",
+              "floppy35",
+              "floppy525",
+              "tape",
+              "arcade",
+              "digital",
+              "other"
+            ]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,39}$"
+          }
+        },
+        "label": {
+          "description": "What goes on a case's label: the box art, the game's logo picture, or its title in type.",
+          "enum": [
+            "boxart",
+            "logo",
+            "title"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "match": {
+      "description": "Which game an entry is for. Every field given must agree. item is one server's own id.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "file": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[^/\\\\]+$"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "console": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "item"
+          ]
+        },
+        {
+          "required": [
+            "file"
+          ]
+        },
+        {
+          "required": [
+            "title"
+          ]
+        }
+      ],
+      "additionalProperties": true
+    },
+    "details": {
+      "description": "A game's facts. Every field is optional.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "sortTitle": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "originalTitle": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "console": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$"
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1950,
+          "maximum": 3000
+        },
+        "releaseDate": {
+          "type": "string",
+          "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$"
+        },
+        "overview": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "genres": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "developer": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "publisher": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "series": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "players": {
+          "type": "object",
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64
+            },
+            "coop": {
+              "type": "boolean"
+            },
+            "versus": {
+              "type": "boolean"
+            },
+            "online": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": true
+        },
+        "rating": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "A score out of 10."
+        },
+        "ageRatings": {
+          "type": "object",
+          "maxProperties": 20,
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "description": "A rating per board: {\"ESRB\": \"E\", \"PEGI\": \"3\"}."
+        },
+        "regions": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "languages": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "description": "A language tag: ISO 639-1/2/3 or BCP 47 (en, deu, pt-BR, zh-Hant).",
+            "pattern": "^[A-Za-z]{2,3}([_-][A-Za-z0-9]{1,8})*$",
+            "maxLength": 35
+          }
+        },
+        "externalIds": {
+          "type": "object",
+          "maxProperties": 50,
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9_.:-]{1,64}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "identity": {
+      "description": "Which dump the file was made for. A file whose size or a checksum differs from the game's is for another dump: it is flagged, not applied.",
+      "type": "object",
+      "properties": {
+        "fileName": {
+          "type": "string",
+          "maxLength": 255,
+          "pattern": "^[^/\\\\]+$"
+        },
+        "serial": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "files": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 255,
+                "pattern": "^[^/\\\\]+$"
+              },
+              "crc32": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{8}$"
+              },
+              "md5": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{32}$"
+              },
+              "sha1": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{40}$"
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "crc32": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}$"
+        },
+        "md5": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{32}$"
+        },
+        "sha1": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{40}$"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "play": {
+      "description": "How the game is best played. A person's own choices come first.",
+      "type": "object",
+      "properties": {
+        "emulator": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9 _.+-]{0,99}$"
+        },
+        "core": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9 _.+-]{0,99}$"
+        },
+        "coreOptions": {
+          "type": "object",
+          "maxProperties": 300,
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9_.-]{1,96}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "shader": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "aspectRatio": {
+          "type": "string",
+          "pattern": "^(\\d{1,2}(\\.\\d{1,3})?:\\d{1,2}(\\.\\d{1,3})?|core|stretch|square)$"
+        },
+        "integerScaling": {
+          "type": "boolean"
+        },
+        "rotation": {
+          "enum": [
+            0,
+            90,
+            180,
+            270
+          ]
+        },
+        "videoStandard": {
+          "enum": [
+            "ntsc",
+            "pal"
+          ]
+        },
+        "disc": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99
+        }
+      },
+      "additionalProperties": true
+    },
+    "cheat": {
+      "type": "object",
+      "required": [
+        "label",
+        "code"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.:-]{1,64}$"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "code": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^[0-9A-Za-z +\\-:;,.=?_]+$"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "saves": {
+      "description": "Notes about the game's saves. Never the saves themselves.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "battery",
+            "memorycard",
+            "password",
+            "none"
+          ]
+        },
+        "memoryCard": {
+          "enum": [
+            "shared",
+            "game"
+          ]
+        },
+        "blocks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 20000
+        }
+      },
+      "additionalProperties": true
+    },
+    "game": {
+      "description": "Everything about the one game a game's own file is for.",
+      "type": "object",
+      "properties": {
+        "details": {
+          "$ref": "#/$defs/details"
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "artwork": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "boxfront",
+              "boxback",
+              "boxspine",
+              "boxfull",
+              "media",
+              "logo",
+              "marquee",
+              "banner",
+              "titlescreen",
+              "fanart",
+              "snapshot",
+              "icon"
+            ]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "description": "A picture inside the archive.",
+            "pattern": "^images/[A-Za-z0-9_][A-Za-z0-9 ._-]{0,99}(/[A-Za-z0-9_][A-Za-z0-9 ._-]{0,99}){0,2}\\.(jpg|jpeg|png|webp)$"
+          }
+        },
+        "screenshots": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "description": "A picture inside the archive.",
+            "pattern": "^images/[A-Za-z0-9_][A-Za-z0-9 ._-]{0,99}(/[A-Za-z0-9_][A-Za-z0-9 ._-]{0,99}){0,2}\\.(jpg|jpeg|png|webp)$"
+          }
+        },
+        "play": {
+          "$ref": "#/$defs/play"
+        },
+        "cheats": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "$ref": "#/$defs/cheat"
+          }
+        },
+        "saves": {
+          "$ref": "#/$defs/saves"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 20000
+        }
+      },
+      "additionalProperties": true
+    },
+    "authorship": {
+      "type": "object",
+      "properties": {
+        "author": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tool": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "version": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        },
+        "license": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "An SPDX licence id, such as CC-BY-4.0."
+        },
+        "source": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "additionalProperties": true
+    },
+    "translation": {
+      "type": "object",
+      "properties": {
+        "details": {
+          "$ref": "#/$defs/details"
+        },
+        "cheats": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": "A cheat's label, by its id."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "saves": {
+          "type": "string",
+          "maxLength": 20000
+        }
+      },
+      "additionalProperties": true
+    },
+    "analog": {
+      "type": "object",
+      "properties": {
+        "deadzone": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.9
+        },
+        "sensitivity": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 5
+        },
+        "mouseSensitivity": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 5
+        },
+        "triggerThreshold": {
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 1
+        },
+        "stickAsDPad": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "hotkey": {
+      "type": "object",
+      "properties": {
+        "keyboard": {
+          "type": "string",
+          "pattern": "^((Control|Shift|Alt|Meta)\\+){0,3}[A-Za-z][A-Za-z0-9]{0,31}$"
+        },
+        "gamepad": {
+          "type": "string",
+          "pattern": "^button:\\d{1,2}(\\+button:\\d{1,2}){0,2}$|^(axis:\\d{1,2}[+-](@-?1)?|hat:\\d{1,2}:(up|down|left|right))$"
+        }
+      },
+      "additionalProperties": true
+    },
+    "player": {
+      "type": "object",
+      "required": [
+        "player"
+      ],
+      "properties": {
+        "player": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "device": {
+          "enum": [
+            "gamepad",
+            "analog",
+            "mouse",
+            "lightgun",
+            "keyboard",
+            "multitap",
+            "none"
+          ]
+        },
+        "gamepad": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "b",
+              "y",
+              "select",
+              "start",
+              "up",
+              "down",
+              "left",
+              "right",
+              "a",
+              "x",
+              "l",
+              "r",
+              "l2",
+              "r2",
+              "l3",
+              "r3",
+              "lstick-left",
+              "lstick-right",
+              "lstick-up",
+              "lstick-down",
+              "rstick-left",
+              "rstick-right",
+              "rstick-up",
+              "rstick-down"
+            ]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^(button:\\d{1,2}|axis:\\d{1,2}[+-](@-?1)?|hat:\\d{1,2}:(up|down|left|right))$"
+          },
+          "description": "W3C standard gamepad numbering: button:0, axis:1-, axis:2+@-1 (a trigger resting at -1), hat:0:up."
+        },
+        "keyboard": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "b",
+              "y",
+              "select",
+              "start",
+              "up",
+              "down",
+              "left",
+              "right",
+              "a",
+              "x",
+              "l",
+              "r",
+              "l2",
+              "r2",
+              "l3",
+              "r3",
+              "lstick-left",
+              "lstick-right",
+              "lstick-up",
+              "lstick-down",
+              "rstick-left",
+              "rstick-right",
+              "rstick-up",
+              "rstick-down"
+            ]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9]{0,31}$"
+          },
+          "description": "KeyboardEvent.code names."
+        },
+        "mouse": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "b",
+              "y",
+              "select",
+              "start",
+              "up",
+              "down",
+              "left",
+              "right",
+              "a",
+              "x",
+              "l",
+              "r",
+              "l2",
+              "r2",
+              "l3",
+              "r3",
+              "lstick-left",
+              "lstick-right",
+              "lstick-up",
+              "lstick-down",
+              "rstick-left",
+              "rstick-right",
+              "rstick-up",
+              "rstick-down",
+              "aim"
+            ]
+          },
+          "additionalProperties": {
+            "enum": [
+              "left",
+              "right",
+              "middle",
+              "back",
+              "forward",
+              "wheelup",
+              "wheeldown",
+              "pointer",
+              "lstick",
+              "rstick"
+            ]
+          }
+        },
+        "remap": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "b",
+              "y",
+              "select",
+              "start",
+              "up",
+              "down",
+              "left",
+              "right",
+              "a",
+              "x",
+              "l",
+              "r",
+              "l2",
+              "r2",
+              "l3",
+              "r3",
+              "lstick-left",
+              "lstick-right",
+              "lstick-up",
+              "lstick-down",
+              "rstick-left",
+              "rstick-right",
+              "rstick-up",
+              "rstick-down"
+            ]
+          },
+          "additionalProperties": {
+            "enum": [
+              "b",
+              "y",
+              "select",
+              "start",
+              "up",
+              "down",
+              "left",
+              "right",
+              "a",
+              "x",
+              "l",
+              "r",
+              "l2",
+              "r2",
+              "l3",
+              "r3",
+              "lstick-left",
+              "lstick-right",
+              "lstick-up",
+              "lstick-down",
+              "rstick-left",
+              "rstick-right",
+              "rstick-up",
+              "rstick-down"
+            ]
+          }
+        },
+        "turbo": {
+          "type": "array",
+          "maxItems": 24,
+          "items": {
+            "enum": [
+              "b",
+              "y",
+              "select",
+              "start",
+              "up",
+              "down",
+              "left",
+              "right",
+              "a",
+              "x",
+              "l",
+              "r",
+              "l2",
+              "r2",
+              "l3",
+              "r3",
+              "lstick-left",
+              "lstick-right",
+              "lstick-up",
+              "lstick-down",
+              "rstick-left",
+              "rstick-right",
+              "rstick-up",
+              "rstick-down"
+            ]
+          }
+        },
+        "analog": {
+          "$ref": "#/$defs/analog"
+        }
+      },
+      "additionalProperties": true
+    },
+    "controlSet": {
+      "type": "object",
+      "properties": {
+        "players": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/player"
+          }
+        },
+        "hotkeys": {
+          "type": "object",
+          "properties": {
+            "enable": {
+              "$ref": "#/$defs/hotkey"
+            },
+            "actions": {
+              "type": "object",
+              "propertyNames": {
+                "enum": [
+                  "menu",
+                  "pause",
+                  "reset",
+                  "exit",
+                  "saveState",
+                  "loadState",
+                  "nextSlot",
+                  "previousSlot",
+                  "fastForward",
+                  "fastForwardHold",
+                  "slowMotion",
+                  "rewind",
+                  "frameAdvance",
+                  "screenshot",
+                  "recordVideo",
+                  "fullscreen",
+                  "mute",
+                  "volumeUp",
+                  "volumeDown",
+                  "nextDisc",
+                  "ejectDisc",
+                  "nextShader",
+                  "cheats",
+                  "netplayChat"
+                ]
+              },
+              "additionalProperties": {
+                "$ref": "#/$defs/hotkey"
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "turbo": {
+          "type": "object",
+          "properties": {
+            "rate": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 30
+            },
+            "mode": {
+              "enum": [
+                "hold",
+                "toggle"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "analog": {
+          "$ref": "#/$defs/analog"
+        },
+        "rumble": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "controls": {
+      "description": "How games are played: by default (in a game's own file, that game) and per console.",
+      "type": "object",
+      "properties": {
+        "default": {
+          "$ref": "#/$defs/controlSet"
+        },
+        "consoles": {
+          "type": "object",
+          "maxProperties": 200,
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/controlSet"
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

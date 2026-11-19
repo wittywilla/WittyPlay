@@ -1184,7 +1184,7 @@
       ],
       "auth": "admin",
       "limits": {
-        "body": "80KB",
+        "body": "1MB",
         "time": "2m"
       }
     },
@@ -1206,6 +1206,114 @@
       "auth": "user",
       "limits": {
         "body": "80KB",
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/convert/counts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/convert",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/games/wittyplay/convert",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/games/wittyplay/convert",
+      "methods": [
+        "POST",
+        "DELETE"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "4KB"
+      }
+    },
+    {
+      "path": "/games/wittyplay/convert/status",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/games/{id}/wittyplay",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "2m"
+      }
+    },
+    {
+      "path": "/games/{id}/wittyplay",
+      "methods": [
+        "PUT"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "96MB",
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/games/{id}/wittyplay/picture",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin"
+    },
+    {
+      "path": "/games/{id}/wittyplay/download",
+      "methods": [
+        "GET"
+      ],
+      "auth": "admin",
+      "limits": {
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/games/{id}/wittyplay/import",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "64MB",
+        "time": "5m"
+      }
+    },
+    {
+      "path": "/games/{id}/wittyplay/writeout",
+      "methods": [
+        "POST"
+      ],
+      "auth": "admin",
+      "limits": {
+        "body": "1KB",
         "time": "2m"
       }
     },
