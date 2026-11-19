@@ -139,7 +139,7 @@ func TestConvertAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if d.Game.Details.Title != "Made Up Quest" || d.Game.Details.Console != "snes" || d.Game.Artwork["boxfront"] == "" || d.Game.Identity.SHA1 == "" || d.Authorship.Tool.Name != "WittyPlay" {
+	if d.Game.Details.Title != "Made Up Quest" || d.Game.Details.Console != "snes" || len(d.Game.Artwork["boxfront"]) == 0 || d.Game.Identity.SHA1 == "" || d.Authorship.Tool.Name != "WittyPlay" {
 		t.Fatalf("gathered %+v", d.Game)
 	}
 	if v := wittyplayfile.Compare(d.Game.Identity, f.a.gameFacts(f.ctx, 7, p, d.Game.Identity)); v != wittyplayfile.Same {
@@ -201,6 +201,36 @@ func TestSidecarEditorAPI(t *testing.T) {
 	}
 	if w := callRaw(t, f.h, "GET", "/games/7/wittyplay/picture?name=../../etc/passwd", 1, true, nil); w.Code != 404 {
 		t.Fatalf("a name outside: %d", w.Code)
+	}
+	// More box art: two added after the first, then the last shown first and the first taken out.
+	png64 := "data:image/png;base64," + base64.StdEncoding.EncodeToString(pngBytes(t))
+	more, _ := json.Marshal(map[string]any{
+		"doc": json.RawMessage(`{"wittyplay":2,"game":{"details":{"title":"Edited"},"artwork":{"boxfront":"images/boxfront.png"}}}`),
+		"add": map[string][]string{"boxfront": {png64, png64}},
+	})
+	if w := callRaw(t, f.h, "PUT", "/games/7/wittyplay", 1, true, more); w.Code != 200 {
+		t.Fatalf("add pictures: %d %s", w.Code, w.Body)
+	}
+	reorder, _ := json.Marshal(map[string]any{"doc": json.RawMessage(`{"wittyplay":2,"game":{"details":{"title":"Edited"},"artwork":{"boxfront":["images/boxfront-3.png","images/boxfront-2.png"]}}}`)})
+	if w := callRaw(t, f.h, "PUT", "/games/7/wittyplay", 1, true, reorder); w.Code != 200 {
+		t.Fatalf("reorder: %d %s", w.Code, w.Body)
+	}
+	if d, err := readSidecar(findSidecar(p)); err != nil || len(d.Game.Artwork["boxfront"]) != 2 || d.Game.Artwork.First("boxfront") != "images/boxfront-3.png" || d.Files["images/boxfront.png"] != nil {
+		t.Fatalf("after reorder: %v %v", err, d)
+	}
+	// A file from a later version: read for what's known, flagged, and saved without losing the rest.
+	later, _ := json.Marshal(map[string]any{"doc": json.RawMessage(`{"wittyplay":9,"sparkle":{"x":1},"game":{"details":{"title":"Edited"},"artwork":{"boxfront":["images/boxfront-3.png","images/boxfront-2.png"]}}}`)})
+	if w := callRaw(t, f.h, "PUT", "/games/7/wittyplay", 1, true, later); w.Code != 200 {
+		t.Fatalf("save a later version: %d %s", w.Code, w.Body)
+	}
+	w = callRaw(t, f.h, "GET", "/games/7/wittyplay", 1, true, nil)
+	var nv struct {
+		Version int
+		Newer   bool
+		Doc     json.RawMessage
+	}
+	if json.Unmarshal(w.Body.Bytes(), &nv) != nil || !nv.Newer || nv.Version != wittyplayfile.Version || !strings.Contains(string(nv.Doc), `"wittyplay":9`) || !strings.Contains(string(nv.Doc), `"sparkle"`) {
+		t.Fatalf("a later version: %s", w.Body)
 	}
 	w = callRaw(t, f.h, "GET", "/games/7/wittyplay/download", 1, true, nil)
 	shared, err := wittyplayfile.Parse(w.Body.Bytes())

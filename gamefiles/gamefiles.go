@@ -115,9 +115,6 @@ func Gather(gamePath string) (*wittyplayfile.Doc, Found, error) {
 		n.into(d)
 	}
 	for role, paths := range picturesBeside(dir, base) {
-		if role != "screenshot" && d.Game.Artwork[role] != "" {
-			continue
-		}
 		for _, p := range paths {
 			if addPicture(d, role, p) {
 				found.Pictures = append(found.Pictures, role)
@@ -180,9 +177,12 @@ func addPicture(d *wittyplayfile.Doc, role, path string) bool {
 	if err != nil || wittyplayfile.ImageType(b) == "" {
 		return false
 	}
-	if role == "screenshot" {
+	switch {
+	case role == "screenshot":
 		_, err = d.AddScreenshot(b)
-	} else {
+	case d.Game != nil && len(d.Game.Artwork[role]) > 0:
+		_, err = d.AddImage(role, b) // another region's box, a second fan art...
+	default:
 		_, err = d.SetImage(role, b)
 	}
 	return err == nil

@@ -84,7 +84,7 @@ func TestGatherAndWriteOut(t *testing.T) {
 		len(m.Genres) != 2 || m.Players.Max != 2 || m.Developer != "Example Studio" || d.Game.Identity.MD5 != "0123456789abcdef0123456789abcdef" {
 		t.Fatalf("details %+v", m)
 	}
-	if d.Game.Artwork["boxfront"] == "" || d.Game.Artwork["boxback"] == "" || len(d.Game.Screenshots) != 1 || d.Game.Artwork["logo"] != "" {
+	if len(d.Game.Artwork["boxfront"]) == 0 || len(d.Game.Artwork["boxback"]) == 0 || len(d.Game.Screenshots) != 1 || len(d.Game.Artwork["logo"]) > 0 {
 		t.Fatalf("pictures %v %v (a picture named outside the folder is never read)", d.Game.Artwork, d.Game.Screenshots)
 	}
 	set := d.Controls.For("snes")
@@ -130,7 +130,7 @@ func TestGatherAndWriteOut(t *testing.T) {
 	if bs.Player(1).Remap["a"] != "b" || bs.Player(1).Keyboard["a"] != "KeyX" || bs.Hotkeys.Actions["saveState"].Keyboard != "F2" || bs.Turbo.Rate != 10 {
 		t.Fatalf("controls back %+v", bs.Player(1))
 	}
-	if back.Game.Artwork["boxback"] == "" || len(back.Game.Screenshots) != 1 {
+	if len(back.Game.Artwork["boxback"]) == 0 || len(back.Game.Screenshots) != 1 {
 		t.Fatalf("pictures back %v", back.Game.Artwork)
 	}
 
@@ -193,5 +193,56 @@ func TestHostileFiles(t *testing.T) {
 	}
 	if p, ok := inside(dir, "./media/a.png"); !ok || p != filepath.Join(dir, "media", "a.png") {
 		t.Error("an ordinary path")
+	}
+}
+
+// Several pictures of one kind: numbered extras in a media folder and beside the game are gathered
+// after the first, written back as Game-02.png..., and never written over a file already there.
+func TestSeveralPicturesGathered(t *testing.T) {
+	dir := t.TempDir()
+	game := filepath.Join(dir, "Quest (Europe).sfc")
+	put(t, game, []byte("rom"))
+	put(t, filepath.Join(dir, "media", "box2dfront", "Quest (Europe).png"), pic(t, 4))
+	put(t, filepath.Join(dir, "media", "box2dfront", "Quest (Europe)-2.png"), pic(t, 5))
+	put(t, filepath.Join(dir, "media", "box2dfront", "Quest (Europe)-10.png"), pic(t, 6))
+	put(t, filepath.Join(dir, "Quest (Europe)-boxart.png"), pic(t, 7))
+	put(t, filepath.Join(dir, "Quest (Europe)-boxart-2.png"), pic(t, 8))
+	put(t, filepath.Join(dir, "Quest (Europe)-boxart-4.png"), pic(t, 9))               // after a gap: not read
+	put(t, filepath.Join(dir, "media", "fanart", "Quest (Europe)-02.png"), pic(t, 10)) // no first: not read
+	d, _, err := Gather(game)
+	if err != nil || d == nil {
+		t.Fatal(err)
+	}
+	if got := d.Game.Artwork["boxfront"]; len(got) != 5 || len(d.Game.Artwork["fanart"]) != 0 {
+		t.Fatalf("gathered %v", d.Game.Artwork)
+	}
+	if b, err := d.EncodeAny(); err != nil {
+		t.Fatal(err)
+	} else if _, err := wittyplayfile.Parse(b); err != nil {
+		t.Fatal(err)
+	}
+
+	out := t.TempDir()
+	game2 := filepath.Join(out, "Quest (Europe).sfc")
+	put(t, game2, []byte("rom"))
+	put(t, filepath.Join(out, "media", "box2dfront", "Quest (Europe)-03.png"), pic(t, 11)) // the owner's own
+	w, err := WriteOut(game2, d, "snes", Options{Skip: map[string]bool{"nfo": true, "gamelist": true}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"media/box2dfront/Quest (Europe).png", "media/box2dfront/Quest (Europe)-02.png", "media/box2dfront/Quest (Europe)-05.png"} {
+		if !contains(w.Files, want) {
+			t.Errorf("didn't write %s: %+v", want, w)
+		}
+	}
+	if !contains(w.Kept, "media/box2dfront/Quest (Europe)-03.png") {
+		t.Errorf("wrote over the owner's picture: %+v", w)
+	}
+	if b, _ := os.ReadFile(filepath.Join(out, "media", "box2dfront", "Quest (Europe)-03.png")); !bytes.Equal(b, pic(t, 11)) {
+		t.Errorf("the owner's picture changed")
+	}
+	back, _, _ := Gather(game2)
+	if back == nil || len(back.Game.Artwork["boxfront"]) != 5 {
+		t.Fatalf("back %v", back)
 	}
 }

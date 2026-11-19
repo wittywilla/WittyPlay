@@ -198,14 +198,21 @@ func (d *Doc) Tidy() {
 				g.Cheats[i].ID = fmt.Sprintf("cheat-%d", i+1)
 			}
 		}
+		for role, p := range g.Artwork {
+			if len(p) == 0 {
+				delete(g.Artwork, role)
+			}
+		}
 		if len(g.Artwork) == 0 {
 			g.Artwork = nil
 		}
 	}
 	used := map[string]bool{}
 	if g := d.Game; g != nil {
-		for _, v := range g.Artwork {
-			used[v] = true
+		for _, p := range g.Artwork {
+			for _, v := range p {
+				used[v] = true
+			}
 		}
 		for _, v := range g.Screenshots {
 			used[v] = true
@@ -316,34 +323,6 @@ func (d *Doc) EncodeAny() ([]byte, error) {
 		return nil, err
 	}
 	return d.Encode()
-}
-
-// SetImage puts a picture in the archive for a role and names it in the artwork.
-func (d *Doc) SetImage(role string, b []byte) (string, error) {
-	if !oneOfList(role, ArtworkRoles) {
-		return "", fmt.Errorf("%q is not an artwork role: use %s", role, strings.Join(ArtworkRoles, ", "))
-	}
-	ext := ImageType(b)
-	if ext == "" {
-		return "", errors.New("pictures have to be JPEG, PNG or WebP")
-	}
-	name := "images/" + role + ext
-	if err := checkImage(name, b); err != nil {
-		return "", err
-	}
-	g := d.ensureGame()
-	if old := g.Artwork[role]; old != "" {
-		delete(d.Files, old)
-	}
-	if d.Files == nil {
-		d.Files = map[string][]byte{}
-	}
-	d.Files[name] = b
-	if g.Artwork == nil {
-		g.Artwork = Artwork{}
-	}
-	g.Artwork[role] = name
-	return name, nil
 }
 
 // AddScreenshot adds a screenshot to the archive.

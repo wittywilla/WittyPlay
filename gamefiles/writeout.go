@@ -64,15 +64,30 @@ func WriteOut(gamePath string, d *wittyplayfile.Doc, console string, opt Options
 	if g := d.Game; g != nil {
 		if !opt.Skip["pictures"] {
 			for _, role := range sortedRoles(g.Artwork) {
-				name := g.Artwork[role]
-				b, ok := d.Files[name]
 				folder := pictureFolder(role)
-				if !ok || folder == "" {
+				if folder == "" {
 					continue
 				}
-				p := filepath.Join(dir, "media", folder, base+strings.ToLower(filepath.Ext(name)))
-				write(p, b)
-				pics[role] = p
+				for i, name := range g.Artwork[role] {
+					b, ok := d.Files[name]
+					if !ok {
+						continue
+					}
+					ext := strings.ToLower(filepath.Ext(name))
+					if i == 0 {
+						p := filepath.Join(dir, "media", folder, base+ext)
+						write(p, b)
+						pics[role] = p
+						continue
+					}
+					// The others as Game-02.png, Game-03.png...: never over a file already there.
+					p := filepath.Join(dir, "media", folder, fmt.Sprintf("%s-%02d%s", base, i+1, ext))
+					if _, err := os.Lstat(p); err == nil {
+						w.Kept = append(w.Kept, rel(p))
+						continue
+					}
+					write(p, b)
+				}
 			}
 			for i, name := range g.Screenshots {
 				b, ok := d.Files[name]

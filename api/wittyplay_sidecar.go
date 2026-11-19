@@ -187,7 +187,7 @@ func (a *App) applySidecar(ctx context.Context, it wittymodule.ScanDescribeItem,
 		}
 	}
 	for role, field := range map[string]*string{"boxfront": &f.Poster, "fanart": &f.Backdrop} {
-		name := g.Artwork[role]
+		name := g.Artwork.First(role)
 		if b, ok := d.Files[name]; ok && name != "" {
 			kind := map[string]string{"boxfront": "poster", "fanart": "backdrop"}[role]
 			if u, err := a.Host.PutImage(ctx, it.ID, kind, bytes.NewReader(b)); err == nil {

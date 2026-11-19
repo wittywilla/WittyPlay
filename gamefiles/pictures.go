@@ -4,10 +4,13 @@
 package gamefiles
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/wittywilla/wittyplay/wittyplayfile"
 )
 
 // Pictures beside a game: media/<kind>/<game>.<ext>, as scrapers lay them out, and
@@ -39,11 +42,15 @@ var suffixes = map[string]string{
 	"-thumb": "boxfront", "-cover": "boxfront", "-boxfront": "boxfront", "-box": "boxfront", "-back": "boxback", "-boxback": "boxback",
 	"-image": "screenshot", "-screenshot": "screenshot", "-marquee": "marquee", "-logo": "logo", "-wheel": "logo", "-fanart": "fanart",
 	"-banner": "banner", "-titlescreen": "titlescreen", "-disc": "media", "-cart": "media", "-icon": "icon",
+	"-boxart": "boxfront",
 }
 
 var pictureExts = []string{".png", ".jpg", ".jpeg", ".webp"}
 
-// picturesBeside finds a game's pictures by role. Screenshots may be several: Game.png, Game-01.png...
+// picturesBeside finds a game's pictures by role, the one to show first first. A role may have
+// several: Game.png, then Game-2.png or Game-02.png... in a media folder, and Game-boxart.png, then
+// Game-boxart-2.png... beside the game. Numbered extras are looked for only once the first is found,
+// so a folder of many games isn't listed for each of them.
 func picturesBeside(dir, base string) map[string][]string {
 	out := map[string][]string{}
 	add := func(role, p string) {
@@ -52,20 +59,21 @@ func picturesBeside(dir, base string) map[string][]string {
 				return
 			}
 		}
-		if role != "screenshot" && len(out[role]) > 0 {
-			return
+		if len(out[role]) < maxPerRole(role) {
+			out[role] = append(out[role], p)
 		}
-		out[role] = append(out[role], p)
 	}
 	for _, k := range pictureKinds {
 		for _, folder := range k.read {
 			for _, root := range []string{filepath.Join(dir, "media", folder), filepath.Join(dir, folder)} {
+				found := false
 				for _, ext := range pictureExts {
 					if p := filepath.Join(root, base+ext); isFile(p, 0) {
 						add(k.role, p)
+						found = true
 					}
 				}
-				if k.role == "screenshot" {
+				if found || k.role == "screenshot" {
 					for _, p := range numbered(root, base) {
 						add(k.role, p)
 					}
@@ -73,11 +81,19 @@ func picturesBeside(dir, base string) map[string][]string {
 			}
 		}
 	}
-	for suffix, role := range suffixes {
+	for _, suffix := range sortedSuffixes() {
+		role := suffixes[suffix]
 		for _, root := range []string{dir, filepath.Join(dir, "images")} {
 			for _, ext := range pictureExts {
 				if p := filepath.Join(root, base+suffix+ext); isFile(p, 0) {
 					add(role, p)
+					for n := 2; n <= maxPerRole(role); n++ {
+						q := filepath.Join(root, fmt.Sprintf("%s%s-%d%s", base, suffix, n, ext))
+						if !isFile(q, 0) {
+							break
+						}
+						add(role, q)
+					}
 				}
 			}
 		}
@@ -85,7 +101,24 @@ func picturesBeside(dir, base string) map[string][]string {
 	return out
 }
 
-// numbered finds Game-01.png, Game-02.png... in a folder, at most 20.
+func maxPerRole(role string) int {
+	if role == "screenshot" {
+		return wittyplayfile.MaxScreenshots
+	}
+	return wittyplayfile.MaxPicturesPerRole
+}
+
+// sortedSuffixes keeps the order pictures are found in the same from one run to the next.
+func sortedSuffixes() []string {
+	out := make([]string, 0, len(suffixes))
+	for s := range suffixes {
+		out = append(out, s)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// numbered finds Game-2.png, Game-02.png... in a folder, at most 32.
 func numbered(root, base string) []string {
 	ents, err := os.ReadDir(root)
 	if err != nil {
@@ -101,12 +134,22 @@ func numbered(root, base string) []string {
 		if isDigits(rest) && len(rest) <= 3 && contains(pictureExts, strings.ToLower(filepath.Ext(name))) {
 			out = append(out, filepath.Join(root, name))
 		}
-		if len(out) == 20 {
+		if len(out) == wittyplayfile.MaxPicturesPerRole {
 			break
 		}
 	}
-	sort.Strings(out)
+	sort.Slice(out, func(i, j int) bool { return numberOf(out[i]) < numberOf(out[j]) })
 	return out
+}
+
+// numberOf is the number at the end of Game-12.png.
+func numberOf(p string) int {
+	name := strings.TrimSuffix(filepath.Base(p), filepath.Ext(p))
+	n := 0
+	for i := strings.LastIndexByte(name, '-') + 1; i < len(name); i++ {
+		n = n*10 + int(name[i]-'0')
+	}
+	return n
 }
 
 func contains(l []string, v string) bool {

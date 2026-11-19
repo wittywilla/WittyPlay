@@ -11,6 +11,11 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - **Fixed: cores that run the game on a stack of their own died at random on Windows** ("morestack on g0"; Mupen64Plus-Next with ParaLLEl-RDP). They call back from that stack, which Go allows only on a thread it didn't create, so on Windows the core now runs on one, as on Linux.
 - **Fixed: Mupen64Plus-Next crashed starting Vulkan.** The runner handed `create_device` no feature list; it now hands empty lists and features, as RetroArch does. And what the runner passes a core by address is kept off the stack (`go:uintptrescapes`, as purego does), since a core calling back during the call can move the stack.
 
+## 0.7.10
+
+- **Several pictures of each kind in a `.wittyplay`, and its version said out loud (#85).** Each artwork role in a `.wittyplay` holds one picture or a list of up to 32, the first shown: box art from several regions, several fan arts. A role with one picture is still written as a plain name. Gathering picks up numbered extras (`media/box2dfront/Game-2.png`, `Game-boxart-2.png`) after the first; writing out puts them back as `Game-02.png`... and never over a file already there. The spec gains a *Versions* section: a file from a newer version of the format is now read for what WittyPlay knows rather than refused, keeps the rest when saved, and is flagged (`newer: true`, and a note in the editor); a writer never lowers a file's version.
+- **The `.wittyplay` editor adds more pictures of a kind, takes any one out, and shows another first.** It notes when a file follows a newer version of the format.
+
 ## 0.7.9
 
 - **Core fixes: the runner corrects what a core gets, on this machine, as it runs (#76).** A core looks up every Vulkan function it uses through the runner, so the runner can hand it a corrected one (`libretro/vk_fixes.go`, listed in `corefixes.go`): nothing in a core's file is changed and no core is built here. On unless **Settings, Games, Advanced, Core fixes** is off (`gamingCoreFixes`), which lists each fix; off, every core gets what it would from any other frontend. `GET /gaming/core-fixes` lists them.
