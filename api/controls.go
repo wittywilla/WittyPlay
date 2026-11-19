@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/wittywilla/wittyplay/wittyplayfile"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -101,13 +102,22 @@ func handleGameControls(a *App, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	// The defaults are WittyPlay's own, with what a .wittyplay gives over them: the server's own
+	// for the console, then the game's own beside it. A person's saved layouts still come first.
+	gamepadDefault, keyboardDefault := wittyplay.DefaultGamepadFor(id), wittyplay.DefaultKeyboardFor(id)
+	fileControls := a.gameSidecarControls(ctx, game, id)
+	if fileControls != nil {
+		applyFileControls(fileControls, gamepadDefault, keyboardDefault)
+	}
 	writeJSON(w, 200, map[string]any{
 		"console":  id,
 		"pad":      wittyplay.Pad(id),
 		"controls": wittyplay.Controls(id),
 		"targets":  wittyplay.Targets(id),
+		// fromFile: everything the .wittyplay files give: every player, hotkeys, turbo, analog.
+		"fromFile": fileControls,
 		"defaults": map[string]any{
-			"gamepad": wittyplay.DefaultGamepadFor(id), "keyboard": wittyplay.DefaultKeyboardFor(id), "remote": wittyplay.DefaultRemote(), "options": wittyplay.DefaultOptions(id),
+			"gamepad": gamepadDefault, "keyboard": keyboardDefault, "remote": wittyplay.DefaultRemote(), "options": wittyplay.DefaultOptions(id),
 			"touch": map[string]any{wittyplay.Landscape: wittyplay.DefaultTouch(id, wittyplay.Landscape), wittyplay.Portrait: wittyplay.DefaultTouch(id, wittyplay.Portrait)},
 		},
 		"saved":      map[string]any{"gamepad": gamepads, "keyboard": keyboard, "touch": touch, "layouts": layouts},
@@ -306,3 +316,23 @@ func controlKeys(console string) map[string]bool {
 }
 
 var _ = slog.Default
+
+// applyFileControls puts player 1's gamepad and keyboard bindings from a .wittyplay over the
+// defaults. Target numbers are the same in both (libretro's).
+func applyFileControls(set *wittyplayfile.ControlSet, gamepad map[int]wittyplay.Binding, keyboard map[int]string) {
+	p := set.Player(1)
+	if p == nil {
+		return
+	}
+	for t, v := range p.Gamepad {
+		id := wittyplayfile.TargetID(t)
+		if b, ok := wittyplayfile.ParseGamepad(v); ok && id >= 0 {
+			gamepad[id] = wittyplay.Binding{Button: b.Button, Axis: b.Axis, Hat: b.Hat, Dir: b.Dir, Rest: b.Rest}
+		}
+	}
+	for t, code := range p.Keyboard {
+		if id := wittyplayfile.TargetID(t); id >= 0 {
+			keyboard[id] = code
+		}
+	}
+}

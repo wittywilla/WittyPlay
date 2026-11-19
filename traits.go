@@ -22,6 +22,9 @@ type CoreTraits struct {
 	// GPU cores draw with a graphics card. They count against the GPU limit and
 	// their runner gets what a graphics driver needs. docs/GAMING.md has the list.
 	GPU bool
+	// Vulkan cores are offered a Vulkan context (the runner's -vulkan), where the card can make
+	// one, as their renderer does better here than through OpenGL; elsewhere they have OpenGL.
+	Vulkan bool
 	// Demanding cores can't play at low priority on a machine doing anything else.
 	// Everything drawn on a graphics card is, as well as these.
 	Demanding bool
@@ -106,11 +109,13 @@ var traits = map[string]CoreTraits{
 		Resolution: pick("mupen64plus-43screensize", "640x480", "1280x960", "1920x1440", "2560x1920")},
 	"parallel_n64": {GPU: true, Options: map[string]string{"parallel-n64-gfxplugin": "gliden64"},
 		Resolution: pick("parallel-n64-screensize", "640x480", "1280x960", "1920x1440", "2880x2160")},
-	"pcsx2": {GPU: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards", CacheIn: "pcsx2/cache", SharedMemory: true,
+	"pcsx2": {GPU: true, Vulkan: true, Assets: "LRPS2", RequiredBIOS: ps2BIOS, SavesIn: "pcsx2/memcards", CacheIn: "pcsx2/cache", SharedMemory: true,
 		// Waiting for the graphics card at every read-back, and running VU1 on the game's own
 		// thread, held a real game to 41 frames a second where it can do 60. The core's own
 		// database still turns VU1's thread off for the games known to hang with it.
-		Options:    map[string]string{"pcsx2_renderer": "OpenGL", "pcsx2_hw_download_mode": "Unsynchronized"},
+		// "Auto" takes the context the runner prefers: Vulkan where the card can make one, and
+		// OpenGL where it can't (the runner's -vulkan, Vulkan above).
+		Options:    map[string]string{"pcsx2_renderer": "Auto", "pcsx2_hw_download_mode": "Unsynchronized"},
 		Threaded:   map[string]string{"pcsx2_mtvu": "enabled"},
 		Resolution: pick("pcsx2_upscale_multiplier", "1x (Native)", "2x", "4x", "4x")},
 	// Play! keeps its settings and memory cards under the home folder, and stops if it
@@ -189,6 +194,9 @@ func RunnerArgs(coreID string) []string {
 	}
 	if t.GPU || t.Demanding {
 		out = append(out, "-normal-priority")
+	}
+	if t.Vulkan {
+		out = append(out, "-vulkan")
 	}
 	if t.SharedMemory {
 		out = append(out, "-shared-memory")

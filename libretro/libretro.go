@@ -122,6 +122,7 @@ type Core struct {
 
 	hw           *hwState
 	hwRefused    bool
+	vkNeg        *vkNegotiation // the core's Vulkan context negotiation interface, if it gave one
 	traceOptions []string
 
 	lastProblem string // the last thing the core complained about, for a failed load
@@ -331,20 +332,13 @@ func (c *Core) Run() {
 		purego.SyscallN(c.fnFrameTime, uintptr(usec))
 	}
 	purego.SyscallN(c.fnRun)
-	if c.hw != nil && c.hw.gl != nil {
-		c.hw.gl.collect(c.h, 0)
-	}
+	c.collectHW(0)
 }
 
 // FinishFrame hands over a frame the graphics card is still finishing, waiting up to wait for
 // it, and says whether one is still on its way. The runner calls it before it waits for the
 // next frame, so the game thread never waits on the card while it has work of its own.
-func (c *Core) FinishFrame(wait time.Duration) bool {
-	if c.hw != nil && c.hw.gl != nil {
-		return c.hw.gl.collect(c.h, wait)
-	}
-	return false
-}
+func (c *Core) FinishFrame(wait time.Duration) bool { return c.collectHW(wait) }
 
 // Reset is the console's reset button.
 func (c *Core) Reset() { purego.SyscallN(c.fnReset) }
@@ -449,8 +443,8 @@ func onVideo(data, width, height, pitch uintptr) uintptr {
 	}
 	if data == hwFrameValid {
 		// A frame nobody will see (one skipped, or run ahead of the one shown) isn't read back.
-		if c.hw != nil && c.hw.gl != nil && !c.videoOff {
-			c.hw.gl.startRead(c.h, int(uint32(width)), int(uint32(height)))
+		if !c.videoOff {
+			c.startHWRead(int(uint32(width)), int(uint32(height)))
 		}
 		return 0
 	}
@@ -810,7 +804,29 @@ func (c *Core) environment(cmd uint32, data unsafe.Pointer) bool {
 		return c.setHWRender(data)
 	case envSetHWShared:
 	case envGetPreferredHW:
+		// Vulkan where this core may have it and a card can make it: LRPS2 on "Auto" and Dolphin
+		// both take what's preferred, and go on to OpenGL themselves when it isn't Vulkan.
 		*(*uint32)(data) = hwOpenGLCore
+		if vulkanOffered() == nil {
+			*(*uint32)(data) = hwVulkan
+		}
+	case envGetHWRenderInterface:
+		if c.hw == nil || c.hw.vk == nil {
+			return false
+		}
+		*(*uintptr)(data) = uintptr(unsafe.Pointer(&c.hw.vk.iface))
+	case envSetHWNegotiationInterface:
+		neg := (*vkNegotiation)(data)
+		if neg.interfaceType != vkNegotiationInterfaceVulkan {
+			return false
+		}
+		c.vkNeg = neg
+	case envGetHWNegotiationSupport:
+		q := (*[2]uint32)(data)
+		if q[0] != vkNegotiationInterfaceVulkan {
+			return false
+		}
+		q[1] = vkNegotiationVersionWeSupport
 	default:
 		return c.optionEnvironment(cmd, data)
 	}

@@ -54,6 +54,8 @@ func main() {
 	largeAddresses := flag.Bool("large-address-space", false, "this core reserves far more address space than it uses, so allow that")
 	_ = flag.Bool("own-home", false, "this core has its save folder as a home folder, which whoever starts this sets up")
 	probe := flag.Bool("probe-gpu", false, "say which graphics card games would draw with, and stop")
+	nv12 := flag.Bool("nv12", false, "convert frames drawn on the graphics card to NV12 there, for the encoder")
+	vulkan := flag.Bool("vulkan", false, "this core may draw with Vulkan, where the graphics card can make a device")
 	processorGL := flag.Bool("processor-gl", false, "this server has no graphics card, and this core can draw with OpenGL the processor runs")
 	flag.Parse()
 	if flag.NArg() > 0 {
@@ -66,6 +68,10 @@ func main() {
 	if *processorGL {
 		libretro.AllowProcessorGL()
 	}
+	if *vulkan {
+		libretro.AllowVulkan()
+	}
+	libretro.WantNV12(*nv12)
 	limits := hostsandbox.Limits{SaveDir: *saveDir, MemoryMB: *memory, GPU: *gpu || *probe || *processorGL, Normal: *normal, SharedMemory: *sharedMemory, LargeAddressSpace: *largeAddresses}
 	// This starts the program again, so it comes before anything that can't happen twice.
 	if err := hostsandbox.Confine(limits); err != nil {
@@ -99,6 +105,7 @@ func main() {
 			if info.VRAMMB > 0 {
 				fmt.Fprintln(out, "vram-mb:", info.VRAMMB)
 			}
+			fmt.Fprintln(out, "vulkan:", info.Vulkan)
 			return
 		}
 		runErr = host.Run(os.Stdin, out, func(l ipc.Load, h engine.Handlers) (engine.Engine, error) {

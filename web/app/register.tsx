@@ -25,6 +25,7 @@ const PlayConsoles = lazy(() => import('./pages/PlayConsoles'))
 const PlayConsoleSettings = lazy(() => import('./pages/PlayConsoles').then((m) => ({ default: m.PlayConsoleSettings })))
 const PlayLibrary = lazy(() => import('./pages/PlayConsoles').then((m) => ({ default: m.PlayLibrary })))
 const PlayGame = lazy(() => import('./pages/PlayGame'))
+const PlayGameFile = lazy(() => import('./pages/PlayGameFile'))
 const EmulatorsSettings = lazy(() => import('./pages/settings/Emulators'))
 const GamesSupport = lazy(() => import('./pages/settings/GamesSupport'))
 const TvGamesLibrary = lazy(() => import('./tvmode/Games').then((m) => ({ default: m.GamesLibraryScreen })))
@@ -48,6 +49,7 @@ function Frame() {
           <Route path="/wittyplay/library" element={<Suspense fallback={<Spinner />}><PlayLibrary /></Suspense>} />
           <Route path="/wittyplay/library/:id" element={<Suspense fallback={<Spinner />}><PlayLibrary /></Suspense>} />
           <Route path="/wittyplay/game/:id" element={<Suspense fallback={<Spinner />}><PlayGame /></Suspense>} />
+          <Route path="/wittyplay/game/:id/file" element={<Suspense fallback={<Spinner />}><PlayGameFile /></Suspense>} />
           <Route path="/wittyplay/settings" element={<Suspense fallback={<Spinner />}><PlaySettings /></Suspense>} />
           <Route path="/wittyplay/settings/module/:module" element={<Suspense fallback={<Spinner />}><PlaySettings /></Suspense>} />
           <Route path="/wittyplay/settings/:section/*" element={<Suspense fallback={<Spinner />}><PlaySettings /></Suspense>} />

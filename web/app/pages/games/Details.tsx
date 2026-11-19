@@ -12,6 +12,7 @@ import LegalNote from '@wms/app/components/LegalNote'
 import { openPlayOn } from '@wms/app/remote/RemoteHost'
 import { IconCheck, IconDevices, IconDownload, IconEdit, IconGamepad, IconImage, IconHistory, IconInfo, IconMore, IconPlay, IconRefresh, IconSettings, IconStar, IconTrash, IconTune, IconUsers } from '@wms/app/icons'
 import { toast, useApp } from '@wms/app/state'
+import { useTvMode } from '@wms/app/tvmode/mode'
 import { ask, Dialog, Menu, Sheet, useBackCloses, type MenuEntry } from '@wms/app/ui/index'
 import { GameCredits, GameMatchBar, GameRatings, GameShots } from '../GameMeta'
 import { GameFixPanel, GameProblem, GameVersionLinks } from '../GameReview'
@@ -57,6 +58,7 @@ const pickSaveFile = (accept: string) => new Promise<File | null>((resolve) => {
 // walks, the main button where focus starts, big targets, and the same settings, saves, tools and fixes as the app's page.
 export default function GameDetails({ it, reload, variant }: { it: Item; reload?: () => void; variant?: 'play' }) {
   const links = useGameLinks()
+  const tv = useTvMode() || links.couch
   const nav = useNavigate()
   const { user, libraries } = useApp()
   const consoles = useConsoles()
@@ -266,6 +268,9 @@ export default function GameDetails({ it, reload, variant }: { it: Item; reload?
       {mine?.hasBattery && <a className="btn sm ghost" href={mediaUrl(`/api/modules/wittyplay/games/${it.id}/battery`)} download>Download battery save</a>}
       <button type="button" className="btn sm ghost" onClick={() => void battery()}>{mine?.hasBattery ? 'Replace battery save…' : 'Import a battery save…'}</button>
     </div>
+    {user?.isAdmin && (tv
+      ? <p className="muted gm-wittyplay-note"><IconInfo size={16} /> Editing this game’s .wittyplay file (its details, pictures, controls and cheats, to keep beside it or share) is limited to the desktop: open this game in the desktop app or a web browser on a computer.</p>
+      : <div className="gm-panel-actions"><Link className="btn sm ghost" to={`/wittyplay/game/${it.id}/file`}>Edit its .wittyplay file…</Link></div>)}
     {user?.isAdmin && meta && <GameMatchBar it={it} d={meta} onChanged={() => { void loadMeta(); reload?.() }} />}
     {user?.isAdmin && meta && <GameFixPanel it={it} d={meta} consoles={consoles} onChanged={() => { void loadMeta(); reload?.() }} />}
   </details>

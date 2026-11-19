@@ -29,7 +29,8 @@ import (
 // database if its list for the console has been downloaded already. The rest is queued, and the
 // worker (gamedetails_worker.go) sets what it finds with SetItem later.
 //
-// Nothing is ever written beside a game: its folder is the owner's, and may well be read-only.
+// Nothing is ever written beside a game during a scan: its folder is the owner's, and may well be
+// read-only. Only an administrator's own request writes there (wittyplay_edit.go, wittyplay_convert.go).
 
 func init() { scanDescribe = describeGames }
 
@@ -60,6 +61,9 @@ func describeGames(ctx context.Context, a *App, args wittymodule.ScanDescribeArg
 			console = it.Facets["console"]
 		}
 		f, local := a.localGameFields(ctx, it, console, a.foreignNFO(ctx, args.Library.ID))
+		// A .wittyplay beside it: its look, and, when made for this dump, details over the NFO's
+		// (wittyplay_sidecar.go). Read only, never written here.
+		a.applySidecar(ctx, it, console, &f, &local)
 		if err := a.enqueueGame(ctx, gameEnqueued{ItemID: it.ID, LibraryID: args.Library.ID, Console: console, Title: it.Title, Files: it.Files, Local: local, Edited: it.Edited}); err != nil {
 			return out, err
 		}
@@ -70,8 +74,6 @@ func describeGames(ctx context.Context, a *App, args wittymodule.ScanDescribeArg
 				return out, err
 			}
 		}
-		// A .wittyplay file beside it says how WittyPlay pictures it (read only, never written).
-		_ = a.setGamePicture(ctx, it.ID, pictureByFile, sidecarLook(it.Files[0], console, it.Title))
 		if time.Now().Before(until) {
 			if r, err := a.gameRow(ctx, it.ID); err == nil {
 				j := &gameJob{meta: r}

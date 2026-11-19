@@ -1135,6 +1135,32 @@
           ]
         },
         {
+          "id": "performance-notice",
+          "component": "Notice",
+          "props": {
+            "text": "Choose how strong this server is. Every emulator starts from this one standard: resolution, run-ahead, rewind, picture quality and how many games at once. Set it first; then change one console's core in WittyPlay's Settings, Consoles & cores, on top of it. Anything you set by hand in Settings still wins.",
+            "title": "How strong is this server?",
+            "tone": "info"
+          },
+          "when": {
+            "admin": true
+          }
+        },
+        {
+          "id": "performance",
+          "component": "List",
+          "props": {
+            "focusable": true,
+            "title": "Performance profile"
+          },
+          "source": {
+            "type": "wittyplay.performance"
+          },
+          "when": {
+            "admin": true
+          }
+        },
+        {
           "id": "photos-notice",
           "component": "Notice",
           "props": {
@@ -1596,6 +1622,32 @@
               }
             }
           ]
+        },
+        {
+          "id": "performance-notice",
+          "component": "Notice",
+          "props": {
+            "text": "Choose how strong this server is. Every emulator starts from this one standard: resolution, run-ahead, rewind, picture quality and how many games at once. Set it first; then change one console's core in WittyPlay's Settings, Consoles & cores, on top of it. Anything you set by hand in Settings still wins.",
+            "title": "How strong is this server?",
+            "tone": "info"
+          },
+          "when": {
+            "admin": true
+          }
+        },
+        {
+          "id": "performance",
+          "component": "List",
+          "props": {
+            "focusable": true,
+            "title": "Performance profile"
+          },
+          "source": {
+            "type": "wittyplay.performance"
+          },
+          "when": {
+            "admin": true
+          }
         },
         {
           "id": "computer",
@@ -2553,6 +2605,20 @@
       "paged": false,
       "title": "Console photos",
       "since": 8
+    },
+    {
+      "type": "wittyplay.performance",
+      "label": "Performance profile",
+      "description": "For an administrator: the performance profiles (Very light, Light, Balanced, High quality), each with the hardware it suits; the one in use is checked and the one this server's hardware suggests says so. Choosing one sets what every emulator starts with. Show PerformanceNotice's words beside it. Nothing for anyone else.",
+      "icon": "chart",
+      "category": "",
+      "yields": [
+        "view"
+      ],
+      "cardStyle": "tile",
+      "paged": false,
+      "title": "Performance",
+      "since": 8
     }
   ],
   "navigation": [
@@ -2749,6 +2815,13 @@
       "method": "PUT",
       "path": "/api/modules/wittyplay/games/console-photos",
       "body": "{\"enabled\":false}"
+    },
+    {
+      "op": "wittyplay.performance.set",
+      "label": "Use this profile",
+      "description": "Administrators: the performance profile every emulator starts from (item: lightest, light, balanced or high; auto for the default). Settings set by hand still win.",
+      "method": "PUT",
+      "path": "/api/modules/wittyplay/gaming/profiles/{item}"
     }
   ]
 }

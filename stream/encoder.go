@@ -39,6 +39,8 @@ func pixFmt(format int) string {
 	switch format {
 	case engine.FormatXRGB8888:
 		return "bgr0"
+	case engine.FormatNV12:
+		return "nv12"
 	case engine.FormatRGB565:
 		return "rgb565le"
 	}
@@ -234,6 +236,9 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 		matrix, tag = "bt601", "smpte170m"
 	}
 	vf := fmt.Sprintf("scale=trunc(iw*%d/2)*2:trunc(ih*%d/2)*2:flags=neighbor:out_color_matrix=%s:out_range=tv,format=%s", scale, scale, matrix, encoderPixFmt(name))
+	if hdr.Format == engine.FormatNV12 {
+		vf = nv12Filter(name, codec, scale)
+	}
 	if upload != "" {
 		vf += "," + upload
 	}
@@ -322,6 +327,25 @@ func (s *Session) startVideoEncoder(codec, name string, hdr ipc.VideoHeader, fps
 		}
 	}()
 	return e, nil
+}
+
+// nv12Filter is the filter for a frame the graphics card already turned into NV12, BT.709, limited
+// range: nothing at all where the encoder takes NV12 and nothing needs scaling, which is the point.
+// Where it's scaled, it stays BT.709; VP8 has only BT.601, so for it the matrix changes.
+func nv12Filter(name, codec string, scale int) string {
+	out := "nv12"
+	if name == "libopenh264" || codec == "vp8" {
+		out = "yuv420p"
+	}
+	matrix := "bt709"
+	if codec == "vp8" {
+		matrix = "bt601"
+	}
+	if scale == 1 && out == "nv12" && matrix == "bt709" {
+		return "null"
+	}
+	return fmt.Sprintf("scale=trunc(iw*%d/2)*2:trunc(ih*%d/2)*2:flags=neighbor:in_color_matrix=bt709:in_range=tv:out_color_matrix=%s:out_range=tv,format=%s",
+		scale, scale, matrix, out)
 }
 
 func encoderPixFmt(name string) string {
@@ -968,6 +992,8 @@ func toRGBA(hdr ipc.VideoHeader, data []byte) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, hdr.Width, hdr.Height))
 	p := img.Pix
 	switch hdr.Format {
+	case engine.FormatNV12:
+		nv12ToRGBA(p, data, hdr.Width, hdr.Height)
 	case engine.FormatXRGB8888:
 		for i := 0; i+3 < len(data) && i+3 < len(p); i += 4 {
 			p[i], p[i+1], p[i+2], p[i+3] = data[i+2], data[i+1], data[i], 0xff
@@ -987,6 +1013,39 @@ func toRGBA(hdr ipc.VideoHeader, data []byte) *image.RGBA {
 	}
 	return img
 }
+
+// nv12ToRGBA converts a frame from NV12, BT.709, limited range. It's for pictures (the JPEG stream
+// some viewers fall back on, thumbnails), not every frame of a stream.
+func nv12ToRGBA(p, data []byte, w, h int) {
+	if len(data) < engine.FrameSize(engine.FormatNV12, w, h) || len(p) < w*h*4 {
+		return
+	}
+	uv := data[w*h:]
+	clamp := func(v float64) byte {
+		switch {
+		case v < 0:
+			return 0
+		case v > 255:
+			return 255
+		}
+		return byte(v + 0.5)
+	}
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			yy := (float64(data[y*w+x]) - 16) * 255 / 219
+			c := uv[(y/2)*w+(x/2)*2:]
+			u, v := (float64(c[0])-128)*255/224, (float64(c[1])-128)*255/224
+			i := (y*w + x) * 4
+			p[i] = clamp(yy + 1.5748*v)
+			p[i+1] = clamp(yy - 0.1873*u - 0.4681*v)
+			p[i+2] = clamp(yy + 1.8556*u)
+			p[i+3] = 0xff
+		}
+	}
+}
+
+// FrameRGBA turns a raw frame into a picture, for tools that save or compare them.
+func FrameRGBA(hdr ipc.VideoHeader, data []byte) *image.RGBA { return toRGBA(hdr, data) }
 
 // writeThumb saves the current picture beside a save state.
 func (s *Session) writeThumb(name string) {

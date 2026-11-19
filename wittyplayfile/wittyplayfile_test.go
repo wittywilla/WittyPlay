@@ -103,7 +103,7 @@ func TestRefused(t *testing.T) {
 			t.Errorf("%s: accepted %s", name, in)
 		}
 	}
-	if _, err := Parse([]byte(`{"wittyplay":2}`)); !errors.Is(err, ErrNewer) {
+	if _, err := Parse([]byte(`{"wittyplay":3}`)); !errors.Is(err, ErrNewer) {
 		t.Errorf("a newer version: %v", err)
 	}
 	big := `{"wittyplay":1,"pad":"` + strings.Repeat("x", MaxSize) + `"}`
@@ -147,25 +147,30 @@ func TestBOM(t *testing.T) {
 
 // The spec's example and its schema's case list say what this package says.
 func TestSpecAgrees(t *testing.T) {
-	schema, err := os.ReadFile("../../docs/specs/wittyplay.schema.json")
+	dir := specDir(t)
+	schema, err := os.ReadFile(dir + "/wittyplay.schema.json")
 	if err != nil {
-		t.Skip("no spec here")
-	}
-	var s struct {
-		Defs map[string]struct {
-			Properties map[string]struct {
-				Enum          []string `json:"enum"`
-				Examples      []string `json:"examples"`
-				PropertyNames struct {
-					Examples []string `json:"examples"`
-				} `json:"propertyNames"`
-			} `json:"properties"`
-		} `json:"$defs"`
-	}
-	if err := json.Unmarshal(schema, &s); err != nil {
 		t.Fatal(err)
 	}
-	look := s.Defs["look"].Properties
+	var all struct {
+		Defs map[string]json.RawMessage `json:"$defs"`
+	}
+	if err := json.Unmarshal(schema, &all); err != nil {
+		t.Fatal(err)
+	}
+	var lookDef struct {
+		Properties map[string]struct {
+			Enum          []string `json:"enum"`
+			Examples      []string `json:"examples"`
+			PropertyNames struct {
+				Examples []string `json:"examples"`
+			} `json:"propertyNames"`
+		} `json:"properties"`
+	}
+	if err := json.Unmarshal(all.Defs["look"], &lookDef); err != nil {
+		t.Fatal(err)
+	}
+	look := lookDef.Properties
 	if strings.Join(look["picture"].Enum, ",") != "fitted,filled,case" || strings.Join(look["label"].Enum, ",") != "boxart,logo,title" {
 		t.Errorf("schema enums differ: %+v", look)
 	}
@@ -175,7 +180,7 @@ func TestSpecAgrees(t *testing.T) {
 	if strings.Join(look["cases"].PropertyNames.Examples, ",") != strings.Join(Media, ",") {
 		t.Errorf("schema's media differ from Media: %v", look["cases"].PropertyNames.Examples)
 	}
-	spec, err := os.ReadFile("../../docs/specs/wittyplay-file.md")
+	spec, err := os.ReadFile(dir + "/wittyplay-file.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,4 +208,15 @@ func TestCasesPerMedium(t *testing.T) {
 	if !strings.Contains(string(out), `"disc-bare"`) {
 		t.Fatalf("lost cases:\n%s", out)
 	}
+}
+
+// specDir is where the format's specification is: WittyPlay's own docs/specs.
+func specDir(t *testing.T) string {
+	for _, d := range []string{"../docs/specs", "../../docs/specs"} {
+		if _, err := os.Stat(d + "/wittyplay-file.md"); err == nil {
+			return d
+		}
+	}
+	t.Skip("no spec here")
+	return ""
 }

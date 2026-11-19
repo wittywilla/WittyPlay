@@ -141,7 +141,7 @@ func (a *App) GPUStatus(ctx context.Context) stream.GPUProbe {
 		}()
 		got = probeGPU(runner, filepath.Join(a.Dir, "probe"), a.Log.With("cat", "games"))
 		// What games here will draw with, once, for anyone reading the log about speed.
-		a.Log.Info("wittyplay: graphics card", "cat", "games", "gpu", got.Name, "vendor", got.Vendor, "version", got.Version, "vramMb", got.VRAMMB,
+		a.Log.Info("wittyplay: graphics card", "cat", "games", "gpu", got.Name, "vendor", got.Vendor, "version", got.Version, "vramMb", got.VRAMMB, "vulkan", got.Vulkan,
 			"none", got.Error, "threads", runtime.NumCPU(), "os", runtime.GOOS+"/"+runtime.GOARCH)
 	}()
 	return stream.GPUProbe{Checking: true}
