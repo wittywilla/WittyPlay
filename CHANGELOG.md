@@ -3,6 +3,14 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.10
+
+- **PlayStation games draw with Vulkan (#84).** SwanStation and Beetle PSX HW now take their automatic renderers, which follow the context the runner prefers: Vulkan where the card can make a device, OpenGL where it can't. Final Fantasy VII's opening on an RTX 3070, in pairs, Vulkan against OpenGL: SwanStation's 95th percentile 3.5 to 4.4 ms against 12.8 to 17.4; Beetle PSX HW's 10.4 to 13.0 against 24.9 to 53.1, on 19 to 34% of a thread against 46 to 75%. Pictures are right through the card's NV12 conversion.
+- **Nintendo 64: ParaLLEl-RDP can be chosen.** Mupen64Plus-Next and ParaLLEl N64 are offered Vulkan, which GLideN64, their default, leaves alone; choosing ParaLLEl-RDP in a core's options now plays (the console's own drawing, on the card), with the internal resolution setting as its upscaling. It isn't the default: with its low-level RSP, Banjo-Kazooie took 50 to 67% of a thread against GLideN64's 14%.
+- PSP stays on OpenGL: PPSSPP's Vulkan renderer measured slower (95th percentile 9.3 to 10.3 ms against 7.1 to 7.6). The 3DS couldn't be compared here.
+- **Fixed: cores that run the game on a stack of their own died at random on Windows** ("morestack on g0"; Mupen64Plus-Next with ParaLLEl-RDP). They call back from that stack, which Go allows only on a thread it didn't create, so on Windows the core now runs on one, as on Linux.
+- **Fixed: Mupen64Plus-Next crashed starting Vulkan.** The runner handed `create_device` no feature list; it now hands empty lists and features, as RetroArch does. And what the runner passes a core by address is kept off the stack (`go:uintptrescapes`, as purego does), since a core calling back during the call can move the stack.
+
 ## 0.7.9
 
 - **Core fixes: the runner corrects what a core gets, on this machine, as it runs (#76).** A core looks up every Vulkan function it uses through the runner, so the runner can hand it a corrected one (`libretro/vk_fixes.go`, listed in `corefixes.go`): nothing in a core's file is changed and no core is built here. On unless **Settings, Games, Advanced, Core fixes** is off (`gamingCoreFixes`), which lists each fix; off, every core gets what it would from any other frontend. `GET /gaming/core-fixes` lists them.

@@ -100,6 +100,11 @@ func (f *glFuncs) load(p glPlatform) error {
 	return nil
 }
 
+// call calls a C function. Like purego.SyscallN, whatever its arguments point to is moved to
+// the heap first (go:uintptrescapes): a core can call back into the runner during the call, and a
+// callback can grow the goroutine's stack, which moves what's on it from under the core.
+//
+//go:uintptrescapes
 func call(fn uintptr, a ...uintptr) uintptr {
 	r, _, _ := purego.SyscallN(fn, a...)
 	return r

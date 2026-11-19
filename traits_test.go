@@ -44,7 +44,7 @@ func TestEveryConsolePlayable(t *testing.T) {
 }
 
 func TestRunnerArgs(t *testing.T) {
-	for id, want := range map[string]string{"fceumm": "", "melonds": "-normal-priority -shared-memory -large-address-space", "play": "-gpu -normal-priority -own-home", "mupen64plus_next": "-gpu -normal-priority", "someone_elses_core": "-gpu -normal-priority"} {
+	for id, want := range map[string]string{"fceumm": "", "melonds": "-normal-priority -shared-memory -large-address-space", "play": "-gpu -normal-priority -own-home", "mupen64plus_next": "-gpu -normal-priority -vulkan", "someone_elses_core": "-gpu -normal-priority"} {
 		if got := strings.Join(RunnerArgs(id), " "); got != want {
 			t.Errorf("RunnerArgs(%q) = %q, want %q", id, got, want)
 		}
@@ -55,6 +55,10 @@ func TestStartOptions(t *testing.T) {
 	o := StartOptions("n64", "mupen64plus_next", "", t.TempDir())
 	if o["mupen64plus-43screensize"] != "1280x960" {
 		t.Errorf("automatic N64 resolution = %q", o["mupen64plus-43screensize"])
+	}
+	// ParaLLEl-RDP, when someone chooses it, upscales by as much.
+	if o["mupen64plus-parallel-rdp-upscaling"] != "2x" {
+		t.Errorf("automatic ParaLLEl-RDP upscaling = %q", o["mupen64plus-parallel-rdp-upscaling"])
 	}
 	if o := StartOptions("n64", "mupen64plus_next", "1", t.TempDir()); o["mupen64plus-43screensize"] != "640x480" {
 		t.Errorf("native N64 resolution = %q", o["mupen64plus-43screensize"])
