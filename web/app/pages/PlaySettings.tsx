@@ -12,6 +12,7 @@ import { PageHead } from '@wms/app/pages/settings/ui'
 import { GameSettingsPage } from './games/consoles'
 import CoresStore, { type StoreTab } from './CoresStore'
 import { LookSetting } from '../shell/playPads'
+import { TvScreen } from '../shell/tvLevels'
 import './settings/settings.css'
 
 const ModuleSettingsPage = lazy(() => import('@wms/app/pages/settings/ModuleSettings').then((m) => ({ default: m.ModuleSettingsPage })))
@@ -35,7 +36,7 @@ const ENTRIES: { title: string; entries: Entry[] }[] = [
   ] },
   { title: 'This server', entries: [
     { id: 'store', icon: IconDisc, label: 'Cores & emulators', hint: 'Consoles and their cores, standalone emulators, BIOS files and what each console plays here: install, update, choose and remove', page: () => <CoresStore tab="consoles" /> },
-    { id: 'libraries', icon: IconLibrary, label: 'Libraries', hint: 'The folders games come from, each library’s console and naming, and scans', admin: true, page: () => <LibrariesSettings /> },
+    { id: 'libraries', icon: IconLibrary, label: 'Libraries', hint: 'The folders games come from, each library’s console and naming, and scans', admin: true, page: () => <TvScreen path="/wittyplay/settings/libraries"><LibrariesSettings /></TvScreen> },
     { id: 'console-photos', icon: IconImage, label: 'Console photos', hint: 'Photos of each console’s hardware from Wikimedia Commons, with their licences: off until you turn them on', admin: true, page: () => <><PageHead title="Console photos" desc="Pictures of each console for the Consoles page, from Wikimedia Commons." /><ConsolePhotos /></> },
   ] },
 ]
