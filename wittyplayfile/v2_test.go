@@ -85,7 +85,7 @@ func TestArchiveRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Game.Details.Title != "Made Up Quest" || got.Game.Artwork["boxfront"] != "images/boxfront.png" || len(got.Files) != 2 {
+	if got.Game.Details.Title != "Made Up Quest" || got.Game.Artwork.First("boxfront") != "images/boxfront.png" || len(got.Files) != 2 {
 		t.Fatalf("read back wrongly: %+v files %v", got.Game, sortedKeys(got.Files))
 	}
 	if got.Language != "en" || got.Game.Details.Languages[0] != "de" {
@@ -131,6 +131,124 @@ func TestLowestVersionWritten(t *testing.T) {
 	}
 	if _, err := Parse(out); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// A version 2 file keeps saying 2 when what's left in it would fit version 1: a writer never
+// lowers a file's version.
+func TestVersionNeverLowered(t *testing.T) {
+	d, err := Parse([]byte(`{"wittyplay":2,"default":{"picture":"case"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out, _ := d.Encode(); !bytes.Contains(out, []byte(`"wittyplay": 2`)) {
+		t.Fatalf("written as:\n%s", out)
+	}
+}
+
+// A newer file is read for what this version knows. Values it doesn't know (a new artwork role,
+// button or hotkey action) and fields it doesn't know are kept, and the version stays.
+func TestNewerFileKept(t *testing.T) {
+	pic := pngBytes(t, 4, 4)
+	in := map[string][]byte{
+		"manifest.json": []byte(`{"wittyplay":3,"shiny":{"a":1},
+			"game":{"details":{"title":"Later Quest","sparkle":true},
+				"artwork":{"boxfront":"images/boxfront.png","hologram":"images/hologram.png"}},
+			"controls":{"default":{"players":[{"player":1,"device":"wand","gamepad":{"a":"button:0","grip":"button:9"}}],
+				"hotkeys":{"actions":{"teleport":{"keyboard":"F9"}}}}}}`),
+		"images/boxfront.png": pic,
+		"images/hologram.png": pic,
+	}
+	d, err := Parse(zipOf(t, in))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !d.Newer() || d.Game.Details.Title != "Later Quest" || d.Game.Artwork.First("boxfront") != "images/boxfront.png" {
+		t.Fatalf("read %+v", d.Game)
+	}
+	if err := d.Validate(); err != nil {
+		t.Fatalf("a newer file's own values are refused: %v", err)
+	}
+	out, err := d.EncodeAny()
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, err := Parse(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, _ := json.Marshal(back)
+	for _, want := range []string{`"wittyplay":3`, `"shiny"`, `"sparkle"`, `"hologram"`, `"wand"`, `"grip"`, `"teleport"`} {
+		if !bytes.Contains(m, []byte(want)) {
+			t.Errorf("%s lost:\n%s", want, m)
+		}
+	}
+	if len(back.Files) != 2 {
+		t.Errorf("pictures %d", len(back.Files))
+	}
+	// The same values in a version 2 file are refused.
+	in["manifest.json"] = bytes.Replace(in["manifest.json"], []byte(`"wittyplay":3`), []byte(`"wittyplay":2`), 1)
+	if d, err := Parse(zipOf(t, in)); err == nil {
+		var e *Error
+		if err := d.Validate(); !errors.As(err, &e) || len(e.Problems) < 4 {
+			t.Errorf("version 2 with unknown values: %v", err)
+		}
+	}
+}
+
+// A role holds one picture or a list, the first shown; one is still written as a plain name.
+func TestSeveralPicturesARole(t *testing.T) {
+	pic := pngBytes(t, 4, 4)
+	d := &Doc{Version: Version}
+	if _, err := d.SetImage("boxfront", pic); err != nil {
+		t.Fatal(err)
+	}
+	m, _ := json.Marshal(d)
+	if !bytes.Contains(m, []byte(`"boxfront":"images/boxfront.png"`)) {
+		t.Fatalf("one picture: %s", m)
+	}
+	n2, _ := d.AddImage("boxfront", pic)
+	n3, _ := d.AddImage("boxfront", pic)
+	if n2 != "images/boxfront-2.png" || n3 != "images/boxfront-3.png" {
+		t.Fatalf("names %s %s", n2, n3)
+	}
+	if !d.ShowFirst("boxfront", n3) || d.Game.Artwork.First("boxfront") != n3 {
+		t.Fatalf("show first: %v", d.Game.Artwork)
+	}
+	if _, err := d.SetImage("boxfront", pic); err != nil {
+		t.Fatal(err)
+	}
+	// Setting replaces the one shown (boxfront-3) and keeps the others.
+	if got := d.Game.Artwork["boxfront"]; len(got) != 3 || got[0] != "images/boxfront-4.png" || got[1] != "images/boxfront.png" || d.Files[n3] != nil {
+		t.Fatalf("after set: %v", got)
+	}
+	if !d.RemoveImage("boxfront", n2) || len(d.Game.Artwork["boxfront"]) != 2 {
+		t.Fatalf("remove: %v", d.Game.Artwork)
+	}
+	out, err := d.EncodeAny()
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, err := Parse(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(back.Game.Artwork["boxfront"]) != 2 || back.Game.Artwork.First("boxfront") != d.Game.Artwork.First("boxfront") {
+		t.Fatalf("back %v", back.Game.Artwork)
+	}
+	for i := 0; i < MaxPicturesPerRole; i++ {
+		d.AddImage("fanart", pic)
+	}
+	if _, err := d.AddImage("fanart", pic); err == nil {
+		t.Errorf("more than %d pictures added", MaxPicturesPerRole)
+	}
+	d.Game.Artwork["logo"] = Pictures{"images/boxfront.png", "images/boxfront.png"}
+	var e *Error
+	if err := d.Validate(); !errors.As(err, &e) || !strings.Contains(err.Error(), "twice") {
+		t.Errorf("a name twice: %v", err)
+	}
+	if err := json.Unmarshal([]byte(`{"x":3}`), &Pictures{}); err == nil {
+		t.Errorf("a number taken as pictures")
 	}
 }
 

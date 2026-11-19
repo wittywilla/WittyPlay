@@ -101,9 +101,6 @@ type FileID struct {
 // Artwork roles.
 var ArtworkRoles = []string{"boxfront", "boxback", "boxspine", "boxfull", "media", "logo", "marquee", "banner", "titlescreen", "fanart", "snapshot", "icon"}
 
-// Artwork names a picture in the archive for each role.
-type Artwork map[string]string
-
 // Play holds how the game is best played. WittyPlay follows what it can; a person's own choices
 // still come first.
 type Play struct {

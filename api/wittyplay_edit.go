@@ -22,7 +22,7 @@ import (
 //
 //	GET  /games/{id}/wittyplay              the file (or a draft gathered from beside the game), its state
 //	GET  /games/{id}/wittyplay/picture      ?name=images/boxfront.png: one picture in it
-//	PUT  /games/{id}/wittyplay              {doc, images: {role: base64}, screenshots: [base64]}: save
+//	PUT  /games/{id}/wittyplay              {doc, images: {role: base64}, add: {role: [base64]}, screenshots: [base64]}: save
 //	GET  /games/{id}/wittyplay/download     the file as an archive, to share
 //	POST /games/{id}/wittyplay/import       a .wittyplay as the body: checked, and saved when it is for this dump
 //	POST /games/{id}/wittyplay/writeout     {overwrite}: write it out to the standard files beside the game
@@ -64,6 +64,10 @@ type sidecarView struct {
 	Pictures map[string]string `json:"pictures"` // member name -> address to show it
 	Console  string            `json:"console"`
 	Limits   map[string]any    `json:"limits"`
+	// Version: the newest version of the format WittyPlay writes. Newer: the file follows a later
+	// one; what WittyPlay doesn't know of it is kept as it is when it's saved.
+	Version int  `json:"version"`
+	Newer   bool `json:"newer,omitempty"`
 }
 
 func handleSidecarGet(a *App, w http.ResponseWriter, r *http.Request) {
@@ -73,8 +77,9 @@ func handleSidecarGet(a *App, w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	v := sidecarView{Name: filepath.Base(gamefiles.SidecarPath(g.Path)), Console: g.Console, Pictures: map[string]string{},
-		State: a.sidecarStateOf(ctx, g.ID),
-		Limits: map[string]any{"maxFile": wittyplayfile.MaxFile, "maxImage": wittyplayfile.MaxImage, "artworkRoles": wittyplayfile.ArtworkRoles,
+		State:   a.sidecarStateOf(ctx, g.ID),
+		Version: wittyplayfile.Version,
+		Limits: map[string]any{"maxFile": wittyplayfile.MaxFile, "maxImage": wittyplayfile.MaxImage, "artworkRoles": wittyplayfile.ArtworkRoles, "maxPerRole": wittyplayfile.MaxPicturesPerRole,
 			"targets": wittyplayfile.Targets, "hotkeyActions": wittyplayfile.HotkeyActions, "devices": wittyplayfile.Devices}}
 	var d *wittyplayfile.Doc
 	if p := findSidecar(g.Path); p != "" {
@@ -89,6 +94,7 @@ func handleSidecarGet(a *App, w http.ResponseWriter, r *http.Request) {
 		d = a.libraryDoc(ctx, g, gathered)
 		v.Draft, v.Found = true, &found
 	}
+	v.Newer = d.Newer()
 	if d.Game != nil {
 		v.Verdict = string(wittyplayfile.Compare(d.Game.Identity, a.gameFacts(ctx, g.ID, g.Path, d.Game.Identity)))
 	}
@@ -142,8 +148,10 @@ func handleSidecarPicture(a *App, w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-// PUT /games/{id}/wittyplay: the editor's document, with pictures to add. Pictures the file has
-// and the document still names are kept; the rest are dropped. Everything is checked before the
+// PUT /games/{id}/wittyplay: the editor's document, with pictures to add. images puts a picture
+// as the one shown for a role, add puts more after a role's others. Pictures the file has and the
+// document still names are kept, in the order the document lists them (the first shown); the rest
+// are dropped. Everything is checked before the
 // file is written, and the problems come back together.
 func handleSidecarPut(a *App, w http.ResponseWriter, r *http.Request) {
 	g, ok := a.sidecarGame(w, r)
@@ -151,9 +159,10 @@ func handleSidecarPut(a *App, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var b struct {
-		Doc         json.RawMessage   `json:"doc"`
-		Images      map[string]string `json:"images"`
-		Screenshots []string          `json:"screenshots"`
+		Doc         json.RawMessage     `json:"doc"`
+		Images      map[string]string   `json:"images"`
+		Add         map[string][]string `json:"add"`
+		Screenshots []string            `json:"screenshots"`
 	}
 	if err := readJSON(capBody(w, r, wittyplayfile.MaxFile*4/3+(1<<20)), &b); err != nil {
 		writeErr(w, 400, "this can't be read: is it too large?")
@@ -182,6 +191,18 @@ func handleSidecarPut(a *App, w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			writeJSON(w, 400, map[string]any{"error": role + ": " + err.Error(), "problems": []wittyplayfile.Problem{{Where: "game.artwork." + role, What: err.Error()}}})
 			return
+		}
+	}
+	for role, list := range b.Add {
+		for _, data := range list {
+			raw, err := base64.StdEncoding.DecodeString(stripDataURL(data))
+			if err == nil {
+				_, err = d.AddImage(role, raw)
+			}
+			if err != nil {
+				writeJSON(w, 400, map[string]any{"error": role + ": " + err.Error(), "problems": []wittyplayfile.Problem{{Where: "game.artwork." + role, What: err.Error()}}})
+				return
+			}
 		}
 	}
 	for _, data := range b.Screenshots {

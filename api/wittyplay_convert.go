@@ -545,7 +545,7 @@ func (a *App) libraryDoc(ctx context.Context, g convertGame, d *wittyplayfile.Do
 	fill(&m.Title, g.Title)
 	// The box art WittyPlay has already downloaded, when the files beside the game had none. Nothing
 	// is fetched for this.
-	if d.Game.Artwork["boxfront"] == "" {
+	if len(d.Game.Artwork["boxfront"]) == 0 {
 		if r, err := a.gameRow(ctx, g.ID); err == nil && r.PosterRef != "" {
 			for _, ext := range []string{".jpg", ".png", ".webp"} {
 				p := filepath.Join(a.gameImagesDir(), gameImageName(r.PosterRef, ext))

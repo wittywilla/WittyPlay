@@ -103,8 +103,11 @@ func TestRefused(t *testing.T) {
 			t.Errorf("%s: accepted %s", name, in)
 		}
 	}
-	if _, err := Parse([]byte(`{"wittyplay":3}`)); !errors.Is(err, ErrNewer) {
-		t.Errorf("a newer version: %v", err)
+	if d, err := Parse([]byte(`{"wittyplay":3}`)); err != nil || !d.Newer() {
+		t.Errorf("a newer version is read and flagged: %v", err)
+	}
+	if _, err := Parse([]byte(`{"wittyplay":0}`)); err == nil {
+		t.Errorf("version 0 accepted")
 	}
 	big := `{"wittyplay":1,"pad":"` + strings.Repeat("x", MaxSize) + `"}`
 	if _, err := Parse([]byte(big)); !errors.Is(err, ErrTooBig) {

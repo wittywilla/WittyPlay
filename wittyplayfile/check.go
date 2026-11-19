@@ -66,7 +66,13 @@ const (
 	MaxCoreOptions = 300
 )
 
-type checker struct{ problems []Problem }
+type checker struct {
+	problems []Problem
+	// newer: the file follows a later version of the format, so a value this version doesn't
+	// know (a new artwork role, button, hotkey action...) may be one the later version added.
+	// It's kept, not refused.
+	newer bool
+}
 
 func (c *checker) bad(where, format string, args ...any) {
 	if len(c.problems) < 100 {
@@ -96,7 +102,7 @@ func (c *checker) list(where string, l []string, max int) {
 }
 
 func (c *checker) oneOf(where, v string, allowed []string) {
-	if !oneOfList(v, allowed) {
+	if !oneOfList(v, allowed) && !c.newer {
 		c.bad(where, "%q is not one of %s", v, strings.Join(allowed, ", "))
 	}
 }
@@ -181,7 +187,25 @@ func (d *Doc) checkV2(c *checker) {
 		}
 		for _, role := range sortedKeys(g.Artwork) {
 			c.oneOf("game.artwork."+role, role, ArtworkRoles)
-			c.member("game.artwork."+role, g.Artwork[role], d.Files)
+			p := g.Artwork[role]
+			if len(p) == 0 {
+				c.bad("game.artwork."+role, "names no picture")
+			}
+			if len(p) > MaxPicturesPerRole {
+				c.bad("game.artwork."+role, "has %d pictures; %d at most", len(p), MaxPicturesPerRole)
+			}
+			seen := map[string]bool{}
+			for i, name := range p {
+				at := "game.artwork." + role
+				if len(p) > 1 {
+					at += fmt.Sprintf("[%d]", i)
+				}
+				if seen[name] {
+					c.bad(at, "names %q twice", name)
+				}
+				seen[name] = true
+				c.member(at, name, d.Files)
+			}
 		}
 		if len(g.Screenshots) > MaxScreenshots {
 			c.bad("game.screenshots", "more than %d screenshots", MaxScreenshots)

@@ -9,11 +9,9 @@
   ],
   "properties": {
     "wittyplay": {
-      "description": "The format's version: 1 or 2. Writers write the lowest that holds what they write.",
-      "enum": [
-        1,
-        2
-      ]
+      "description": "Which version of the format the file follows, a whole number: 1 or 2 for files written to this description. A reader takes a newer version for what it knows and keeps the rest. Writers write the lowest that holds what they write, and never lower a file's version.",
+      "type": "integer",
+      "minimum": 1
     },
     "name": {
       "type": "string",
@@ -93,6 +91,11 @@
   },
   "additionalProperties": true,
   "$defs": {
+    "imageMember": {
+      "type": "string",
+      "description": "A picture inside the archive.",
+      "pattern": "^images/[A-Za-z0-9_][A-Za-z0-9 ._-]{0,99}(/[A-Za-z0-9_][A-Za-z0-9 ._-]{0,99}){0,2}\\.(jpg|jpeg|png|webp)$"
+    },
     "look": {
       "description": "How pictures are shown at one level. Every field is optional; an absent one is decided by the level above.",
       "type": "object",
@@ -735,9 +738,21 @@
             ]
           },
           "additionalProperties": {
-            "type": "string",
-            "description": "A picture inside the archive.",
-            "pattern": "^images/[A-Za-z0-9_][A-Za-z0-9 ._-]{0,99}(/[A-Za-z0-9_][A-Za-z0-9 ._-]{0,99}){0,2}\\.(jpg|jpeg|png|webp)$"
+            "description": "The role's pictures: one name, or a list with the one shown first (32 at most, each once).",
+            "oneOf": [
+              {
+                "$ref": "#/$defs/imageMember"
+              },
+              {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 32,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/imageMember"
+                }
+              }
+            ]
           }
         },
         "screenshots": {
