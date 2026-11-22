@@ -66,14 +66,17 @@ html[data-wplay] {
   --focus-scale: 1 !important;
   --on-image: #ffffff !important;
   --picture-bg: #0a0f2e !important;
-  /* WittyPlay's own sizes: a ten-foot screen drawn at any window size (the board is 1920 wide). */
-  --wp-gutter: clamp(16px, 4.6vw, 96px);
-  --wp-tile: calc(clamp(132px, min(15.6vw, 25vh), 300px) * var(--wp-scale, 1));
+  /* WittyPlay's own sizes: a ten-foot screen drawn at any window size (the board is 1920 wide). Every size that follows the
+     window is in --wp-vw: the window's own 1vw in TV mode, less on a computer's screen (below), so one sheet serves both. */
+  --wp-vw: 1vw;
+  --wp-gutter: clamp(16px, calc(4.6 * var(--wp-vw)), 96px);
+  --wp-tile-base: clamp(132px, min(calc(15.6 * var(--wp-vw)), 25vh), 300px);
+  --wp-tile: calc(var(--wp-tile-base) * var(--wp-scale, 1));
   --wp-grow: 1.27;
   --wp-ring: #0a0f2e;
   --wp-chip: rgb(255 255 255 / .14);
   --wp-chip-hover: rgb(255 255 255 / .22);
-  --wp-dock: clamp(52px, 4.4vw, 84px);
+  --wp-dock: clamp(52px, calc(4.4 * var(--wp-vw)), 84px);
 }
 html[data-wplay], html[data-wplay] body { background: #13163f; overflow: hidden; }
 html[data-wplay] body { font-family: var(--font); }
@@ -90,14 +93,14 @@ html[data-wplay] body { font-family: var(--font); }
   background-color: #13163f;
 }
 /* The status bar's height (its padding and its 44px row), so what sticks while the page scrolls sticks just under it. */
-.wplay { --wp-bar: calc(clamp(14px, 2.4vw, 32px) + clamp(8px, 1vw, 16px) + 48px); }
+.wplay { --wp-bar: calc(clamp(14px, calc(2.4 * var(--wp-vw)), 32px) + clamp(8px, calc(1 * var(--wp-vw)), 16px) + 48px); }
 .wplay .gpic-look-now { inset-block-start: calc(var(--wp-bar) + 8px); }
 /* The page is one layer, under the status bar and the dock (both 4): nothing on it, however it is drawn, can rise above them. */
 .wplay-stage { position: relative; z-index: 0; isolation: isolate; flex: 1 0 auto; min-block-size: 0; padding: 0 var(--wp-gutter) calc(var(--wp-dock) * 1.25 + 80px); outline: none; }
 .wplay-stage:focus-visible { outline: none; }
 
 /* ---- the status bar: who, then the server's name, the controllers, the time and the way out ---- */
-.wplay .play-status { padding: clamp(14px, 2.4vw, 32px) var(--wp-gutter) clamp(8px, 1vw, 16px); gap: var(--sp-3) var(--sp-5); }
+.wplay .play-status { padding: clamp(14px, calc(2.4 * var(--wp-vw)), 32px) var(--wp-gutter) clamp(8px, calc(1 * var(--wp-vw)), 16px); gap: var(--sp-3) var(--sp-5); }
 /* The status bar stays at the top. At the top of a page it is clear, as it always was; once the page scrolls it gets a deep band
    that fades to nothing at its foot, so what passes under it never muddles it and there is no hard edge. */
 /* Its own layer: rows that scroll sideways get layers of their own, and would otherwise be painted over it. */
@@ -105,21 +108,21 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay[data-scrolled] .play-status { background: linear-gradient(180deg, rgb(16 14 52 / .99) 0%, rgb(16 14 52 / .98) 86%, rgb(16 14 52 / 0) 100%); }
 /* Rows that scroll sideways keep below it: they are given a place in the stacking order under the status bar's. */
 .wplay :is(.wpg-shots, .wpl-line, .wpg-saves, .sdui-shelf .row) { position: relative; z-index: 0; }
-.wplay .play-avatar { inline-size: clamp(44px, 3.2vw, 60px); block-size: clamp(44px, 3.2vw, 60px); background: linear-gradient(135deg, #ff8aa3, #8a7bd8 55%, #5ff0d6); color: #13163f; font-size: clamp(1.1rem, 1.3vw, 1.6rem); font-weight: 900; box-shadow: 0 0 0 2px rgb(255 255 255 / .35); }
-.wplay .play-who-text b { font-size: clamp(1.1rem, 1.45vw, 1.7rem); font-weight: 800; line-height: 1.15; }
-.wplay .play-who-text span { font-size: clamp(.9rem, 1.05vw, 1.25rem); color: var(--fg-2); }
-.wplay .play-right { gap: clamp(10px, 1.3vw, 26px); flex-wrap: wrap; justify-content: flex-end; }
-.wplay .play-brand { font-size: clamp(1rem, 1.15vw, 1.35rem); font-weight: 900; }
-.wplay .play-pads { gap: clamp(8px, 1vw, 18px); color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1.1rem); font-weight: 700; letter-spacing: .06em; }
+.wplay .play-avatar { inline-size: clamp(44px, calc(3.2 * var(--wp-vw)), 60px); block-size: clamp(44px, calc(3.2 * var(--wp-vw)), 60px); background: linear-gradient(135deg, #ff8aa3, #8a7bd8 55%, #5ff0d6); color: #13163f; font-size: clamp(1.1rem, calc(1.3 * var(--wp-vw)), 1.6rem); font-weight: 900; box-shadow: 0 0 0 2px rgb(255 255 255 / .35); }
+.wplay .play-who-text b { font-size: clamp(1.1rem, calc(1.45 * var(--wp-vw)), 1.7rem); font-weight: 800; line-height: 1.15; }
+.wplay .play-who-text span { font-size: clamp(.9rem, calc(1.05 * var(--wp-vw)), 1.25rem); color: var(--fg-2); }
+.wplay .play-right { gap: clamp(10px, calc(1.3 * var(--wp-vw)), 26px); flex-wrap: wrap; justify-content: flex-end; }
+.wplay .play-brand { font-size: clamp(1rem, calc(1.15 * var(--wp-vw)), 1.35rem); font-weight: 900; }
+.wplay .play-pads { gap: clamp(8px, calc(1 * var(--wp-vw)), 18px); color: var(--fg-2); font-size: clamp(.85rem, calc(.95 * var(--wp-vw)), 1.1rem); font-weight: 700; letter-spacing: .06em; }
 /* A battery: its level is the fill (--lvl), in words beside it; low, it's the warning colour and says Low; unknown, an empty outline. */
 .wplay :is(.play-pads, .play-device-batt) i { --batt: var(--ok); position: relative; inline-size: 1.6em; block-size: .85em; border-radius: 3px; background: linear-gradient(90deg, var(--batt) 0 var(--lvl, 0%), transparent var(--lvl, 0%)); box-shadow: 0 0 0 2px var(--batt); margin-inline-end: 4px; }
 .wplay :is(.play-pads, .play-device-batt) i::after { content: ""; position: absolute; inset-inline-end: -5px; inset-block: 25%; inline-size: 2px; border-radius: 1px; background: var(--batt); }
 .wplay :is(.play-pads, .play-device-batt) i.unknown { --batt: var(--fg-2); }
 .wplay :is(.play-pads, .play-device-batt) i.low { --batt: var(--warn); }
 .wplay :is(.play-pads li, .play-device-batt).low { color: var(--warn); }
-.wplay .play-device-batt { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1.1rem); font-weight: 700; font-variant-numeric: tabular-nums; }
+.wplay .play-device-batt { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--fg-2); font-size: clamp(.85rem, calc(.95 * var(--wp-vw)), 1.1rem); font-weight: 700; font-variant-numeric: tabular-nums; }
 .play-invites { text-decoration: none; }
-.wplay .play-clock { font-size: clamp(1.2rem, 1.6vw, 1.85rem); font-weight: 900; }
+.wplay .play-clock { font-size: clamp(1.2rem, calc(1.6 * var(--wp-vw)), 1.85rem); font-weight: 900; }
 .play-sys { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-inline-size: 44px; min-block-size: 44px; padding: 0 var(--sp-3); border: 0; border-radius: var(--r-full); background: var(--wp-chip); color: var(--fg); font: inherit; font-weight: 800; cursor: pointer; transition: background var(--dur-2); }
 .play-sys:hover { background: var(--wp-chip-hover); }
 .play-sys:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
@@ -132,8 +135,8 @@ html[data-wplay] body { font-family: var(--font); }
 /* ---- the page in it: no heading on show (the status bar says where you are), big bold tabs without icons ---- */
 .wplay .sdui { --card-w: var(--wp-tile); }
 .wplay .sdui-page-title { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.wplay .sdui-tabs .tabs { gap: clamp(14px, 1.7vw, 34px); box-shadow: none; margin-block: clamp(4px, .8vw, 14px) clamp(6px, 1vw, 20px); padding-block-end: 6px; }
-.wplay .sdui-tabs .tabs > :is(a, button) { padding: 4px 0; font-size: clamp(1.15rem, 1.6vw, 1.9rem); font-weight: 800; color: var(--fg-2); border-bottom: 0; position: relative; border-radius: 6px; }
+.wplay .sdui-tabs .tabs { gap: clamp(14px, calc(1.7 * var(--wp-vw)), 34px); box-shadow: none; margin-block: clamp(4px, calc(.8 * var(--wp-vw)), 14px) clamp(6px, calc(1 * var(--wp-vw)), 20px); padding-block-end: 6px; }
+.wplay .sdui-tabs .tabs > :is(a, button) { padding: 4px 0; font-size: clamp(1.15rem, calc(1.6 * var(--wp-vw)), 1.9rem); font-weight: 800; color: var(--fg-2); border-bottom: 0; position: relative; border-radius: 6px; }
 .wplay .sdui-tabs .tabs > :is(a, button) svg { display: none; }
 .wplay .sdui-tabs .tabs > :is(a, button):hover { color: var(--fg); }
 .wplay .sdui-tabs .tabs > :is(a, button).active { color: var(--fg); }
@@ -145,10 +148,10 @@ html[data-wplay] body { font-family: var(--font); }
 /* ---- the home row: large rounded tiles, the era on a coloured badge and the title on the art; the focused one larger with a ring ---- */
 .wplay .sdui-shelf.focus-grow { --card-w: var(--wp-tile) !important; }
 .wplay .sdui-shelf.focus-grow .row-wrap { margin-inline: calc(var(--wp-gutter) * -1); }
-.wplay .sdui-shelf.focus-grow .row { gap: clamp(12px, 1.6vw, 30px); padding: clamp(14px, 1.4vw, 24px) var(--wp-gutter); align-items: center; scroll-padding-inline: var(--wp-gutter); }
+.wplay .sdui-shelf.focus-grow .row { gap: clamp(12px, calc(1.6 * var(--wp-vw)), 30px); padding: clamp(14px, calc(1.4 * var(--wp-vw)), 24px) var(--wp-gutter); align-items: center; scroll-padding-inline: var(--wp-gutter); }
 .wplay .sdui-shelf.focus-grow .row-arrow { display: none; }
 .wplay .sdui-shelf .card { position: relative; width: var(--card-w); }
-.wplay .sdui .sdui-shelf .card .poster { aspect-ratio: 1 / 1; border-radius: clamp(14px, 1.3vw, 24px); background: linear-gradient(135deg, #5a4ad8, #1b234f); box-shadow: 0 10px 26px rgb(4 6 24 / .45); }
+.wplay .sdui .sdui-shelf .card .poster { aspect-ratio: 1 / 1; border-radius: clamp(14px, calc(1.3 * var(--wp-vw)), 24px); background: linear-gradient(135deg, #5a4ad8, #1b234f); box-shadow: 0 10px 26px rgb(4 6 24 / .45); }
 .wplay .sdui-shelf .card .poster::after { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1); background: linear-gradient(180deg, rgb(255 255 255 / .1), transparent 38%, rgb(6 8 30 / .62)); }
 .wplay .sdui-shelf .card .art-ph b { display: none; }
 .wplay .sdui-shelf.focus-grow .sdui-item.grown .card { width: calc(var(--wp-tile) * var(--wp-grow)); box-shadow: none; }
@@ -156,13 +159,13 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .sdui-shelf .card:focus-visible .poster { outline: none; transform: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px var(--focus), 0 18px 40px rgb(4 6 24 / .55); }
 /* The title over the art, at its foot. */
 .wplay .sdui-shelf .card .title,
-.wplay .sdui-shelf.focus-grow.has-detail .sdui-item.grown .card .title { display: -webkit-box; position: absolute; inset-inline: 0; inset-block-end: 0; z-index: 3; margin: 0; padding: 0 clamp(10px, 1vw, 18px) clamp(10px, 1.1vw, 20px); color: #fff; font-size: clamp(1rem, 1.55vw, 1.85rem); font-weight: 900; line-height: 1.1; text-shadow: 0 2px 10px rgb(0 0 0 / .55); -webkit-line-clamp: 2; }
-.wplay .sdui-shelf.focus-grow .sdui-item.grown .card .title { font-size: clamp(1.2rem, 2vw, 2.4rem); }
+.wplay .sdui-shelf.focus-grow.has-detail .sdui-item.grown .card .title { display: -webkit-box; position: absolute; inset-inline: 0; inset-block-end: 0; z-index: 3; margin: 0; padding: 0 clamp(10px, calc(1 * var(--wp-vw)), 18px) clamp(10px, calc(1.1 * var(--wp-vw)), 20px); color: #fff; font-size: clamp(1rem, calc(1.55 * var(--wp-vw)), 1.85rem); font-weight: 900; line-height: 1.1; text-shadow: 0 2px 10px rgb(0 0 0 / .55); -webkit-line-clamp: 2; }
+.wplay .sdui-shelf.focus-grow .sdui-item.grown .card .title { font-size: clamp(1.2rem, calc(2 * var(--wp-vw)), 2.4rem); }
 .wplay .sdui-shelf .card .sub { display: none; }
 .wplay .sdui-shelf .card:hover .title { color: #fff; }
 /* The era: a coloured pill, top left. */
-.wplay .card .sdui-badges { top: clamp(8px, .9vw, 16px); left: clamp(8px, .9vw, 16px); }
-.wplay .card .sdui-badges .badge { min-height: 0; padding: .2em .6em; border-radius: var(--r-full); background: #c9b0ff; color: #17123a; font-size: clamp(.7rem, .85vw, 1rem); font-weight: 900; letter-spacing: .02em; text-transform: uppercase; }
+.wplay .card .sdui-badges { top: clamp(8px, calc(.9 * var(--wp-vw)), 16px); left: clamp(8px, calc(.9 * var(--wp-vw)), 16px); }
+.wplay .card .sdui-badges .badge { min-height: 0; padding: .2em .6em; border-radius: var(--r-full); background: #c9b0ff; color: #17123a; font-size: clamp(.7rem, calc(.85 * var(--wp-vw)), 1rem); font-weight: 900; letter-spacing: .02em; text-transform: uppercase; }
 .wplay .card .sdui-badges .badge[data-badge="8-bit"] { background: #5ff0d6; }
 .wplay .card .sdui-badges .badge[data-badge="16-bit"] { background: #ffd84a; }
 .wplay .card .sdui-badges .badge:is([data-badge="first era"], [data-badge="arcade"]) { background: #ff8aa3; }
@@ -172,24 +175,24 @@ html[data-wplay] body { font-family: var(--font); }
 
 /* The home's parts sit close: tabs, consoles, the row and its detail all fit over the dock on a 16:9 screen. */
 .wplay .sdui-tabs { gap: 0; }
-.wplay .sdui-tabs > [role="tabpanel"] { gap: clamp(8px, 1vw, 20px); }
+.wplay .sdui-tabs > [role="tabpanel"] { gap: clamp(8px, calc(1 * var(--wp-vw)), 20px); }
 .wplay .sdui-shelf.focus-grow { gap: 0; }
-.wplay .sdui-shelf.focus-grow .row { padding-block: clamp(12px, 1vw, 18px); }
+.wplay .sdui-shelf.focus-grow .row { padding-block: clamp(12px, calc(1 * var(--wp-vw)), 18px); }
 
 /* ---- the consoles bar over the home row: calm chips, the chosen one in the accent ---- */
-.wplay .sdui-console-bar { margin-block-end: clamp(2px, .4vw, 8px); }
-.wplay .sdui-console-chip { min-block-size: clamp(44px, 3vw, 56px); padding: 0 clamp(14px, 1.1vw, 22px); background: var(--wp-chip); font-size: clamp(.95rem, 1.1vw, 1.3rem); font-weight: 800; }
+.wplay .sdui-console-bar { margin-block-end: clamp(2px, calc(.4 * var(--wp-vw)), 8px); }
+.wplay .sdui-console-chip { min-block-size: clamp(44px, calc(3 * var(--wp-vw)), 56px); padding: 0 clamp(14px, calc(1.1 * var(--wp-vw)), 22px); background: var(--wp-chip); font-size: clamp(.95rem, calc(1.1 * var(--wp-vw)), 1.3rem); font-weight: 800; }
 .wplay .sdui-console-chip:hover { background: var(--wp-chip-hover); }
 .wplay .sdui-console-chip.on { background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
 .wplay .sdui-console-chip:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wplay .sdui-console-arrow { background: var(--wp-chip); }
 
 /* ---- under the row: the focused game's name large, its line, and pills with the pad's keys ---- */
-.wplay .sdui-detail { gap: clamp(6px, .7vw, 12px); padding-block-start: clamp(8px, 1.2vw, 22px); }
-.wplay .sdui-detail-title { font-size: clamp(1.8rem, 2.6vw, 3.1rem); font-weight: 900; letter-spacing: 0; line-height: 1.05; }
-.wplay .sdui-detail-line { font-size: clamp(1rem, 1.45vw, 1.7rem); color: var(--fg-2); }
-.wplay .sdui-detail-actions { gap: clamp(10px, 1.1vw, 20px); margin-block-start: clamp(4px, .6vw, 10px); }
-.wplay .sdui .sdui-detail-actions .btn { min-height: clamp(48px, 3.4vw, 64px); padding-inline: clamp(16px, 1.3vw, 26px); gap: .5em; border: 0; border-radius: var(--r-full); background: var(--wp-chip); color: var(--fg); font-size: clamp(1rem, 1.45vw, 1.65rem); font-weight: 900; box-shadow: none; }
+.wplay .sdui-detail { gap: clamp(6px, calc(.7 * var(--wp-vw)), 12px); padding-block-start: clamp(8px, calc(1.2 * var(--wp-vw)), 22px); }
+.wplay .sdui-detail-title { font-size: clamp(1.8rem, calc(2.6 * var(--wp-vw)), 3.1rem); font-weight: 900; letter-spacing: 0; line-height: 1.05; }
+.wplay .sdui-detail-line { font-size: clamp(1rem, calc(1.45 * var(--wp-vw)), 1.7rem); color: var(--fg-2); }
+.wplay .sdui-detail-actions { gap: clamp(10px, calc(1.1 * var(--wp-vw)), 20px); margin-block-start: clamp(4px, calc(.6 * var(--wp-vw)), 10px); }
+.wplay .sdui .sdui-detail-actions .btn { min-height: clamp(48px, calc(3.4 * var(--wp-vw)), 64px); padding-inline: clamp(16px, calc(1.3 * var(--wp-vw)), 26px); gap: .5em; border: 0; border-radius: var(--r-full); background: var(--wp-chip); color: var(--fg); font-size: clamp(1rem, calc(1.45 * var(--wp-vw)), 1.65rem); font-weight: 900; box-shadow: none; }
 .wplay .sdui-detail-actions .btn:hover { background: var(--wp-chip-hover); }
 .wplay .sdui-detail-actions .btn.primary { background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
 .wplay .sdui-detail-actions .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 7px var(--focus); }
@@ -197,13 +200,13 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .btn.primary .sdui-glyph { background: #06302a; color: #5ff0d6; }
 
 /* ---- the other tabs: the same surfaces ---- */
-.wplay .sdui .hub-head h2 { font-size: clamp(1.2rem, 1.7vw, 2rem); font-weight: 900; }
+.wplay .sdui .hub-head h2 { font-size: clamp(1.2rem, calc(1.7 * var(--wp-vw)), 2rem); font-weight: 900; }
 .wplay .sdui-person, .wplay .sdui-control-row { background: var(--wp-chip); }
-.wplay .sdui .lib-tile { background: var(--wp-chip); border-radius: clamp(14px, 1.3vw, 24px); }
+.wplay .sdui .lib-tile { background: var(--wp-chip); border-radius: clamp(14px, calc(1.3 * var(--wp-vw)), 24px); }
 
 /* ---- the system dock: large round buttons along the foot, the current one filled in the accent with its name under it ---- */
 /* Above the games scrolling under it (a chosen tile's title sits at 3), below the first-launch tip (5). */
-.wplay .play-dock { position: fixed; z-index: 4; inset-block-end: calc(clamp(14px, 3.2vh, 40px) + env(safe-area-inset-bottom, 0px) + 1.2em); gap: clamp(14px, 1.9vw, 30px); align-items: center; }
+.wplay .play-dock { position: fixed; z-index: 4; inset-block-end: calc(clamp(14px, 3.2vh, 40px) + env(safe-area-inset-bottom, 0px) + 1.2em); gap: clamp(14px, calc(1.9 * var(--wp-vw)), 30px); align-items: center; }
 .wplay .play-dock a { position: relative; gap: 6px; }
 /* A fade at the foot so the dock reads over the games scrolling beneath it. */
 .wplay .play-dock::before { content: ""; position: fixed; inset-inline: 0; inset-block-end: 0; block-size: calc(var(--wp-dock) * 2 + 60px); z-index: -1; pointer-events: none; background: linear-gradient(180deg, transparent, rgb(8 10 34 / .88) 60%); }
@@ -214,19 +217,19 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay .play-dock a:focus-visible .play-dock-ic { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); transform: scale(1.06); }
 /* Under its button, out of the row's flow, so a long name never pushes the buttons apart. */
 /* Under the current button, clear of its scaled ring (it reaches about 14px past the button), on a small dark pill so it reads over any scene. */
-.wplay .play-dock-label { position: absolute; inset-block-start: calc(100% + 18px); inset-inline-start: 50%; transform: translateX(-50%); white-space: nowrap; font-size: clamp(.85rem, .95vw, 1.1rem); font-weight: 800; padding: 2px 10px; border-radius: 999px; background: rgb(0 0 0 / .55); color: #fff; line-height: 1.4; }
+.wplay .play-dock-label { position: absolute; inset-block-start: calc(100% + 18px); inset-inline-start: 50%; transform: translateX(-50%); white-space: nowrap; font-size: clamp(.85rem, calc(.95 * var(--wp-vw)), 1.1rem); font-weight: 800; padding: 2px 10px; border-radius: 999px; background: rgb(0 0 0 / .55); color: #fff; line-height: 1.4; }
 
 /* ---- the first-time tip: how to get back to the app, with a ring round the Home button ---- */
 .wplay-tip-scrim { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; padding: var(--wp-gutter); background: rgb(6 8 30 / .74); animation: fade-in var(--dur-2) ease-out; }
 .wplay-tip-ring { position: fixed; border-radius: var(--r-full); box-shadow: 0 0 0 4px #5ff0d6, 0 0 0 9999px transparent; pointer-events: none; animation: wplay-tip-pulse 1.6s ease-in-out infinite; }
 @keyframes wplay-tip-pulse { 50% { box-shadow: 0 0 0 8px rgb(95 240 214 / .55); } }
-.wplay-tip { inline-size: min(100%, 40rem); display: grid; gap: clamp(10px, 1.2vw, 18px); padding: clamp(20px, 2.4vw, 40px); border-radius: clamp(18px, 1.6vw, 28px); background: #1f2358; color: var(--fg); box-shadow: 0 0 0 1px rgb(255 255 255 / .12), 0 24px 60px rgb(4 6 24 / .6); }
-.wplay-tip h2 { margin: 0; font-size: clamp(1.5rem, 2.2vw, 2.6rem); font-weight: 900; line-height: 1.1; }
-.wplay-tip p { margin: 0; color: var(--fg-2); font-size: clamp(1.05rem, 1.35vw, 1.6rem); }
-.wplay-tip ul { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(8px, .9vw, 14px); }
-.wplay-tip li { display: flex; align-items: center; gap: var(--sp-3); font-size: clamp(1.05rem, 1.35vw, 1.6rem); font-weight: 700; }
+.wplay-tip { inline-size: min(100%, 40rem); display: grid; gap: clamp(10px, calc(1.2 * var(--wp-vw)), 18px); padding: clamp(20px, calc(2.4 * var(--wp-vw)), 40px); border-radius: clamp(18px, calc(1.6 * var(--wp-vw)), 28px); background: #1f2358; color: var(--fg); box-shadow: 0 0 0 1px rgb(255 255 255 / .12), 0 24px 60px rgb(4 6 24 / .6); }
+.wplay-tip h2 { margin: 0; font-size: clamp(1.5rem, calc(2.2 * var(--wp-vw)), 2.6rem); font-weight: 900; line-height: 1.1; }
+.wplay-tip p { margin: 0; color: var(--fg-2); font-size: clamp(1.05rem, calc(1.35 * var(--wp-vw)), 1.6rem); }
+.wplay-tip ul { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(8px, calc(.9 * var(--wp-vw)), 14px); }
+.wplay-tip li { display: flex; align-items: center; gap: var(--sp-3); font-size: clamp(1.05rem, calc(1.35 * var(--wp-vw)), 1.6rem); font-weight: 700; }
 .wplay-tip kbd { flex: none; inline-size: 4.4em; padding: .25em .6em; border-radius: var(--r-full); background: rgb(255 255 255 / .16); color: #fff; font: inherit; font-size: .85em; font-weight: 900; text-align: center; }
-.wplay-tip-ok { justify-self: start; display: inline-flex; align-items: center; gap: .5em; min-block-size: clamp(48px, 3.4vw, 64px); padding-inline: clamp(18px, 1.4vw, 28px); margin-block-start: var(--sp-2); border: 0; border-radius: var(--r-full); background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); font: inherit; font-size: clamp(1.05rem, 1.4vw, 1.6rem); font-weight: 900; cursor: pointer; }
+.wplay-tip-ok { justify-self: start; display: inline-flex; align-items: center; gap: .5em; min-block-size: clamp(48px, calc(3.4 * var(--wp-vw)), 64px); padding-inline: clamp(18px, calc(1.4 * var(--wp-vw)), 28px); margin-block-start: var(--sp-2); border: 0; border-radius: var(--r-full); background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); font: inherit; font-size: clamp(1.05rem, calc(1.4 * var(--wp-vw)), 1.6rem); font-weight: 900; cursor: pointer; }
 .wplay-tip-ok .sdui-glyph { inline-size: 1.3em; block-size: 1.3em; background: #06302a; color: #5ff0d6; font-size: .8em; }
 .wplay-tip-ok:focus-visible { outline: none; box-shadow: 0 0 0 4px #1f2358, 0 0 0 7px var(--focus); }
 
@@ -245,32 +248,32 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay-tip.step-pads { inline-size: min(100%, 56rem); }
 
 /* The four choices: each with its four face buttons in their places (Y top, X left, B right, A bottom). */
-.wplay-pads { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: clamp(8px, 1vw, 16px); }
-.wplay-pad { display: flex; align-items: center; gap: var(--sp-4); min-block-size: 5.5rem; padding: var(--sp-3) var(--sp-4); border: 0; border-radius: clamp(14px, 1.2vw, 22px); background: var(--wp-chip); color: var(--fg); font: inherit; text-align: start; cursor: pointer; }
+.wplay-pads { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: clamp(8px, calc(1 * var(--wp-vw)), 16px); }
+.wplay-pad { display: flex; align-items: center; gap: var(--sp-4); min-block-size: 5.5rem; padding: var(--sp-3) var(--sp-4); border: 0; border-radius: clamp(14px, calc(1.2 * var(--wp-vw)), 22px); background: var(--wp-chip); color: var(--fg); font: inherit; text-align: start; cursor: pointer; }
 .wplay-pad:hover { background: var(--wp-chip-hover); }
 .wplay-pad.on { background: rgb(95 240 214 / .16); box-shadow: inset 0 0 0 3px #5ff0d6; }
 .wplay-pad:focus-visible { outline: none; box-shadow: 0 0 0 4px #1f2358, 0 0 0 7px var(--focus); }
 .wplay-pad.on:focus-visible { box-shadow: inset 0 0 0 3px #5ff0d6, 0 0 0 4px #1f2358, 0 0 0 7px var(--focus); }
-.wplay-pad-glyphs { flex: none; display: grid; grid-template-areas: ". y ." "x . b" ". a ."; grid-template-columns: repeat(3, 1.6em); grid-template-rows: repeat(3, 1.6em); place-items: center; font-size: clamp(1.3rem, 1.9vw, 2.1rem); }
+.wplay-pad-glyphs { flex: none; display: grid; grid-template-areas: ". y ." "x . b" ". a ."; grid-template-columns: repeat(3, 1.6em); grid-template-rows: repeat(3, 1.6em); place-items: center; font-size: clamp(1.3rem, calc(1.9 * var(--wp-vw)), 2.1rem); }
 .wplay-pad[data-pads="keyboard"] .wplay-pad-glyphs { grid-template-columns: repeat(3, 2.4em); }
 .wplay-pad-glyphs .at-y { grid-area: y; } .wplay-pad-glyphs .at-x { grid-area: x; } .wplay-pad-glyphs .at-b { grid-area: b; } .wplay-pad-glyphs .at-a { grid-area: a; }
 .wplay-pad-text { display: grid; gap: 2px; min-inline-size: 0; }
-.wplay-pad-text b { font-size: clamp(1.05rem, 1.35vw, 1.5rem); font-weight: 900; }
-.wplay-pad-text span { color: var(--fg-2); font-size: clamp(.9rem, 1vw, 1.1rem); }
+.wplay-pad-text b { font-size: clamp(1.05rem, calc(1.35 * var(--wp-vw)), 1.5rem); font-weight: 900; }
+.wplay-pad-text span { color: var(--fg-2); font-size: clamp(.9rem, calc(1 * var(--wp-vw)), 1.1rem); }
 .wplay-pads-setting { display: grid; gap: var(--sp-3); margin-block-end: var(--sp-6); }
-.wplay-pads-setting h2 { margin: 0; font-size: clamp(1.2rem, 1.7vw, 2rem); font-weight: 900; }
+.wplay-pads-setting h2 { margin: 0; font-size: clamp(1.2rem, calc(1.7 * var(--wp-vw)), 2rem); font-weight: 900; }
 
 /* ---- WittyPlay's Settings (pages/PlaySettings.tsx): big rows, two columns where there is room; each page the app's own ---- */
-.wplay-settings { display: grid; gap: clamp(16px, 2vw, 32px); max-inline-size: 90rem; }
-.wplay-settings h1 { margin: 0; font-size: clamp(1.8rem, 2.6vw, 3.1rem); font-weight: 900; }
-.wplay-settings h2 { margin: 0 0 var(--sp-3); font-size: clamp(1.1rem, 1.5vw, 1.75rem); font-weight: 800; color: var(--fg-2); }
-.wplay-settings-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 28rem), 1fr)); gap: clamp(8px, 1vw, 16px); }
-.wplay-settings-link { display: flex; align-items: center; gap: var(--sp-4); min-block-size: clamp(64px, 5.4vw, 96px); padding: var(--sp-3) clamp(16px, 1.5vw, 28px); border-radius: clamp(14px, 1.2vw, 22px); background: var(--wp-chip); color: var(--fg); text-decoration: none; }
+.wplay-settings { display: grid; gap: clamp(16px, calc(2 * var(--wp-vw)), 32px); max-inline-size: 90rem; }
+.wplay-settings h1 { margin: 0; font-size: clamp(1.8rem, calc(2.6 * var(--wp-vw)), 3.1rem); font-weight: 900; }
+.wplay-settings h2 { margin: 0 0 var(--sp-3); font-size: clamp(1.1rem, calc(1.5 * var(--wp-vw)), 1.75rem); font-weight: 800; color: var(--fg-2); }
+.wplay-settings-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 28rem), 1fr)); gap: clamp(8px, calc(1 * var(--wp-vw)), 16px); }
+.wplay-settings-link { display: flex; align-items: center; gap: var(--sp-4); min-block-size: clamp(64px, calc(5.4 * var(--wp-vw)), 96px); padding: var(--sp-3) clamp(16px, calc(1.5 * var(--wp-vw)), 28px); border-radius: clamp(14px, calc(1.2 * var(--wp-vw)), 22px); background: var(--wp-chip); color: var(--fg); text-decoration: none; }
 .wplay-settings-link:hover { background: var(--wp-chip-hover); }
 .wplay-settings-link:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 7px var(--focus); }
 .wplay-settings-link > span:not(.wplay-settings-icon) { display: grid; gap: 2px; flex: 1; min-inline-size: 0; }
-.wplay-settings-link b { font-size: clamp(1.05rem, 1.35vw, 1.55rem); font-weight: 900; }
-.wplay-settings-link > span > span { color: var(--fg-2); font-size: clamp(.9rem, 1vw, 1.1rem); }
+.wplay-settings-link b { font-size: clamp(1.05rem, calc(1.35 * var(--wp-vw)), 1.55rem); font-weight: 900; }
+.wplay-settings-link > span > span { color: var(--fg-2); font-size: clamp(.9rem, calc(1 * var(--wp-vw)), 1.1rem); }
 .wplay-settings-link svg { flex: none; inline-size: 24px; block-size: 24px; }
 .wplay-settings-page { display: grid; gap: var(--sp-4); max-inline-size: 90rem; }
 .wplay-settings-back { justify-self: start; display: inline-flex; align-items: center; min-block-size: 44px; padding: 0 var(--sp-4); border-radius: var(--r-full); background: var(--wp-chip); color: var(--fg); font-weight: 800; text-decoration: none; }
@@ -280,10 +283,10 @@ html[data-wplay] body { font-family: var(--font); }
 /* ---- the tab row's end: the layout switch (three small pressed-or-not buttons), and the same row on WittyPlay's own pages ---- */
 .wplay [data-sdui-tabs], .wplay-tabs-row { display: flex; align-items: center; gap: var(--sp-4); min-inline-size: 0; }
 .wplay [data-sdui-tabs] > .tabs, .wplay-tabs-row > .tabs { flex: 1; min-inline-size: 0; }
-.wplay-tabs-row .tabs { display: flex; gap: clamp(14px, 1.7vw, 34px); box-shadow: none; margin-block: clamp(4px, .8vw, 14px) clamp(6px, 1vw, 20px); padding-block-end: 6px; overflow-x: auto; scrollbar-width: none; }
+.wplay-tabs-row .tabs { display: flex; gap: clamp(14px, calc(1.7 * var(--wp-vw)), 34px); box-shadow: none; margin-block: clamp(4px, calc(.8 * var(--wp-vw)), 14px) clamp(6px, calc(1 * var(--wp-vw)), 20px); padding-block-end: 6px; overflow-x: auto; scrollbar-width: none; }
 /* No border of its own: WittyPlay draws the chosen tab's bar (::after). The app's .tabs gives the chosen link a bottom border, which
    on this rounded link curved up at both ends and sat on top of the bar, a hook under the tab. */
-.wplay-tabs-row .tabs > a { position: relative; flex: none; padding: 4px 0; border: 0; border-radius: 6px; color: var(--fg-2); font-size: clamp(1.15rem, 1.6vw, 1.9rem); font-weight: 800; text-decoration: none; white-space: nowrap; }
+.wplay-tabs-row .tabs > a { position: relative; flex: none; padding: 4px 0; border: 0; border-radius: 6px; color: var(--fg-2); font-size: clamp(1.15rem, calc(1.6 * var(--wp-vw)), 1.9rem); font-weight: 800; text-decoration: none; white-space: nowrap; }
 .wplay-tabs-row .tabs > a:hover, .wplay-tabs-row .tabs > a.active { color: var(--fg); }
 /* On a phone the tabs take a line of their own, and the size and layout switches go under them. */
 @media (max-width: 640px) {
@@ -310,64 +313,64 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay-look-setting { display: grid; gap: var(--sp-6); }
 
 /* ---- the home row as a Grid or a List (the layout choice): every game, scrolling down; the chosen game's details beside them ---- */
-.wplay .sdui-shelf.layout-grid, .wplay .sdui-shelf.layout-list { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 26rem); grid-template-areas: "bar bar" "row detail"; column-gap: clamp(16px, 2vw, 40px); align-items: start; }
+.wplay .sdui-shelf.layout-grid, .wplay .sdui-shelf.layout-list { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 26rem); grid-template-areas: "bar bar" "row detail"; column-gap: clamp(16px, calc(2 * var(--wp-vw)), 40px); align-items: start; }
 .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-console-bar { grid-area: bar; }
 .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .row-wrap { grid-area: row; margin-inline: 0; }
-.wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail { grid-area: detail; position: sticky; inset-block-start: calc(var(--wp-bar) + 12px); padding: clamp(14px, 1.4vw, 26px); border-radius: clamp(14px, 1.3vw, 24px); background: var(--wp-chip); }
-.wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-detail-title { font-size: clamp(1.4rem, 2vw, 2.4rem); }
+.wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail { grid-area: detail; position: sticky; inset-block-start: calc(var(--wp-bar) + 12px); padding: clamp(14px, calc(1.4 * var(--wp-vw)), 26px); border-radius: clamp(14px, calc(1.3 * var(--wp-vw)), 24px); background: var(--wp-chip); }
+.wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-detail-title { font-size: clamp(1.4rem, calc(2 * var(--wp-vw)), 2.4rem); }
 .wplay .sdui-shelf:is(.layout-grid, .layout-list) .row { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding: 8px 12px calc(var(--wp-dock) + 80px); align-items: flex-start; }
-.wplay .sdui-shelf.layout-grid .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(170px, 16vw, 300px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, 1.6vw, 28px); }
+.wplay .sdui-shelf.layout-grid .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(170px, calc(16 * var(--wp-vw)), 300px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, calc(1.6 * var(--wp-vw)), 28px); }
 .wplay .sdui-shelf.layout-grid .sdui-item .card, .wplay .sdui-shelf.layout-grid .sdui-item.grown .card { width: 100%; }
 .wplay .sdui-shelf.layout-grid .sdui-item.grown .card .poster { box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; }
 /* The server's focus-grow makes the chosen card 25% bigger, for a shelf that makes room for it; in a grid or a list it covered the games
    beside and under it, so there it stays its size and the ring shows which it is. */
-.wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-item:is(:focus-within, .grown) { transform: none; }
-.wplay .sdui-shelf.layout-grid .card .title, .wplay .sdui-shelf.layout-grid.has-detail .sdui-item.grown .card .title { font-size: clamp(.95rem, 1.15vw, 1.35rem); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; padding-block-end: 0; inset-block-end: clamp(10px, 1.1vw, 20px); }
+.wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-item:is(:focus-within, .grown) { transform: none; margin-inline: 0; }
+.wplay .sdui-shelf.layout-grid .card .title, .wplay .sdui-shelf.layout-grid.has-detail .sdui-item.grown .card .title { font-size: clamp(.95rem, calc(1.15 * var(--wp-vw)), 1.35rem); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; padding-block-end: 0; inset-block-end: clamp(10px, calc(1.1 * var(--wp-vw)), 20px); }
 /* List: a dense row each, the art small at the start, the title and its line beside it. */
 .wplay .sdui-shelf.layout-list .row { display: grid; grid-template-columns: 1fr; gap: 10px; }
-.wplay .sdui-shelf.layout-list .sdui-item .card, .wplay .sdui-shelf.layout-list .sdui-item.grown .card { display: grid; grid-template-columns: clamp(52px, 4.4vw, 80px) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--sp-4); align-items: center; width: 100%; min-block-size: 64px; padding: 8px 14px 8px 8px; border-radius: 14px; background: var(--wp-chip); }
+.wplay .sdui-shelf.layout-list .sdui-item .card, .wplay .sdui-shelf.layout-list .sdui-item.grown .card { display: grid; grid-template-columns: clamp(52px, calc(4.4 * var(--wp-vw)), 80px) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--sp-4); align-items: center; width: 100%; min-block-size: 64px; padding: 8px 14px 8px 8px; border-radius: 14px; background: var(--wp-chip); }
 .wplay .sdui-shelf.layout-list .sdui-item.grown .card { background: rgb(95 240 214 / .14); box-shadow: inset 0 0 0 3px #5ff0d6; }
 .wplay .sdui-shelf.layout-list .card:focus-visible { box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wplay .sdui-shelf.layout-list .card .poster { grid-row: 1 / span 2; border-radius: 10px; box-shadow: none; }
 .wplay .sdui-shelf.layout-list .card .poster .sdui-badges { display: none; }
-.wplay .sdui-shelf.layout-list .card .title, .wplay .sdui-shelf.layout-list.has-detail .sdui-item.grown .card .title { position: static; display: block; padding: 0; text-shadow: none; font-size: clamp(1rem, 1.25vw, 1.4rem); align-self: end; }
-.wplay .sdui-shelf.layout-list .card .sub, .wplay .sdui-shelf.layout-list.has-detail .sdui-item.grown .card .sub { display: block; align-self: start; margin: 0; color: var(--fg-2); font-size: clamp(.85rem, 1vw, 1.1rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wplay .sdui-shelf.layout-list .card .title, .wplay .sdui-shelf.layout-list.has-detail .sdui-item.grown .card .title { position: static; display: block; padding: 0; text-shadow: none; font-size: clamp(1rem, calc(1.25 * var(--wp-vw)), 1.4rem); align-self: end; }
+.wplay .sdui-shelf.layout-list .card .sub, .wplay .sdui-shelf.layout-list.has-detail .sdui-item.grown .card .sub { display: block; align-self: start; margin: 0; color: var(--fg-2); font-size: clamp(.85rem, calc(1 * var(--wp-vw)), 1.1rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* A window between a phone and a full screen (a browser beside other windows, a small laptop): the details panel takes less of
    the width and the grid's games are smaller, so two or more fit beside it instead of one huge one. */
 @media (min-width: 760px) and (max-width: 1199px) {
   .wplay .sdui-shelf.layout-grid, .wplay .sdui-shelf.layout-list { grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); }
-  .wplay .sdui-shelf.layout-grid .row { grid-template-columns: repeat(auto-fill, minmax(calc(clamp(120px, 14vw, 170px) * var(--wp-scale, 1)), 1fr)); }
-  .wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-detail-title { font-size: clamp(1.2rem, 2.2vw, 1.6rem); }
+  .wplay .sdui-shelf.layout-grid .row { grid-template-columns: repeat(auto-fill, minmax(calc(clamp(120px, calc(14 * var(--wp-vw)), 170px) * var(--wp-scale, 1)), 1fr)); }
+  .wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-detail-title { font-size: clamp(1.2rem, calc(2.2 * var(--wp-vw)), 1.6rem); }
 }
 @media (max-width: 759px) {
   .wplay .sdui-shelf.layout-grid, .wplay .sdui-shelf.layout-list { grid-template-columns: minmax(0, 1fr); grid-template-areas: "bar" "detail" "row"; }
   .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail { position: static; }
-  .wplay .sdui-shelf.layout-grid .row { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .wplay .sdui-shelf.layout-grid .row { grid-template-columns: repeat(auto-fill, minmax(calc(140px * var(--wp-scale, 1)), 1fr)); }
 }
 
 /* ---- the Consoles tab: a grid of console buttons, and the chosen one shown off in a panel at the side (a sheet on a phone) ---- */
 /* Room under the tab row and its switches, so the console panel (and the list's heading level with it) doesn't touch them. */
-.wplay-consoles-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem); gap: clamp(16px, 2vw, 40px); align-items: start; margin-block-start: clamp(14px, 1.6vw, 28px); padding-block-end: calc(var(--wp-dock) + 80px); }
+.wplay-consoles-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem); gap: clamp(16px, calc(2 * var(--wp-vw)), 40px); align-items: start; margin-block-start: clamp(14px, calc(1.6 * var(--wp-vw)), 28px); padding-block-end: calc(var(--wp-dock) + 80px); }
 .wplay-consoles.phone .wplay-consoles-body { grid-template-columns: minmax(0, 1fr); }
-.wplay-consoles-h { margin: 0 0 var(--sp-3); font-size: clamp(1.1rem, 1.5vw, 1.75rem); font-weight: 800; color: var(--fg-2); }
-.wplay-console-grid { list-style: none; margin: 0; padding: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(150px, 12vw, 230px), 1fr)); gap: clamp(10px, 1.2vw, 22px); }
-.wplay-console { position: relative; display: grid; justify-items: center; align-content: center; gap: 6px; inline-size: 100%; min-block-size: clamp(130px, 10vw, 190px); padding: var(--sp-4) var(--sp-3); border: 0; border-radius: clamp(16px, 1.4vw, 26px); background: var(--wp-chip); color: var(--fg); font: inherit; text-align: center; cursor: pointer; transition: background var(--dur-2), transform var(--dur-2) var(--ease-out); }
+.wplay-consoles-h { margin: 0 0 var(--sp-3); font-size: clamp(1.1rem, calc(1.5 * var(--wp-vw)), 1.75rem); font-weight: 800; color: var(--fg-2); }
+.wplay-console-grid { list-style: none; margin: 0; padding: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(150px, calc(12 * var(--wp-vw)), 230px), 1fr)); gap: clamp(10px, calc(1.2 * var(--wp-vw)), 22px); }
+.wplay-console { position: relative; display: grid; justify-items: center; align-content: center; gap: 6px; inline-size: 100%; min-block-size: clamp(130px, calc(10 * var(--wp-vw)), 190px); padding: var(--sp-4) var(--sp-3); border: 0; border-radius: clamp(16px, calc(1.4 * var(--wp-vw)), 26px); background: var(--wp-chip); color: var(--fg); font: inherit; text-align: center; cursor: pointer; transition: background var(--dur-2), transform var(--dur-2) var(--ease-out); }
 .wplay-console:hover { background: var(--wp-chip-hover); }
 .wplay-console.on { background: rgb(95 240 214 / .14); box-shadow: inset 0 0 0 3px #5ff0d6; }
 .wplay-console:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wplay-console-art { display: grid; place-items: center; min-block-size: 3.2rem; }
 /* A console with no logo of its own: its name says it, once (the mark's text would only repeat it). */
 .wplay-console-art:has(.gc-mark-text), .wplay-console-mark:has(.gc-mark-text), .wplay-console-head .gc-mark-text { display: none; }
-.wplay-console b { font-size: clamp(1.05rem, 1.35vw, 1.5rem); font-weight: 900; }
-.wplay-console-count { color: var(--fg-2); font-size: clamp(.85rem, 1vw, 1.1rem); font-weight: 700; }
+.wplay-console b { font-size: clamp(1.05rem, calc(1.35 * var(--wp-vw)), 1.5rem); font-weight: 900; }
+.wplay-console-count { color: var(--fg-2); font-size: clamp(.85rem, calc(1 * var(--wp-vw)), 1.1rem); font-weight: 700; }
 .wplay-console-dot { position: absolute; inset-block-start: 12px; inset-inline-end: 12px; inline-size: 12px; block-size: 12px; border-radius: 50%; background: var(--fg-3); }
 .wplay-console-dot.ready { background: var(--ok); }
 .wplay-console-dot.setup { background: var(--warn); }
-.wplay-console-panel { position: sticky; inset-block-start: calc(var(--wp-bar) + 12px); display: grid; gap: var(--sp-3); padding: clamp(18px, 1.8vw, 32px); border-radius: clamp(18px, 1.6vw, 28px); background: #1f2358; box-shadow: 0 0 0 1px rgb(255 255 255 / .1), 0 20px 50px rgb(4 6 24 / .45); animation: wplay-panel-in var(--dur-3) var(--ease-out); }
+.wplay-console-panel { position: sticky; inset-block-start: calc(var(--wp-bar) + 12px); display: grid; gap: var(--sp-3); padding: clamp(18px, calc(1.8 * var(--wp-vw)), 32px); border-radius: clamp(18px, calc(1.6 * var(--wp-vw)), 28px); background: #1f2358; box-shadow: 0 0 0 1px rgb(255 255 255 / .1), 0 20px 50px rgb(4 6 24 / .45); animation: wplay-panel-in var(--dur-3) var(--ease-out); }
 @keyframes wplay-panel-in { from { opacity: 0; transform: translateX(24px); } }
-.wplay-console-panel h2 { margin: 0; font-size: clamp(1.4rem, 2vw, 2.4rem); font-weight: 900; line-height: 1.1; }
+.wplay-console-panel h2 { margin: 0; font-size: clamp(1.4rem, calc(2 * var(--wp-vw)), 2.4rem); font-weight: 900; line-height: 1.1; }
 .wplay-console-mark { display: grid; place-items: start; min-block-size: 4rem; }
-.wplay-console-facts { margin: 0; color: var(--fg-2); font-size: clamp(.95rem, 1.15vw, 1.3rem); }
+.wplay-console-facts { margin: 0; color: var(--fg-2); font-size: clamp(.95rem, calc(1.15 * var(--wp-vw)), 1.3rem); }
 .wplay-console-stats { display: grid; gap: var(--sp-2); margin: 0; }
 .wplay-console-stats > div { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 10px 14px; border-radius: 12px; background: rgb(255 255 255 / .07); }
 .wplay-console-stats dt { color: var(--fg-2); font-weight: 700; }
@@ -387,8 +390,8 @@ html[data-wplay] body { font-family: var(--font); }
 @keyframes wplay-sheet-in { from { transform: translateY(40px); opacity: 0; } }
 .wplay-sheet-scrim { position: fixed; inset: 0; z-index: 5; background: rgb(6 8 30 / .6); }
 /* A console's picture of its hardware: fitted whole, never cropped, on the tile and large in the panel, with its credit under it. */
-.wplay-console-photo { display: block; inline-size: 100%; max-inline-size: 11rem; block-size: clamp(56px, 5vw, 96px); object-fit: contain; }
-.wplay-console-mark .wplay-console-photo { max-inline-size: 100%; block-size: clamp(120px, 12vw, 220px); }
+.wplay-console-photo { display: block; inline-size: 100%; max-inline-size: 11rem; block-size: clamp(56px, calc(5 * var(--wp-vw)), 96px); object-fit: contain; }
+.wplay-console-mark .wplay-console-photo { max-inline-size: 100%; block-size: clamp(120px, calc(12 * var(--wp-vw)), 220px); }
 .wplay-photo-credit { margin: 0; color: var(--fg-3); font-size: .8rem; line-height: 1.35; }
 .wplay-photo-credit a { color: var(--fg-2); }
 .wplay-photo-credit a:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; border-radius: 3px; }
@@ -402,12 +405,12 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay-tabs-buttons button:disabled { opacity: .4; cursor: default; }
 .wplay-tabs-buttons button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wplay-console-head { display: flex; align-items: center; gap: var(--sp-4); }
-.wplay-console-head h1 { margin: 0; font-size: clamp(1.6rem, 2.4vw, 2.8rem); font-weight: 900; }
+.wplay-console-head h1 { margin: 0; font-size: clamp(1.6rem, calc(2.4 * var(--wp-vw)), 2.8rem); font-weight: 900; }
 .wplay-parts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .wplay-parts button { min-block-size: 48px; padding: 0 var(--sp-5); border: 0; border-radius: var(--r-full); background: var(--wp-chip); color: var(--fg); font: inherit; font-weight: 800; cursor: pointer; }
 .wplay-parts button.active { background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
 .wplay-parts button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
-.wplay-empty { color: var(--fg-2); font-size: clamp(1rem, 1.3vw, 1.5rem); }
+.wplay-empty { color: var(--fg-2); font-size: clamp(1rem, calc(1.3 * var(--wp-vw)), 1.5rem); }
 .wplay-empty small { font-size: .8em; }
 .wplay-finding { margin: 0 0 var(--sp-3); color: var(--fg-2); font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .wplay-console, .wplay-console-panel, .wplay-console-panel.sheet { animation: none; transition: none; } .wplay-console:focus-visible { transform: none; } }
@@ -428,7 +431,7 @@ html[data-wplay] body { font-family: var(--font); }
   .wplay .sdui-shelf.focus-grow .sdui-item.grown .card .poster, .wplay .play-dock a.on .play-dock-ic { outline: 3px solid CanvasText; }
 }
 /* Each WittyPlay setting has an icon in a rounded tile beside its name. */
-.wplay-settings-icon { flex: none; display: grid; place-items: center; inline-size: clamp(40px, 3.2vw, 56px); block-size: clamp(40px, 3.2vw, 56px); border-radius: clamp(12px, 1vw, 16px); background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); }
+.wplay-settings-icon { flex: none; display: grid; place-items: center; inline-size: clamp(40px, calc(3.2 * var(--wp-vw)), 56px); block-size: clamp(40px, calc(3.2 * var(--wp-vw)), 56px); border-radius: clamp(12px, calc(1 * var(--wp-vw)), 16px); background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); }
 .wplay-settings-icon svg { inline-size: 55%; block-size: 55%; }
 .wplay-settings-link:focus-visible .wplay-settings-icon, .wplay-settings-link:hover .wplay-settings-icon { background: var(--accent); color: var(--accent-fg); }
 /* Every card in a row is as tall as the tallest, so a one-line description doesn't leave a smaller box. */
@@ -436,18 +439,18 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay-settings-list > li > .wplay-settings-link { flex: 1; }
 
 /* ---- a game's bio in the detail panel (GameBio.tsx): logo, console, makers, rating, pictures, and its RetroAchievements greyed ---- */
-.wplay .sdui-detail.has-bio { display: grid; gap: clamp(8px, .8vw, 14px); align-content: start; }
+.wplay .sdui-detail.has-bio { display: grid; gap: clamp(8px, calc(.8 * var(--wp-vw)), 14px); align-content: start; }
 .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail.has-bio { max-block-size: calc(100dvh - var(--wp-bar) - var(--wp-dock) - 7rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 /* A details panel scrolls its last buttons clear of the Dock, which floats over the bottom of the screen. */
 :is(.wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail.has-bio, .wpl-panel) { padding-block-end: calc(var(--wp-dock) + 48px); }
-.wplay-bio { display: grid; gap: clamp(8px, .8vw, 14px); min-inline-size: 0; }
-.wplay-bio-logo { display: block; justify-self: center; max-inline-size: min(100%, 22rem); max-block-size: clamp(56px, 7vw, 120px); object-fit: contain; object-position: center; filter: drop-shadow(0 2px 8px rgb(0 0 0 / .5)); }
-.wplay-bio-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1.05rem); font-weight: 700; }
+.wplay-bio { display: grid; gap: clamp(8px, calc(.8 * var(--wp-vw)), 14px); min-inline-size: 0; }
+.wplay-bio-logo { display: block; justify-self: center; max-inline-size: min(100%, 22rem); max-block-size: clamp(56px, calc(7 * var(--wp-vw)), 120px); object-fit: contain; object-position: center; filter: drop-shadow(0 2px 8px rgb(0 0 0 / .5)); }
+.wplay-bio-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; color: var(--fg-2); font-size: clamp(.85rem, calc(.95 * var(--wp-vw)), 1.05rem); font-weight: 700; }
 .wplay-bio-console { padding: 2px 10px; border-radius: 999px; background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); font-weight: 900; letter-spacing: .02em; }
 .wplay-bio-rating { padding: 1px 8px; border-radius: 6px; box-shadow: inset 0 0 0 1.5px currentColor; }
-.wplay-bio-makers, .wplay-bio-genres { margin: 0; color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1.05rem); }
+.wplay-bio-makers, .wplay-bio-genres { margin: 0; color: var(--fg-2); font-size: clamp(.85rem, calc(.95 * var(--wp-vw)), 1.05rem); }
 .wplay-bio-label { color: var(--fg); font-weight: 800; }
-.wplay-bio-about { margin: 0; color: var(--fg); font-size: clamp(.9rem, 1vw, 1.1rem); line-height: 1.45; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+.wplay-bio-about { margin: 0; color: var(--fg); font-size: clamp(.9rem, calc(1 * var(--wp-vw)), 1.1rem); line-height: 1.45; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
 .wplay-bio-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .wplay-bio-shot { display: block; padding: 0; border: 0; inline-size: 100%; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; background: rgb(0 0 0 / .3); cursor: zoom-in; transition: transform var(--dur-2) var(--ease-out); }
 .wplay-bio-shot img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
@@ -455,7 +458,7 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay-bio-shot:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--wp-ring), 0 0 0 4px var(--focus); transform: none; }
 @media (prefers-reduced-motion: reduce) { .wplay-bio-shot, .wplay-bio-shot:hover, .wplay-bio-shot:focus-visible { transition: none; transform: none; } }
 /* A picture large (GameBio's ShotViewer). */
-.wplay-shot-view.modal { inline-size: min(96vw, 72rem); }
+.wplay-shot-view.modal { inline-size: min(calc(96 * var(--wp-vw)), 72rem); }
 .wplay-shot-stage { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
 .wplay-shot-stage figure { grid-column: 2; margin: 0; display: grid; gap: 8px; justify-items: center; }
 .wplay-shot-stage img { inline-size: min(100%, calc(70dvh * 4 / 3)); block-size: auto; max-block-size: 70dvh; object-fit: contain; border-radius: 10px; image-rendering: pixelated; background: #000; }
@@ -465,9 +468,9 @@ html[data-wplay] body { font-family: var(--font); }
 .wplay-shot-arrow:hover { background: var(--accent); color: var(--accent-fg); }
 .wplay-shot-arrow:focus-visible { outline: var(--focus-width, 3px) solid var(--focus); outline-offset: 3px; }
 .wplay-cheevos { display: grid; gap: 8px; padding-block-start: 10px; border-block-start: 1px solid rgb(255 255 255 / .12); }
-.wplay-cheevos h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; font-size: clamp(.95rem, 1.05vw, 1.2rem); font-weight: 900; }
+.wplay-cheevos h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; font-size: clamp(.95rem, calc(1.05 * var(--wp-vw)), 1.2rem); font-weight: 900; }
 .wplay-cheevos-count { color: var(--fg-2); font-size: .85em; font-weight: 700; }
-.wplay-cheevos-note { margin: 0; color: var(--fg-2); font-size: clamp(.85rem, .95vw, 1rem); }
+.wplay-cheevos-note { margin: 0; color: var(--fg-2); font-size: clamp(.85rem, calc(.95 * var(--wp-vw)), 1rem); }
 .wplay-cheevos-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-block-size: 18rem; overflow-y: auto; scrollbar-width: thin; border-radius: 10px; }
 .wplay-cheevos-list:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 /* Greyed: what can be earned, none of it earned here yet. */
@@ -483,69 +486,69 @@ html[data-wplay] body { font-family: var(--font); }
 @media (prefers-reduced-transparency: reduce) { .wplay-cheevos-list li { opacity: 1; color: var(--fg-2); } }
 
 /* ==== a game's page in WittyPlay (games/Details.tsx, variant "play"): built for a controller and a TV first ==================== */
-.wpg { --wpg-gap: clamp(28px, 3.2vw, 56px); position: relative; display: grid; gap: var(--wpg-gap); padding-block: clamp(8px, 1.6vw, 28px) calc(var(--wp-dock) + 120px); }
+.wpg { --wpg-gap: clamp(28px, calc(3.2 * var(--wp-vw)), 56px); position: relative; display: grid; gap: var(--wpg-gap); padding-block: clamp(8px, calc(1.6 * var(--wp-vw)), 28px) calc(var(--wp-dock) + 120px); }
 .wpg-backdrop { position: fixed; inset: -40px; z-index: -1; background-size: cover; background-position: center; filter: blur(40px) saturate(1.1) brightness(.3); transform: scale(1.08); pointer-events: none; }
 .wpg::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(120% 80% at 20% 0%, color-mix(in srgb, var(--wpg-tint, #3a2f8f) 32%, transparent), transparent 60%), linear-gradient(180deg, rgb(10 12 40 / .55), rgb(8 10 34 / .94) 60%); }
 /* hero: the cover, then what it is and the buttons, the main one where focus starts */
-.wpg-hero { display: grid; grid-template-columns: clamp(150px, min(22vw, 34vh), 420px) minmax(0, 1fr); gap: clamp(20px, 3vw, 56px); align-items: end; }
+.wpg-hero { display: grid; grid-template-columns: clamp(150px, min(calc(22 * var(--wp-vw)), 34vh), 420px) minmax(0, 1fr); gap: clamp(20px, calc(3 * var(--wp-vw)), 56px); align-items: end; }
 .wpg-cover { align-self: start; }
-.wpg-cover img, .wpg-cover .placeholder { display: block; inline-size: 100%; border-radius: clamp(12px, 1.2vw, 20px); box-shadow: 0 30px 70px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .1); }
-.wpg-head { display: grid; gap: clamp(12px, 1.2vw, 20px); min-inline-size: 0; }
-.wpg-logo { max-inline-size: min(100%, 34rem); max-block-size: clamp(70px, 9vw, 160px); object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 18px rgb(0 0 0 / .6)); }
-.wpg-title { margin: 0; font-size: clamp(2rem, 4.4vw, 4.6rem); font-weight: 900; line-height: 1.02; letter-spacing: -.01em; text-wrap: balance; text-shadow: 0 4px 24px rgb(0 0 0 / .45); }
-.wpg-title.small { font-size: clamp(1.1rem, 1.6vw, 1.7rem); font-weight: 800; color: var(--fg-2); text-shadow: none; }
+.wpg-cover img, .wpg-cover .placeholder { display: block; inline-size: 100%; border-radius: clamp(12px, calc(1.2 * var(--wp-vw)), 20px); box-shadow: 0 30px 70px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .1); }
+.wpg-head { display: grid; gap: clamp(12px, calc(1.2 * var(--wp-vw)), 20px); min-inline-size: 0; }
+.wpg-logo { max-inline-size: min(100%, 34rem); max-block-size: clamp(70px, calc(9 * var(--wp-vw)), 160px); object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 18px rgb(0 0 0 / .6)); }
+.wpg-title { margin: 0; font-size: clamp(2rem, calc(4.4 * var(--wp-vw)), 4.6rem); font-weight: 900; line-height: 1.02; letter-spacing: -.01em; text-wrap: balance; text-shadow: 0 4px 24px rgb(0 0 0 / .45); }
+.wpg-title.small { font-size: clamp(1.1rem, calc(1.6 * var(--wp-vw)), 1.7rem); font-weight: 800; color: var(--fg-2); text-shadow: none; }
 .wpg-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-.wpg-chip { padding: 5px 14px; border-radius: 999px; background: rgb(255 255 255 / .1); color: var(--fg); font-size: clamp(.85rem, 1vw, 1.1rem); font-weight: 750; }
+.wpg-chip { padding: 5px 14px; border-radius: 999px; background: rgb(255 255 255 / .1); color: var(--fg); font-size: clamp(.85rem, calc(1 * var(--wp-vw)), 1.1rem); font-weight: 750; }
 .wpg-chip.console { background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); font-weight: 900; }
 .wpg-chip.rating { background: none; box-shadow: inset 0 0 0 2px rgb(255 255 255 / .45); }
 .wpg-head { container-type: inline-size; container-name: wpg-head; }
-.wpg-actions { display: flex; flex-wrap: nowrap; gap: clamp(10px, 1vw, 16px); margin-block-start: 4px; }
-.wpg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-block-size: clamp(52px, 4.6vw, 72px); padding: 0 clamp(20px, 2vw, 34px); border: 0; border-radius: 999px; background: var(--wp-chip); color: var(--fg); font: inherit; font-size: clamp(1rem, 1.25vw, 1.4rem); font-weight: 850; text-decoration: none; cursor: pointer; transition: transform var(--dur-2) var(--ease-out), background var(--dur-2), box-shadow var(--dur-2); }
+.wpg-actions { display: flex; flex-wrap: nowrap; gap: clamp(10px, calc(1 * var(--wp-vw)), 16px); margin-block-start: 4px; }
+.wpg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-block-size: clamp(52px, calc(4.6 * var(--wp-vw)), 72px); padding: 0 clamp(20px, calc(2 * var(--wp-vw)), 34px); border: 0; border-radius: 999px; background: var(--wp-chip); color: var(--fg); font: inherit; font-size: clamp(1rem, calc(1.25 * var(--wp-vw)), 1.4rem); font-weight: 850; text-decoration: none; cursor: pointer; transition: transform var(--dur-2) var(--ease-out), background var(--dur-2), box-shadow var(--dur-2); }
 .wpg-btn-label { white-space: nowrap; }
 .wpg .gm-prompts { display: none; }
 .wpg-btn svg { inline-size: 1.15em; block-size: 1.15em; flex: none; }
 .wpg-btn:hover { background: var(--wp-chip-hover); }
-.wpg-btn.primary { min-inline-size: clamp(170px, 14vw, 260px); background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
-.wpg-btn.icon { inline-size: clamp(52px, 4.6vw, 72px); padding: 0; }
+.wpg-btn.primary { min-inline-size: clamp(170px, calc(14 * var(--wp-vw)), 260px); background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
+.wpg-btn.icon { inline-size: clamp(52px, calc(4.6 * var(--wp-vw)), 72px); padding: 0; }
 .wpg-btn.on svg { color: #ffd34d; }
 .wpg-btn.small { min-block-size: 44px; font-size: 1rem; justify-self: start; }
 .wpg-count { display: inline-grid; place-items: center; min-inline-size: 1.6em; block-size: 1.6em; padding: 0 .4em; border-radius: 999px; background: #5ff0d6; color: var(--accent-fg); font-size: .8em; font-weight: 900; }
 :is(.wpg, .wpg-saves-sheet) :is(.wpg-btn, .wpg-shot, .wpg-mini):focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; transform: none; }
 /* rows a d-pad walks sideways */
 .wpg-row { display: grid; gap: 14px; min-inline-size: 0; }
-.wpg h2 { margin: 0; font-size: clamp(1.25rem, 1.7vw, 2rem); font-weight: 900; }
-.wpg-empty { margin: 0; max-inline-size: 60ch; color: var(--fg-2); font-size: clamp(.95rem, 1.05vw, 1.15rem); }
-.wpg-shots { list-style: none; margin: 0; padding: 12px 12px 18px; margin-inline: -12px; display: flex; gap: clamp(16px, 1.6vw, 28px); overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: 12px; scrollbar-width: none; }
+.wpg h2 { margin: 0; font-size: clamp(1.25rem, calc(1.7 * var(--wp-vw)), 2rem); font-weight: 900; }
+.wpg-empty { margin: 0; max-inline-size: 60ch; color: var(--fg-2); font-size: clamp(.95rem, calc(1.05 * var(--wp-vw)), 1.15rem); }
+.wpg-shots { list-style: none; margin: 0; padding: 12px 12px 18px; margin-inline: -12px; display: flex; gap: clamp(16px, calc(1.6 * var(--wp-vw)), 28px); overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: 12px; scrollbar-width: none; }
 .wpg-shots::-webkit-scrollbar { display: none; }
 .wpg-shots > li { flex: none; scroll-snap-align: start; }
-.wpg-shot { display: block; padding: 0; border: 0; inline-size: clamp(200px, min(20vw, 30vh), 420px); aspect-ratio: 4 / 3; border-radius: 16px; overflow: hidden; background: #000; cursor: zoom-in; box-shadow: 0 14px 34px rgb(0 0 0 / .4); transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2); }
+.wpg-shot { display: block; padding: 0; border: 0; inline-size: clamp(200px, min(calc(20 * var(--wp-vw)), 30vh), 420px); aspect-ratio: 4 / 3; border-radius: 16px; overflow: hidden; background: #000; cursor: zoom-in; box-shadow: 0 14px 34px rgb(0 0 0 / .4); transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2); }
 .wpg-shot img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
 /* achievements: what can be earned, laid out wide */
 .wpg-cheevos .wplay-cheevos { border: 0; padding: 0; }
-.wpg-cheevos .wplay-cheevos h3 { font-size: clamp(1.25rem, 1.7vw, 2rem); }
+.wpg-cheevos .wplay-cheevos h3 { font-size: clamp(1.25rem, calc(1.7 * var(--wp-vw)), 2rem); }
 .wpg-cheevos .wplay-cheevos-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); max-block-size: none; overflow: visible; }
 .wplay-cheevos-credit { margin: 0; color: var(--fg-2); font-size: .85rem; }
 .wplay-cheevos-credit a { color: inherit; }
 /* about and facts, then the rest of the game's page as cards */
-.wpg-about { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(16px, 2vw, 32px); align-items: start; }
-.wpg-card, .wpg .gm-panel, .wpg-advanced > details { display: grid; gap: 12px; padding: clamp(18px, 1.8vw, 30px); border-radius: clamp(16px, 1.4vw, 24px); background: rgb(255 255 255 / .06); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
-.wpg .gm-overview { margin: 0; font-size: clamp(1rem, 1.15vw, 1.25rem); line-height: 1.55; }
+.wpg-about { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(16px, calc(2 * var(--wp-vw)), 32px); align-items: start; }
+.wpg-card, .wpg .gm-panel, .wpg-advanced > details { display: grid; gap: 12px; padding: clamp(18px, calc(1.8 * var(--wp-vw)), 30px); border-radius: clamp(16px, calc(1.4 * var(--wp-vw)), 24px); background: rgb(255 255 255 / .06); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
+.wpg .gm-overview { margin: 0; font-size: clamp(1rem, calc(1.15 * var(--wp-vw)), 1.25rem); line-height: 1.55; }
 .wpg-facts .gm-facts-box { margin: 0; padding: 0; background: none; }
 .wpg-facts .gm-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; margin: 0; }
 .wpg-facts .gm-facts dt { color: var(--fg-2); font-size: .8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.wpg-facts .gm-facts dd { margin: 2px 0 0; font-size: clamp(1rem, 1.1vw, 1.2rem); font-weight: 700; }
-.wpg .gm-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: clamp(14px, 1.6vw, 26px); margin: 0; }
-.wpg .gm-panel h2 { font-size: clamp(1.1rem, 1.4vw, 1.6rem); }
+.wpg-facts .gm-facts dd { margin: 2px 0 0; font-size: clamp(1rem, calc(1.1 * var(--wp-vw)), 1.2rem); font-weight: 700; }
+.wpg .gm-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: clamp(14px, calc(1.6 * var(--wp-vw)), 26px); margin: 0; }
+.wpg .gm-panel h2 { font-size: clamp(1.1rem, calc(1.4 * var(--wp-vw)), 1.6rem); }
 .wpg :is(.gm-panel, .wpg-advanced) .btn { min-block-size: 48px; padding-inline: 20px; border: 0; border-radius: 999px; background: var(--wp-chip); color: var(--fg); font-weight: 800; }
 .wpg :is(.gm-panel, .wpg-advanced) .btn:hover { background: var(--wp-chip-hover); }
 .wpg :is(.gm-panel, .wpg-advanced, .wpg-about) :is(.btn, a, textarea, summary):focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; }
 .wpg .gm-notes { inline-size: 100%; border-radius: 14px; background: rgb(0 0 0 / .25); }
-.wpg-advanced > details > summary { cursor: pointer; font-weight: 850; font-size: clamp(1rem, 1.2vw, 1.3rem); min-block-size: 44px; display: flex; align-items: center; border-radius: 12px; }
+.wpg-advanced > details > summary { cursor: pointer; font-weight: 850; font-size: clamp(1rem, calc(1.2 * var(--wp-vw)), 1.3rem); min-block-size: 44px; display: flex; align-items: center; border-radius: 12px; }
 .wpg .legal-note, .wpg .gm-credits { color: var(--fg-2); }
 /* One row of buttons always, so Down from any of them goes to the saves: where the row is narrow, the other buttons keep only their
    icons (their names stay for screen readers and show as a tooltip-free label on focus). */
 @container wpg-head (max-width: 104rem) {
-  .wpg-btn:not(.primary) { min-inline-size: clamp(52px, 4.6vw, 72px); padding: 0 clamp(14px, 1.2vw, 20px); flex: none; }
+  .wpg-btn:not(.primary) { min-inline-size: clamp(52px, calc(4.6 * var(--wp-vw)), 72px); padding: 0 clamp(14px, calc(1.2 * var(--wp-vw)), 20px); flex: none; }
   .wpg-btn:not(.primary) .wpg-btn-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* The one in focus (or under the pointer) says what it is, as a console's home does. */
   .wpg-btn:not(.primary):is(:focus-visible, :hover) .wpg-btn-label { position: static; inline-size: auto; block-size: auto; overflow: visible; clip-path: none; }
@@ -553,7 +556,7 @@ html[data-wplay] body { font-family: var(--font); }
 }
 @media (max-width: 800px) {
   .wpg-hero { grid-template-columns: minmax(0, 1fr); }
-  .wpg-cover { inline-size: min(52vw, 220px); }
+  .wpg-cover { inline-size: min(calc(52 * var(--wp-vw)), 220px); }
   .wpg-about { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { .wpg :is(.wpg-btn, .wpg-shot) { transition: none; transform: none !important; } }
@@ -570,27 +573,27 @@ html[data-wplay] body { font-family: var(--font); }
 
 /* ==== a game's settings in WittyPlay: a full-height panel built for a controller (Details.tsx sheet, class wpg-settings) ==== */
 html[data-wplay] .ui-sheet-wrap:has(.wpg-settings) { background: rgb(6 8 30 / .72); backdrop-filter: blur(6px); }
-html[data-wplay] .modal.ui-sheet.wpg-settings { inline-size: min(100vw, max(40rem, 58vw)); background: #161a4a; color: #fff; border: 0; box-shadow: -30px 0 80px rgb(0 0 0 / .5); font-size: clamp(1rem, 1.05vw, 1.25rem); }
-html[data-wplay] .wpg-settings .ui-dialog-head { padding: clamp(18px, 2vw, 32px) clamp(20px, 2.4vw, 40px); }
-html[data-wplay] .wpg-settings .ui-dialog-head h2 { font-size: clamp(1.3rem, 1.8vw, 2.1rem); font-weight: 900; }
-html[data-wplay] .wpg-settings .ui-sheet-body { padding: 0 clamp(20px, 2.4vw, 40px) clamp(24px, 3vw, 48px); scroll-padding-block: 120px; }
+html[data-wplay] .modal.ui-sheet.wpg-settings { inline-size: min(100vw, max(40rem, calc(58 * var(--wp-vw)))); background: #161a4a; color: #fff; border: 0; box-shadow: -30px 0 80px rgb(0 0 0 / .5); font-size: clamp(1rem, calc(1.05 * var(--wp-vw)), 1.25rem); }
+html[data-wplay] .wpg-settings .ui-dialog-head { padding: clamp(18px, calc(2 * var(--wp-vw)), 32px) clamp(20px, calc(2.4 * var(--wp-vw)), 40px); }
+html[data-wplay] .wpg-settings .ui-dialog-head h2 { font-size: clamp(1.3rem, calc(1.8 * var(--wp-vw)), 2.1rem); font-weight: 900; }
+html[data-wplay] .wpg-settings .ui-sheet-body { padding: 0 clamp(20px, calc(2.4 * var(--wp-vw)), 40px) clamp(24px, calc(3 * var(--wp-vw)), 48px); scroll-padding-block: 120px; }
 html[data-wplay] .wpg-settings :is(button, select, input, a, summary, [tabindex="0"]) { min-block-size: 48px; }
 html[data-wplay] .wpg-settings :is(button, select, input, a, summary, [tabindex="0"]):focus-visible { outline: none; box-shadow: 0 0 0 3px #5ff0d6, 0 0 0 6px #fff; border-radius: 12px; }
 @media (max-width: 700px) { html[data-wplay] .modal.ui-sheet.wpg-settings { inline-size: 100vw; } }
 
 /* Below the hero: what the game is and its facts on the left, its achievements on the right (stacked on narrow screens). */
-.wpg-main { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(min(100%, 22rem), 1fr); gap: clamp(16px, 2vw, 32px); align-items: start; }
-.wpg-col { display: grid; gap: clamp(16px, 2vw, 32px); min-inline-size: 0; }
+.wpg-main { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(min(100%, 22rem), 1fr); gap: clamp(16px, calc(2 * var(--wp-vw)), 32px); align-items: start; }
+.wpg-col { display: grid; gap: clamp(16px, calc(2 * var(--wp-vw)), 32px); min-inline-size: 0; }
 .wpg-cheevos .wplay-cheevos-list { grid-template-columns: minmax(0, 1fr); max-block-size: min(60vh, 40rem); overflow-y: auto; }
 @media (max-width: 900px), (max-aspect-ratio: 1/1) { .wpg-main { grid-template-columns: minmax(0, 1fr); } }
 @media (min-width: 1400px) and (min-aspect-ratio: 16/10) { .wpg-main { grid-template-columns: minmax(0, 2fr) minmax(24rem, 1fr); } }
 
 /* ==== save states: their own panel at the side (a sheet), a column of big screenshots a d-pad walks down ==== */
 html[data-wplay] .ui-sheet-wrap:has(.wpg-saves-sheet) { background: rgb(6 8 30 / .6); backdrop-filter: blur(6px); }
-html[data-wplay] .modal.ui-sheet.wpg-saves-sheet { inline-size: min(100vw, clamp(22rem, 34vw, 40rem)); background: #161a4a; color: #fff; border: 0; box-shadow: -30px 0 80px rgb(0 0 0 / .5); }
-html[data-wplay] .wpg-saves-sheet .ui-dialog-head { padding: clamp(18px, 2vw, 32px) clamp(20px, 2.4vw, 36px); }
-html[data-wplay] .wpg-saves-sheet .ui-dialog-head h2 { font-size: clamp(1.3rem, 1.8vw, 2.1rem); font-weight: 900; }
-html[data-wplay] .wpg-saves-sheet .ui-sheet-body { padding: 4px clamp(20px, 2.4vw, 36px) 40px; scroll-padding-block: 80px; }
+html[data-wplay] .modal.ui-sheet.wpg-saves-sheet { inline-size: min(100vw, clamp(22rem, calc(34 * var(--wp-vw)), 40rem)); background: #161a4a; color: #fff; border: 0; box-shadow: -30px 0 80px rgb(0 0 0 / .5); }
+html[data-wplay] .wpg-saves-sheet .ui-dialog-head { padding: clamp(18px, calc(2 * var(--wp-vw)), 32px) clamp(20px, calc(2.4 * var(--wp-vw)), 36px); }
+html[data-wplay] .wpg-saves-sheet .ui-dialog-head h2 { font-size: clamp(1.3rem, calc(1.8 * var(--wp-vw)), 2.1rem); font-weight: 900; }
+html[data-wplay] .wpg-saves-sheet .ui-sheet-body { padding: 4px clamp(20px, calc(2.4 * var(--wp-vw)), 36px) 40px; scroll-padding-block: 80px; }
 .wpg-saves-sheet .wpg-saves { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(18px, 2vh, 28px); }
 .wpg-saves-sheet .wpg-saves > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px 12px; }
 .wpg-saves-sheet .wpg-save { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: center; color: #fff; text-decoration: none; border-radius: 16px; }
@@ -600,9 +603,9 @@ html[data-wplay] .wpg-saves-sheet .ui-sheet-body { padding: 4px clamp(20px, 2.4v
 .wpg-save-pic img, .wpg-save-pic .gm-save-blank { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
 .wpg-save-num { position: absolute; inset-block-start: 8px; inset-inline-start: 8px; display: grid; place-items: center; min-inline-size: 2em; block-size: 2em; padding: 0 .5em; border-radius: 999px; background: rgb(0 0 0 / .72); color: #fff; font-weight: 900; }
 .wpg-save-text { display: grid; gap: 4px; align-content: center; justify-items: start; }
-.wpg-save-text b { font-size: clamp(1.05rem, 1.25vw, 1.4rem); font-weight: 850; }
-.wpg-saves-sheet .resume .wpg-save-text b { font-size: clamp(1.2rem, 1.5vw, 1.7rem); }
-.wpg-save-text time { color: rgb(255 255 255 / .72); font-size: clamp(.9rem, 1vw, 1.1rem); }
+.wpg-save-text b { font-size: clamp(1.05rem, calc(1.25 * var(--wp-vw)), 1.4rem); font-weight: 850; }
+.wpg-saves-sheet .resume .wpg-save-text b { font-size: clamp(1.2rem, calc(1.5 * var(--wp-vw)), 1.7rem); }
+.wpg-save-text time { color: rgb(255 255 255 / .72); font-size: clamp(.9rem, calc(1 * var(--wp-vw)), 1.1rem); }
 .wpg-save-cue { display: inline-flex; align-items: center; gap: 6px; margin-block-start: 4px; padding: 6px 14px; border-radius: 999px; background: rgb(255 255 255 / .12); font-weight: 900; }
 .wpg-saves-sheet .resume .wpg-save-cue, .wpg-save:is(:hover, :focus-visible) .wpg-save-cue { background: linear-gradient(180deg, #5ff0d6, #1fc3a8); color: var(--accent-fg); }
 .wpg-save:focus-visible { outline: none; }
@@ -621,14 +624,14 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wplay-bio-makers { min-block-size: 1.45em; }
 
 /* ==== a games library in WittyPlay (pages/PlayLibraryView.tsx): a row of games for each console, search, All as a grid ==== */
-.wpl { display: grid; gap: clamp(18px, 2.2vw, 36px); padding-block-start: clamp(4px, .8vw, 12px); }
-.wpl-head { display: flex; flex-wrap: wrap; align-items: center; gap: clamp(10px, 1.2vw, 18px); }
-.wpl-head h1 { margin: 0; font-size: clamp(1.6rem, 2.6vw, 2.8rem); font-weight: 900; }
-.wpl-head > .wpl-count { margin-inline-end: auto; font-size: clamp(.8rem, .9vw, 1rem); }
+.wpl { display: grid; gap: clamp(18px, calc(2.2 * var(--wp-vw)), 36px); padding-block-start: clamp(4px, calc(.8 * var(--wp-vw)), 12px); }
+.wpl-head { display: flex; flex-wrap: wrap; align-items: center; gap: clamp(10px, calc(1.2 * var(--wp-vw)), 18px); }
+.wpl-head h1 { margin: 0; font-size: clamp(1.6rem, calc(2.6 * var(--wp-vw)), 2.8rem); font-weight: 900; }
+.wpl-head > .wpl-count { margin-inline-end: auto; font-size: clamp(.8rem, calc(.9 * var(--wp-vw)), 1rem); }
 .wpl-count { padding: 2px 10px; border-radius: 999px; background: rgb(255 255 255 / .1); color: var(--fg-2); font-size: .45em; font-weight: 800; }
 .wpl-back { display: grid; place-items: center; inline-size: 52px; block-size: 52px; border: 0; border-radius: 50%; background: var(--wp-chip); color: var(--fg); cursor: pointer; }
 .wpl-search { display: flex; align-items: center; gap: 10px; flex: 0 1 26rem; min-block-size: 52px; padding: 0 18px; border-radius: 999px; background: var(--wp-chip); color: var(--fg-2); }
-.wpl-search input { flex: 1; min-inline-size: 0; border: 0; background: none; color: var(--fg); font: inherit; font-size: clamp(1rem, 1.1vw, 1.2rem); outline: none; }
+.wpl-search input { flex: 1; min-inline-size: 0; border: 0; background: none; color: var(--fg); font: inherit; font-size: clamp(1rem, calc(1.1 * var(--wp-vw)), 1.2rem); outline: none; }
 .wpl-search:focus-within { box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wpl-btn, .wpl-all { display: inline-flex; align-items: center; gap: 8px; min-block-size: 52px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--wp-chip); color: var(--fg); font: inherit; font-weight: 850; cursor: pointer; }
 .wpl-all { min-block-size: 44px; padding: 0 18px; }
@@ -636,18 +639,18 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wpl :is(.wpl-btn, .wpl-all, .wpl-back, .wpl-game):focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; }
 .wpl-row { display: grid; gap: 10px; min-inline-size: 0; }
 .wpl-row-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.wpl-row-head h2 { margin: 0; display: flex; align-items: baseline; gap: 10px; font-size: clamp(1.2rem, 1.6vw, 1.8rem); font-weight: 900; }
-.wpl-line { display: flex; gap: clamp(14px, 1.4vw, 24px); overflow-x: auto; padding: 12px; margin-inline: -12px; scroll-padding-inline: 12px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.wpl-row-head h2 { margin: 0; display: flex; align-items: baseline; gap: 10px; font-size: clamp(1.2rem, calc(1.6 * var(--wp-vw)), 1.8rem); font-weight: 900; }
+.wpl-line { display: flex; gap: clamp(14px, calc(1.4 * var(--wp-vw)), 24px); overflow-x: auto; padding: 12px; margin-inline: -12px; scroll-padding-inline: 12px; scroll-snap-type: x proximity; scrollbar-width: none; }
 .wpl-line::-webkit-scrollbar { display: none; }
-.wpl-line > .wpl-game { flex: none; inline-size: calc(clamp(140px, 13vw, 240px) * var(--wp-scale, 1)); scroll-snap-align: start; }
-.wpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(150px, 14vw, 260px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, 1.6vw, 28px); padding: 12px; margin-inline: -12px; }
+.wpl-line > .wpl-game { flex: none; inline-size: calc(clamp(140px, calc(13 * var(--wp-vw)), 240px) * var(--wp-scale, 1)); scroll-snap-align: start; }
+.wpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(150px, calc(14 * var(--wp-vw)), 260px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, calc(1.6 * var(--wp-vw)), 28px); padding: 12px; margin-inline: -12px; }
 /* A shelf runs to the edge of the screen, so a game slides off the edge instead of being cut inside the page's margin. */
 .wpl-line.layout-shelf { margin-inline: calc(-1 * var(--wp-gutter)); padding-inline: var(--wp-gutter); scroll-padding-inline: var(--wp-gutter); }
 /* All games follows the layout switch, as Recent does: Grid wraps each console's games, List lays every game out on a line of its own. */
-.wpl-line.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(150px, 14vw, 260px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, 1.6vw, 28px); overflow: visible; scroll-snap-type: none; }
+.wpl-line.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(clamp(150px, calc(14 * var(--wp-vw)), 260px) * var(--wp-scale, 1)), 1fr)); gap: clamp(16px, calc(1.6 * var(--wp-vw)), 28px); overflow: visible; scroll-snap-type: none; }
 .wpl :is(.wpl-line, .wpl-grid).layout-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; overflow: visible; scroll-snap-type: none; }
 .wpl :is(.wpl-line.layout-grid, .wpl-line.layout-list, .wpl-grid.layout-list) > .wpl-game { inline-size: auto; }
-.wpl :is(.wpl-line, .wpl-grid).layout-list > .wpl-game { grid-template-columns: calc(clamp(52px, 4.4vw, 80px) * var(--wp-scale, 1)) minmax(0, 1fr); grid-template-rows: auto; align-items: center; column-gap: var(--sp-4); padding: 8px 14px 8px 8px; border-radius: 14px; background: var(--wp-chip); }
+.wpl :is(.wpl-line, .wpl-grid).layout-list > .wpl-game { grid-template-columns: calc(clamp(52px, calc(4.4 * var(--wp-vw)), 80px) * var(--wp-scale, 1)) minmax(0, 1fr); grid-template-rows: auto; align-items: center; column-gap: var(--sp-4); padding: 8px 14px 8px 8px; border-radius: 14px; background: var(--wp-chip); }
 .wpl .layout-list .wpl-game-name { text-align: start; min-block-size: 0; }
 .wpl .layout-list > .wpl-game:hover, .wpl .layout-list > .wpl-game:focus-visible { transform: none; }
 .wpl-game { display: grid; grid-template-rows: auto auto; align-content: start; align-self: start; gap: 8px; color: var(--fg); text-decoration: none; border-radius: 14px; transition: transform var(--dur-2) var(--ease-out); }
@@ -656,22 +659,22 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wpl-game-art > img { inline-size: 100%; block-size: 100%; object-fit: cover; border-radius: 12px; box-shadow: 0 12px 28px rgb(0 0 0 / .4); }
 .wpl-game-art > .gcase-fit { inset: 2%; place-items: end center; }
 .wpl-game-blank { display: grid; place-items: center; inline-size: 100%; block-size: 100%; padding: 12px; border-radius: 12px; background: rgb(255 255 255 / .08); text-align: center; font-weight: 800; }
-.wpl-game-name { text-align: center; font-weight: 800; font-size: clamp(.9rem, 1vw, 1.1rem); line-height: 1.3; min-block-size: 2.6em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.wpl-game-name { text-align: center; font-weight: 800; font-size: clamp(.9rem, calc(1 * var(--wp-vw)), 1.1rem); line-height: 1.3; min-block-size: 2.6em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .wpl-wait { display: grid; place-items: center; min-block-size: 120px; }
-.wpl-empty, .wpl-found { margin: 0; color: var(--fg-2); font-size: clamp(1rem, 1.1vw, 1.2rem); }
+.wpl-empty, .wpl-found { margin: 0; color: var(--fg-2); font-size: clamp(1rem, calc(1.1 * var(--wp-vw)), 1.2rem); }
 @media (prefers-reduced-motion: reduce) { .wpl-game { transition: none; } .wpl-game:hover, .wpl-game:focus-visible { transform: none; } }
 
 /* "Files need a look": the library's notice and WittyPlay home's, in WittyPlay's colours. */
-.wplay .wpl-review .gr-banner, .wplay-review-notice p { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin: 0; padding: clamp(12px, 1.2vw, 18px) clamp(16px, 1.6vw, 24px); border: 0; border-radius: 18px; background: rgb(255 211 77 / .12); box-shadow: inset 0 0 0 1.5px rgb(255 211 77 / .5); color: var(--fg); font-size: clamp(.95rem, 1.05vw, 1.15rem); }
+.wplay .wpl-review .gr-banner, .wplay-review-notice p { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin: 0; padding: clamp(12px, calc(1.2 * var(--wp-vw)), 18px) clamp(16px, calc(1.6 * var(--wp-vw)), 24px); border: 0; border-radius: 18px; background: rgb(255 211 77 / .12); box-shadow: inset 0 0 0 1.5px rgb(255 211 77 / .5); color: var(--fg); font-size: clamp(.95rem, calc(1.05 * var(--wp-vw)), 1.15rem); }
 .wplay .wpl-review .gr-banner > span, .wplay-review-notice p > span { flex: 1 1 18rem; }
-.wplay-review-notice { display: grid; gap: 10px; margin-block-end: clamp(12px, 1.4vw, 20px); }
+.wplay-review-notice { display: grid; gap: 10px; margin-block-end: clamp(12px, calc(1.4 * var(--wp-vw)), 20px); }
 .wplay-review-notice svg { flex: none; color: #ffd34d; }
 .wplay .wpl-review .gr-banner .btn, .wplay-review-go { display: inline-flex; align-items: center; min-block-size: 48px; padding: 0 22px; border: 0; border-radius: 999px; background: linear-gradient(180deg, #ffe07a, #f2b632); color: #2a1d00; font-weight: 900; text-decoration: none; }
 .wplay .wpl-review .gr-banner .btn:focus-visible, .wplay-review-go:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 8px #fff; }
 
 /* Game size (Settings › Game pictures, and the games page's switch): one scale for every grid and row of games. */
 /* The tile width is first worked out on the page; worked out again here, where the chosen size is known. */
-.wplay[data-tiles] { --wp-tile: calc(clamp(132px, min(15.6vw, 25vh), 300px) * var(--wp-scale, 1)); }
+.wplay[data-tiles] { --wp-tile: calc(var(--wp-tile-base) * var(--wp-scale, 1)); }
 @media (max-width: 599px) { .wplay[data-tiles] { --wp-tile: calc(42vw * var(--wp-scale, 1)); } }
 .wplay[data-tiles="small"] { --wp-scale: .75; }
 .wplay[data-tiles="large"] { --wp-scale: 1.35; }
@@ -684,11 +687,11 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wplay-size-switch button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px var(--focus); }
 .wplay-switches { flex: none; display: inline-flex; align-items: center; gap: 10px; }
 .wpl-head > .wpl-switches { margin-inline-start: auto; }
-.wpl-body.with-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 26rem); column-gap: clamp(16px, 2vw, 40px); align-items: start; }
-.wpl-games { display: grid; gap: clamp(18px, 2.2vw, 36px); min-inline-size: 0; }
+.wpl-body.with-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 26rem); column-gap: clamp(16px, calc(2 * var(--wp-vw)), 40px); align-items: start; }
+.wpl-games { display: grid; gap: clamp(18px, calc(2.2 * var(--wp-vw)), 36px); min-inline-size: 0; }
 .wpl-body.with-panel .wpl-line.layout-shelf { margin-inline-end: 0; padding-inline-end: 12px; }
-.wpl-panel { position: sticky; inset-block-start: calc(var(--wp-bar) + 12px); max-block-size: calc(100dvh - var(--wp-bar) - var(--wp-dock) - 7rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: clamp(14px, 1.4vw, 26px); border-radius: clamp(14px, 1.3vw, 24px); background: var(--wp-chip); }
-.wpl-panel .sdui-detail-title { display: block; font-size: clamp(1.2rem, 2vw, 2.2rem); line-height: 1.2; }
+.wpl-panel { position: sticky; inset-block-start: calc(var(--wp-bar) + 12px); max-block-size: calc(100dvh - var(--wp-bar) - var(--wp-dock) - 7rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: clamp(14px, calc(1.4 * var(--wp-vw)), 26px); border-radius: clamp(14px, calc(1.3 * var(--wp-vw)), 24px); background: var(--wp-chip); }
+.wpl-panel .sdui-detail-title { display: block; font-size: clamp(1.2rem, calc(2 * var(--wp-vw)), 2.2rem); line-height: 1.2; }
 .wpl-panel-empty { margin: 0; color: var(--fg-2); }
 @media (min-width: 760px) and (max-width: 1199px) { .wpl-body.with-panel { grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); } }
 @media (max-width: 759px) { .wpl-body.with-panel { display: block; } .wpl-panel, .wpl-panel-switch { display: none; } }
@@ -705,3 +708,49 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 /* The store for cores and emulators (pages/CoresStore.tsx): its title, its tabs, then the screen of the tab. */
 .wplay-store { display: grid; gap: var(--sp-4); }
 .wplay-store > h1 { margin: 0; }
+
+/* ==================================================================================================================================
+   On a computer's screen: a desktop or laptop browser and the desktop app, not TV mode (which keeps the ten-foot sizes above, for a
+   TV and anyone choosing it). The page is read from arm's length, so it is drawn smaller: type, bars and the header at the app's
+   ordinary sizes, six to eight games a row on a wide window, a smaller dock with room kept for it under the games, and the chosen
+   game's details whole, scrolling on their own. Small, medium and large still scale every grid and row (--wp-scale). (#91)
+   ================================================================================================================================== */
+html[data-wplay]:not(.tv-mode) {
+  --wp-vw: .6vw;
+  --wp-tile-base: clamp(120px, min(9vw, 20vh), 220px);
+  --wp-dock: clamp(40px, 2.6vw, 52px);
+}
+@media (min-width: 760px) {
+  html[data-wplay]:not(.tv-mode) .wplay .sdui-shelf:is(.layout-grid, .layout-list) { grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem); }
+  html[data-wplay]:not(.tv-mode) .wplay .sdui-shelf.layout-grid .row { grid-template-columns: repeat(auto-fill, minmax(calc(clamp(104px, 8.4vw, 200px) * var(--wp-scale, 1)), 1fr)); gap: clamp(12px, 1vw, 20px); }
+  /* The details beside the games: all of them, under the status bar and clear of the dock, scrolling when they're longer. */
+  html[data-wplay]:not(.tv-mode) .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail { max-block-size: calc(100dvh - 16rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  html[data-wplay]:not(.tv-mode) .wplay-console-grid { grid-template-columns: repeat(auto-fill, minmax(calc(clamp(120px, 8vw, 190px) * var(--wp-scale, 1)), 1fr)); }
+}
+html[data-wplay]:not(.tv-mode) .wplay .play-dock-ic svg { inline-size: 46%; block-size: 46%; }
+html[data-wplay]:not(.tv-mode) .wplay .play-dock a.on .play-dock-ic { box-shadow: 0 0 0 3px var(--wp-ring), 0 0 0 6px #fff; transform: scale(1.06); }
+html[data-wplay]:not(.tv-mode) .wplay .play-dock-label { inset-block-start: calc(100% + 10px); }
+/* The dock on a small band of its own rather than a fade across the whole foot, which dimmed the games and the details beside it. */
+@media (min-width: 760px) {
+  html[data-wplay]:not(.tv-mode) .wplay .play-dock { inset-inline: 50% auto; transform: translateX(-50%); padding: var(--sp-2) var(--sp-4); border-radius: var(--r-full); background: rgb(16 14 52 / .96); backdrop-filter: blur(12px); box-shadow: 0 0 0 1px rgb(255 255 255 / .1), 0 12px 30px rgb(4 6 24 / .5); pointer-events: auto; }
+  html[data-wplay]:not(.tv-mode) .wplay .play-dock::before { display: none; }
+}
+/* A phone, not in TV mode: the chosen game's details above the games are a short band (its name, its line and its buttons; the
+   cover is the card's own), so the games start on the first screen; the dock keeps its 48px buttons for a thumb. */
+@media (max-width: 759px) {
+  html[data-wplay]:not(.tv-mode) { --wp-dock: 48px; }
+  html[data-wplay]:not(.tv-mode) .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail { position: static; max-block-size: none; padding: var(--sp-3); }
+  html[data-wplay]:not(.tv-mode) .wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-detail-title { font-size: var(--text-xl); }
+  html[data-wplay]:not(.tv-mode) .wplay .sdui-shelf:is(.layout-grid, .layout-list) .sdui-detail-line { font-size: var(--text-sm); }
+  /* The rest (about, pictures, achievements) is on the game's own page, one press away. */
+  html[data-wplay]:not(.tv-mode) .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail :is(.wplay-panel-cover, .wplay-bio-logo, .wplay-bio-makers, .wplay-bio-about, .wplay-bio-shots, .wplay-bio-genres, .wplay-cheevos) { display: none; }
+  html[data-wplay]:not(.tv-mode) .wplay .sdui-shelf:is(.layout-grid, .layout-list) > .sdui-detail.has-bio { padding-block-end: var(--sp-3); }
+  html[data-wplay]:not(.tv-mode) .wplay .sdui .sdui-detail-actions .btn { min-height: 44px; font-size: var(--text-md); }
+  /* The status bar and the setup notice at a phone's own size. */
+  html[data-wplay]:not(.tv-mode) .wplay .play-status { padding-block: var(--sp-2); row-gap: var(--sp-1); }
+  html[data-wplay]:not(.tv-mode) .wplay .play-avatar { inline-size: 36px; block-size: 36px; font-size: var(--text-md); }
+  html[data-wplay]:not(.tv-mode) .wplay .play-right { gap: var(--sp-2); }
+  html[data-wplay]:not(.tv-mode) .wplay .play-sys { min-inline-size: 40px; min-block-size: 40px; }
+  html[data-wplay]:not(.tv-mode) .wplay :is(.wpl-review .gr-banner, .wplay-review-notice p) { padding: var(--sp-2) var(--sp-3); gap: var(--sp-2); font-size: var(--text-sm); }
+  html[data-wplay]:not(.tv-mode) .wplay :is(.wpl-review .gr-banner .btn, .wplay-review-go) { min-block-size: 40px; padding-inline: var(--sp-4); font-size: var(--text-sm); }
+}

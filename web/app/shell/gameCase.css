@@ -93,15 +93,15 @@
 
 
 /* The detail panel's Picture style button. */
-.gpic-detail-btn { display: inline-grid; place-items: center; flex: none; inline-size: clamp(48px, 3.4vw, 64px); block-size: clamp(48px, 3.4vw, 64px); padding: 0; border: 0; border-radius: 999px; background: var(--wp-chip, var(--bg-3)); color: var(--fg); font: inherit; font-weight: 800; cursor: pointer; }
+.gpic-detail-btn { display: inline-grid; place-items: center; flex: none; inline-size: clamp(48px, calc(3.4 * var(--wp-vw, 1vw)), 64px); block-size: clamp(48px, calc(3.4 * var(--wp-vw, 1vw)), 64px); padding: 0; border: 0; border-radius: 999px; background: var(--wp-chip, var(--bg-3)); color: var(--fg); font: inherit; font-weight: 800; cursor: pointer; }
 .gpic-detail-btn:hover { background: var(--wp-chip-hover, var(--bg-4)); }
 .gpic-detail-btn:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
 
 /* Choosing: the live preview beside the questions; each answer a button in a radio group. */
-.gpic-look { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(14px, 1.6vw, 28px); align-items: start; }
+.gpic-look { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(14px, calc(1.6 * var(--wp-vw, 1vw)), 28px); align-items: start; }
 @media (max-width: 720px) { .gpic-look { grid-template-columns: minmax(0, 1fr); } }
 .gpic-look-now { position: sticky; inset-block-start: 8px; }
-.gpic-preview { position: relative; display: block; inline-size: clamp(120px, 12vw, 190px); aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, #5a4ad8, #1b234f); }
+.gpic-preview { position: relative; display: block; inline-size: clamp(120px, calc(12 * var(--wp-vw, 1vw)), 190px); aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, #5a4ad8, #1b234f); }
 .gpic-preview.sm { inline-size: 64px; border-radius: 10px; }
 .gpic-preview .gcase-fit { inset: 6%; }
 .gpic-filled img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
@@ -138,10 +138,10 @@
 /* Setup's quick choice. */
 .gpic-quick { display: grid; gap: 12px; }
 .gpic-quick-previews { display: flex; flex-wrap: wrap; gap: 12px; }
-.gpic-quick .gpic-preview { inline-size: clamp(96px, 10vw, 140px); }
+.gpic-quick .gpic-preview { inline-size: clamp(96px, calc(10 * var(--wp-vw, 1vw)), 140px); }
 
 /* The Picture style button sits at the end of the panel's row of buttons, the same height as them. */
-.sdui-detail-actrow { display: flex; flex-wrap: wrap; align-items: center; gap: clamp(10px, 1.1vw, 20px); margin-block-start: clamp(4px, .6vw, 10px); }
+.sdui-detail-actrow { display: flex; flex-wrap: wrap; align-items: center; gap: clamp(10px, calc(1.1 * var(--wp-vw, 1vw)), 20px); margin-block-start: clamp(4px, calc(.6 * var(--wp-vw, 1vw)), 10px); }
 .sdui-detail-actrow > .sdui-detail-actions { margin: 0; }
 .gpic-detail-btn svg { inline-size: 42%; block-size: 42%; }
 .wplay .gpic-detail-btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--wp-ring), 0 0 0 7px var(--focus); }
@@ -149,8 +149,8 @@
 /* The game panel's picture (GamePictureArt PanelCover): the art whole, or the game in its case, above the name and Play. */
 /* The picture's own limit is the box's height: a percentage would be ignored in the box's auto row, and a tall cover (a PS2 case)
    would spill over the title and buttons under it. */
-.wplay-panel-cover { display: grid; place-items: center; block-size: clamp(150px, 26vh, 320px); margin-block-end: clamp(14px, 1.6vw, 26px); overflow: hidden; }
-.wplay-panel-cover img { max-inline-size: 100%; max-block-size: clamp(150px, 26vh, 320px); object-fit: contain; border-radius: clamp(8px, .8vw, 14px); box-shadow: 0 18px 40px rgb(0 0 0 / .45), 0 0 0 1px rgb(255 255 255 / .08); }
+.wplay-panel-cover { display: grid; place-items: center; block-size: clamp(150px, 26vh, 320px); margin-block-end: clamp(14px, calc(1.6 * var(--wp-vw, 1vw)), 26px); overflow: hidden; }
+.wplay-panel-cover img { max-inline-size: 100%; max-block-size: clamp(150px, 26vh, 320px); object-fit: contain; border-radius: clamp(8px, calc(.8 * var(--wp-vw, 1vw)), 14px); box-shadow: 0 18px 40px rgb(0 0 0 / .45), 0 0 0 1px rgb(255 255 255 / .08); }
 .wplay-panel-cover.case { position: relative; inline-size: min(100%, clamp(140px, 22vh, 260px)); aspect-ratio: 3 / 4; block-size: auto; justify-self: center; }
 .wplay .sdui-shelf:not(.layout-grid):not(.layout-list) .wplay-panel-cover { display: none; }
 
