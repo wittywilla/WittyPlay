@@ -389,7 +389,7 @@ export default function GamingSettings({ only }: { only?: string } = {}) {
       <TvPart id="wittyplay.custom-cores"><CustomCoresSection onChanged={refresh} /></TvPart>
       <LegalNote kind="cores" className="set-legal" />
       </>}
-      {picker && <Suspense fallback={null}><CorePicker scope={picker} onClose={() => { setPicker(null); void refresh() }} /></Suspense>}
+      {picker && <Suspense fallback={null}><CorePicker scope={picker} onPicked={() => { void refresh() }} onClose={() => { setPicker(null); void refresh() }} /></Suspense>}
       {confirm && (
         <Dialog title={confirm.length === 1 ? `Install ${confirm[0].name}?` : `Install ${confirm.length} cores?`} onClose={() => setConfirm(null)}
           actions={<><button type="button" className="btn ghost" onClick={() => setConfirm(null)}>Cancel</button><button type="button" className="btn primary" autoFocus onClick={install}>Install</button></>}>

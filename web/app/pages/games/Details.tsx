@@ -277,7 +277,15 @@ export default function GameDetails({ it, reload, variant }: { it: Item; reload?
   )
   const overlays = (
     <>
-      {picker && <Suspense fallback={null}><CorePicker scope={picker} onClose={() => { setPicker(null); void loadCheck(); void getConsoles(true) }} /></Suspense>}
+      {picker && <Suspense fallback={null}><CorePicker scope={picker} onPicked={() => { void loadCheck() }} onClose={() => {
+        setPicker(null)
+        void getConsoles(true)
+        // The button that opened the picker (Choose a core) may be gone, Play in its place: a remote or a pad goes back to the page's
+        // first action rather than to nothing.
+        void loadCheck().then(() => requestAnimationFrame(() => {
+          if (!document.activeElement || document.activeElement === document.body) document.querySelector<HTMLElement>('.wpg-actions [data-tv-first], .wpg-actions .wpg-btn')?.focus()
+        }))
+      }} /></Suspense>}
       <PromptBar className="gm-prompts" always={links.couch} items={prompts} />
       {edit && <EditGame item={it} onClose={() => setEdit(false)} onSaved={() => { setEdit(false); reload?.() }} />}
       {art && <ArtworkPicker title={`Artwork for ${it.title}`} onClose={() => setArt(false)}

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { api } from '@wms/app/api'
 import { Spinner } from '@wms/app/components/common'
+import { getConsoles } from './consoles'
 import { IconCheck, IconInfo } from '@wms/app/icons'
 import { toast } from '@wms/app/state'
 import { Sheet } from '@wms/app/ui/index'
@@ -101,10 +102,20 @@ export default function CorePicker({ scope, onClose, playing, onPicked }: {
   const title = scope.kind === 'game' ? `Core for ${scope.title}` : `Core for ${scope.consoleShort} games`
   const byId = (id: string) => info?.choices.find((c) => c.id === id)
 
-  // Saves the choice. During a game, a change to what plays offers to restart on it.
+  // The focus stays on a choice in the list, whatever the list draws meanwhile: a button that goes away (Install and use, as the
+  // download begins) would leave a remote or a pad with nothing to move from.
+  const keepFocus = (id: string) => requestAnimationFrame(() => {
+    const sheet = listRef.current
+    if (!sheet || (document.activeElement && sheet.contains(document.activeElement) && document.activeElement !== document.body)) return
+    sheet.querySelector<HTMLElement>(`.cp-row[data-core="${CSS.escape(id)}"]`)?.focus({ preventScroll: true })
+  })
+
+  // Saves the choice. During a game, a change to what plays offers to restart on it. Every page that says what a console plays
+  // (Consoles, a game's page) reads it again at once, not only when the picker closes.
   const save = async (core: string) => {
     const before = info?.effective
     await api.put(base, { core })
+    void getConsoles(true).catch(() => {})
     onPicked?.(core)
     const v = await api.get<CoreChoices>(base)
     if (alive.current) setInfo(v)
@@ -132,7 +143,9 @@ export default function CorePicker({ scope, onClose, playing, onPicked }: {
   // Install, showing how far the download has got, then use it. The install goes on if the picker
   // is closed meanwhile, and the core is still put to use.
   const install = async (c: CoreChoice) => {
+    if (busy) return // one install at a time, however often it's pressed
     setBusy(c.id)
+    keepFocus(c.id)
     setProgress({ received: 0, total: 0 })
     let polling = true
     const poll = async () => {
@@ -157,7 +170,7 @@ export default function CorePicker({ scope, onClose, playing, onPicked }: {
       toast(e.message)
     } finally {
       polling = false
-      if (alive.current) { setBusy(''); setProgress(null) }
+      if (alive.current) { setBusy(''); setProgress(null); keepFocus(c.id) }
     }
   }
 
@@ -229,7 +242,7 @@ export default function CorePicker({ scope, onClose, playing, onPicked }: {
             const installing = busy === c.id && !c.installed
             return (
               <div key={c.id} className={'cp-item' + (selected ? ' on' : '') + (usable ? '' : ' off')}>
-                <button type="button" className="cp-row" role="radio" aria-checked={selected} disabled={!usable || (!!busy && busy !== c.id)}
+                <button type="button" className="cp-row" role="radio" data-core={c.id} aria-checked={selected} disabled={!usable || (!!busy && busy !== c.id)}
                   aria-describedby={`cp-${c.id}-d`} onClick={() => void choose(c.id)}>
                   <span className="cp-mark" aria-hidden="true" />
                   <span className="cp-main">
