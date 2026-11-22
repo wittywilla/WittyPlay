@@ -639,3 +639,20 @@ html.gm-couch .wp-screen .wps-prompts { display: none; }
 .wp-menu .wp-batts { color: var(--wpx-ink, #fff); opacity: .92; }
 .wp-batt-alert { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 7; pointer-events: none; padding: 6px 12px; border-radius: 999px; background: rgb(10 12 18 / .82); color: #ffc069; }
 .wp-batt-alert .wp-batt.low { color: #ffc069; }
+
+/* The game menu, its Settings and More fit the window at every size, with no scroll bar (#91): the menu takes the window's height,
+   and the tiles share what the header and the key hints leave, each row between a floor and its full size. Only a very short
+   window (under about 600px, where even the floor doesn't fit) scrolls, as a last resort. */
+.wp-big .wp-menu { height: 100%; }
+.wp-big .wp-menu > .wp-tiles { flex: 0 1 auto; min-height: 0; grid-auto-rows: minmax(clamp(52px, 8vh, 84px), clamp(96px, 15vh, 168px)); }
+.wp-big .wp-tiles .wp-tile { min-height: 0; overflow: hidden; }
+.wp-big .wp-qm-cover { height: clamp(52px, 11vh, 150px); max-width: clamp(52px, 11vh, 150px); }
+.wp-big .wp-menu .wp-qm-title h2 { font-size: clamp(1.4rem, min(3.4vw, 5.6vh), 3.6rem); }
+/* A window too short for even the floor (a phone on its side): the tiles keep their size and the menu scrolls, rather than its
+   last row running under what follows it. */
+@media (max-height: 599px) { .wp-big .wp-menu > .wp-tiles { min-height: auto; grid-auto-rows: 52px; } .wp-big .wp-tile small, .wp-big .wp-qm-eyebrow { display: none; } }
+/* Short tiles put the icon beside the words. */
+@media (max-height: 820px) {
+  .wp-big .wp-tile { flex-direction: row; align-items: center; justify-content: flex-start; }
+  .wp-big .wp-tile-glyph { position: static; margin-left: auto; }
+}
