@@ -12,8 +12,8 @@ import { setPlayMode } from '@wms/app/theme'
 import { isBackKey } from '@wms/app/ui/spatial'
 import { toast, useApp } from '@wms/app/state'
 import { focusFirst } from '@wms/app/tv'
-import { cardRoute, dockFor, PLAY_LIBRARY, exitWords, isPlayPath, isPlayTop, PLAY_CONSOLES, PLAY_CONTROLLERS, PLAY_EXIT, PLAY_PADS_TITLE, PLAY_STATUS, PLAY_TIP, PLAY_TIP_KEY, tipDue, type PlayLayout, type PlayPads } from './playPaths'
-import { usePlayTabs, LayoutChooser, LayoutSwitch, OpenChooser, PadsChooser, PadsSetting, PlayGlyph, usePlayLayout, usePlayOpen, usePlayPads } from './playPads'
+import { cardRoute, dockFor, PLAY_LIBRARY, exitWords, isPlayPath, isPlayTop, PLAY_CONSOLES, PLAY_CONTROLLERS, PLAY_EXIT, PLAY_PADS_TITLE, PLAY_STATUS, PLAY_PADS, PLAY_TIP, PLAY_TIP_KEY, tipDue, type PlayLayout, type PlayPads } from './playPaths'
+import { usePlayTabs, LayoutSwitch, PadsChooser, PadsSetting, PlayGlyph, usePlayLayout, usePlayOpen, usePlayPads } from './playPads'
 import { CardRouteContext } from '@wms/app/sdui/render/cardRoute'
 import { PlayReviewNotice } from './PlayReviewNotice'
 import { GameArtContext, GlyphContext, RowLayoutContext, TabsContext, type GlyphKey } from '@wms/app/sdui/render/glyphs'
@@ -162,11 +162,11 @@ export function SystemDock({ entries }: { entries: DockEntry[] }) {
 }
 
 // The first-time tip, a dialog (focus moves in and stays; Esc, Back or B closes it): on the first launch "Which buttons should we
-// show?" and then, optionally, the layout; always how to get back to the app, in those buttons, with a ring round the Home button.
-function ExitTip({ onClose, choose, pads, setPads, layout, setLayout }: { onClose: () => void; choose: boolean; pads: PlayPads; setPads: (p: PlayPads) => void; layout: PlayLayout; setLayout: (l: PlayLayout) => void }) {
+// show?", then how to get back to the app, in those buttons, with a ring round the Home button. Two steps, not four (#94): the
+// layout and what choosing a game does start as they are and are in Settings, which the first step says.
+function ExitTip({ onClose, choose, pads, setPads }: { onClose: () => void; choose: boolean; pads: PlayPads; setPads: (p: PlayPads) => void }) {
   const id = useId()
-  const [step, setStep] = useState<'pads' | 'layout' | 'open' | 'exit'>(choose ? 'pads' : 'exit')
-  const [open, setOpen] = usePlayOpen()
+  const [step, setStep] = useState<'pads' | 'exit'>(choose ? 'pads' : 'exit')
   const box = useRef<HTMLDivElement | null>(null)
   const [ring, setRing] = useState<DOMRect | null>(null)
   useEffect(() => {
@@ -198,29 +198,18 @@ function ExitTip({ onClose, choose, pads, setPads, layout, setLayout }: { onClos
         {step === 'pads' ? (
           <>
             <h2 id={id + 't'}>{PLAY_PADS_TITLE}</h2>
-            <p id={id + 'd'}>WittyPlay shows these buttons on its screens. You can change it later under Controllers.</p>
-            <PadsChooser value={pads} onChange={setPads} labelledBy={id + 't'} />
-            <button type="button" className="wplay-tip-ok" onClick={() => { setPads(pads); setStep('layout') }}>{drawn('a')} Continue</button>
-          </>
-        ) : step === 'layout' ? (
-          <>
-            <h2 id={id + 't'}>How should your games be laid out?</h2>
-            <p id={id + 'd'}>You can switch at any time with the buttons at the end of the tabs, or in Settings.</p>
-            <LayoutChooser value={layout} onChange={setLayout} labelledBy={id + 't'} />
-            <div className="wplay-tip-row">
-              <button type="button" className="wplay-tip-ok" onClick={() => { setLayout(layout); setStep('open') }}>{drawn('a')} Continue</button>
-              <button type="button" className="wplay-tip-skip" onClick={() => setStep('open')}>Skip</button>
+            <p id={id + 'd'}>WittyPlay shows these buttons on its screens. You can change it later under Controllers; how games are laid out, and what choosing one does, are in Settings.</p>
+            {/* Choosing a tile moves on to Continue, so one more press goes on; Enter on a tile chooses it and goes on at once. */}
+            <div onKeyDown={(e) => {
+              const tile = (e.target as HTMLElement).closest<HTMLElement>('[role=radio]')
+              if (e.key !== 'Enter' || !tile) return
+              e.preventDefault(); e.stopPropagation()
+              const chosen = PLAY_PADS.find((p) => p.id === tile.dataset.pads)?.id || pads
+              setPads(chosen); setStep('exit')
+            }}>
+              <PadsChooser value={pads} onChange={(p) => { setPads(p); box.current?.querySelector<HTMLElement>('.wplay-tip-ok')?.focus() }} labelledBy={id + 't'} />
             </div>
-          </>
-        ) : step === 'open' ? (
-          <>
-            <h2 id={id + 't'}>When you choose a game…</h2>
-            <p id={id + 'd'}>Open its page first, or start playing straight away. You can change this in Settings.</p>
-            <OpenChooser value={open} onChange={setOpen} labelledBy={id + 't'} />
-            <div className="wplay-tip-row">
-              <button type="button" className="wplay-tip-ok" onClick={() => { setOpen(open); setStep('exit') }}>{drawn('a')} Continue</button>
-              <button type="button" className="wplay-tip-skip" onClick={() => setStep('exit')}>Skip</button>
-            </div>
+            <button type="button" className="wplay-tip-ok" onClick={() => { setPads(pads); setStep('exit') }}>{drawn('a')} Continue</button>
           </>
         ) : (
           <>
@@ -310,7 +299,7 @@ export function PlayFrame({ children }: { children: ReactNode }) {
           {children}
         </main>
         <SystemDock entries={dockFor(regions?.systemDock)} />
-        {tip && <ExitTip onClose={closeTip} choose={!padsChosen} pads={pads} setPads={setPads} layout={layout} setLayout={setLayout} />}
+        {tip && <ExitTip onClose={closeTip} choose={!padsChosen} pads={pads} setPads={setPads} />}
       </div>
     </GameArtContext.Provider></CardRouteContext.Provider></TabsContext.Provider></RowLayoutContext.Provider></GlyphContext.Provider>
   )

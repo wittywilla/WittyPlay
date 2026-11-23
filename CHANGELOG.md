@@ -9,6 +9,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - **A TV remote is told to press Back** for the game menu while a game loads, instead of Esc.
 - **Button hints follow TV mode:** with the server's TV mode on, hints show the remote's OK and Back instead of a keyboard's keys, and the choice of buttons to show offers the remote instead of the keyboard.
 - **Release dates are whole or left out.** A date a source gave half-way (such as "2001-1") is shown as the year, so games sort by date correctly.
+- **Fewer questions the first time you open Games.** It asks which buttons to show, then how to get back to the app, and you're at your games. How games are laid out and what choosing one does start as they are; change them any time in Settings.
+- **Choosing your buttons takes one press.** Enter on a choice picks it and moves on; with a controller, picking one moves straight to Continue.
 
 ## Developer notes for 0.7.12
 
@@ -17,6 +19,19 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - `cleanDate` keeps only whole parts (month 01-12, day 01-31); `FuzzGameParsers` checks its output's shape, and `TestCleanDateWholeParts` the cases.
 - `sandbox/docker` tests: `specUser` is atomic; `TestLifecycleConcurrencyLimit` raced on it under `-race`.
 - The recent-games source (`sduiAsk.recent`) caps the offset and limit before adding them: a huge pair wrapped round to a negative SQL `LIMIT`, which SQLite reads as no limit.
+
+## 0.7.11
+
+_Never published on its own: it came out in 0.7.12._
+
+- **Fewer questions the first time you open Games.** It asks which buttons to show, then how to get back to the app, and you're at your games. How games are laid out and what choosing one does start as they are; change them any time in Settings.
+- **Choosing your buttons takes one press.** Enter on a choice picks it and moves on; with a controller, picking one moves straight to Continue.
+
+## Developer notes for 0.7.11
+
+- Fuzz tests for .wittyplay files and players' input messages.
+- `ExitTip` (`web/app/shell/PlayChrome.tsx`) has two steps, `pads` and `exit`; the `layout` and `open` steps are gone, and the defaults of `usePlayLayout` and `usePlayOpen` stand until changed in Settings (#94).
+- Enter on a `PadsChooser` tile inside the tip chooses it and goes to `exit`; a click (a pad's A) chooses it and focuses Continue.
 
 ## 0.7.10
 
