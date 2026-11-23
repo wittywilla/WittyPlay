@@ -65,7 +65,7 @@ export const PLAY_PADS: { id: PlayPads; label: string; note: string }[] = [
   { id: 'xbox', label: 'Xbox / XInput', note: 'A, B, X and Y; View and Menu' },
   { id: 'playstation', label: 'PlayStation / DualSense', note: 'Cross, Circle, Square and Triangle; Create and Options' },
   // Its id is the app's pad family; the words never name the maker (a nod to its home city instead).
-  { id: 'nintendo', label: 'Kyoto layout (A on the right)', note: 'A on the right confirms, B below goes back; + and −' },
+  { id: 'nintendo', label: 'Kyoto layout', note: 'A on the right confirms, B below goes back; + and −' },
 ]
 export const isPlayPads = (v: unknown): v is PlayPads => PLAY_PADS.some((p) => p.id === v)
 // The family a pad's id says (the same tests as ui/inputModel.ts padFamily); a pad with no known maker is drawn as XInput, and
