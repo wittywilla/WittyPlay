@@ -23,11 +23,12 @@ import { LayoutSwitch } from '../shell/playPads'
 const ROW = 24
 const PAGE = 60
 
-// The details panel beside the games (a switch, per profile; on to begin with): the game pointed at or moved to, the way Recent's
+// The details panel beside the games (a switch, per profile; on to begin with): the game moved to or clicked, the way Recent's
 // grid and list show it. Under 760 pixels wide there's no room beside the games, so it's not drawn there.
 const PANEL_KEY = 'wittyplayLibraryPanel'
 type Shown = { it: Item; short: string }
-const PickContext = createContext<((s: Shown) => void) | null>(null)
+// pick shows a game in the panel; chosen is the one shown there.
+const PickContext = createContext<{ pick: (s: Shown) => void; chosen: Item['id'] | null } | null>(null)
 
 function usePanel(): [boolean, (on: boolean) => void] {
   const [saved, save] = useUserPref<boolean | null>(PANEL_KEY, null)
@@ -73,15 +74,19 @@ function GamePanel({ shown }: { shown: Shown | null }) {
   )
 }
 
-// One game: drawn as WittyPlay draws it, its name under it, opening its page. Pointing at it or moving to it shows it in the panel.
+// One game: drawn as WittyPlay draws it, its name under it, opening its page. Moving to it (arrows, a remote, a pad) shows it in the
+// panel; with a pointer a click shows it and the panel stays on it, and a second click, a double-click or Enter opens its page.
 function GameTile({ it, short }: { it: Item; short: string }) {
   const art = useContext(GameArtContext)
-  const pick = useContext(PickContext)
+  const panel = useContext(PickContext)
+  const pressedChosen = useRef(false)
   const image = it.poster ? posterUrl(it) : ''
   const drawn = art?.art({ itemId: String(it.id), console: short || it.console || '', image, title: it.title })
-  const show = pick ? () => pick({ it, short }) : undefined
+  const show = panel ? () => panel.pick({ it, short }) : undefined
   return (
-    <Link className="wpl-game" to={playGamePath(it.id)} aria-label={it.title + (it.year ? `, ${it.year}` : '')} onFocus={show} onPointerEnter={show}>
+    <Link className="wpl-game" to={playGamePath(it.id)} aria-label={it.title + (it.year ? `, ${it.year}` : '')} onFocus={show}
+      onPointerDown={panel ? () => { pressedChosen.current = panel.chosen === it.id } : undefined}
+      onClick={panel ? (e) => { if (e.detail === 1 && !pressedChosen.current) { e.preventDefault(); show?.() } pressedChosen.current = false } : undefined}>
       <span className="wpl-game-art">{drawn ?? (image ? <img src={image} alt="" loading="lazy" /> : <span className="wpl-game-blank">{it.title}</span>)}</span>
       <span className="wpl-game-name">{it.title}</span>
     </Link>
@@ -177,6 +182,7 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
   const total = useMemo(() => (consoles || []).reduce((n, c) => n + (c.count || 0), 0), [consoles])
   const [panel] = usePanel()
   const [shown, setShown] = useState<Shown | null>(null)
+  const picker = useMemo(() => (panel ? { pick: setShown, chosen: shown?.it.id ?? null } : null), [panel, shown?.it.id])
   useEffect(() => { setShown(null) }, [consoleId, q])
   const chosen = consoles?.find((c) => c.id === consoleId)
   return (
@@ -197,7 +203,7 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
         <div className="wplay-switches wpl-switches">{(consoleId || q) && <><TileSizeSwitch /><LayoutSwitch only={['grid', 'list']} /></>}<PanelSwitch /></div>
       </header>
       {user?.isAdmin && <div className="wpl-review"><GameReviewBanner libraryId={lib.id} consoles={consoles || []} version={version} onChanged={() => setVersion((v) => v + 1)} /></div>}
-      <PickContext.Provider value={panel ? setShown : null}>
+      <PickContext.Provider value={picker}>
         <div className={'wpl-body' + (panel ? ' with-panel' : '')}>
           <div className="wpl-games">
             {q || consoleId

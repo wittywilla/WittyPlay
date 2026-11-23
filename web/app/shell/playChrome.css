@@ -754,3 +754,9 @@ html[data-wplay]:not(.tv-mode) .wplay .play-dock-label { inset-block-start: calc
   html[data-wplay]:not(.tv-mode) .wplay :is(.wpl-review .gr-banner, .wplay-review-notice p) { padding: var(--sp-2) var(--sp-3); gap: var(--sp-2); font-size: var(--text-sm); }
   html[data-wplay]:not(.tv-mode) .wplay :is(.wpl-review .gr-banner .btn, .wplay-review-go) { min-block-size: 40px; padding-inline: var(--sp-4); font-size: var(--text-sm); }
 }
+
+/* A pointer over a game or a console only shows it's there to be clicked: the chosen one (the focus, or the last clicked) stays
+   chosen, and the details beside it with it (#91). */
+@media (hover: hover) {
+  .wplay :is(.sdui-shelf .sdui-item:not(.grown) .card, .wpl-game, .wplay-console:not(.on)):hover { filter: brightness(1.14); }
+}

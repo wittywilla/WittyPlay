@@ -7,7 +7,7 @@
 // it: its core and BIOS files (Consoles and cores), its game settings, its controls, and the libraries. The data is the app's own
 // /api/modules/wittyplay/games/consoles (pages/games/consoles.tsx getConsoles).
 import { lazy, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, mediaUrl } from '@wms/app/api'
 import type { GameConsole } from '../gameTypes'
 import { ConsoleMark } from './games/ConsoleMark'
@@ -195,6 +195,16 @@ export default function PlayConsoles() {
   const current = shown.find((c) => c.id === at) || shown[0]
   const head = useId()
   const pick = (id: string, open: boolean) => { setAt(id); if (open && phone) setSheet(true) }
+  // The chosen console is the one the focus is on (arrows, a remote or a pad), or the one last clicked: the pointer only points, so
+  // the panel stays on the console chosen while the pointer crosses others on its way to Browse games. A second click on the chosen
+  // console, a double-click, or Enter on it opens its games.
+  const { libraries } = useApp()
+  const nav = useNavigate()
+  const pressedChosen = useRef(false)
+  const browse = (c: ShownConsole) => {
+    const lib = libraryFor(libraries, c.id)
+    if (lib && gamesOf(c) > 0 && !c.sorting) nav(`${PLAY_LIBRARY}/${lib.id}?console=${encodeURIComponent(c.id)}`)
+  }
   return (
     <div className={'wplay-consoles' + (phone ? ' phone' : '')}>
       <h1 className="sr-only">Consoles</h1>
@@ -212,7 +222,8 @@ export default function PlayConsoles() {
               {shown.map((c) => (
                 <li key={c.id}>
                   <button type="button" className={'wplay-console' + (current?.id === c.id ? ' on' : '')} aria-pressed={current?.id === c.id}
-                    onFocus={() => !phone && setAt(c.id)} onPointerEnter={() => !phone && setAt(c.id)} onClick={() => pick(c.id, true)}>
+                    onFocus={() => !phone && setAt(c.id)} onPointerDown={() => { pressedChosen.current = current?.id === c.id }}
+                    onClick={(e) => { const again = e.detail === 0 || e.detail > 1 || pressedChosen.current; pressedChosen.current = false; if (again && !phone && current?.id === c.id) browse(c); else pick(c.id, true) }}>
                     <span className="wplay-console-art"><ConsoleArt c={c} size="md" /></span>
                     <b>{c.short}</b>
                     <span className="wplay-console-count">{countWords(c)}</span>
