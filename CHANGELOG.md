@@ -3,6 +3,16 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.14
+
+### What's new
+
+- **A Games library waiting for its first scan says so.** While another library is scanned ahead of it, it reads "Waiting to be scanned", then "Scanning…" while its turn runs, and the games appear when it ends, instead of "No games found in this library yet".
+
+### Developer notes
+
+- `PlayLibraryView` asks `GET /api/libraries/{id}/scan` once and every 3 s while a scan waits or runs (WittyMediaServer #553).
+
 ## 0.7.13
 
 - **Games start on a phone away from home.** An app that queued a button press or a keyframe request while its connection was still opening sent it before the hello, and the game refused the connection ("the first message must be the hello, as text") and never showed a picture. Binary messages before the hello are now skipped.
