@@ -8,6 +8,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 ### What's new
 
 - **A Games library waiting for its first scan says so.** While another library is scanned ahead of it, it reads "Waiting to be scanned", then "Scanning…" while its turn runs, and the games appear when it ends, instead of "No games found in this library yet".
+- **On a phone, a controller row fits on one line** (name, key, Change and Put back), and the first game in a row starts at the page edge, not cut off (#110).
 
 ### Developer notes
 
