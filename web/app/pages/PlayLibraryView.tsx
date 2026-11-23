@@ -19,6 +19,7 @@ import { PlayTabsRow } from './PlayConsoles'
 import { RefreshLibraryDetails } from './games/RefreshDetails'
 import { TileSizeSwitch } from '../shell/GamePictureArt'
 import { LayoutSwitch } from '../shell/playPads'
+import { useMedia } from '@wms/app/shell/useNav'
 
 const ROW = 24
 const PAGE = 60
@@ -215,7 +216,11 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
   }
   const total = useMemo(() => (consoles || []).reduce((n, c) => n + (c.count || 0), 0), [consoles])
   const queue = useLibraryScan(lib.id, () => setVersion((v) => v + 1))
-  const [panel] = usePanel()
+  const [panelOn] = usePanel()
+  // A phone has no room beside the games: no panel, so a tap opens the game's page at once. A panel drawn under the games
+  // put its Play behind the dock, where a tap went to the dock instead.
+  const phone = useMedia('(max-width: 759px)')
+  const panel = panelOn && !phone
   const [shown, setShown] = useState<Shown | null>(null)
   const picker = useMemo(() => (panel ? { pick: setShown, chosen: shown?.it.id ?? null } : null), [panel, shown?.it.id])
   useEffect(() => { setShown(null) }, [consoleId, q])

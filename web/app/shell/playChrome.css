@@ -698,7 +698,7 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wpl-panel .sdui-detail-title { display: block; font-size: clamp(1.2rem, calc(2 * var(--wp-vw)), 2.2rem); line-height: 1.2; }
 .wpl-panel-empty { margin: 0; color: var(--fg-2); }
 @media (min-width: 760px) and (max-width: 1199px) { .wpl-body.with-panel { grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); } }
-@media (max-width: 759px) { .wpl-body.with-panel { display: block; } .wpl-panel, .wpl-panel-switch { display: none; } }
+@media (max-width: 759px) { .wpl-body.with-panel { display: block; } .wplay .wpl-panel, .wplay .wpl-panel.has-bio, .wpl-panel-switch { display: none; } }
 /* The game page's cards keep their contents their own size, however tall the row makes the card: buttons stay buttons, a console's
    button names stay a row of chips. */
 .wpg .gm-panel, .wpg-card { align-content: start; }

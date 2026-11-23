@@ -25,11 +25,32 @@ func n64File(t *testing.T, boot string) string {
 	return p
 }
 
-// A libdragon game needs its settings, needs no graphics card, and is told what to expect.
-func TestLibdragonGameGetsWhatItNeeds(t *testing.T) {
+// On a graphics card a libdragon game gets parallel-RDP over Vulkan: angrylion leaves it black.
+func TestLibdragonGameOnACardGetsParallelRDP(t *testing.T) {
 	start := map[string]string{"parallel-n64-gfxplugin": "gliden64", "parallel-n64-screensize": "1280x960"}
 	args := []string{"-gpu", "-normal-priority"}
 	got := forThisGame(Options{Console: "n64", CoreID: wittyplay.LibdragonCore, ROM: n64File(t, "Libdragon IPL3"), GPU: true, RunnerArgs: args, CoreOptions: start})
+	for k, v := range libdragonCardOptions() {
+		if got.CoreOptions[k] != v {
+			t.Errorf("%s is %q", k, got.CoreOptions[k])
+		}
+	}
+	if !got.GPU || !slices.Contains(got.RunnerArgs, "-gpu") || !slices.Contains(got.RunnerArgs, "-vulkan") {
+		t.Errorf("gpu %v, args %v", got.GPU, got.RunnerArgs)
+	}
+	if len(got.Notices) != 1 {
+		t.Errorf("notices: %v", got.Notices)
+	}
+	if slices.Contains(args, "-vulkan") || start["parallel-n64-gfxplugin"] != "gliden64" {
+		t.Error("what was passed in was changed")
+	}
+}
+
+// With no card it gets the software settings and no card.
+func TestLibdragonGameGetsWhatItNeeds(t *testing.T) {
+	start := map[string]string{"parallel-n64-gfxplugin": "gliden64", "parallel-n64-screensize": "1280x960"}
+	args := []string{"-gpu", "-normal-priority"}
+	got := forThisGame(Options{Console: "n64", CoreID: wittyplay.LibdragonCore, ROM: n64File(t, "Libdragon IPL3"), GPU: false, RunnerArgs: args, CoreOptions: start})
 	for k, v := range wittyplay.LibdragonOptions() {
 		if got.CoreOptions[k] != v {
 			t.Errorf("%s is %q", k, got.CoreOptions[k])
