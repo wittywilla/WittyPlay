@@ -3,6 +3,11 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.13
+
+- **Games start on a phone away from home.** An app that queued a button press or a keyframe request while its connection was still opening sent it before the hello, and the game refused the connection ("the first message must be the hello, as text") and never showed a picture. Binary messages before the hello are now skipped.
+- **The note for a server with no graphics card is short** enough to read on a phone's start screen.
+
 ## 0.7.12
 
 - **A big games library's first scan no longer crawls.** While a scan described the games it found, it kept reading the game database again for almost every game, so a first scan of a large library could take hours. It now keeps a few consoles' lists in memory.
