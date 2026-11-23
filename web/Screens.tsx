@@ -50,6 +50,7 @@ export function LoadingScreen({ title, consoleName, cover, stage, status, percen
             {input.kind === 'pad'
               ? <>For the game menu, press <PadGlyph button="start" family={input.family} /> and <PadGlyph button="select" family={input.family} /> together</>
               : input.kind === 'pointer' ? <>For the game menu, use the button in the corner</>
+              : input.kind === 'remote' ? <>For the game menu, press Back on the remote</>
               : <>For the game menu, press <kbd className="wp-glyph key">Esc</kbd></>}
           </p>
         </div>

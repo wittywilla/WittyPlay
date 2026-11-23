@@ -294,7 +294,22 @@ func cleanDate(s string) string {
 			return s[:4]
 		}
 	}
+	// Only whole parts that can be: "2001-1" or "2001-13" is the year, "2001-02-3" or
+	// "2001-02-40" the month. Two dates are compared as text, so a part left half-way would sort
+	// wrongly as well as read wrongly.
+	if len(s) < 7 || !inRange(s[5:7], 1, 12) {
+		return s[:4]
+	}
+	if len(s) < 10 || !inRange(s[8:10], 1, 31) {
+		return s[:7]
+	}
 	return s
+}
+
+// inRange: two digits, from lo to hi.
+func inRange(d string, lo, hi int) bool {
+	n := int(d[0]-'0')*10 + int(d[1]-'0')
+	return n >= lo && n <= hi
 }
 
 // limitedBody reads an answer, up to what any answer should be.
