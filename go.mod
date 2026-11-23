@@ -17,7 +17,7 @@ require (
 	github.com/pion/webrtc/v4 v4.2.26
 	github.com/ulikunitz/xz v0.5.12
 	github.com/wittywilla/wittymodule v0.5.4
-	golang.org/x/image v0.47.0
+	golang.org/x/image v0.48.0
 	golang.org/x/sys v0.50.0
 	modernc.org/sqlite v1.61.1
 )
@@ -67,7 +67,7 @@ require (
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
-	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/text v0.44.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	modernc.org/libc v1.79.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
