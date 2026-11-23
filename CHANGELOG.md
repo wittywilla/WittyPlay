@@ -10,6 +10,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## Developer notes for 0.7.11
 
+- Fuzz tests for .wittyplay files and players' input messages.
 - `ExitTip` (`web/app/shell/PlayChrome.tsx`) has two steps, `pads` and `exit`; the `layout` and `open` steps are gone, and the defaults of `usePlayLayout` and `usePlayOpen` stand until changed in Settings (#94).
 - Enter on a `PadsChooser` tile inside the tip chooses it and goes to `exit`; a click (a pad's A) chooses it and focuses Continue.
 
