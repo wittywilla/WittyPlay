@@ -5,20 +5,20 @@ go 1.26.0
 require (
 	github.com/bodgit/sevenzip v1.6.0
 	github.com/coder/websocket v1.8.15
-	github.com/ebitengine/purego v0.11.2
+	github.com/ebitengine/purego v0.11.3
 	github.com/klauspost/compress v1.17.9
-	github.com/moby/moby/api v1.56.1
+	github.com/moby/moby/api v1.57.0
 	github.com/moby/moby/client v0.6.2
 	github.com/nwaples/rardecode/v2 v2.4.5
-	github.com/pion/ice/v4 v4.4.8
+	github.com/pion/ice/v4 v4.4.9
 	github.com/pion/interceptor v0.1.51
 	github.com/pion/rtcp v1.2.20
 	github.com/pion/rtp v1.10.6
 	github.com/pion/webrtc/v4 v4.2.26
 	github.com/ulikunitz/xz v0.5.12
 	github.com/wittywilla/wittymodule v0.5.4
-	golang.org/x/image v0.47.0
-	golang.org/x/sys v0.49.0
+	golang.org/x/image v0.48.0
+	golang.org/x/sys v0.50.0
 	modernc.org/sqlite v1.61.1
 )
 
@@ -67,7 +67,7 @@ require (
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
-	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/text v0.44.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	modernc.org/libc v1.79.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
