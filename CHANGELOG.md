@@ -16,6 +16,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - `web/app/shell/playPaths.ts`: in TV mode the `keyboard` choice is drawn as the remote (`PLAY_REMOTE`: OK and Back, nothing for X and Y), labelled "Remote", and `exitWords` says Back. `web/Screens.tsx`: the loading tip has a `remote` case; `web/prompts.tsx`: `isTV()` also counts the server's TV mode (`html.tv-mode`), per docs/TV-MODE.md.
 - `cleanDate` keeps only whole parts (month 01-12, day 01-31); `FuzzGameParsers` checks its output's shape, and `TestCleanDateWholeParts` the cases.
 - `sandbox/docker` tests: `specUser` is atomic; `TestLifecycleConcurrencyLimit` raced on it under `-race`.
+- The recent-games source (`sduiAsk.recent`) caps the offset and limit before adding them: a huge pair wrapped round to a negative SQL `LIMIT`, which SQLite reads as no limit.
 
 ## 0.7.10
 
