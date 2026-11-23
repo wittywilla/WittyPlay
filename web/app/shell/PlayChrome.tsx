@@ -139,7 +139,7 @@ export function StatusBar({ parts, onExit, onHelp }: { parts: StatusPart[]; onEx
         <time className="play-clock">{time}</time>
         {onHelp && <button type="button" className="play-sys" onClick={onHelp} aria-label="How to get back to the app" title="How to get back to the app"><IconHelp /></button>}
         {toggleFull && <button type="button" className="play-sys" onClick={toggleFull} aria-pressed={full} aria-label="Full screen" title={full ? 'Leave full screen' : 'Full screen'}><IconExpand /></button>}
-        {onExit && <button type="button" className="play-sys play-exit" onClick={onExit} aria-label="Return To Server" title="Return to the server's Home (Esc)"><IconReturn /><span className="play-exit-label" aria-hidden="true">Return To Server</span></button>}
+        {onExit && <button type="button" className="play-sys play-exit" onClick={onExit} aria-label="Return To Server" title="Return to the server's Home (Esc)"><IconReturn /><span className="play-exit-label" aria-hidden="true">Return To Server</span><span className="play-exit-short" aria-hidden="true">Return</span></button>}
       </div>
     </header>
   )

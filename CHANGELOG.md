@@ -7,6 +7,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 - **Games start on a phone away from home.** An app that queued a button press or a keyframe request while its connection was still opening sent it before the hello, and the game refused the connection ("the first message must be the hello, as text") and never showed a picture. Binary messages before the hello are now skipped.
 - **The note for a server with no graphics card is short** enough to read on a phone's start screen.
+- **Return To Server says so on a phone.** On a narrow screen the button was only an arrow; it now reads "Return" beside it. Wider screens keep the whole name.
 
 ## 0.7.12
 
