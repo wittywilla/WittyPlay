@@ -307,7 +307,7 @@ export default function GameDetails({ it, reload, variant }: { it: Item; reload?
       <div className="wpg" style={tint ? { ['--wpg-tint' as string]: tint } : undefined}>
         {back && <div className="wpg-backdrop" style={{ backgroundImage: `url(${back})` }} aria-hidden="true" />}
         <section className="wpg-hero" aria-labelledby="wpg-title">
-          <div className="wpg-cover">
+          <div className={'wpg-cover' + (it.poster ? '' : ' no-art')}>
             {it.poster ? <img src={heroCover(it)} alt="" /> : <Placeholder title={it.title} label={c?.short} />}
           </div>
           <div className="wpg-head">
