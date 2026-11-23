@@ -282,6 +282,40 @@ func TestAWebSocketMustSayHelloFirst(t *testing.T) {
 	}
 }
 
+// An app that queued a pad state or a keyframe request while its socket was opening sends
+// them before the hello. They're skipped, and the stream starts.
+func TestBinaryBeforeTheHelloIsSkipped(t *testing.T) {
+	s := viewerTestSession(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { s.ServeStream(w, r, false) }))
+	defer srv.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	c, _, err := websocket.Dial(ctx, srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.CloseNow()
+	_ = c.Write(ctx, websocket.MessageBinary, []byte{0xF7})
+	_ = c.Write(ctx, websocket.MessageBinary, make([]byte, 13))
+	hello, _ := json.Marshal(Hello{Type: "hello", V: 2})
+	_ = c.Write(ctx, websocket.MessageText, hello)
+	for {
+		typ, b, err := c.Read(ctx)
+		if err != nil {
+			t.Fatalf("no stream: %v", err)
+		}
+		if typ != websocket.MessageText {
+			continue
+		}
+		if strings.Contains(string(b), CodeBadHello) {
+			t.Fatalf("refused: %s", b)
+		}
+		if strings.Contains(string(b), `"type":"stream"`) {
+			return
+		}
+	}
+}
+
 // ---- helpers ----
 
 type rtcPeer struct {

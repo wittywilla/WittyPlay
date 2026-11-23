@@ -29,11 +29,13 @@ const (
 
 // How a WebSocket queues what it sends.
 const (
-	wsVideoQueue   = 2                      // frames that may wait; past that one is dropped
-	wsCtrlQueue    = 512                    // sound, events and timing; past that the connection is hopeless
-	wsHelloWait    = 5 * time.Second        // how long a client has to say hello
-	wsReportEvery  = 250 * time.Millisecond // how often the queue's state reaches the rate
-	wsWriteTimeout = 5 * time.Second
+	wsVideoQueue = 2               // frames that may wait; past that one is dropped
+	wsCtrlQueue  = 512             // sound, events and timing; past that the connection is hopeless
+	wsHelloWait  = 5 * time.Second // how long a client has to say hello
+	// wsBinaryBeforeHello is how many binary messages are skipped while waiting for the hello.
+	wsBinaryBeforeHello = 64
+	wsReportEvery       = 250 * time.Millisecond // how often the queue's state reaches the rate
+	wsWriteTimeout      = 5 * time.Second
 )
 
 // wsQueue is what a WebSocket has to send: sound, events and timing first, never
@@ -191,8 +193,15 @@ func (s *Session) ServeStream(w http.ResponseWriter, r *http.Request, away bool)
 		wcancel()
 		_ = c.Close(websocket.StatusPolicyViolation, e.Code)
 	}
+	// The hello is the first text message. Binary ones before it are skipped, not refused: a
+	// pad state or a keyframe request an app queued while its socket was still opening (slow,
+	// from away) used to arrive first, and the stream never started. A few at most, within the
+	// same five seconds.
 	hctx, hcancel := context.WithTimeout(ctx, wsHelloWait)
 	t, b, err := c.Read(hctx)
+	for skipped := 0; err == nil && t == websocket.MessageBinary && skipped < wsBinaryBeforeHello; skipped++ {
+		t, b, err = c.Read(hctx)
+	}
 	hcancel()
 	if err != nil || t != websocket.MessageText {
 		refuse(streamErr(http.StatusBadRequest, CodeBadHello, "the first message must be the hello, as text"))

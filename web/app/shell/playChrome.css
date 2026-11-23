@@ -126,6 +126,7 @@ html[data-wplay] body { font-family: var(--font); }
 .play-sys { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-inline-size: 44px; min-block-size: 44px; padding: 0 var(--sp-3); border: 0; border-radius: var(--r-full); background: var(--wp-chip); color: var(--fg); font: inherit; font-weight: 800; cursor: pointer; transition: background var(--dur-2); }
 .play-sys:hover { background: var(--wp-chip-hover); }
 .play-sys:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+.play-exit-short { display: none; }
 .play-sys svg { inline-size: 20px; block-size: 20px; flex: none; }
 .play-sys[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
 
@@ -417,7 +418,9 @@ html[data-wplay] body { font-family: var(--font); }
 
 /* A phone: one column, the clock and pads wrap under the name, smaller tiles and dock. */
 @media (max-width: 599px) {
+  /* No room for the whole name beside the clock, but never the arrow alone: it read as nothing. */
   .wplay .play-exit-label { display: none; }
+  .wplay .play-exit-short { display: inline; }
   .wplay .play-brand { display: none; }
   html[data-wplay] { --wp-tile: calc(42vw * var(--wp-scale, 1)); --wp-grow: 1.15; --wp-dock: 48px; }
 }
