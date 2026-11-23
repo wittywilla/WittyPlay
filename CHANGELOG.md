@@ -5,7 +5,38 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## 0.7.10
 
-This is the first WittyPlay published since 0.7.2. What 0.7.3 to 0.7.9 held is listed in full under their own headings below; those versions were never published on their own and come out in this one.
+The first WittyPlay update since 0.7.2, with everything from the versions in between.
+
+**Looks and feel**
+
+- **Fits a computer's screen.** In a desktop or laptop browser and the desktop app, games are drawn at a normal size: six or seven to a row on a large window, with the chosen game's details beside them. Small, medium and large change the size everywhere. TV mode keeps its big, from-the-sofa sizes.
+- **A mouse only points.** Hovering over a game no longer chooses it, so the details stay put while you move to their buttons. Click to choose, click again (or double-click, or press Enter) to open. A remote, a gamepad and the arrow keys work as before.
+- **The game menu fits the window,** with no scroll bar on a computer, phone or TV.
+- **A details panel beside the games** on All games, a console's games and search, and All games follows the Grid and List switch.
+- **Console photos without their white box,** fixed photos for the Wii, Switch and Switch 2, and a console's name follows the version you pick (the NES or the Famicom, the Genesis or the Mega Drive).
+- **Narrower windows read better,** and the highlight around a chosen game no longer spills over its neighbours.
+
+**Playing**
+
+- **Smoother games on a graphics card.** PlayStation, PlayStation 2, GameCube and Wii games draw with Vulkan where the card supports it, and frames no longer wait for the card every time. Games run ahead of background work on Windows.
+- **GameCube and Wii at full speed** on Windows and Linux, and they play on a Linux server with no graphics card too.
+- **Nintendo 64: ParaLLEl-RDP can be chosen** in a core's options. It isn't the default, because it costs more processor time.
+- **Performance profiles:** one starting point for every emulator, chosen in the first-run step and in Settings, Games.
+- **The Wii Remote's pointer works from a browser:** the mouse, or a finger, is where the remote points, and a click presses A.
+- **Fixed:** some Nintendo 64 cores crashed at random on Windows, or when starting with Vulkan.
+- **Fixed:** the core picker keeps your place while a core downloads, and the game shows the new core at once.
+
+**Your games' files**
+
+- **A game's own `.wittyplay`** can carry everything WittyPlay knows about it: details, several pictures of each kind, controls, cheats and how it plays. It is checked against the game file it was made for, so a file for another region or revision is flagged rather than applied.
+- **An editor for a game's `.wittyplay`,** for administrators on a computer (from a game's "Fix this game, files and advanced").
+- **Bring in what other tools left behind** (game lists, `.nfo` files, box art in media folders, remaps) or write WittyPlay's details back out for them.
+- **A games library being scanned says so.** Consoles appear as the scan sorts games into them ("Finding your games: 1,204 found so far"), instead of a page saying there's no games library.
+- **On a television,** console settings stay, and file and folder screens tell you to use a computer.
+
+## Developer notes for 0.7.10
+
+The same release in technical detail (not shown in What's new).
 
 - **PlayStation games draw with Vulkan (#84).** SwanStation and Beetle PSX HW now take their automatic renderers, which follow the context the runner prefers: Vulkan where the card can make a device, OpenGL where it can't. Final Fantasy VII's opening on an RTX 3070, in pairs, Vulkan against OpenGL: SwanStation's 95th percentile 3.5 to 4.4 ms against 12.8 to 17.4; Beetle PSX HW's 10.4 to 13.0 against 24.9 to 53.1, on 19 to 34% of a thread against 46 to 75%. Pictures are right through the card's NV12 conversion.
 - **Nintendo 64: ParaLLEl-RDP can be chosen.** Mupen64Plus-Next and ParaLLEl N64 are offered Vulkan, which GLideN64, their default, leaves alone; choosing ParaLLEl-RDP in a core's options now plays (the console's own drawing, on the card), with the internal resolution setting as its upscaling. It isn't the default: with its low-level RSP, Banjo-Kazooie took 50 to 67% of a thread against GLideN64's 14%.
@@ -20,43 +51,6 @@ This is the first WittyPlay published since 0.7.2. What 0.7.3 to 0.7.9 held is l
 - **Fixed: choosing a core (#91).** While a core downloads and after, the focus stays on it in the list (it was lost when Install and use went away, leaving a remote or a pad with nothing to move); the game's page and Consoles show the new core at once, not only once the picker closes; a second press can't start a second install; closing the picker puts the focus on Play.
 - **The game menu fits the window (#91).** Its tiles share the height the header and key hints leave, so there's no scroll bar at any desktop, laptop, phone or TV size; only a window under about 600px tall scrolls, as a last resort.
 - **A games library being scanned says so (#88).** Consoles show as the scan sorts games into them ("Finding games: 120 so far"), not only once the scan ends, and Consoles, Recent, Classics, a library's page and TV mode say "Finding your games: 1,204 found so far in Games" instead of that there's no games library. The scan's progress names the console it's sorting, and with WittyMediaServer 0.8.1-alpha each later step shows in its own words rather than sitting at "12,709 of 12,709 files".
-
-From 0.7.3 to 0.7.9, in short:
-
-- Core fixes: the runner corrects what a core gets, on this machine, as it runs (#76) (0.7.9).
-- GameCube and Wii draw with Vulkan (0.7.9).
-- `wittyplay-probe frames -nv12` has frames converted on the card, as the server does (0.7.9).
-- On a television, WittyPlay's console settings stay and its file and folder screens point to a computer (WittyMediaServer #469) (0.7.9).
-- A game's own `.wittyplay`, to keep beside it or to share (#75) (0.7.8).
-- Controls in `.wittyplay` (0.7.8).
-- Scans read a game's `.wittyplay` (0.7.8).
-- Conversion both ways (0.7.8).
-- An editor for a game's `.wittyplay` (0.7.8).
-- Performance profiles: one standard for what every emulator starts with (#78) (0.7.7).
-- Settings, Games no longer saves a number box that was only left, so leaving one doesn't pin the profile's value (0.7.7).
-- Frames come back from the graphics card as NV12, converted there (#74) (0.7.6).
-- A frame from a graphics card goes through a new `VideoReady` handler, so one handed over while the next frame is running isn't taken for that frame's and dropped (0.7.6).
-- PlayStation 2 games draw with Vulkan where the graphics card can (#72) (0.7.5).
-- Dolphin stays on OpenGL (0.7.5).
-- The graphics card check names the Vulkan card cores would get (`vulkan` in the GPU status), and `wittyplay-probe -vulkan` offers Vulkan to any core, to measure it (0.7.5).
-- Games drawn on a graphics card no longer wait for it every frame (#68) (0.7.4).
-- Games come before background work on Windows (0.7.4).
-- GameCube and Wii at full speed: Dolphin's fast memory is on for Windows and Linux (0.7.4).
-- GameCube and Wii play on a Linux server with no graphics card (0.7.4).
-- The graphics card check says more (0.7.4).
-- `wittyplay-probe sweep` measures what a game costs (0.7.4).
-- All games follows the layout switch (0.7.3).
-- A details panel beside the games (0.7.3).
-- Highlights stay off the next game (0.7.3).
-- Narrower windows read better (0.7.3).
-- Console photos without their white box (0.7.3).
-- Background removal that leaves light plastic alone (0.7.3).
-- Fixed photos for the Wii, Switch and Switch 2 (0.7.3).
-- A console's name follows its version (0.7.3).
-- A console's version, for its photo (0.7.3).
-- Smoother games on Windows (0.7.3).
-- The Wii Remote's pointer works from a browser (0.7.3).
-- The emulator tests pass on Windows (0.7.3).
 
 ## 0.7.9
 
