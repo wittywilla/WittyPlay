@@ -16,11 +16,26 @@ func FuzzGameParsers(f *testing.F) {
 	f.Fuzz(func(t *testing.T, b []byte, s string) {
 		_ = parseRDB(b, func(*rdbRecord) {})
 		CleanName(s)
-		cleanDate(s)
+		if d := cleanDate(s); d != "" && !validDate(d) {
+			t.Errorf("cleanDate(%q) = %q, not YYYY, YYYY-MM or YYYY-MM-DD", s, d)
+		}
 		parseReview(s)
 		r := bytes.NewReader(b)
 		playStationSerial(r)
 		segaSerial(r, s)
 		isoFile(r, s, 1<<20)
 	})
+}
+
+// validDate: YYYY, YYYY-MM or YYYY-MM-DD, digits where digits go.
+func validDate(d string) bool {
+	if len(d) != 4 && len(d) != 7 && len(d) != 10 {
+		return false
+	}
+	for i, c := range d {
+		if (i == 4 || i == 7) != (c == '-') || (c != '-' && (c < '0' || c > '9')) {
+			return false
+		}
+	}
+	return true
 }

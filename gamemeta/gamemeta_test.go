@@ -1183,7 +1183,7 @@ func TestCartridgeCodesAreCheckedAgainstTheName(t *testing.T) {
 	d := &libDB{byCRC: map[uint32]int32{}, bySerial: map[string]int32{}, byKey: map[string][]int32{}, byWord: map[string][]int32{}}
 	d.add(&rdbRecord{Name: "Mega Racer 64 (USA)", Serial: "NMRE", CRC: 7, HasCRC: true}, 0)
 	d.add(&rdbRecord{Name: "Otra Carrera (Japan)", CRC: 9, HasCRC: true}, 0)
-	s := &Libretro{db: d, console: "n64"}
+	s := &Libretro{dbs: []loadedDB{{console: "n64", db: d}}}
 	s.init()
 	find := func(q Query) (string, int) {
 		t.Helper()
@@ -1245,7 +1245,7 @@ func TestNewerConsolesMatchBySerial(t *testing.T) {
 	} {
 		d := &libDB{byCRC: map[uint32]int32{}, bySerial: map[string]int32{}, byKey: map[string][]int32{}, byWord: map[string][]int32{}}
 		d.add(&rdbRecord{Name: "Made Up Game (USA)", Serial: c.list}, 0)
-		s := &Libretro{db: d, console: c.console}
+		s := &Libretro{dbs: []loadedDB{{console: c.console, db: d}}}
 		s.init()
 		_, i, method, _, err := s.find(context.Background(), Query{Console: c.console, Title: "game", Serial: c.ours})
 		if err != nil || method != MethodSerial || d.recs[i].Name != "Made Up Game (USA)" {

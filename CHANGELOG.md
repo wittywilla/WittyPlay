@@ -3,7 +3,26 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.12
+
+- **A big games library's first scan no longer crawls.** While a scan described the games it found, it kept reading the game database again for almost every game, so a first scan of a large library could take hours. It now keeps a few consoles' lists in memory.
+- **A TV remote is told to press Back** for the game menu while a game loads, instead of Esc.
+- **Button hints follow TV mode:** with the server's TV mode on, hints show the remote's OK and Back instead of a keyboard's keys, and the choice of buttons to show offers the remote instead of the keyboard.
+- **Release dates are whole or left out.** A date a source gave half-way (such as "2001-1") is shown as the year, so games sort by date correctly.
+- **Fewer questions the first time you open Games.** It asks which buttons to show, then how to get back to the app, and you're at your games. How games are laid out and what choosing one does start as they are; change them any time in Settings.
+- **Choosing your buttons takes one press.** Enter on a choice picks it and moves on; with a controller, picking one moves straight to Continue.
+
+## Developer notes for 0.7.12
+
+- `gamemeta.Libretro` keeps up to `libdbKeep` (3) consoles' lists, most recently used first, instead of one. A scan's `describeLocal` and the worker's `localBatch` asked about different consoles, so each lookup threw out the other's list and parsed a multi-MB RDB again (about 12 s a game on a 2,293-game library's first scan). Measured on the same machine and a new library of the same NES and N64 folders (447 games): describing took 2 min 38 s before and 53 s after; the whole scan 2 min 47 s and 1 min 4 s. A list with files not downloaded yet is kept too, for offline (scan) lookups only and for `partialFor` (one minute); a lookup that may download reads it again. `reads` counts list reads for the new tests.
+- `web/app/shell/playPaths.ts`: in TV mode the `keyboard` choice is drawn as the remote (`PLAY_REMOTE`: OK and Back, nothing for X and Y), labelled "Remote", and `exitWords` says Back. `web/Screens.tsx`: the loading tip has a `remote` case; `web/prompts.tsx`: `isTV()` also counts the server's TV mode (`html.tv-mode`), per docs/TV-MODE.md.
+- `cleanDate` keeps only whole parts (month 01-12, day 01-31); `FuzzGameParsers` checks its output's shape, and `TestCleanDateWholeParts` the cases.
+- `sandbox/docker` tests: `specUser` is atomic; `TestLifecycleConcurrencyLimit` raced on it under `-race`.
+- The recent-games source (`sduiAsk.recent`) caps the offset and limit before adding them: a huge pair wrapped round to a negative SQL `LIMIT`, which SQLite reads as no limit.
+
 ## 0.7.11
+
+_Never published on its own: it came out in 0.7.12._
 
 - **Fewer questions the first time you open Games.** It asks which buttons to show, then how to get back to the app, and you're at your games. How games are laid out and what choosing one does start as they are; change them any time in Settings.
 - **Choosing your buttons takes one press.** Enter on a choice picks it and moves on; with a controller, picking one moves straight to Continue.

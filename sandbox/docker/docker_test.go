@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -197,14 +198,16 @@ func TestCheckRefusesWeakenedSpecs(t *testing.T) {
 	}
 }
 
-var specUser int64 = 100
+// specUser counts up from 100; tests build specs from several goroutines at once.
+var specUser atomic.Int64
+
+func init() { specUser.Store(100) }
 
 func spec(t *testing.T, session string) Spec {
 	t.Helper()
 	r := request()
 	r.SessionID = session
-	specUser++ // each session is someone else's, as one person only ever has one
-	r.UserID = specUser
+	r.UserID = specUser.Add(1) // each session is someone else's, as one person only ever has one
 	s, err := Build(r)
 	if err != nil {
 		t.Fatal(err)
