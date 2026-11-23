@@ -32,6 +32,7 @@ The first WittyPlay update since 0.7.2, with everything from the versions in bet
 - **An editor for a game's `.wittyplay`,** for administrators on a computer (from a game's "Fix this game, files and advanced").
 - **Bring in what other tools left behind** (game lists, `.nfo` files, box art in media folders, remaps) or write WittyPlay's details back out for them.
 - **A games library being scanned says so.** Consoles appear as the scan sorts games into them ("Finding your games: 1,204 found so far"), instead of a page saying there's no games library.
+- **First-run setup sees your games folders.** Its Games step lists each games library with its consoles and how many games, instead of saying there's no games folder.
 - **On a television,** console settings stay, and file and folder screens tell you to use a computer.
 
 ## Developer notes for 0.7.10
@@ -51,6 +52,7 @@ The same release in technical detail (not shown in What's new).
 - **Fixed: choosing a core (#91).** While a core downloads and after, the focus stays on it in the list (it was lost when Install and use went away, leaving a remote or a pad with nothing to move); the game's page and Consoles show the new core at once, not only once the picker closes; a second press can't start a second install; closing the picker puts the focus on Play.
 - **The game menu fits the window (#91).** Its tiles share the height the header and key hints leave, so there's no scroll bar at any desktop, laptop, phone or TV size; only a window under about 600px tall scrolls, as a last resort.
 - **A games library being scanned says so (#88).** Consoles show as the scan sorts games into them ("Finding games: 120 so far"), not only once the scan ends, and Consoles, Recent, Classics, a library's page and TV mode say "Finding your games: 1,204 found so far in Games" instead of that there's no games library. The scan's progress names the console it's sorting, and with WittyMediaServer 0.8.1-alpha each later step shows in its own words rather than sitting at "12,709 of 12,709 files".
+- **Setup's Games step reads the server's games libraries (#95).** It listed only the libraries added during this run of setup, so a library added before it, or on a re-run, read as "no games folder". It now reads `GET /libraries` and each games library's counts from `GET /games/consoles?library=<id>`, shows WittyPlay's sorting progress while `/games/scanning` lists the library, then re-reads the counts every 5 s while the server still marks it `scanning`, and offers "Add another folder".
 
 ## 0.7.9
 
