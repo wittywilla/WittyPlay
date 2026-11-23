@@ -3,6 +3,10 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## Unreleased
+
+- **WittyPlay 0.7.11:** Fuzz tests for .wittyplay files and players' input messages.
+
 ## 0.7.10
 
 The first WittyPlay update since 0.7.2, with everything from the versions in between.
