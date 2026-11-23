@@ -3,6 +3,16 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.11
+
+- **Fewer questions the first time you open Games.** It asks which buttons to show, then how to get back to the app, and you're at your games. How games are laid out and what choosing one does start as they are; change them any time in Settings.
+- **Choosing your buttons takes one press.** Enter on a choice picks it and moves on; with a controller, picking one moves straight to Continue.
+
+## Developer notes for 0.7.11
+
+- `ExitTip` (`web/app/shell/PlayChrome.tsx`) has two steps, `pads` and `exit`; the `layout` and `open` steps are gone, and the defaults of `usePlayLayout` and `usePlayOpen` stand until changed in Settings (#94).
+- Enter on a `PadsChooser` tile inside the tip chooses it and goes to `exit`; a click (a pad's A) chooses it and focuses Continue.
+
 ## 0.7.10
 
 The first WittyPlay update since 0.7.2, with everything from the versions in between.
