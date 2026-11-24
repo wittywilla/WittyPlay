@@ -96,7 +96,22 @@ func (a *App) GPUMissing(ctx context.Context) string {
 		// Finding the runner is only done when the check runs.
 		p = a.GPUStatus(ctx)
 	}
-	return gpuMissingFrom(p, runtime.GOOS)
+	return explainMissing(gpuMissingFrom(p, runtime.GOOS))
+}
+
+// explainMissing puts what can be done in place of how the check failed, where that's known: the
+// render node a container wasn't given or can't open, or an image with no OpenGL library.
+func explainMissing(why string) string {
+	if why == "" || why == gpuPlatformReason {
+		return why
+	}
+	if r := renderNodeReason(); r != "" {
+		return r
+	}
+	if inContainer() && strings.Contains(why, "libEGL") {
+		return "this server's Docker image has no OpenGL library (libEGL). Pull the newest image, which has it"
+	}
+	return why
 }
 
 // GPUStatus is what's known about the graphics card (the server's gpuStatus). Finding out takes
@@ -208,7 +223,7 @@ func cpuDrawingOn(id, goos string) map[string]string {
 // softwareNotice is the speed caveat for a game the processor draws, shown before it starts and
 // when it does.
 // Short: apps show it on a phone's start screen.
-const softwareNotice = "No graphics card on this server, so its processor draws this game. It may run slower."
+const softwareNotice = "Playing on the server's processor, as it has no graphics card games can use. It may run a little slower."
 
 // cardFaults are cores whose drawing on a graphics card goes wrong on a system, as seen with real
 // games, so that there they're drawn by the processor even where the runner can use a card. On a

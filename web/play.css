@@ -203,7 +203,11 @@
 .wp-menu { width: min(460px, 100%); max-height: 100%; overflow: auto; background: var(--wp-panel); color: var(--wp-fg); border: 1px solid var(--wp-line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; user-select: text; -webkit-user-select: text; }
 /* Every sheet over the game keeps its ways out in view however far it scrolls: Back a level, and ×
    straight back to the game. Esc, a controller's B, Back and a tap outside do the same. */
-.wp-sheet-bar { position: sticky; top: 0; z-index: 3; flex: none; display: flex; align-items: center; gap: 8px; margin: -18px -18px 0; padding: 10px 12px 8px 18px; background: var(--wp-panel); border-bottom: 1px solid var(--wp-line); }
+/* The bar is pulled up over the menu's top padding by a negative margin, and stays there as the
+   menu scrolls. A sticky element sticks inside its scroller's padding, so with top: 0 the bar was
+   pushed back down by the padding's height and covered the top of what came next (the pause
+   menu's title, cut off). Every rule that pulls it up sets top to the same pull. */
+.wp-sheet-bar { position: sticky; top: -18px; z-index: 3; flex: none; display: flex; align-items: center; gap: 8px; margin: -18px -18px 0; padding: 10px 12px 8px 18px; background: var(--wp-panel); border-bottom: 1px solid var(--wp-line); }
 .wp-sheet-up { padding-inline: 8px 14px; }
 .wp-sheet-close { min-width: 44px; padding-inline: 12px; border-radius: 999px; }
 @media (max-width: 480px) { .wp-sheet-close-text { display: none; } .wp-sheet-close { padding-inline: 0; } }
@@ -366,7 +370,7 @@
 /* The game menu: large tiles, with the game paused behind. */
 .wp-big { padding: 0; background: rgb(4 5 8 / .72); align-items: center; justify-content: center; }
 .wp-big .wp-menu { width: min(1080px, 100%); max-height: 100%; background: transparent; border: 0; border-radius: 0; color: #f2f4f8; padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); gap: 16px; --wp-muted: #aab1c0; --fg: #f2f4f8; --fg-2: #c8ccd4; --bg-4: #2a2e38; --border-strong: #5a5f6b; }
-.wp-big .wp-sheet-bar { margin: calc(-1 * max(20px, env(safe-area-inset-top))) calc(-1 * max(20px, env(safe-area-inset-right))) 0 calc(-1 * max(20px, env(safe-area-inset-left))); padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 10px max(20px, env(safe-area-inset-left)); background: rgb(4 5 8 / .94); border-bottom: 0; }
+.wp-big .wp-sheet-bar { margin: calc(-1 * max(20px, env(safe-area-inset-top))) calc(-1 * max(20px, env(safe-area-inset-right))) 0 calc(-1 * max(20px, env(safe-area-inset-left))); padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 10px max(20px, env(safe-area-inset-left)); background: rgb(4 5 8 / .94); border-bottom: 0; top: calc(-1 * max(20px, env(safe-area-inset-top))); }
 .wp-qm-head { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .wp-qm-cover { flex: none; height: 72px; width: auto; max-width: 72px; object-fit: contain; border-radius: 6px; box-shadow: 0 6px 16px rgb(0 0 0 / .5); }
 .wp-qm-title { min-width: 0; }
@@ -504,7 +508,7 @@ html.gm-couch .wp-screen .wps-prompts { display: none; }
 }
 @supports (backdrop-filter: blur(1px)) { .wp-menu-back { backdrop-filter: blur(6px); } }
 .wp-menu { background: var(--wpx-sheet); color: var(--wpx-ink); border: 0; border-radius: clamp(18px, 1.6vw, 28px); box-shadow: 0 30px 80px rgb(0 0 0 / .5); padding: clamp(18px, 2vw, 32px); gap: clamp(12px, 1.4vh, 20px); }
-.wp-menu .wp-sheet-bar { margin: calc(-1 * clamp(18px, 2vw, 32px)) calc(-1 * clamp(18px, 2vw, 32px)) 0; padding: 12px clamp(14px, 1.6vw, 26px); background: var(--wpx-sheet); border-bottom: 1px solid rgb(255 255 255 / .08); }
+.wp-menu .wp-sheet-bar { margin: calc(-1 * clamp(18px, 2vw, 32px)) calc(-1 * clamp(18px, 2vw, 32px)) 0; padding: 12px clamp(14px, 1.6vw, 26px); background: var(--wpx-sheet); border-bottom: 1px solid rgb(255 255 255 / .08); top: calc(-1 * clamp(18px, 2vw, 32px)); }
 .wp-menu h2 { font-size: clamp(1.3rem, 1.8vw, 2.1rem); font-weight: 900; line-height: 1.1; }
 .wp-menu h3 { font-size: clamp(1rem, 1.2vw, 1.3rem); font-weight: 800; }
 .wp-sheet-sub { margin: -6px 0 0; font-size: clamp(.95rem, 1vw, 1.15rem); }
@@ -525,8 +529,8 @@ html.gm-couch .wp-screen .wps-prompts { display: none; }
 /* The game menu: over the game, which stays paused and faintly in view. */
 .wp-big { background: var(--wpx-sky); background-color: rgb(19 22 63 / .9); }
 @supports (backdrop-filter: blur(1px)) { .wp-big { background: rgb(19 22 63 / .7); backdrop-filter: blur(14px) saturate(1.1); } .wp-big::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--wpx-sky); opacity: .78; pointer-events: none; } }
-.wp-big .wp-menu { width: min(100%, 1480px); background: transparent; box-shadow: none; border-radius: 0; color: var(--wpx-ink); justify-content: center; gap: clamp(16px, 3vh, 40px); padding: max(clamp(20px, 3.4vh, 56px), env(safe-area-inset-top)) max(var(--wpx-gutter), env(safe-area-inset-right)) max(clamp(16px, 2.6vh, 40px), env(safe-area-inset-bottom)) max(var(--wpx-gutter), env(safe-area-inset-left)); }
-.wp-big .wp-sheet-bar { margin: calc(-1 * max(clamp(20px, 3.4vh, 56px), env(safe-area-inset-top))) 0 0; padding: max(12px, env(safe-area-inset-top)) 0 8px; background: transparent; border: 0; }
+.wp-big .wp-menu { width: min(100%, 1480px); background: transparent; box-shadow: none; border-radius: 0; color: var(--wpx-ink); justify-content: center; justify-content: safe center; gap: clamp(16px, 3vh, 40px); padding: max(clamp(20px, 3.4vh, 56px), env(safe-area-inset-top)) max(var(--wpx-gutter), env(safe-area-inset-right)) max(clamp(16px, 2.6vh, 40px), env(safe-area-inset-bottom)) max(var(--wpx-gutter), env(safe-area-inset-left)); }
+.wp-big .wp-sheet-bar { margin: calc(-1 * max(clamp(20px, 3.4vh, 56px), env(safe-area-inset-top))) 0 0; padding: max(12px, env(safe-area-inset-top)) 0 8px; background: transparent; border: 0; top: calc(-1 * max(clamp(20px, 3.4vh, 56px), env(safe-area-inset-top))); }
 .wp-qm-head { gap: clamp(14px, 1.6vw, 30px); }
 .wp-qm-cover { height: clamp(76px, 13vh, 160px); max-width: clamp(76px, 13vh, 160px); border-radius: clamp(12px, 1.2vw, 20px); box-shadow: 0 0 0 1px var(--wpx-card-edge), 0 18px 40px rgb(4 6 24 / .55); }
 .wp-qm-eyebrow { margin: 0 0 4px; color: var(--wpx-mint-1); font-size: clamp(.85rem, 1vw, 1.15rem); font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }

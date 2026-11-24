@@ -1,7 +1,7 @@
 {
   "id": "wittyplay",
   "name": "WittyPlay",
-  "version": "0.7.19",
+  "version": "0.7.21",
   "repo": "wittywilla/WittyPlay",
   "license": "AGPL-3.0-or-later",
   "delivery": "helper",
