@@ -3,9 +3,44 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
-## 0.7.20
+## 0.7.22
 
 - **Nothing on the Games pages slides under the top bar.** A game's backdrop, a section a link jumps to, the on-screen keyboard's side panel and the screen preview sit below the bar however tall it is, the floating glass bar included, using the room the bar measures (`--bar-space`) instead of a fixed height. Older servers keep the old numbers.
+
+## 0.7.21
+
+### What's fixed
+
+- **The pause menu's top is no longer cut off.** Its bar (Back and ×) is held at the top as the menu scrolls, pulled up over the menu's margin. The browser held it below that margin instead, so it covered the top of what came next: the game's name, by 17 pixels on a phone held sideways and a few on one held upright. It now sits at the very top on phones, TVs and computers, and a menu taller than the screen starts at its top rather than centred with its top out of reach. Every panel with that bar (settings, saves, controllers) had the same overlap.
+- **Why games can't use the graphics chip, said in a way that can be acted on.** In Docker, "no usable graphics card" now says which: no graphics device was passed into the container (add `/dev/dri` under `devices:`), the container's user can't open `/dev/dri/renderD128` (with the group number to put under `group_add:`), or the image has no OpenGL library (pull a newer one). Before, every one of these read "no OpenGL library (libEGL) is installed", or just "no graphics card".
+- **The note for a game drawn on the processor reads as what it is.** "Playing on the server's processor, as it has no graphics card games can use. It may run a little slower." It was read as an error ("No graphics card on this server…"), though the game plays.
+
+### Developer notes
+
+- web/play.css: each `.wp-sheet-bar` rule that pulls the bar up with a negative top margin sets `top` to the same value (`-18px`, `calc(-1 * clamp(18px, 2vw, 32px))`, and the two `.wp-big` ones with the safe-area inset). A sticky box sticks inside its scroller's padding, so `top: 0` pushed it back down. `.wp-big .wp-menu` centres with `justify-content: safe center`.
+- api/renderdev_linux.go: `renderNodeReason` (no render node in a container; a render node this user can't open, with its group); `explainMissing` puts it, or the old image's missing libEGL, in place of the probe's own words in `GPUMissing`.
+- The server image gets Mesa's EGL, OpenGL and Vulkan drivers in WittyMediaServer 0.8.5-alpha (Dockerfile); without libEGL the probe found no card even with `/dev/dri` passed.
+
+## 0.7.20
+
+### Security
+
+- **Libraries with known problems are updated.** Six advisories that govulncheck reported as reachable from WittyPlay's code are fixed by newer versions: the 7-Zip unpacker's Brotli and XZ decoders (`andybalholm/brotli` 1.2.7, `ulikunitz/xz` 0.5.15), `klauspost/compress` 1.20.2, `golang.org/x/net` 0.56.0, and the Docker client's tracing library (`go.opentelemetry.io/otel` 1.47.0). The sixth, in Go's own `net/http`, is fixed by building with Go 1.27.4 or later, which releases already use. Nothing else changes.
+
+## 0.7.19
+
+### What's fixed
+
+- **Games play in Docker.** On a NAS or any server in Docker with its usual network, a game started but never showed anything: the player sat on "Connecting to this device…" for good. Three things went wrong. WebRTC could only offer the container's private address and a port nobody had published, so the browser could never reach it. The player waited for that connection to start playing before it started its timer, so it never gave up and never tried anything else. And the WebSocket it would have tried next was refused by WittyPlay itself, everywhere: the server passes it on with its own address, which never matched the page's. Now the WebSocket is let through (a page on another site still isn't), the player gives up on WebRTC as soon as the browser says it can't get through, or after 12 seconds at most, and on Docker's own network the game goes straight over the server's own port. For WebRTC's lower latency in Docker, publish a UDP port and set it and the server's address in Settings, Games (the server's docs/DOCKER.md says how), or use the host's network.
+- **Nintendo 64 homebrew that can't be drawn here says so, instead of a black screen.** Games built with libdragon need a graphics card with Vulkan; on a server without one (most NAS boxes) they started anyway, showed black, and said why only in a note that was gone in a few seconds. They now don't start, and the player says "This game needs a graphics card with Vulkan on the server to show a picture." (or "…a graphics card on the server…" where there's none), with Back. ParaLLEl N64 isn't counted as failing for it, and plays commercial games as before.
+
+### Developer notes
+
+- `stream.behindBridge`: in a container (`WMS_DOCKER=1`, `/.dockerenv` or `/run/.containerenv`) that sees no `docker0`. There, `Modes` leaves WebRTC out unless `gamingPublicIp` and `gamingUdpPort` are both set, and the log says so once at start.
+- `ServeStream` checks the Origin itself (`sameOrigin`) in place of coder/websocket's check against the helper's own Host: the browser's `Sec-Fetch-Site` decides when it's there; otherwise the Origin must name `X-Witty-Reached`, the Host the browser reached the server by, which every 0.8 server sets and strips from what browsers send. With no such header, the Origin must name this Host, as before. Every 0.8 server also refuses cross-origin upgrades before passing them on (`passToModule`).
+- `stream.NoPictureError`: `startOn` refuses a libdragon game with no Vulkan card; `POST /games/{id}/play` answers 409 with `needsGpu`, like a core that needs a card, and doesn't call `CoreStartFailed`.
+- web/transport.ts: `video.play()` isn't awaited before the first-picture timer; `connectionFails` ends the WebRTC try when the connection or ICE state is `failed`.
+- Tests: stream/docker_test.go (a WebSocket through the server's proxy, modes behind a bridge). The server's scripts/test/docker-games.sh plays two real cores in its image in CI.
 
 ## 0.7.18
 

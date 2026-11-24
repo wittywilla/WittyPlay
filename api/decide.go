@@ -185,6 +185,10 @@ func (a *App) Configure(ctx context.Context) error {
 		c.PublicIPs = splitNonEmpty(a.configText(ctx, "gamingPublicIp", ""))
 		c.STUN = splitNonEmpty(a.configText(ctx, "gamingStun", ""))
 	})
+	if stream.BehindBridge() && (a.configText(ctx, "gamingPublicIp", "") == "" || port == 0) {
+		a.Log.Info("wittyplay: in a container on its own network, so games stream over the server's own port (WebSocket). "+
+			"For WebRTC, publish a UDP port and set it and this server's address in Settings, Games (docs/DOCKER.md)", "cat", "games")
+	}
 	return nil
 }
 
