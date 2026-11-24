@@ -14,6 +14,10 @@ What changed in WittyPlay, newest first. What changed before it had a repository
   here. A test (`web/hostcss.test.mjs`) fails on any rule of this module's for the server's Settings frame.
 - **Settings, Controllers keeps its heading below the top bar** as the page scrolls, not under it (#121).
 
+### Docs
+
+- **The README's pictures show 0.7.18**, on a computer, a phone and a TV.
+
 ### Developer notes
 
 - web/app/pages/settings/settings.css keeps only the `.wplay-photos*` rules; the rest was a copy of the server's own. web/play.css: `.wp-page .wps-head` sticks at `var(--bar-space, var(--topbar-h, 0px))`, the top bar's measured height.

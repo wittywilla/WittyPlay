@@ -12,6 +12,14 @@ It's a module of [WittyMediaServer](https://github.com/wittywilla/WittyMediaServ
 
 <sub>A games library of open-licence homebrew. From a test server. The server's [credits list](https://github.com/wittywilla/WittyMediaServer/blob/master/docs/images/CREDITS.md) names everything shown.</sub>
 
+![The games library on a phone: the tabs, sizes, and the NES games as cartridges](docs/images/games-phone.webp)
+
+<sub>The same library on a phone. From a test server. The server's [credits list](https://github.com/wittywilla/WittyMediaServer/blob/master/docs/images/CREDITS.md) names everything shown.</sub>
+
+![The games library in TV mode, with the chosen game's details beside the rows](docs/images/games-tv.webp)
+
+<sub>And in TV mode, from across the room. From a test server. The server's [credits list](https://github.com/wittywilla/WittyMediaServer/blob/master/docs/images/CREDITS.md) names everything shown.</sub>
+
 ![A city-building game running in a browser](docs/images/gameplay-ucity.webp)
 
 <sub>[µCity](https://github.com/AntonioND/ucity), Antonio Niño Díaz, GPL-3.0-or-later and CC BY-SA 4.0, running on the server and streamed to a browser.</sub>
