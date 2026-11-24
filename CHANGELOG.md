@@ -3,6 +3,16 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.19
+
+### Fixed
+
+- **Settings pages on the server look as the server draws them** (#121). WittyPlay's bundle carried an old copy of the
+  server's settings stylesheet, and once WittyPlay was installed it restyled every Settings page, core ones too: each
+  page's title and lead sat off to one side of what was under them, and the settings menu slid under the top bar. The
+  copy is gone: WittyPlay's settings pages use the server's own, and only WittyPlay's console photos switch is styled
+  here. A test (`web/hostcss.test.mjs`) fails on any rule of this module's for the server's Settings frame.
+
 ## 0.7.18
 
 ### What's new
