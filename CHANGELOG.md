@@ -3,6 +3,19 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.19
+
+### What's fixed
+
+- **Games play in Docker.** On a NAS or any server in Docker with its usual network, a game started but never showed anything: the player sat on "Connecting to this device…" for good. Three things went wrong. WebRTC could only offer the container's private address and a port nobody had published, so the browser could never reach it. The player waited for that connection to start playing before it started its timer, so it never gave up and never tried anything else. And the WebSocket it would have tried next was refused by WittyPlay itself, everywhere: the server passes it on with its own address, which never matched the page's. Now the WebSocket is let through (a page on another site still isn't), the player gives up on WebRTC as soon as the browser says it can't get through, or after 12 seconds at most, and on Docker's own network the game goes straight over the server's own port. For WebRTC's lower latency in Docker, publish a UDP port and set it and the server's address in Settings, Games (the server's docs/DOCKER.md says how), or use the host's network.
+
+### Developer notes
+
+- `stream.behindBridge`: in a container (`WMS_DOCKER=1`, `/.dockerenv` or `/run/.containerenv`) that sees no `docker0`. There, `Modes` leaves WebRTC out unless `gamingPublicIp` and `gamingUdpPort` are both set, and the log says so once at start.
+- `ServeStream` accepts any Origin (`InsecureSkipVerify`): the server refuses a cross-origin upgrade before passing it on (`passToModule`), and the helper refuses `Sec-Fetch-Site: cross-site`/`same-site` and `Origin: null` itself.
+- web/transport.ts: `video.play()` isn't awaited before the first-picture timer; `connectionFails` ends the WebRTC try when the connection or ICE state is `failed`.
+- Tests: stream/docker_test.go (a WebSocket through the server's proxy, modes behind a bridge). The server's scripts/test/docker-games.sh plays two real cores in its image in CI.
+
 ## 0.7.18
 
 ### What's new

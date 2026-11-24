@@ -179,7 +179,15 @@ func (s *Session) clock90k(unixNano int64) uint32 {
 // ServeStream is the stream's WebSocket: the hello comes first, as text, and the stream's
 // description goes back. away is the server's word on where the device is.
 func (s *Session) ServeStream(w http.ResponseWriter, r *http.Request, away bool) {
-	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{CompressionMode: websocket.CompressionDisabled})
+	// The server passes this on with its own address to the helper as the Host, so the library's
+	// own check (Origin's host against Host) refused every browser, and the WebSocket fallback
+	// never worked: in Docker, where WebRTC can't get through, no game showed at all. The browser
+	// still says where the page came from, and a page on another site is refused here.
+	if crossSite(r) {
+		http.Error(w, "cross-site request refused", http.StatusForbidden)
+		return
+	}
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{CompressionMode: websocket.CompressionDisabled, InsecureSkipVerify: true})
 	if err != nil {
 		return
 	}
@@ -368,4 +376,14 @@ func latencyNamed(name string) LatencyMode {
 		return LatencySteady
 	}
 	return LatencyFastest
+}
+
+// crossSite is a browser saying the page that opened this WebSocket is on another site. Apps send
+// no Origin, and a browser on the server's own page says same-origin.
+func crossSite(r *http.Request) bool {
+	switch r.Header.Get("Sec-Fetch-Site") {
+	case "cross-site", "same-site":
+		return true
+	}
+	return r.Header.Get("Origin") == "null"
 }

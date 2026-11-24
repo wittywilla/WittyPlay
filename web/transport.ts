@@ -250,9 +250,13 @@ class WebRTCTransport implements Transport {
     await gathered(pc, 1500)
     const answer = await answerFor(this.signal, pc.localDescription!.sdp)
     await pc.setRemoteDescription({ type: 'answer', sdp: answer })
-    await this.play()
+    // play() only settles once media arrives, so it's never waited on alone: when the connection
+    // can't get through (a server in Docker gives an address on its own private network), it would
+    // wait for good and the WebSocket would never be tried.
+    const playing = this.play()
     this.onWaiting?.()
-    await firstFrame(this.element, FIRST_FRAME_MS)
+    await Promise.race([firstFrame(this.element, FIRST_FRAME_MS), connectionFails(pc)])
+    await playing
     // Lost while starting, before anyone was listening: not one to use.
     if (this.gone) throw new Error(`the connection went while starting (${this.goneWhy})`)
     if (!this.closed) watchdog.start()
@@ -558,6 +562,23 @@ function gathered(pc: RTCPeerConnection, maxMs: number) {
     const done = () => { if (pc.iceGatheringState === 'complete') resolve() }
     pc.addEventListener('icegatheringstatechange', done)
     setTimeout(resolve, maxMs) // what was found by now is enough on most networks
+  })
+}
+
+// connectionFails rejects when the browser gives up on reaching the server, often well before the
+// first picture's time is up. It never resolves: a working connection is told by its picture.
+function connectionFails(pc: RTCPeerConnection) {
+  return new Promise<void>((_, reject) => {
+    const check = () => {
+      if (pc.connectionState === 'failed' || pc.iceConnectionState === 'failed') {
+        pc.removeEventListener('connectionstatechange', check)
+        pc.removeEventListener('iceconnectionstatechange', check)
+        reject(new Error('the connection to the server couldn’t get through'))
+      }
+    }
+    pc.addEventListener('connectionstatechange', check)
+    pc.addEventListener('iceconnectionstatechange', check)
+    check()
   })
 }
 
