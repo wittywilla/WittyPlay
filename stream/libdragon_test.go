@@ -50,7 +50,7 @@ func TestLibdragonGameOnACardGetsParallelRDP(t *testing.T) {
 func TestLibdragonGameGetsWhatItNeeds(t *testing.T) {
 	start := map[string]string{"parallel-n64-gfxplugin": "gliden64", "parallel-n64-screensize": "1280x960"}
 	args := []string{"-gpu", "-normal-priority"}
-	got := forThisGame(Options{Console: "n64", CoreID: wittyplay.LibdragonCore, ROM: n64File(t, "Libdragon IPL3"), GPU: false, RunnerArgs: args, CoreOptions: start})
+	got := forThisGame(Options{Console: "n64", CoreID: wittyplay.LibdragonCore, ROM: n64File(t, "Libdragon IPL3"), GPU: false, RunnerArgs: args, CoreOptions: start, Notices: []string{"No graphics card on this server, so its processor draws this game."}})
 	for k, v := range wittyplay.LibdragonOptions() {
 		if got.CoreOptions[k] != v {
 			t.Errorf("%s is %q", k, got.CoreOptions[k])
@@ -64,6 +64,9 @@ func TestLibdragonGameGetsWhatItNeeds(t *testing.T) {
 	}
 	if len(got.Notices) != 1 {
 		t.Errorf("notices: %v", got.Notices)
+	}
+	if len(got.Notices) != 1 || got.Notices[0] != libdragonNoCardNotice {
+		t.Errorf("with no card the start screen should say it needs one: %v", got.Notices)
 	}
 	if !slices.Contains(args, "-gpu") || start["parallel-n64-gfxplugin"] != "gliden64" {
 		t.Error("what was passed in was changed")

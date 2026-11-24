@@ -16,8 +16,9 @@ func forThisGame(opt Options) Options {
 	if opt.Console != "n64" || opt.CoreID != wittyplay.LibdragonCore || !wittyplay.IsLibdragon(opt.ROM) {
 		return opt
 	}
-	opt.Notices = append(opt.Notices[:len(opt.Notices):len(opt.Notices)], wittyplay.LibdragonNotice)
+	notes := opt.Notices[:len(opt.Notices):len(opt.Notices)]
 	if opt.GPU {
+		opt.Notices = append(notes, wittyplay.LibdragonNotice)
 		// A card: parallel-RDP over Vulkan, the one renderer of this core that draws these games.
 		opt.fixedOptions = libdragonCardOptions()
 		opt.CoreOptions = withFixed(opt.CoreOptions, opt.fixedOptions)
@@ -26,6 +27,9 @@ func forThisGame(opt Options) Options {
 		}
 		return opt
 	}
+	// No card: this core's angrylion leaves these games black, so say that plainly at the start, and
+	// only that: the usual "the processor draws this game" note would promise a picture.
+	opt.Notices = []string{libdragonNoCardNotice}
 	opt.fixedOptions = wittyplay.LibdragonOptions()
 	opt.CoreOptions = withFixed(opt.CoreOptions, opt.fixedOptions)
 	opt.RunnerArgs = slices.DeleteFunc(slices.Clone(opt.RunnerArgs), func(a string) bool { return a == "-gpu" })
@@ -55,3 +59,8 @@ func libdragonCardOptions() map[string]string {
 		"parallel-n64-cpucore":   "cached_interpreter",
 	}
 }
+
+// libdragonNoCardNotice is said on the start screen instead of wittyplay.LibdragonNotice on a
+// server with no graphics card, where nothing in this core draws such a game: told before, rather
+// than a black screen.
+const libdragonNoCardNotice = "This game needs a graphics card on the server to show a picture."
