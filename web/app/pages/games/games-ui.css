@@ -4,15 +4,15 @@
    that moves animates transform or opacity, and nothing here is blurred. */
 
 /* The top bar runs over the page's colour here, so the page starts below it. */
-@supports (animation-timeline: scroll()) { .app:has(.gm-ambient) .gm-page { padding-top: calc(var(--topbar-h) - var(--sp-2)); } }
+@supports (animation-timeline: scroll()) { .app:has(.gm-ambient) .gm-page { padding-top: calc(var(--bar-space, var(--topbar-h)) - var(--sp-2)); } }
 .gm-page { position: relative; --gm-cell: 150px; --gm-row-gap: 20px; --gm-text-h: 3.5rem; --gm-jump-gap: 96px; }
 .gm-hide-narrow { display: inline; }
 @media (max-width: 720px) { .gm-hide-narrow { display: none; } }
-.gm-section { scroll-margin-top: calc(var(--topbar-h) + var(--sp-4)); }
+.gm-section { scroll-margin-top: calc(var(--bar-space, var(--topbar-h)) + var(--sp-4)); }
 .gm-pictures { margin-block: var(--sp-8); }
 
 /* The colour behind the top of the page. */
-.detail-hero.gm-ambient { position: absolute; z-index: -1; left: calc(-1 * var(--gutter)); right: calc(-1 * var(--gutter)); top: calc(-1 * (var(--topbar-h) + var(--sp-2))); margin: 0; height: min(120vh, 62rem); min-height: 0; max-height: none; overflow: hidden; pointer-events: none; }
+.detail-hero.gm-ambient { position: absolute; z-index: -1; left: calc(-1 * var(--gutter)); right: calc(-1 * var(--gutter)); top: calc(-1 * (var(--bar-space, var(--topbar-h)) + var(--sp-2))); margin: 0; height: min(120vh, 62rem); min-height: 0; max-height: none; overflow: hidden; pointer-events: none; }
 .gm-ambient-layer { position: absolute; inset: 0; opacity: 0; transition: opacity var(--dur-4) var(--ease-standard); background: linear-gradient(180deg, var(--gm-tint, var(--bg-3)) 0%, var(--bg) 100%); }
 
 /* ---------------------------------------------------------------- page head */
@@ -131,7 +131,7 @@ html.ten-foot .gm-page { --gm-cell: 210px; --gm-jump-gap: 140px; }
 
 /* ---------------------------------------------------------------- a game's page */
 .gm-detail { padding-top: var(--sp-5); }
-.gm-detail-backdrop { position: absolute; z-index: -1; left: calc(-1 * var(--gutter)); right: calc(-1 * var(--gutter)); top: calc(-1 * (var(--topbar-h) + var(--sp-2))); height: min(70vh, 38rem); background-size: cover; background-position: center 25%; opacity: .24; pointer-events: none;
+.gm-detail-backdrop { position: absolute; z-index: -1; left: calc(-1 * var(--gutter)); right: calc(-1 * var(--gutter)); top: calc(-1 * (var(--bar-space, var(--topbar-h)) + var(--sp-2))); height: min(70vh, 38rem); background-size: cover; background-position: center 25%; opacity: .24; pointer-events: none;
   -webkit-mask-image: linear-gradient(180deg, rgb(0 0 0 / 1) 40%, transparent); mask-image: linear-gradient(180deg, rgb(0 0 0 / 1) 40%, transparent); } /* design-ok: how see-through a mask is */
 .gm-game-head { display: grid; grid-template-columns: clamp(11rem, 20vw, 17rem) minmax(0, 1fr); gap: clamp(var(--sp-5), 3vw, var(--sp-10)); align-items: end; margin-bottom: var(--section-gap); }
 .gm-game-cover .poster { position: relative; display: flex; align-items: flex-end; justify-content: center; aspect-ratio: 3 / 4; }
@@ -233,7 +233,7 @@ html.gm-couch, html.gm-couch body { background: var(--bg); }
 @media (max-width: 720px) { .gm-couch-name, .gm-couch-clock { display: none; } .gm-couch-tab span { display: none; } .gm-couch-tab { min-width: 44px; padding: 0 var(--sp-2); justify-content: center; } .gm-couch-leave span { display: none; } .gm-couch-leave { min-width: 44px; padding-inline: var(--sp-2); } .gm-couch-foot { display: none; } }
 
 .gm-osk-wrap { display: grid; grid-template-columns: minmax(0, 24rem) minmax(0, 1fr); gap: var(--sp-8); align-items: start; }
-.gm-osk-side { display: grid; gap: var(--sp-4); position: sticky; top: 6rem; }
+.gm-osk-side { display: grid; gap: var(--sp-4); position: sticky; top: calc(var(--bar-space, 64px) + var(--sp-4)); }
 .gm-osk-field { display: grid; gap: var(--sp-1); font-weight: 600; font-size: var(--text-sm); }
 .gm-osk { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-1); }
 .gm-osk-key { min-height: 3rem; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg-2); color: var(--fg); font-weight: 600; cursor: pointer; }
