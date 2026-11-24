@@ -44,7 +44,7 @@ func (m *Manager) Modes(client string) []Mode {
 		codecs = append(codecs, "vp8")
 	}
 	var out []Mode
-	if len(codecs) > 0 {
+	if len(codecs) > 0 && cfg.webRTCReachable() {
 		out = append(out, Mode{ID: "webrtc", Video: codecs, Audio: "opus", Input: "datachannel", Needs: "A WebRTC stack with a data channel", Stream: StreamVersion})
 	}
 	if h264 {

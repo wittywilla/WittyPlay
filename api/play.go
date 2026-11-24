@@ -664,6 +664,14 @@ func handleGamePlay(a *App, w http.ResponseWriter, r *http.Request) {
 			writeErr(w, 503, err.Error())
 			return
 		}
+		// Nothing here can draw this game (libdragon homebrew with no Vulkan card): said as it is, the
+		// way a game needing a card is, and not held against the core, which plays everything else.
+		var np *stream.NoPictureError
+		if errors.As(err, &np) {
+			a.Log.InfoContext(ctx, "wittyplay: a game this server can't draw", "cat", "games", "item", it.ID, "game", it.Title, "core", plan.CoreID, "why", np.Text)
+			writeJSON(w, 409, map[string]any{"error": np.Text, "reason": "gpu", "needsGpu": true, "console": c.ID})
+			return
+		}
 		a.Log.WarnContext(ctx, "wittyplay: could not start a game", "cat", "games", "item", it.ID, "game", it.Title, "console", c.ID, "core", plan.CoreID, "err", err)
 		// Recorded against the core, so that one console that can't run here never takes every
 		// other game off the server with it.

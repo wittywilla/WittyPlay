@@ -428,6 +428,9 @@ func TestRepeatedInputIsNotActivity(t *testing.T) {
 }
 
 func TestModes(t *testing.T) {
+	was := behindBridge
+	t.Cleanup(func() { behindBridge = was })
+	behindBridge = func() bool { return false } // the same answer in a container
 	m := NewManager(Config{HaveEncoder: func(n string) bool { return n == "libvpx" }})
 	got := m.Modes(ClientNative)
 	if len(got) != 2 || got[0].ID != "webrtc" || got[0].Video[0] != "vp8" || got[1].ID != "ws-jpeg" {
