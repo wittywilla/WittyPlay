@@ -78,6 +78,11 @@ func TestStreamOriginCheck(t *testing.T) {
 		{"a sandboxed page", "null", "", "nas:9797", false},
 		{"an older server with no Reached: another site", "https://evil.example", "", "", false},
 		{"no Reached, Origin is this Host", "http://127.0.0.1:46773", "", "", true},
+		// Only "same-origin" lets a browser through on its word; anything else is checked by address.
+		{"Sec-Fetch-Site none, another site", "https://evil.example", "none", "nas:9797", false},
+		{"Sec-Fetch-Site none, the server's own page", "http://nas:9797", "none", "nas:9797", true},
+		{"an unknown Sec-Fetch-Site, another site", "https://evil.example", "same-origin-ish", "nas:9797", false},
+		{"no Sec-Fetch-Site, Origin not Reached though it is Host", "http://127.0.0.1:46773", "", "nas:9797", false},
 	} {
 		r := httptest.NewRequest("GET", "http://127.0.0.1:46773/play/x/stream", nil)
 		if c.origin != "" {
