@@ -3,6 +3,10 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.19
+
+- **The README's pictures show 0.7.18**, on a computer, a phone and a TV. Nothing else changed.
+
 ## 0.7.18
 
 ### What's new
