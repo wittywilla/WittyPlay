@@ -8,12 +8,19 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 ### What's new
 
 - **The console photos switches are easy to reach on a TV.** In setup's Games step and WittyPlay's Settings, each switch is now its whole row: one target as tall as a remote or a finger needs, and a screen reader says its name.
+- **The graphics card check no longer fails on Linux under WSL.** It answered, then the game runner crashed on its way out on about half the checks (a graphics driver thread racing the runner's tidy-up), and the server threw the answer away, so it never knew it had a card. The runner now leaves straight after answering, and an answer given in full stands however the runner ended. With no card at all the check says so, with the reason, and never crashes.
+- **N64 homebrew no longer crashes where the graphics card can't use Vulkan.** Libdragon games draw only with parallel-RDP, which needs Vulkan. On a card without it (WSL, or a driver with only the processor's Vulkan) ParaLLEl N64 fell back to an OpenGL plugin, and the 240p Test Suite stopped on its own error screen a minute in. There they now get the processor's settings, and the start screen says "This game needs a graphics card with Vulkan on the server to show a picture."
+- **Nintendo 64 homebrew shows a picture on a server with a graphics card.** Games built with libdragon (most new homebrew) were always drawn by ParaLLEl N64's software renderer, which in this core draws them black. With a card they now use parallel-RDP, which draws them correctly; with no card they still can't be shown. Commercial games, on Mupen64Plus-Next, were never affected. Starting one says so on its start screen: "This game needs a graphics card on the server to show a picture."
+- **On a phone, tapping a game in All games opens it.** The details panel meant only for wider screens was drawn under the games instead, with its Play button behind the dock, where a tap opened Together.
+- **A game with no cover picture can be played on a phone.** Its page drew the stand-in cover over the whole page, Play included.
 
 ### Developer notes
 
 - `SwitchRow` (web/app/pages/settings/SwitchRow.tsx): a `role="switch"` button with its words inside and an `aria-label`, at least 48px tall. It replaces the server's bare `Switch` (26px, named only through `aria-labelledby`), which setup's TV walk counted as a nameless button under 48px. Test: web/tests/switchrow.test.ts.
 
 ## 0.7.17
+
+_Never published on its own: it came out in 0.7.18._
 
 ### What's new
 
@@ -25,6 +32,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ## 0.7.16
 
+_Never published on its own: it came out in 0.7.18._
+
 ### What's new
 
 - **N64 homebrew no longer crashes where the graphics card can't use Vulkan.** Libdragon games draw only with parallel-RDP, which needs Vulkan. On a card without it (WSL, or a driver with only the processor's Vulkan) ParaLLEl N64 fell back to an OpenGL plugin, and the 240p Test Suite stopped on its own error screen a minute in. There they now get the processor's settings, and the start screen says "This game needs a graphics card with Vulkan on the server to show a picture."
@@ -34,6 +43,8 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 - The game is offered Vulkan (`-vulkan`) only when the graphics card check named a Vulkan card (`vulkanCard` in `api/gpu.go`). Under WSL that check fails (the runner's `-probe-gpu` ends on a segmentation fault), so nothing there is offered Vulkan for these games. Same core version on Windows and Linux (ParaLLEl N64 1.0 e854c84): the difference was Vulkan, not the build.
 
 ## 0.7.15
+
+_Never published on its own: it came out in 0.7.18._
 
 ### What's new
 
