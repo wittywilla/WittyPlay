@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -642,6 +643,12 @@ func handleGamePlay(a *App, w http.ResponseWriter, r *http.Request) {
 		PreferDevices: wittyplay.Pad(c.ID).PreferDevices,
 	}
 	a.applyGameSettings(ctx, &opts, b.SafeMode)
+	// A libdragon game draws only with parallel-RDP, which needs a Vulkan card: where the card check
+	// named none (or couldn't check, as under WSL), the runner isn't offered Vulkan, and the game gets
+	// the processor's settings and a plain note instead of a crash a minute in (stream/forgame.go).
+	if c.ID == "n64" && plan.CoreID == wittyplay.LibdragonCore && !vulkanCard(a.GPUStatus(ctx)) && wittyplay.IsLibdragon(rom) {
+		opts.RunnerArgs = slices.DeleteFunc(slices.Clone(opts.RunnerArgs), func(s string) bool { return s == "-vulkan" })
+	}
 	if plan.Software {
 		// Over whatever anyone chose: without these, the core asks for a graphics card that isn't here.
 		opts.CoreOptions = overOptions(opts.CoreOptions, plan.CPUOptions)

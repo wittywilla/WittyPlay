@@ -3,6 +3,16 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.16
+
+### What's new
+
+- **N64 homebrew no longer crashes where the graphics card can't use Vulkan.** Libdragon games draw only with parallel-RDP, which needs Vulkan. On a card without it (WSL, or a driver with only the processor's Vulkan) ParaLLEl N64 fell back to an OpenGL plugin, and the 240p Test Suite stopped on its own error screen a minute in. There they now get the processor's settings, and the start screen says "This game needs a graphics card with Vulkan on the server to show a picture."
+
+### Developer notes
+
+- The game is offered Vulkan (`-vulkan`) only when the graphics card check named a Vulkan card (`vulkanCard` in `api/gpu.go`). Under WSL that check fails (the runner's `-probe-gpu` ends on a segmentation fault), so nothing there is offered Vulkan for these games. Same core version on Windows and Linux (ParaLLEl N64 1.0 e854c84): the difference was Vulkan, not the build.
+
 ## 0.7.15
 
 ### What's new
