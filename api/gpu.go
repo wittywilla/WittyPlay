@@ -311,3 +311,11 @@ func allOfferedNeedCard(console *wittyplay.Console) bool {
 	}
 	return true
 }
+
+// vulkanCard says whether the card check named a graphics card cores can draw on with Vulkan. A
+// check that failed (under WSL the runner can't make one, and it's asked again for ever), one not
+// finished yet, or one that found only the processor's Vulkan is a no.
+func vulkanCard(p stream.GPUProbe) bool {
+	v := strings.TrimSpace(p.Vulkan)
+	return v != "" && !strings.HasPrefix(v, "none")
+}

@@ -17,19 +17,22 @@ func forThisGame(opt Options) Options {
 		return opt
 	}
 	notes := opt.Notices[:len(opt.Notices):len(opt.Notices)]
-	if opt.GPU {
+	if opt.GPU && slices.Contains(opt.RunnerArgs, "-vulkan") {
 		opt.Notices = append(notes, wittyplay.LibdragonNotice)
-		// A card: parallel-RDP over Vulkan, the one renderer of this core that draws these games.
+		// A card the runner may draw on with Vulkan: parallel-RDP, the one renderer of this core that
+		// draws these games. Without Vulkan the core falls back to an OpenGL plugin that guesses, and
+		// the game crashes on its own error screen (the 240p Test Suite, under WSL).
 		opt.fixedOptions = libdragonCardOptions()
 		opt.CoreOptions = withFixed(opt.CoreOptions, opt.fixedOptions)
-		if !slices.Contains(opt.RunnerArgs, "-vulkan") {
-			opt.RunnerArgs = append(slices.Clone(opt.RunnerArgs), "-vulkan")
-		}
 		return opt
 	}
-	// No card: this core's angrylion leaves these games black, so say that plainly at the start, and
-	// only that: the usual "the processor draws this game" note would promise a picture.
+	// No Vulkan card: this core's angrylion leaves these games black, so say that plainly at the
+	// start, and only that: the usual "the processor draws this game" note would promise a picture.
 	opt.Notices = []string{libdragonNoCardNotice}
+	if opt.GPU {
+		opt.Notices = []string{libdragonNoVulkanNotice}
+	}
+	opt.GPU = false
 	opt.fixedOptions = wittyplay.LibdragonOptions()
 	opt.CoreOptions = withFixed(opt.CoreOptions, opt.fixedOptions)
 	opt.RunnerArgs = slices.DeleteFunc(slices.Clone(opt.RunnerArgs), func(a string) bool { return a == "-gpu" })
@@ -64,3 +67,6 @@ func libdragonCardOptions() map[string]string {
 // server with no graphics card, where nothing in this core draws such a game: told before, rather
 // than a black screen.
 const libdragonNoCardNotice = "This game needs a graphics card on the server to show a picture."
+
+// libdragonNoVulkanNotice is that note for a server with a card that can't draw with Vulkan.
+const libdragonNoVulkanNotice = "This game needs a graphics card with Vulkan on the server to show a picture."

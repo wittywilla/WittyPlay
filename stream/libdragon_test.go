@@ -28,7 +28,7 @@ func n64File(t *testing.T, boot string) string {
 // On a graphics card a libdragon game gets parallel-RDP over Vulkan: angrylion leaves it black.
 func TestLibdragonGameOnACardGetsParallelRDP(t *testing.T) {
 	start := map[string]string{"parallel-n64-gfxplugin": "gliden64", "parallel-n64-screensize": "1280x960"}
-	args := []string{"-gpu", "-normal-priority"}
+	args := []string{"-gpu", "-normal-priority", "-vulkan"}
 	got := forThisGame(Options{Console: "n64", CoreID: wittyplay.LibdragonCore, ROM: n64File(t, "Libdragon IPL3"), GPU: true, RunnerArgs: args, CoreOptions: start})
 	for k, v := range libdragonCardOptions() {
 		if got.CoreOptions[k] != v {
@@ -41,8 +41,26 @@ func TestLibdragonGameOnACardGetsParallelRDP(t *testing.T) {
 	if len(got.Notices) != 1 {
 		t.Errorf("notices: %v", got.Notices)
 	}
-	if slices.Contains(args, "-vulkan") || start["parallel-n64-gfxplugin"] != "gliden64" {
+	if start["parallel-n64-gfxplugin"] != "gliden64" {
 		t.Error("what was passed in was changed")
+	}
+}
+
+// A card the runner can't draw on with Vulkan (the card check found none, or couldn't check, as
+// under WSL) gets the processor's settings and says it needs Vulkan: parallel-RDP without Vulkan
+// fell back to an OpenGL plugin, and the 240p Test Suite crashed on its own error screen.
+func TestLibdragonGameOnACardWithoutVulkanSaysSo(t *testing.T) {
+	got := forThisGame(Options{Console: "n64", CoreID: wittyplay.LibdragonCore, ROM: n64File(t, "Libdragon IPL3"), GPU: true, RunnerArgs: []string{"-gpu", "-normal-priority"}})
+	for k, v := range wittyplay.LibdragonOptions() {
+		if got.CoreOptions[k] != v {
+			t.Errorf("%s is %q", k, got.CoreOptions[k])
+		}
+	}
+	if got.GPU || slices.Contains(got.RunnerArgs, "-gpu") || slices.Contains(got.RunnerArgs, "-vulkan") {
+		t.Errorf("gpu %v, args %v", got.GPU, got.RunnerArgs)
+	}
+	if len(got.Notices) != 1 || got.Notices[0] != libdragonNoVulkanNotice {
+		t.Errorf("notices: %v", got.Notices)
 	}
 }
 
