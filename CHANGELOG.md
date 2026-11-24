@@ -3,6 +3,14 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.15
+
+### What's new
+
+- **Nintendo 64 homebrew shows a picture on a server with a graphics card.** Games built with libdragon (most new homebrew) were always drawn by ParaLLEl N64's software renderer, which in this core draws them black. With a card they now use parallel-RDP, which draws them correctly; with no card they still can't be shown. Commercial games, on Mupen64Plus-Next, were never affected. Starting one says so on its start screen: "This game needs a graphics card on the server to show a picture."
+- **On a phone, tapping a game in All games opens it.** The details panel meant only for wider screens was drawn under the games instead, with its Play button behind the dock, where a tap opened Together.
+- **A game with no cover picture can be played on a phone.** Its page drew the stand-in cover over the whole page, Play included.
+
 ## 0.7.14
 
 ### What's new

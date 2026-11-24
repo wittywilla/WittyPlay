@@ -496,6 +496,8 @@ html[data-wplay] body { font-family: var(--font); }
 /* hero: the cover, then what it is and the buttons, the main one where focus starts */
 .wpg-hero { display: grid; grid-template-columns: clamp(150px, min(calc(22 * var(--wp-vw)), 34vh), 420px) minmax(0, 1fr); gap: clamp(20px, calc(3 * var(--wp-vw)), 56px); align-items: end; }
 .wpg-cover { align-self: start; }
+/* A game with no picture: the placeholder fills its box, so the box needs a size of its own, or it filled the whole page. */
+.wpg-cover.no-art { position: relative; aspect-ratio: 3 / 4; overflow: hidden; border-radius: clamp(12px, calc(1.2 * var(--wp-vw)), 20px); }
 .wpg-cover img, .wpg-cover .placeholder { display: block; inline-size: 100%; border-radius: clamp(12px, calc(1.2 * var(--wp-vw)), 20px); box-shadow: 0 30px 70px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .1); }
 .wpg-head { display: grid; gap: clamp(12px, calc(1.2 * var(--wp-vw)), 20px); min-inline-size: 0; }
 .wpg-logo { max-inline-size: min(100%, 34rem); max-block-size: clamp(70px, calc(9 * var(--wp-vw)), 160px); object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 18px rgb(0 0 0 / .6)); }
@@ -698,7 +700,7 @@ html[data-wplay] .wpg-settings [role=tablist] { overflow-x: auto; scrollbar-widt
 .wpl-panel .sdui-detail-title { display: block; font-size: clamp(1.2rem, calc(2 * var(--wp-vw)), 2.2rem); line-height: 1.2; }
 .wpl-panel-empty { margin: 0; color: var(--fg-2); }
 @media (min-width: 760px) and (max-width: 1199px) { .wpl-body.with-panel { grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); } }
-@media (max-width: 759px) { .wpl-body.with-panel { display: block; } .wpl-panel, .wpl-panel-switch { display: none; } }
+@media (max-width: 759px) { .wpl-body.with-panel { display: block; } .wplay .wpl-panel, .wplay .wpl-panel.has-bio, .wpl-panel-switch { display: none; } }
 /* The game page's cards keep their contents their own size, however tall the row makes the card: buttons stay buttons, a console's
    button names stay a row of chips. */
 .wpg .gm-panel, .wpg-card { align-content: start; }
