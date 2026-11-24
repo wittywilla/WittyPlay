@@ -144,3 +144,9 @@ html:has(.set-toc) { scroll-padding-top: calc(var(--topbar-h) + var(--control-h-
 .wplay-photos { display: grid; gap: var(--sp-3); margin-block-end: var(--sp-6); max-inline-size: 40rem; }
 .wplay-photos h2, .wplay-photos h3 { margin: 0; }
 .wplay-photos-switch { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-block-size: 48px; font-weight: 700; }
+button.wplay-photos-switch { inline-size: 100%; padding: var(--sp-2) 0; border: 0; border-radius: var(--r-md); background: none; color: inherit; font: inherit; font-weight: 700; text-align: start; cursor: pointer; }
+.wplay-photos-switch .muted { font-weight: 400; }
+.wplay-photos-switch .set-switch { display: block; }
+.wplay-photos-switch:disabled { cursor: default; }
+.wplay-photos-switch:disabled .set-switch { opacity: .4; }
+.wplay-photos-switch:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
