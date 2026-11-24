@@ -6,6 +6,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 ## 0.7.22
 
 - **Nothing on the Games pages slides under the top bar.** A game's backdrop, a section a link jumps to, the on-screen keyboard's side panel and the screen preview sit below the bar however tall it is, the floating glass bar included, using the room the bar measures (`--bar-space`) instead of a fixed height. Older servers keep the old numbers.
+- **The README's pictures show 0.7.18**, on a computer, a phone and a TV.
 
 ## 0.7.21
 
