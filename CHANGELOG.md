@@ -3,6 +3,16 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.17
+
+### What's new
+
+- **The graphics card check no longer fails on Linux under WSL.** It answered, then the game runner crashed on its way out on about half the checks (a graphics driver thread racing the runner's tidy-up), and the server threw the answer away, so it never knew it had a card. The runner now leaves straight after answering, and an answer given in full stands however the runner ended. With no card at all the check says so, with the reason, and never crashes.
+
+### Developer notes
+
+- `wittyplay-game-runner -probe-gpu` exits right after its answer and doesn't destroy the OpenGL context first: under WSL that took the crash rate from 9 in 20 checks to 0 in 20, and 0 in 10 in a container with no card. `stream.ProbeGPU` keeps a full answer from a runner that ended badly (`answeredAnyway`), and logs it. `TestProbeGPUAnswersCleanly` runs the real check five times through the real sandbox on whatever the machine has (CI's have no card).
+
 ## 0.7.16
 
 ### What's new
