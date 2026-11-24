@@ -3,6 +3,16 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.18
+
+### What's new
+
+- **The console photos switches are easy to reach on a TV.** In setup's Games step and WittyPlay's Settings, each switch is now its whole row: one target as tall as a remote or a finger needs, and a screen reader says its name.
+
+### Developer notes
+
+- `SwitchRow` (web/app/pages/settings/SwitchRow.tsx): a `role="switch"` button with its words inside and an `aria-label`, at least 48px tall. It replaces the server's bare `Switch` (26px, named only through `aria-labelledby`), which setup's TV walk counted as a nameless button under 48px. Test: web/tests/switchrow.test.ts.
+
 ## 0.7.17
 
 ### What's new
