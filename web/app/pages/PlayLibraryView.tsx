@@ -19,6 +19,7 @@ import { PlayTabsRow } from './PlayConsoles'
 import { RefreshLibraryDetails } from './games/RefreshDetails'
 import { TileSizeSwitch } from '../shell/GamePictureArt'
 import { LayoutSwitch } from '../shell/playPads'
+import { useMedia } from '@wms/app/shell/useNav'
 
 const ROW = 24
 const PAGE = 60
@@ -155,6 +156,40 @@ function GameGrid({ lib, consoleId, query, short }: { lib: Library; consoleId: s
   )
 }
 
+// What the server says of the library's scan: waiting for its turn behind another library's,
+// going on, or not (GET /api/libraries/{id}/scan). Asked once, and every few seconds while a scan
+// waits or runs; when it ends, onDone asks for the games again.
+type ScanState = 'waiting' | 'scanning' | 'idle' | null
+function useLibraryScan(id: number, onDone: () => void): ScanState {
+  const [state, setState] = useState<ScanState>(null)
+  const done = useRef(onDone)
+  done.current = onDone
+  useEffect(() => {
+    let live = true, timer = 0, was = false
+    const poll = async () => {
+      try {
+        const r = await api.get<{ scanning: boolean; progress?: { phase?: string } | null }>(`/libraries/${id}/scan`)
+        if (!live) return
+        setState(r.scanning ? (r.progress?.phase === 'waiting' ? 'waiting' : 'scanning') : 'idle')
+        if (was && !r.scanning) done.current()
+        was = r.scanning
+        if (r.scanning) timer = window.setTimeout(poll, 3000)
+      } catch { if (live) setState('idle') }
+    }
+    void poll()
+    return () => { live = false; window.clearTimeout(timer) }
+  }, [id])
+  return state
+}
+
+// A library with no games yet: waiting to be scanned behind another library, being scanned, or
+// scanned and empty. Before, a library queued behind a big scan said "No games found" (#553).
+function emptyWords(state: ScanState, admin: boolean): string {
+  if (state === 'waiting') return 'Waiting to be scanned. Another library is being scanned first, and the games appear as soon as this one’s turn comes.'
+  if (state === 'scanning') return 'Scanning… Games appear as they are found.'
+  return 'No games found in this library yet.' + (admin ? ' Scan to look through its folders.' : '')
+}
+
 export default function PlayLibraryView({ lib }: { lib: Library }) {
   const { user } = useApp()
   const [params, setParams] = useSearchParams()
@@ -180,7 +215,12 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
     window.setTimeout(() => { setScanning(false); setVersion((v) => v + 1) }, 4000)
   }
   const total = useMemo(() => (consoles || []).reduce((n, c) => n + (c.count || 0), 0), [consoles])
-  const [panel] = usePanel()
+  const queue = useLibraryScan(lib.id, () => setVersion((v) => v + 1))
+  const [panelOn] = usePanel()
+  // A phone has no room beside the games: no panel, so a tap opens the game's page at once. A panel drawn under the games
+  // put its Play behind the dock, where a tap went to the dock instead.
+  const phone = useMedia('(max-width: 759px)')
+  const panel = panelOn && !phone
   const [shown, setShown] = useState<Shown | null>(null)
   const picker = useMemo(() => (panel ? { pick: setShown, chosen: shown?.it.id ?? null } : null), [panel, shown?.it.id])
   useEffect(() => { setShown(null) }, [consoleId, q])
@@ -209,7 +249,7 @@ export default function PlayLibraryView({ lib }: { lib: Library }) {
             {q || consoleId
               ? <GameGrid key={`${consoleId}|${q}`} lib={lib} consoleId={consoleId} query={q} short={chosen?.short || ''} />
               : consoles === null ? <div className="wpl-wait"><Spinner /></div>
-                : consoles.length === 0 ? <p className="wpl-empty">No games found in this library yet. {user?.isAdmin ? 'Scan to look through its folders.' : ''}</p>
+                : consoles.length === 0 ? <p className="wpl-empty" role="status">{emptyWords(queue, !!user?.isAdmin)}</p>
                   : consoles.map((c) => <ConsoleRow key={c.id} lib={lib} c={c} />)}
           </div>
           {panel && <GamePanel shown={shown} />}

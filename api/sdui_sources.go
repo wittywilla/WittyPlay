@@ -422,7 +422,9 @@ func (q *sduiAsk) recent() ([]sdui.Item, error) {
 	if limit <= 0 {
 		limit = 200
 	}
-	rows, err := q.a.gameList(q.ctx, q.id.User, false, false, min(2*(q.req.Offset+limit), 400))
+	// Each part kept under the cap before adding: a caller's huge offset or limit would wrap round to
+	// a negative number, which SQLite reads as no limit at all.
+	rows, err := q.a.gameList(q.ctx, q.id.User, false, false, min(2*(min(max(q.req.Offset, 0), 400)+min(limit, 400)), 400))
 	if err != nil {
 		return nil, err
 	}

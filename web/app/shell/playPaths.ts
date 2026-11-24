@@ -65,7 +65,7 @@ export const PLAY_PADS: { id: PlayPads; label: string; note: string }[] = [
   { id: 'xbox', label: 'Xbox / XInput', note: 'A, B, X and Y; View and Menu' },
   { id: 'playstation', label: 'PlayStation / DualSense', note: 'Cross, Circle, Square and Triangle; Create and Options' },
   // Its id is the app's pad family; the words never name the maker (a nod to its home city instead).
-  { id: 'nintendo', label: 'Kyoto layout (A on the right)', note: 'A on the right confirms, B below goes back; + and −' },
+  { id: 'nintendo', label: 'Kyoto layout', note: 'A on the right confirms, B below goes back; + and −' },
 ]
 export const isPlayPads = (v: unknown): v is PlayPads => PLAY_PADS.some((p) => p.id === v)
 // The family a pad's id says (the same tests as ui/inputModel.ts padFamily); a pad with no known maker is drawn as XInput, and
@@ -81,9 +81,15 @@ export function padsFor(ids: string[]): PlayPads {
 // An SDUI glyph (a, b, x, y: by position, A at the bottom) as the keyboard's key, the same keys as the app's key legend
 // (ui/inputModel.ts): A is Enter, B is Esc, X options (.), Y search (/).
 export const PLAY_KEYS: Record<'a' | 'b' | 'x' | 'y', string> = { a: 'Enter', b: 'Esc', x: '.', y: '/' }
+// In the server's TV mode the keyboard choice is the remote's: a television shows no computer keys (docs/TV-MODE.md), only the
+// remote's OK and Back; X and Y have no button on a remote, so nothing is drawn for them.
+export const onTv = () => typeof document !== 'undefined' && document.documentElement.classList.contains('tv-mode')
+export const PLAY_REMOTE: Partial<Record<'a' | 'b' | 'x' | 'y', string>> = { a: 'OK', b: 'Back' }
+export const padsLabel = (p: { id: PlayPads; label: string; note: string }) =>
+  p.id === 'keyboard' && onTv() ? { label: 'Remote', note: 'OK, Back and the arrows' } : p
 // The exit hint's words for each choice.
 export const exitWords = (p: PlayPads) => ({
-  keyboard: 'Press Esc (or Backspace) on the keyboard.',
+  keyboard: onTv() ? 'Press Back on the remote.' : 'Press Esc (or Backspace) on the keyboard.',
   xbox: 'Press B on the controller.',
   playstation: 'Press Circle on the controller.',
   nintendo: 'Press B on the controller (the bottom button).',

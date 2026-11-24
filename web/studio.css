@@ -168,9 +168,14 @@
 }
 @media (max-width: 640px) {
   .wsc-picture-card { display: none; }
-  .wsc-row { grid-template-columns: minmax(0, 1fr) auto; }
-  .wsc-row-actions { grid-column: 1 / -1; justify-content: flex-start; }
+  /* A phone keeps each row on one line: the name, its key, Change and Put back (#470). Only a phone narrower than
+     the buttons need puts them on a line of their own. */
+  .wsc-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
   .wsc-device { min-width: 10rem; }
+}
+@media (max-width: 359px) {
+  .wsc-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .wsc-row-actions { grid-column: 1 / -1; justify-content: flex-end; }
 }
 @media (forced-colors: active) {
   .wpp-part[data-on], .wsc-row[data-on], .wsc-seg button.on, .wsc-picker-grid button[aria-checked=true] { forced-color-adjust: none; background: Highlight; color: HighlightText; fill: Highlight; }

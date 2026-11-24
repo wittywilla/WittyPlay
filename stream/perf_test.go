@@ -38,3 +38,19 @@ func TestFrameTimes(t *testing.T) {
 		t.Fatalf("taking starts again: %+v", again)
 	}
 }
+
+// A runner that answered and then crashed on its way out (a graphics driver's thread, under WSL)
+// still told us about the card; one that crashed before answering told us nothing.
+func TestAnAnswerBeforeACrashStands(t *testing.T) {
+	if p, ok := answeredAnyway("gpu: D3D12 (A card)\nvendor: Microsoft Corporation\nvulkan: none: no usable Vulkan device\n"); !ok || p.Name != "D3D12 (A card)" || p.Vulkan == "" {
+		t.Errorf("a full answer: %+v %v", p, ok)
+	}
+	if p, ok := answeredAnyway("none: OpenGL here is only llvmpipe\n"); !ok || p.Error != "OpenGL here is only llvmpipe" {
+		t.Errorf("no card, said so: %+v %v", p, ok)
+	}
+	for _, said := range []string{"", "libEGL warning: egl: failed to create dri2 screen\n", "vendor: Microsoft Corporation\n"} {
+		if _, ok := answeredAnyway(said); ok {
+			t.Errorf("%q isn't an answer", said)
+		}
+	}
+}

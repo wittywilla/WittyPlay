@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -80,9 +81,27 @@ type Libretro struct {
 	once sync.Once
 	c    *Client
 
-	mu      sync.Mutex
+	mu  sync.Mutex
+	dbs []loadedDB // the lists in memory, the one used last first
+	// reads counts the lists read from disk; tests check it.
+	reads int
+}
+
+// libdbKeep is how many consoles' lists stay in memory. A scan describing one console's games
+// while the worker asks about another's would otherwise read both lists again for every game,
+// which on a first scan of a big library took seconds a game.
+const libdbKeep = 3
+
+// partialFor is how long a list that isn't all downloaded yet is used as it is by a lookup that
+// may not download (a scan's): long enough not to read it again for every game, short enough to
+// pick up what the worker downloads meanwhile.
+const partialFor = time.Minute
+
+type loadedDB struct {
 	console string
 	db      *libDB
+	partial bool // some of its files weren't downloaded yet
+	at      time.Time
 }
 
 func (s *Libretro) init() {
@@ -264,7 +283,7 @@ func (s *Libretro) fetchFile(ctx context.Context, name string) ([]byte, error) {
 	return b, nil
 }
 
-// load gets a console's list ready. One console stays in memory at a time.
+// load gets a console's list ready. A few consoles stay in memory (libdbKeep).
 func (s *Libretro) load(ctx context.Context, console string) (*libDB, error) {
 	names, ok := rdbNames[console]
 	if !ok {
@@ -272,8 +291,18 @@ func (s *Libretro) load(ctx context.Context, console string) (*libDB, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.console == console && s.db != nil {
-		return s.db, nil
+	for i, l := range s.dbs {
+		if l.console != console {
+			continue
+		}
+		// A partial list is kept for lookups that may not download; one that may goes and gets
+		// the rest.
+		if !l.partial || (isOffline(ctx) && time.Since(l.at) < partialFor) {
+			copy(s.dbs[1:i+1], s.dbs[:i])
+			s.dbs[0] = l
+			return l.db, nil
+		}
+		break
 	}
 	d := &libDB{byCRC: map[uint32]int32{}, bySerial: map[string]int32{}, byKey: map[string][]int32{}, byWord: map[string][]int32{}, allFiles: names}
 	var firstErr error
@@ -287,6 +316,7 @@ func (s *Libretro) load(ctx context.Context, console string) (*libDB, error) {
 			}
 			continue
 		}
+		s.reads++
 		if err := parseRDB(b, func(r *rdbRecord) { d.add(r, uint8(i)) }); err != nil {
 			if firstErr == nil {
 				firstErr = err
@@ -298,11 +328,18 @@ func (s *Libretro) load(ctx context.Context, console string) (*libDB, error) {
 	if got == 0 && firstErr != nil {
 		return nil, firstErr
 	}
-	if missing {
-		return d, nil // a list not downloaded yet: not kept, so the worker downloads it
-	}
-	s.console, s.db = console, d
+	s.keep(loadedDB{console: console, db: d, partial: missing, at: time.Now()})
 	return d, nil
+}
+
+// keep puts a console's list first among those in memory, and lets the oldest go.
+func (s *Libretro) keep(l loadedDB) {
+	s.dbs = slices.DeleteFunc(s.dbs, func(x loadedDB) bool { return x.console == l.console })
+	s.dbs = slices.Insert(s.dbs, 0, l)
+	if len(s.dbs) > libdbKeep {
+		clear(s.dbs[libdbKeep:])
+		s.dbs = s.dbs[:libdbKeep]
+	}
 }
 
 // Prepare implements Preparer: the download can wait for the first game that needs it,

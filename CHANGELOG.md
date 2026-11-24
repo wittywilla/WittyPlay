@@ -3,6 +3,103 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.18
+
+### What's new
+
+- **The console photos switches are easy to reach on a TV.** In setup's Games step and WittyPlay's Settings, each switch is now its whole row: one target as tall as a remote or a finger needs, and a screen reader says its name.
+- **The graphics card check no longer fails on Linux under WSL.** It answered, then the game runner crashed on its way out on about half the checks (a graphics driver thread racing the runner's tidy-up), and the server threw the answer away, so it never knew it had a card. The runner now leaves straight after answering, and an answer given in full stands however the runner ended. With no card at all the check says so, with the reason, and never crashes.
+- **N64 homebrew no longer crashes where the graphics card can't use Vulkan.** Libdragon games draw only with parallel-RDP, which needs Vulkan. On a card without it (WSL, or a driver with only the processor's Vulkan) ParaLLEl N64 fell back to an OpenGL plugin, and the 240p Test Suite stopped on its own error screen a minute in. There they now get the processor's settings, and the start screen says "This game needs a graphics card with Vulkan on the server to show a picture."
+- **Nintendo 64 homebrew shows a picture on a server with a graphics card.** Games built with libdragon (most new homebrew) were always drawn by ParaLLEl N64's software renderer, which in this core draws them black. With a card they now use parallel-RDP, which draws them correctly; with no card they still can't be shown. Commercial games, on Mupen64Plus-Next, were never affected. Starting one says so on its start screen: "This game needs a graphics card on the server to show a picture."
+- **On a phone, tapping a game in All games opens it.** The details panel meant only for wider screens was drawn under the games instead, with its Play button behind the dock, where a tap opened Together.
+- **A game with no cover picture can be played on a phone.** Its page drew the stand-in cover over the whole page, Play included.
+
+### Developer notes
+
+- `SwitchRow` (web/app/pages/settings/SwitchRow.tsx): a `role="switch"` button with its words inside and an `aria-label`, at least 48px tall. It replaces the server's bare `Switch` (26px, named only through `aria-labelledby`), which setup's TV walk counted as a nameless button under 48px. Test: web/tests/switchrow.test.ts.
+
+## 0.7.17
+
+_Never published on its own: it came out in 0.7.18._
+
+### What's new
+
+- **The graphics card check no longer fails on Linux under WSL.** It answered, then the game runner crashed on its way out on about half the checks (a graphics driver thread racing the runner's tidy-up), and the server threw the answer away, so it never knew it had a card. The runner now leaves straight after answering, and an answer given in full stands however the runner ended. With no card at all the check says so, with the reason, and never crashes.
+
+### Developer notes
+
+- `wittyplay-game-runner -probe-gpu` exits right after its answer and doesn't destroy the OpenGL context first: under WSL that took the crash rate from 9 in 20 checks to 0 in 20, and 0 in 10 in a container with no card. `stream.ProbeGPU` keeps a full answer from a runner that ended badly (`answeredAnyway`), and logs it. `TestProbeGPUAnswersCleanly` runs the real check five times through the real sandbox on whatever the machine has (CI's have no card).
+
+## 0.7.16
+
+_Never published on its own: it came out in 0.7.18._
+
+### What's new
+
+- **N64 homebrew no longer crashes where the graphics card can't use Vulkan.** Libdragon games draw only with parallel-RDP, which needs Vulkan. On a card without it (WSL, or a driver with only the processor's Vulkan) ParaLLEl N64 fell back to an OpenGL plugin, and the 240p Test Suite stopped on its own error screen a minute in. There they now get the processor's settings, and the start screen says "This game needs a graphics card with Vulkan on the server to show a picture."
+
+### Developer notes
+
+- The game is offered Vulkan (`-vulkan`) only when the graphics card check named a Vulkan card (`vulkanCard` in `api/gpu.go`). Under WSL that check fails (the runner's `-probe-gpu` ends on a segmentation fault), so nothing there is offered Vulkan for these games. Same core version on Windows and Linux (ParaLLEl N64 1.0 e854c84): the difference was Vulkan, not the build.
+
+## 0.7.15
+
+_Never published on its own: it came out in 0.7.18._
+
+### What's new
+
+- **Nintendo 64 homebrew shows a picture on a server with a graphics card.** Games built with libdragon (most new homebrew) were always drawn by ParaLLEl N64's software renderer, which in this core draws them black. With a card they now use parallel-RDP, which draws them correctly; with no card they still can't be shown. Commercial games, on Mupen64Plus-Next, were never affected. Starting one says so on its start screen: "This game needs a graphics card on the server to show a picture."
+- **On a phone, tapping a game in All games opens it.** The details panel meant only for wider screens was drawn under the games instead, with its Play button behind the dock, where a tap opened Together.
+- **A game with no cover picture can be played on a phone.** Its page drew the stand-in cover over the whole page, Play included.
+
+## 0.7.14
+
+### What's new
+
+- **A Games library waiting for its first scan says so.** While another library is scanned ahead of it, it reads "Waiting to be scanned", then "Scanning…" while its turn runs, and the games appear when it ends, instead of "No games found in this library yet".
+- **The controller layout named "Kyoto layout"** no longer adds "(A on the right)"; its note still says A on the right confirms (#105).
+- **On a phone, a controller row fits on one line** (name, key, Change and Put back), and the first game in a row starts at the page edge, not cut off (#110).
+
+### Developer notes
+
+- `PlayLibraryView` asks `GET /api/libraries/{id}/scan` once and every 3 s while a scan waits or runs (WittyMediaServer #553).
+
+## 0.7.13
+
+- **Games start on a phone away from home.** An app that queued a button press or a keyframe request while its connection was still opening sent it before the hello, and the game refused the connection ("the first message must be the hello, as text") and never showed a picture. Binary messages before the hello are now skipped.
+- **The note for a server with no graphics card is short** enough to read on a phone's start screen.
+- **Return To Server says so on a phone.** On a narrow screen the button was only an arrow; it now reads "Return" beside it. Wider screens keep the whole name.
+
+## 0.7.12
+
+- **A big games library's first scan no longer crawls.** While a scan described the games it found, it kept reading the game database again for almost every game, so a first scan of a large library could take hours. It now keeps a few consoles' lists in memory.
+- **A TV remote is told to press Back** for the game menu while a game loads, instead of Esc.
+- **Button hints follow TV mode:** with the server's TV mode on, hints show the remote's OK and Back instead of a keyboard's keys, and the choice of buttons to show offers the remote instead of the keyboard.
+- **Release dates are whole or left out.** A date a source gave half-way (such as "2001-1") is shown as the year, so games sort by date correctly.
+- **Fewer questions the first time you open Games.** It asks which buttons to show, then how to get back to the app, and you're at your games. How games are laid out and what choosing one does start as they are; change them any time in Settings.
+- **Choosing your buttons takes one press.** Enter on a choice picks it and moves on; with a controller, picking one moves straight to Continue.
+
+## Developer notes for 0.7.12
+
+- `gamemeta.Libretro` keeps up to `libdbKeep` (3) consoles' lists, most recently used first, instead of one. A scan's `describeLocal` and the worker's `localBatch` asked about different consoles, so each lookup threw out the other's list and parsed a multi-MB RDB again (about 12 s a game on a 2,293-game library's first scan). Measured on the same machine and a new library of the same NES and N64 folders (447 games): describing took 2 min 38 s before and 53 s after; the whole scan 2 min 47 s and 1 min 4 s. A list with files not downloaded yet is kept too, for offline (scan) lookups only and for `partialFor` (one minute); a lookup that may download reads it again. `reads` counts list reads for the new tests.
+- `web/app/shell/playPaths.ts`: in TV mode the `keyboard` choice is drawn as the remote (`PLAY_REMOTE`: OK and Back, nothing for X and Y), labelled "Remote", and `exitWords` says Back. `web/Screens.tsx`: the loading tip has a `remote` case; `web/prompts.tsx`: `isTV()` also counts the server's TV mode (`html.tv-mode`), per docs/TV-MODE.md.
+- `cleanDate` keeps only whole parts (month 01-12, day 01-31); `FuzzGameParsers` checks its output's shape, and `TestCleanDateWholeParts` the cases.
+- `sandbox/docker` tests: `specUser` is atomic; `TestLifecycleConcurrencyLimit` raced on it under `-race`.
+- The recent-games source (`sduiAsk.recent`) caps the offset and limit before adding them: a huge pair wrapped round to a negative SQL `LIMIT`, which SQLite reads as no limit.
+
+## 0.7.11
+
+_Never published on its own: it came out in 0.7.12._
+
+- **Fewer questions the first time you open Games.** It asks which buttons to show, then how to get back to the app, and you're at your games. How games are laid out and what choosing one does start as they are; change them any time in Settings.
+- **Choosing your buttons takes one press.** Enter on a choice picks it and moves on; with a controller, picking one moves straight to Continue.
+
+## Developer notes for 0.7.11
+
+- Fuzz tests for .wittyplay files and players' input messages.
+- `ExitTip` (`web/app/shell/PlayChrome.tsx`) has two steps, `pads` and `exit`; the `layout` and `open` steps are gone, and the defaults of `usePlayLayout` and `usePlayOpen` stand until changed in Settings (#94).
+- Enter on a `PadsChooser` tile inside the tip chooses it and goes to `exit`; a click (a pad's A) chooses it and focuses Continue.
+
 ## 0.7.10
 
 The first WittyPlay update since 0.7.2, with everything from the versions in between.

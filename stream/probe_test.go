@@ -6,6 +6,7 @@ package stream
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -134,5 +135,27 @@ func TestProbeJunkOutput(t *testing.T) {
 func TestExitDetail(t *testing.T) {
 	if exitDetail(errors.New("nope")) != "" {
 		t.Error("only an exit status has a detail")
+	}
+}
+
+// The graphics card check, through the real runner and the real sandbox, on whatever this machine
+// has: CI's have no graphics card. It must answer cleanly, a card or "none" and why, never a
+// runner that couldn't check. Several times, as the crash it guards against came on half the
+// checks under WSL.
+func TestProbeGPUAnswersCleanly(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		t.Skip("a Mac's check makes a window server connection CI's runners may not have")
+	}
+	runner := buildProbeRunner(t)
+	log := slog.New(slog.DiscardHandler)
+	for i := range 5 {
+		p := ProbeGPU(runner, filepath.Join(t.TempDir(), "probe"), log)
+		if strings.Contains(p.Error, "could not check") || p.Again {
+			t.Fatalf("check %d: %+v", i+1, p)
+		}
+		if p.Name == "" && p.Error == "" {
+			t.Fatalf("check %d said nothing: %+v", i+1, p)
+		}
+		t.Logf("check %d: card %q, none %q, vulkan %q", i+1, p.Name, p.Error, p.Vulkan)
 	}
 }

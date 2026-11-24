@@ -50,10 +50,27 @@ func ProbeGPU(runner, dir string, log *slog.Logger) GPUProbe {
 	prepareSandbox(cmd, dir, log)
 	defer sandboxStarted(cmd)
 	if err := cmd.Run(); err != nil {
+		// An answer given in full stands, however the runner ended after it: a graphics driver
+		// that crashed on the way out (Mesa's D3D12 under WSL did, on half the checks) said
+		// nothing about the card, and throwing the answer away cost the server its card.
+		if p, ok := answeredAnyway(out.String()); ok {
+			log.Warn("checking for a graphics card: the runner answered, then ended badly", "err", err, "stderr", truncate(errOut.String(), 500))
+			return p
+		}
 		log.Warn("checking for a graphics card", "err", err, "stderr", truncate(errOut.String(), 500))
 		return GPUProbe{Error: "the runner could not check: " + err.Error(), Again: true}
 	}
 	return parseGPUProbe(out.String())
+}
+
+// answeredAnyway is what a runner that ended badly had already said, if it said all of it: a
+// card, or "none: " and why.
+func answeredAnyway(said string) (GPUProbe, bool) {
+	p := parseGPUProbe(said)
+	if p.Name != "" || (p.Error != "" && strings.HasPrefix(strings.TrimSpace(said), "none: ")) {
+		return p, true
+	}
+	return GPUProbe{}, false
 }
 
 // parseGPUProbe reads what the runner said: "gpu: <name>" and what it knows about the card on

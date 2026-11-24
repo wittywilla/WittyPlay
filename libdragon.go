@@ -57,8 +57,9 @@ func IsLibdragon(path string) bool {
 	return bytes.Contains(head, libdragonMark)
 }
 
-// LibdragonOptions are what ParaLLEl N64 takes to run such a game. Nothing here needs a graphics
-// card. The cached interpreter takes about twice the CPU of the recompiler (12 seconds against 7
+// LibdragonOptions are what ParaLLEl N64 takes to run such a game with no graphics card. Nothing
+// here needs one, but this core's angrylion doesn't draw libdragon's games: they stay black. On a
+// graphics card they get parallel-RDP instead (stream/forgame.go). The cached interpreter takes about twice the CPU of the recompiler (12 seconds against 7
 // in 20 of a test suite's menus), and is what shows a game's own error where the recompiler
 // shows a black screen for good. cxd4 is in every build of this core.
 func LibdragonOptions() map[string]string {

@@ -247,13 +247,14 @@ type GPUInfo struct {
 }
 
 // ProbeGPU makes an OpenGL context the way a game would and describes the graphics card
-// behind it, or says why there isn't one.
+// behind it, or says why there isn't one. The context is left as it is: the runner ends as
+// soon as it has answered, and tearing the context down first raced the driver's own threads
+// (Mesa's D3D12 driver under WSL crashed the runner on half its probes, after it had answered).
 func ProbeGPU() (GPUInfo, error) {
 	o, err := newGLOut(glRequest{major: 3, minor: 3, core: true}, false, false, false)
 	if err != nil {
 		return GPUInfo{}, err
 	}
-	defer o.destroy()
 	f := &o.f
 	vk, vkErr := vkProbe()
 	if vkErr != nil {

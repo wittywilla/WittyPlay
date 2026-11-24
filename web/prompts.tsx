@@ -14,7 +14,8 @@ export type { PadFamily }
 export type InputKind = 'pad' | 'keyboard' | 'remote' | 'pointer'
 export type PromptButton = 'confirm' | 'back' | 'west' | 'north' | 'lb' | 'rb' | 'lt' | 'rt' | 'start' | 'select' | 'dpad' | 'stick'
 
-const isTV = () => (window.matchMedia?.('(pointer: none)').matches ?? false) || /\b(TV|AFT[A-Z]*|BRAVIA|GoogleTV|SmartTV|CrKey|Tizen|Web0S)\b/.test(navigator.userAgent)
+// A television, or the server's TV mode on any screen (html.tv-mode): remote words, never a computer's keys.
+const isTV = () => document.documentElement.classList.contains('tv-mode') || (window.matchMedia?.('(pointer: none)').matches ?? false) || /\b(TV|AFT[A-Z]*|BRAVIA|GoogleTV|SmartTV|CrKey|Tizen|Web0S)\b/.test(navigator.userAgent)
 
 type State = { kind: InputKind; family: PadFamily }
 let state: State = { kind: 'pointer', family: 'generic' }

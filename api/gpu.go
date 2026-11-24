@@ -207,7 +207,8 @@ func cpuDrawingOn(id, goos string) map[string]string {
 
 // softwareNotice is the speed caveat for a game the processor draws, shown before it starts and
 // when it does.
-const softwareNotice = "This server has no graphics card games can use, so its processor draws this game instead, at the console's own resolution. It may run slower than on a server with a card, and keeps several processor cores busy while it plays."
+// Short: apps show it on a phone's start screen.
+const softwareNotice = "No graphics card on this server, so its processor draws this game. It may run slower."
 
 // cardFaults are cores whose drawing on a graphics card goes wrong on a system, as seen with real
 // games, so that there they're drawn by the processor even where the runner can use a card. On a
@@ -309,4 +310,12 @@ func allOfferedNeedCard(console *wittyplay.Console) bool {
 		}
 	}
 	return true
+}
+
+// vulkanCard says whether the card check named a graphics card cores can draw on with Vulkan. A
+// check that failed (under WSL the runner can't make one, and it's asked again for ever), one not
+// finished yet, or one that found only the processor's Vulkan is a no.
+func vulkanCard(p stream.GPUProbe) bool {
+	v := strings.TrimSpace(p.Vulkan)
+	return v != "" && !strings.HasPrefix(v, "none")
 }

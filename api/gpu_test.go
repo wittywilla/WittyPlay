@@ -174,3 +174,23 @@ func TestDolphinWithNoCardOnlyOnLinux(t *testing.T) {
 		t.Errorf("PPSSPP draws without OpenGL: %v", got)
 	}
 }
+
+// A libdragon game is offered Vulkan only where the card check named a Vulkan card: under WSL the
+// check fails and is asked again for ever, and parallel-RDP there crashed the game.
+func TestVulkanCardIsWhatTheCheckFound(t *testing.T) {
+	for _, c := range []struct {
+		p    stream.GPUProbe
+		want bool
+	}{
+		{stream.GPUProbe{Name: "RTX", Vulkan: "NVIDIA GeForce RTX 3070 Laptop GPU"}, true},
+		{stream.GPUProbe{Checking: true}, false},
+		{stream.GPUProbe{Checking: true, Vulkan: "NVIDIA GeForce RTX 3070 Laptop GPU"}, true},
+		{stream.GPUProbe{Name: "RTX", Vulkan: "none: Vulkan here is only the processor's"}, false},
+		{stream.GPUProbe{Error: "the runner could not check: signal: segmentation fault"}, false},
+		{stream.GPUProbe{Name: "D3D12"}, false},
+	} {
+		if got := vulkanCard(c.p); got != c.want {
+			t.Errorf("%+v: %v", c.p, got)
+		}
+	}
+}

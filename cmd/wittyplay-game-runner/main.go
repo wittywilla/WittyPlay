@@ -110,7 +110,10 @@ func main() {
 				fmt.Fprintln(out, "vram-mb:", info.VRAMMB)
 			}
 			fmt.Fprintln(out, "vulkan:", info.Vulkan)
-			return
+			// Straight out, with the graphics driver as it is: nothing is left to tidy, and the
+			// driver's threads are stopped with the process rather than racing a teardown.
+			_ = out.Sync()
+			os.Exit(0)
 		}
 		runErr = host.Run(os.Stdin, out, func(l ipc.Load, h engine.Handlers) (engine.Engine, error) {
 			if l.Core == ipc.TestCore {

@@ -12,13 +12,16 @@ import { useUserPref } from '@wms/app/ui/userPrefs'
 import { GameTitleSample } from '../pages/games/GameName'
 import { GAME_TITLE_CHOICES, type GameTitlePref } from '../pages/games/titles'
 import { useGameTitlePref } from '../pages/games/useGameTitles'
-import { moveTab, PLAY_TABS, PLAY_TABS_KEY, tabsPref, type PlayTabsPref, isPlayPads, layoutOf, padsFor, PLAY_KEYS, PLAY_LAYOUT_KEY, PLAY_LAYOUTS, PLAY_PADS, PLAY_PADS_KEY, swapFor, type PlayLayout, type PlayPads, openOf, PLAY_OPEN_KEY, PLAY_OPENS, type PlayOpen } from './playPaths'
+import { moveTab, PLAY_TABS, PLAY_TABS_KEY, tabsPref, type PlayTabsPref, isPlayPads, layoutOf, padsFor, PLAY_KEYS, PLAY_REMOTE, onTv, padsLabel, PLAY_LAYOUT_KEY, PLAY_LAYOUTS, PLAY_PADS, PLAY_PADS_KEY, swapFor, type PlayLayout, type PlayPads, openOf, PLAY_OPEN_KEY, PLAY_OPENS, type PlayOpen } from './playPaths'
 
 // By position: A at the bottom, B on the right, X on the left, Y at the top. Nintendo's letters for those places are the pad's own.
 const PLACE: Record<GlyphKey, PromptButton> = { a: 'confirm', b: 'back', x: 'west', y: 'north' }
 
 export function PlayGlyph({ pads, g }: { pads: PlayPads; g: GlyphKey }) {
-  if (pads === 'keyboard') return <kbd className="gm-glyph key">{PLAY_KEYS[g]}</kbd>
+  if (pads === 'keyboard') {
+    const cap = onTv() ? PLAY_REMOTE[g] : PLAY_KEYS[g]
+    return cap ? <kbd className="gm-glyph key">{cap}</kbd> : null
+  }
   return <PadGlyph button={PLACE[g]} family={pads} />
 }
 
@@ -44,7 +47,7 @@ export function PadsChooser({ value, onChange, labelledBy }: { value: PlayPads; 
       {PLAY_PADS.map((p) => (
         <button key={p.id} type="button" role="radio" aria-checked={p.id === value} className={'wplay-pad' + (p.id === value ? ' on' : '')} onClick={() => onChange(p.id)} data-pads={p.id}>
           <span className="wplay-pad-glyphs" aria-hidden="true">{(['y', 'x', 'b', 'a'] as GlyphKey[]).map((g) => <span key={g} className={'at-' + g}><PlayGlyph pads={p.id} g={g} /></span>)}</span>
-          <span className="wplay-pad-text"><b>{p.label}</b><span>{p.note}</span></span>
+          <span className="wplay-pad-text"><b>{padsLabel(p).label}</b><span>{padsLabel(p).note}</span></span>
         </button>
       ))}
     </div>

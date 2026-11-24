@@ -7,7 +7,8 @@
 import { useEffect, useId, useState } from 'react'
 import { api } from '@wms/app/api'
 import { useApp } from '@wms/app/state'
-import { ask, Notice, Switch } from '@wms/app/ui/index'
+import { ask, Notice } from '@wms/app/ui/index'
+import { SwitchRow } from './SwitchRow'
 import './settings.css'
 
 type ConsolePhotosState = { enabled: boolean; cutout: boolean; notice: string; wikidata: boolean }
@@ -41,15 +42,10 @@ export function ConsolePhotosSetting({ heading = 'h2' }: { heading?: 'h2' | 'h3'
     <section className="wplay-photos" id="console-photos" aria-labelledby={id}>
       <H id={id}>Console photos from Wikimedia</H>
       {s && <Notice tone="info" title="What this fetches, from where, and the licence">{s.notice}</Notice>}
-      <div className="wplay-photos-switch">
-        <span id={id + 's'}>Download console photos from Wikimedia</span>
-        <Switch checked={!!s?.enabled} disabled={busy || !s} labelledBy={id + 's'} onChange={(on) => void put(on)} />
-      </div>
+      <SwitchRow name="Download console photos from Wikimedia" checked={!!s?.enabled} disabled={busy || !s} onChange={(on) => void put(on)} />
       {s?.enabled && (
-        <div className="wplay-photos-switch">
-          <span id={id + 'c'}>Remove plain backgrounds<span className="muted"> · Takes away the plain white most photos are shot on, so the console stands on WittyPlay’s own background. The credit says so.</span></span>
-          <Switch checked={s.cutout} disabled={busy} labelledBy={id + 'c'} onChange={(on) => void cutout(on)} />
-        </div>
+        <SwitchRow name="Remove plain backgrounds" checked={s.cutout} disabled={busy} onChange={(on) => void cutout(on)}
+          more="Takes away the plain white most photos are shot on, so the console stands on WittyPlay’s own background. The credit says so." />
       )}
       {s?.enabled && !s.wikidata && <p className="muted">Console photos are found through Wikidata, which is off in Settings, Game metadata, so none are fetched until it’s on again.</p>}
       {said && <p role="status">{said}</p>}
@@ -61,3 +57,4 @@ export function ConsolePhotosSetting({ heading = 'h2' }: { heading?: 'h2' | 'h3'
 export default function ConsolePhotos() {
   return <ConsolePhotosSetting />
 }
+
