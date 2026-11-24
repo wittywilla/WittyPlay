@@ -429,7 +429,7 @@
 .wp-screen { --wp-accent: var(--accent, #7c9cff); --wp-accent-fg: var(--accent-fg, #0b1020); --wp-panel: var(--bg-2, #171a22); --wp-fg: var(--fg, #f2f4f8); --wp-muted: var(--fg-2, #a9b1c0); --wp-line: var(--control-line, var(--border-strong, rgba(127, 127, 127, .4))); --wps-gutter: 4px; display: flex; flex-direction: column; gap: var(--sp-4, 16px); min-width: 0; max-width: 72rem; container-type: inline-size; }
 .wp-screen-body { display: flex; flex-direction: column; gap: var(--sp-4, 16px); min-width: 0; }
 .wp-screen-panel { display: flex; flex-direction: column; gap: var(--sp-4, 16px); min-width: 0; }
-.wp-screen-preview { display: flex; flex-direction: column; gap: var(--sp-2, 8px); position: sticky; top: var(--wp-screen-top, var(--topbar-h, 0px)); z-index: 1; background: var(--bg, transparent); padding-block: var(--sp-1, 4px); }
+.wp-screen-preview { display: flex; flex-direction: column; gap: var(--sp-2, 8px); position: sticky; top: var(--wp-screen-top, var(--bar-space, var(--topbar-h, 0px))); z-index: 1; background: var(--bg, transparent); padding-block: var(--sp-1, 4px); }
 .wp-screen .wp-section { gap: 0; padding: var(--sp-2, 8px) var(--sp-4, 16px); background: var(--bg-2, #171a22); border: 1px solid var(--border, rgba(127, 127, 127, .2)); border-radius: var(--r-lg, 12px); }
 .wp-screen .wp-section > h3 { margin: var(--sp-2, 8px) 0 var(--sp-1, 4px); font-size: var(--text-lg, 17px); font-weight: 650; }
 .wp-screen .wp-setting { min-height: 3.25rem; padding-block: var(--sp-2, 8px); }
