@@ -7,6 +7,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ### What's fixed
 
+- **Nothing on the Games pages slides under the top bar.** A game's backdrop, a section a link jumps to, the on-screen keyboard's side panel and the screen preview sit below the bar however tall it is, the floating glass bar included, using the room the bar measures (`--bar-space`) instead of a fixed height. Older servers keep the old numbers.
 - **Settings pages on the server look as the server draws them** (#121). WittyPlay's bundle carried an old copy of the
   server's settings stylesheet, and once WittyPlay was installed it restyled every Settings page, core ones too: each
   page's title and lead sat off to one side of what was under them, and the settings menu slid under the top bar. The
