@@ -13,7 +13,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 ### Developer notes
 
 - `stream.behindBridge`: in a container (`WMS_DOCKER=1`, `/.dockerenv` or `/run/.containerenv`) that sees no `docker0`. There, `Modes` leaves WebRTC out unless `gamingPublicIp` and `gamingUdpPort` are both set, and the log says so once at start.
-- `ServeStream` accepts any Origin (`InsecureSkipVerify`): the server refuses a cross-origin upgrade before passing it on (`passToModule`), and the helper refuses `Sec-Fetch-Site: cross-site`/`same-site` and `Origin: null` itself.
+- `ServeStream` checks the Origin itself (`sameOrigin`) in place of coder/websocket's check against the helper's own Host: the browser's `Sec-Fetch-Site` decides when it's there; otherwise the Origin must name `X-Witty-Reached`, the Host the browser reached the server by, which every 0.8 server sets and strips from what browsers send. With no such header, the Origin must name this Host, as before. Every 0.8 server also refuses cross-origin upgrades before passing them on (`passToModule`).
 - `stream.NoPictureError`: `startOn` refuses a libdragon game with no Vulkan card; `POST /games/{id}/play` answers 409 with `needsGpu`, like a core that needs a card, and doesn't call `CoreStartFailed`.
 - web/transport.ts: `video.play()` isn't awaited before the first-picture timer; `connectionFails` ends the WebRTC try when the connection or ICE state is `failed`.
 - Tests: stream/docker_test.go (a WebSocket through the server's proxy, modes behind a bridge). The server's scripts/test/docker-games.sh plays two real cores in its image in CI.
