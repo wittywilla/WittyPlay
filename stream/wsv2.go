@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -179,11 +181,11 @@ func (s *Session) clock90k(unixNano int64) uint32 {
 // ServeStream is the stream's WebSocket: the hello comes first, as text, and the stream's
 // description goes back. away is the server's word on where the device is.
 func (s *Session) ServeStream(w http.ResponseWriter, r *http.Request, away bool) {
-	// The server passes this on with its own address to the helper as the Host, so the library's
-	// own check (Origin's host against Host) refused every browser, and the WebSocket fallback
-	// never worked: in Docker, where WebRTC can't get through, no game showed at all. The browser
-	// still says where the page came from, and a page on another site is refused here.
-	if crossSite(r) {
+	// The server passes this on with the helper's own address as the Host, so the library's own check
+	// (Origin against Host) refused every browser, and the WebSocket fallback never worked: in Docker,
+	// where WebRTC can't get through, no game showed at all. sameOrigin checks the page against the
+	// address the browser reached the server by, which every 0.8 server sets in X-Witty-Reached.
+	if !sameOrigin(r) {
 		http.Error(w, "cross-site request refused", http.StatusForbidden)
 		return
 	}
@@ -378,12 +380,31 @@ func latencyNamed(name string) LatencyMode {
 	return LatencyFastest
 }
 
-// crossSite is a browser saying the page that opened this WebSocket is on another site. Apps send
-// no Origin, and a browser on the server's own page says same-origin.
-func crossSite(r *http.Request) bool {
+// ReachedHeader is the Host the browser reached the server by. The server sets it on every
+// signed-in request it passes on (from 0.8.0), and drops any the browser sent under that name.
+const ReachedHeader = "X-Witty-Reached"
+
+// sameOrigin: the page that opened this WebSocket is the server's own, or it isn't a browser (an
+// app sends no Origin). The browser's own Sec-Fetch-Site, which a page can't set, decides when
+// it's there; otherwise Origin has to name the address the server was reached by (or this
+// Host, reached directly). With neither, a browser's request is refused.
+func sameOrigin(r *http.Request) bool {
 	switch r.Header.Get("Sec-Fetch-Site") {
+	case "same-origin":
+		return true
 	case "cross-site", "same-site":
+		return false
+	}
+	o := r.Header.Get("Origin")
+	if o == "" {
 		return true
 	}
-	return r.Header.Get("Origin") == "null"
+	u, err := url.Parse(o)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	if reached := r.Header.Get(ReachedHeader); reached != "" {
+		return strings.EqualFold(u.Host, reached)
+	}
+	return strings.EqualFold(u.Host, r.Host)
 }
