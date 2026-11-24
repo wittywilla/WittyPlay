@@ -106,6 +106,9 @@
 .wps h3 { margin: 0; font-size: var(--text-lg, 17px); font-weight: 650; }
 .wps-head { display: flex; align-items: center; gap: var(--sp-3, 12px); }
 .wps-head { position: sticky; top: 0; z-index: 3; margin-top: calc(-1 * var(--sp-4, 16px)); padding-block: var(--sp-4, 16px) var(--sp-2, 8px); background: var(--bg, #0d0f14); }
+/* On the Controllers page (Settings, Controllers) the app's top bar is above it: the heading stays below the bar, not
+   under it (WittyMediaServer #678). In a game there's no bar, and it stays at the top. */
+.wp-page .wps-head { top: var(--bar-space, var(--topbar-h, 0px)); }
 .wps-title { flex: 1; min-width: 0; margin: 0; font-size: var(--page-title, 1.75rem); letter-spacing: var(--tracking-display, normal); overflow-wrap: anywhere; }
 .wps-title .wp-muted { font-size: var(--text-md, 1rem); font-weight: 400; letter-spacing: normal; }
 @media (max-width: 600px) { .wps-title { font-size: var(--text-xl, 1.25rem); } }
