@@ -3,6 +3,20 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.21
+
+### What's fixed
+
+- **The pause menu's top is no longer cut off.** Its bar (Back and ×) is held at the top as the menu scrolls, pulled up over the menu's margin. The browser held it below that margin instead, so it covered the top of what came next: the game's name, by 17 pixels on a phone held sideways and a few on one held upright. It now sits at the very top on phones, TVs and computers, and a menu taller than the screen starts at its top rather than centred with its top out of reach. Every panel with that bar (settings, saves, controllers) had the same overlap.
+- **Why games can't use the graphics chip, said in a way that can be acted on.** In Docker, "no usable graphics card" now says which: no graphics device was passed into the container (add `/dev/dri` under `devices:`), the container's user can't open `/dev/dri/renderD128` (with the group number to put under `group_add:`), or the image has no OpenGL library (pull a newer one). Before, every one of these read "no OpenGL library (libEGL) is installed", or just "no graphics card".
+- **The note for a game drawn on the processor reads as what it is.** "Playing on the server's processor, as it has no graphics card games can use. It may run a little slower." It was read as an error ("No graphics card on this server…"), though the game plays.
+
+### Developer notes
+
+- web/play.css: each `.wp-sheet-bar` rule that pulls the bar up with a negative top margin sets `top` to the same value (`-18px`, `calc(-1 * clamp(18px, 2vw, 32px))`, and the two `.wp-big` ones with the safe-area inset). A sticky box sticks inside its scroller's padding, so `top: 0` pushed it back down. `.wp-big .wp-menu` centres with `justify-content: safe center`.
+- api/renderdev_linux.go: `renderNodeReason` (no render node in a container; a render node this user can't open, with its group); `explainMissing` puts it, or the old image's missing libEGL, in place of the probe's own words in `GPUMissing`.
+- The server image gets Mesa's EGL, OpenGL and Vulkan drivers in WittyMediaServer 0.8.5-alpha (Dockerfile); without libEGL the probe found no card even with `/dev/dri` passed.
+
 ## 0.7.20
 
 ### Security

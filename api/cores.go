@@ -211,6 +211,11 @@ func handleGaming(a *App, w http.ResponseWriter, r *http.Request) {
 	}
 	views := a.gamingConsoles(ctx, host.For(r))
 	systemDir := a.SystemDir()
+	// The card as the page shows it: a check that found none says why in words that can be acted on.
+	gpu := a.GPUStatus(ctx)
+	if gpu.Name == "" && gpu.Error != "" {
+		gpu.Error = explainMissing(plainGPUReason(gpu.Error))
+	}
 	var unpacked int64
 	if unpackedCache != nil {
 		if c := unpackedCache(a); c != nil {
@@ -219,7 +224,7 @@ func handleGaming(a *App, w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, 200, map[string]any{
 		"runner": runnerName, "encoders": enc, "consoles": views, "cores": a.Cores().List(), "canDownload": cores.CanDownload(),
-		"coresDir": a.Cores().Dir, "systemDir": systemDir, "running": rpc.Mgr.Count(), "unpackedBytes": unpacked, "gpu": a.GPUStatus(ctx), "biosFolder": wittyplay.BIOSFolderName,
+		"coresDir": a.Cores().Dir, "systemDir": systemDir, "running": rpc.Mgr.Count(), "unpackedBytes": unpacked, "gpu": gpu, "biosFolder": wittyplay.BIOSFolderName,
 	})
 }
 
