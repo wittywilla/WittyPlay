@@ -13,6 +13,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
   copy is gone: WittyPlay's settings pages use the server's own, and only WittyPlay's console photos switch is styled
   here. A test (`web/hostcss.test.mjs`) fails on any rule of this module's for the server's Settings frame.
 - **Settings, Controllers keeps its heading below the top bar** as the page scrolls, not under it (#121).
+- **Settings, Games keeps its picture preview below the top bar** as the page scrolls, in every layout, not 2 to 25 pixels under a taller bar (#121).
 
 ### Docs
 
@@ -20,7 +21,7 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ### Developer notes
 
-- web/app/pages/settings/settings.css keeps only the `.wplay-photos*` rules; the rest was a copy of the server's own. web/play.css: `.wp-page .wps-head` sticks at `var(--bar-space, var(--topbar-h, 0px))`, the top bar's measured height.
+- web/app/pages/settings/settings.css keeps only the `.wplay-photos*` rules; the rest was a copy of the server's own. web/play.css: `.wp-page .wps-head`, and `.wp-screen-preview` when nothing sets `--wp-screen-top`, stick at `var(--bar-space, var(--topbar-h, 0px))`, the top bar's measured height.
 - web/hostcss.test.mjs, run by `npm test`, fails on a rule for `.set-shell`, `.set-nav`, `.set-main`, `.set-head`, `.set-toc`, `.set-card`, `.set-back`, `.set-help` or `.sm-*` that isn't scoped inside one of WittyPlay's own classes.
 
 ## 0.7.21
