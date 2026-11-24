@@ -3,6 +3,12 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.20
+
+### Security
+
+- **Libraries with known problems are updated.** Six advisories that govulncheck reported as reachable from WittyPlay's code are fixed by newer versions: the 7-Zip unpacker's Brotli and XZ decoders (`andybalholm/brotli` 1.2.7, `ulikunitz/xz` 0.5.15), `klauspost/compress` 1.20.2, `golang.org/x/net` 0.56.0, and the Docker client's tracing library (`go.opentelemetry.io/otel` 1.47.0). The sixth, in Go's own `net/http`, is fixed by building with Go 1.27.4 or later, which releases already use. Nothing else changes.
+
 ## 0.7.19
 
 ### What's fixed
