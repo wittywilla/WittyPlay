@@ -26,12 +26,13 @@ func forThisGame(opt Options) Options {
 		opt.CoreOptions = withFixed(opt.CoreOptions, opt.fixedOptions)
 		return opt
 	}
-	// No Vulkan card: this core's angrylion leaves these games black, so say that plainly at the
-	// start, and only that: the usual "the processor draws this game" note would promise a picture.
-	opt.Notices = []string{libdragonNoCardNotice}
+	// No Vulkan card: this core's angrylion leaves these games black, so the game isn't started and
+	// the player says why, rather than a black screen and a note gone in a few seconds.
+	opt.noPicture = libdragonNoCardNotice
 	if opt.GPU {
-		opt.Notices = []string{libdragonNoVulkanNotice}
+		opt.noPicture = libdragonNoVulkanNotice
 	}
+	opt.Notices = []string{opt.noPicture}
 	opt.GPU = false
 	opt.fixedOptions = wittyplay.LibdragonOptions()
 	opt.CoreOptions = withFixed(opt.CoreOptions, opt.fixedOptions)
@@ -70,3 +71,9 @@ const libdragonNoCardNotice = "This game needs a graphics card on the server to 
 
 // libdragonNoVulkanNotice is that note for a server with a card that can't draw with Vulkan.
 const libdragonNoVulkanNotice = "This game needs a graphics card with Vulkan on the server to show a picture."
+
+// NoPictureError is a game nothing on this server can draw: said to the person as it is, and
+// never counted against the core, which plays its other games.
+type NoPictureError struct{ Text string }
+
+func (e *NoPictureError) Error() string { return e.Text }

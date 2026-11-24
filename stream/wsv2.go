@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -179,7 +181,15 @@ func (s *Session) clock90k(unixNano int64) uint32 {
 // ServeStream is the stream's WebSocket: the hello comes first, as text, and the stream's
 // description goes back. away is the server's word on where the device is.
 func (s *Session) ServeStream(w http.ResponseWriter, r *http.Request, away bool) {
-	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{CompressionMode: websocket.CompressionDisabled})
+	// The server passes this on with the helper's own address as the Host, so the library's own check
+	// (Origin against Host) refused every browser, and the WebSocket fallback never worked: in Docker,
+	// where WebRTC can't get through, no game showed at all. sameOrigin checks the page against the
+	// address the browser reached the server by, which every 0.8 server sets in X-Witty-Reached.
+	if !sameOrigin(r) {
+		http.Error(w, "cross-site request refused", http.StatusForbidden)
+		return
+	}
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{CompressionMode: websocket.CompressionDisabled, InsecureSkipVerify: true})
 	if err != nil {
 		return
 	}
@@ -368,4 +378,33 @@ func latencyNamed(name string) LatencyMode {
 		return LatencySteady
 	}
 	return LatencyFastest
+}
+
+// ReachedHeader is the Host the browser reached the server by. The server sets it on every
+// signed-in request it passes on (from 0.8.0), and drops any the browser sent under that name.
+const ReachedHeader = "X-Witty-Reached"
+
+// sameOrigin: the page that opened this WebSocket is the server's own, or it isn't a browser (an
+// app sends no Origin). The browser's own Sec-Fetch-Site, which a page can't set, decides when
+// it's there; otherwise Origin has to name the address the server was reached by (or this
+// Host, reached directly). With neither, a browser's request is refused.
+func sameOrigin(r *http.Request) bool {
+	switch r.Header.Get("Sec-Fetch-Site") {
+	case "same-origin":
+		return true
+	case "cross-site", "same-site":
+		return false
+	}
+	o := r.Header.Get("Origin")
+	if o == "" {
+		return true
+	}
+	u, err := url.Parse(o)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	if reached := r.Header.Get(ReachedHeader); reached != "" {
+		return strings.EqualFold(u.Host, reached)
+	}
+	return strings.EqualFold(u.Host, r.Host)
 }

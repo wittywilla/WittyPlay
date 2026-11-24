@@ -92,7 +92,9 @@ type Options struct {
 	Stamp         bool                                   // draw numbers into each picture, for measuring: wittyplay-probe
 
 	fixedOptions map[string]string // what this game can't run without, whatever a setting says
-	keep         *keptCleanup
+	// noPicture: nothing here can draw this game, and this says why. It isn't started.
+	noPicture string
+	keep      *keptCleanup
 }
 
 // CoreChoice is a core and the settings it starts with.
@@ -290,6 +292,12 @@ func (m *Manager) Start(opt Options) (*Session, error) {
 // unpacked game in place for the next. The id is the session that was tried, for the log, or "".
 func (m *Manager) startOn(opt Options, moreToTry bool) (*Session, string, error) {
 	opt = forThisGame(opt)
+	if opt.noPicture != "" {
+		if !moreToTry && opt.Cleanup != nil {
+			opt.Cleanup()
+		}
+		return nil, "", &NoPictureError{Text: opt.noPicture}
+	}
 	coreID := opt.CoreID
 	if coreID == "" {
 		coreID = opt.Core
