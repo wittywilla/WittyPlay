@@ -4,6 +4,7 @@
 package stream
 
 import (
+	"errors"
 	"maps"
 	"os"
 	"path/filepath"
@@ -116,5 +117,20 @@ func TestSettingsCannotUndoWhatAGameNeeds(t *testing.T) {
 	mine := map[string]string{"x": "y"}
 	if !maps.Equal(withFixed(mine, nil), mine) {
 		t.Error("nothing fixed changed something")
+	}
+}
+
+// With no card nothing here draws a libdragon game, so it isn't started to show black: the start
+// is refused with the reason, which the player shows with a way back.
+func TestNoCardLibdragonGameIsRefused(t *testing.T) {
+	m := NewManager(Config{MaxSessions: 2, HaveEncoder: func(string) bool { return true }})
+	_, _, err := m.startOn(Options{Console: "n64", CoreID: wittyplay.LibdragonCore, ROM: n64File(t, "Libdragon IPL3")}, false)
+	var np *NoPictureError
+	if !errors.As(err, &np) || np.Text != libdragonNoCardNotice {
+		t.Fatalf("no card: %v", err)
+	}
+	_, _, err = m.startOn(Options{Console: "n64", CoreID: wittyplay.LibdragonCore, ROM: n64File(t, "Libdragon IPL3"), GPU: true, RunnerArgs: []string{"-gpu"}}, false)
+	if !errors.As(err, &np) || np.Text != libdragonNoVulkanNotice {
+		t.Fatalf("a card with no Vulkan: %v", err)
 	}
 }
