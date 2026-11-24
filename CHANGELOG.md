@@ -3,6 +3,22 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.22
+
+### What's fixed
+
+- **Settings pages on the server look as the server draws them** (#121). WittyPlay's bundle carried an old copy of the
+  server's settings stylesheet, and once WittyPlay was installed it restyled every Settings page, core ones too: each
+  page's title and lead sat off to one side of what was under them, and the settings menu slid under the top bar. The
+  copy is gone: WittyPlay's settings pages use the server's own, and only WittyPlay's console photos switch is styled
+  here. A test (`web/hostcss.test.mjs`) fails on any rule of this module's for the server's Settings frame.
+- **Settings, Controllers keeps its heading below the top bar** as the page scrolls, not under it (#121).
+
+### Developer notes
+
+- web/app/pages/settings/settings.css keeps only the `.wplay-photos*` rules; the rest was a copy of the server's own. web/play.css: `.wp-page .wps-head` sticks at `var(--bar-space, var(--topbar-h, 0px))`, the top bar's measured height.
+- web/hostcss.test.mjs, run by `npm test`, fails on a rule for `.set-shell`, `.set-nav`, `.set-main`, `.set-head`, `.set-toc`, `.set-card`, `.set-back`, `.set-help` or `.sm-*` that isn't scoped inside one of WittyPlay's own classes.
+
 ## 0.7.21
 
 ### What's fixed
@@ -27,12 +43,6 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ### What's fixed
 
-- **Settings pages on the server look as the server draws them** (#121). WittyPlay's bundle carried an old copy of the
-  server's settings stylesheet, and once WittyPlay was installed it restyled every Settings page, core ones too: each
-  page's title and lead sat off to one side of what was under them, and the settings menu slid under the top bar. The
-  copy is gone: WittyPlay's settings pages use the server's own, and only WittyPlay's console photos switch is styled
-  here. A test (`web/hostcss.test.mjs`) fails on any rule of this module's for the server's Settings frame.
-- **Settings, Controllers keeps its heading below the top bar** as the page scrolls, not under it (#121).
 - **Games play in Docker.** On a NAS or any server in Docker with its usual network, a game started but never showed anything: the player sat on "Connecting to this device…" for good. Three things went wrong. WebRTC could only offer the container's private address and a port nobody had published, so the browser could never reach it. The player waited for that connection to start playing before it started its timer, so it never gave up and never tried anything else. And the WebSocket it would have tried next was refused by WittyPlay itself, everywhere: the server passes it on with its own address, which never matched the page's. Now the WebSocket is let through (a page on another site still isn't), the player gives up on WebRTC as soon as the browser says it can't get through, or after 12 seconds at most, and on Docker's own network the game goes straight over the server's own port. For WebRTC's lower latency in Docker, publish a UDP port and set it and the server's address in Settings, Games (the server's docs/DOCKER.md says how), or use the host's network.
 - **Nintendo 64 homebrew that can't be drawn here says so, instead of a black screen.** Games built with libdragon need a graphics card with Vulkan; on a server without one (most NAS boxes) they started anyway, showed black, and said why only in a note that was gone in a few seconds. They now don't start, and the player says "This game needs a graphics card with Vulkan on the server to show a picture." (or "…a graphics card on the server…" where there's none), with Back. ParaLLEl N64 isn't counted as failing for it, and plays commercial games as before.
 
