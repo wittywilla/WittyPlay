@@ -13,6 +13,7 @@ import { useApp } from '@wms/app/state'
 import { Spinner } from '@wms/app/ui/Surface'
 import { GameArtContext, GlyphContext, RowLayoutContext } from '@wms/app/sdui/render/glyphs'
 import { useUserPref } from '@wms/app/ui/userPrefs'
+import { useChooseThenOpen } from '../useChooseThenOpen'
 import { playGamePath } from '../shell/playPaths'
 import { GameReviewBanner } from './GameReview'
 import { PlayTabsRow } from './PlayConsoles'
@@ -51,7 +52,7 @@ export function PanelSwitch() {
 function GamePanel({ shown }: { shown: Shown | null }) {
   const art = useContext(GameArtContext)
   const glyph = useContext(GlyphContext)
-  if (!shown) return <aside className="sdui-detail wpl-panel" aria-live="polite"><p className="wpl-panel-empty">Point at a game, or move to one, to see it here.</p></aside>
+  if (!shown) return <aside className="sdui-detail wpl-panel" aria-live="polite"><p className="wpl-panel-empty">Click a game, or move to one, to see it here.</p></aside>
   const { it, short } = shown
   const args = { itemId: String(it.id), console: short || it.console || '', image: it.poster ? posterUrl(it) : '', title: it.title }
   const title = (
@@ -80,14 +81,14 @@ function GamePanel({ shown }: { shown: Shown | null }) {
 function GameTile({ it, short }: { it: Item; short: string }) {
   const art = useContext(GameArtContext)
   const panel = useContext(PickContext)
-  const pressedChosen = useRef(false)
+  const press = useChooseThenOpen()
   const image = it.poster ? posterUrl(it) : ''
   const drawn = art?.art({ itemId: String(it.id), console: short || it.console || '', image, title: it.title })
   const show = panel ? () => panel.pick({ it, short }) : undefined
   return (
     <Link className="wpl-game" to={playGamePath(it.id)} aria-label={it.title + (it.year ? `, ${it.year}` : '')} onFocus={show}
-      onPointerDown={panel ? () => { pressedChosen.current = panel.chosen === it.id } : undefined}
-      onClick={panel ? (e) => { if (e.detail === 1 && !pressedChosen.current) { e.preventDefault(); show?.() } pressedChosen.current = false } : undefined}>
+      onPointerDown={panel ? () => press.press(panel.chosen === it.id) : undefined}
+      onClick={panel ? (e) => { if (!press.opens(e.detail)) { e.preventDefault(); show?.() } } : undefined}>
       <span className="wpl-game-art">{drawn ?? (image ? <img src={image} alt="" loading="lazy" /> : <span className="wpl-game-blank">{it.title}</span>)}</span>
       <span className="wpl-game-name">{it.title}</span>
     </Link>
