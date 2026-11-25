@@ -109,6 +109,11 @@
 /* On the Controllers page (Settings, Controllers) the app's top bar is above it: the heading stays below the bar, not
    under it (WittyMediaServer #678). In a game there's no bar, and it stays at the top. */
 .wp-page .wps-head { top: var(--bar-space, var(--topbar-h, 0px)); }
+/* Opened from the server's Settings menu (Controllers), the page is drawn inside Settings, beside its menu (WittyMediaServer
+   #763): a column of that page, not a layer over the whole window, and its heading stays in its place. */
+.set-opened .wp-page { position: relative; inset: auto; z-index: auto; display: block; background: none; }
+.set-opened .wps { position: static; inset: auto; padding: 0; }
+.set-opened .wps-head { position: static; margin-top: 0; padding-top: 0; background: none; }
 .wps-title { flex: 1; min-width: 0; margin: 0; font-size: var(--page-title, 1.75rem); letter-spacing: var(--tracking-display, normal); overflow-wrap: anywhere; }
 .wps-title .wp-muted { font-size: var(--text-md, 1rem); font-weight: 400; letter-spacing: normal; }
 @media (max-width: 600px) { .wps-title { font-size: var(--text-xl, 1.25rem); } }

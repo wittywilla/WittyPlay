@@ -7,11 +7,13 @@ What changed in WittyPlay, newest first. What changed before it had a repository
 
 ### What's fixed
 
+- **Settings, Controllers stays inside Settings.** Opened from the server's Settings menu, it is drawn in the page beside the menu, which stays in place, instead of covering the whole window (WittyMediaServer 0.8.6, #763). Opened any other way, it is as it was.
 - **Recent can be clicked into again, the same way as Consoles and All games.** Moving the mouse across Recent's games kept changing which one was chosen, and the chosen one grows, so the game under the pointer moved and a click landed on another. That was fixed for Consoles and All games here, and for Recent in the server (0.8.1-alpha), where a later change undid it; it's back in WittyMediaServer 0.8.6. Everywhere now, a pointer only points: a click chooses a game, and a second click, a double-click or Enter opens it, while the arrows, a remote and a pad move the choice as before.
 - **All games' details say how to choose a game:** "Click a game, or move to one", not "Point at a game".
 
 ### Developer notes
 
+- web/play.css: `.set-opened .wp-page`, `.wps` and `.wps-head` put the page in the flow of the server's Settings column (the server's `set-opened`, WittyMediaServer `pages/settings/open.ts`): not fixed over the window, no sticky heading.
 - web/app/pointerChoose.ts is the rule in one place (`clickOpens`, `pressTracker`), with `useChooseThenOpen` (web/app/useChooseThenOpen.ts) for components. Consoles and All games use it in place of their own copies, which had drifted (All games opened only on a single click of the chosen game, not on a double-click). The server's rows use the same rule (its web/src/ui/pointerChoose.ts). web/pointerChoose.test.mjs tests the rule, and fails if a grid chooses on hover.
 
 ## 0.7.22
