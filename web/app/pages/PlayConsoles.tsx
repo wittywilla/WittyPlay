@@ -27,6 +27,7 @@ import { ERA_NAMES } from './games/Shelves'
 import { GameSettingsPage } from './games/consoles'
 import GamingSettings from './settings/Gaming'
 import './games/games-ui.css'
+import { useChooseThenOpen } from '../useChooseThenOpen'
 
 const ControllersScreen = lazy(() => import('./Games').then((m) => ({ default: m.ControllersScreen })))
 
@@ -200,7 +201,7 @@ export default function PlayConsoles() {
   // console, a double-click, or Enter on it opens its games.
   const { libraries } = useApp()
   const nav = useNavigate()
-  const pressedChosen = useRef(false)
+  const press = useChooseThenOpen()
   const browse = (c: ShownConsole) => {
     const lib = libraryFor(libraries, c.id)
     if (lib && gamesOf(c) > 0 && !c.sorting) nav(`${PLAY_LIBRARY}/${lib.id}?console=${encodeURIComponent(c.id)}`)
@@ -222,8 +223,8 @@ export default function PlayConsoles() {
               {shown.map((c) => (
                 <li key={c.id}>
                   <button type="button" className={'wplay-console' + (current?.id === c.id ? ' on' : '')} aria-pressed={current?.id === c.id}
-                    onFocus={() => !phone && setAt(c.id)} onPointerDown={() => { pressedChosen.current = current?.id === c.id }}
-                    onClick={(e) => { const again = e.detail === 0 || e.detail > 1 || pressedChosen.current; pressedChosen.current = false; if (again && !phone && current?.id === c.id) browse(c); else pick(c.id, true) }}>
+                    onFocus={() => !phone && setAt(c.id)} onPointerDown={() => press.press(current?.id === c.id)}
+                    onClick={(e) => { if (press.opens(e.detail) && !phone && current?.id === c.id) browse(c); else pick(c.id, true) }}>
                     <span className="wplay-console-art"><ConsoleArt c={c} size="md" /></span>
                     <b>{c.short}</b>
                     <span className="wplay-console-count">{countWords(c)}</span>
