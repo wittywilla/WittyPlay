@@ -87,6 +87,7 @@ function GameTile({ it, short }: { it: Item; short: string }) {
   const show = panel ? () => panel.pick({ it, short }) : undefined
   return (
     <Link className="wpl-game" to={playGamePath(it.id)} aria-label={it.title + (it.year ? `, ${it.year}` : '')} onFocus={show}
+      aria-current={panel?.chosen === it.id ? 'true' : undefined}
       onPointerDown={panel ? () => press.press(panel.chosen === it.id) : undefined}
       onClick={panel ? (e) => { if (!press.opens(e.detail)) { e.preventDefault(); show?.() } } : undefined}>
       <span className="wpl-game-art">{drawn ?? (image ? <img src={image} alt="" loading="lazy" /> : <span className="wpl-game-blank">{it.title}</span>)}</span>
