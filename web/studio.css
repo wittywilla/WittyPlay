@@ -22,6 +22,9 @@
 /* ---- sections down the side ---- */
 .wsc-body { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: var(--sp-5, 20px); align-items: start; min-height: 0; padding-bottom: var(--sp-4, 16px); }
 .wsc-nav { position: sticky; top: calc(var(--page-title, 1.75rem) + 3.5rem); display: flex; flex-direction: column; gap: 2px; }
+/* Inside the server's Settings (WittyMediaServer #763) the page scrolls under the app's top bar, and the list's column is
+   only as tall as the list: held there, it was pushed up under the bar. It scrolls with the page instead. */
+.set-opened .wsc-nav { position: static; }
 .wsc-nav-item { display: flex; align-items: center; min-height: var(--control-h, 40px); padding: 0 var(--sp-3, 12px); border: 0; border-radius: var(--r-md, 8px); background: transparent; color: var(--wp-muted); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
 .wsc-nav-item:hover { background: var(--bg-3, rgba(127, 127, 127, .14)); color: var(--wp-fg); }
 .wsc-nav-item[aria-selected=true] { background: color-mix(in srgb, var(--wp-accent) 16%, transparent); color: var(--wp-fg); box-shadow: inset 3px 0 var(--wp-accent); }
