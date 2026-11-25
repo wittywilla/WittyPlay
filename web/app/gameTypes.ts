@@ -46,6 +46,8 @@ export type GameConsole = {
   // Standalone emulators set up to play it here, and the one Play starts when no core plays it.
   standaloneEmulators?: { id: string; name: string; version: string; ready: boolean; why?: string }[]; standalone?: string
   totalGames?: number
+  // The games library its games open in (the one kept for it, else the one with the most of them): see libraryFor.
+  library?: number
   // Ready, with the processor drawing its games: no graphics card here. notice is the speed caveat.
   software?: boolean; notice?: string
   // Why the processor draws (no-card: none here; card-fault: its core draws wrongly on this system's card),

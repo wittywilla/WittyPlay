@@ -674,3 +674,45 @@ func TestFilteredQuery(t *testing.T) {
 		}
 	}
 }
+
+// Two games libraries for every console, the Mega Drive's games all in the second: its Consoles card opens the second, not
+// the first (the 0.8.6 release check found it opened the first, empty for it). A library kept for a console wins, and with
+// equal counts the first library listed does.
+func TestConsoleOpensTheLibraryWithItsGames(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Witty-Host", "1")
+		enc := json.NewEncoder(w)
+		switch strings.TrimPrefix(r.URL.Path, host.Base) {
+		case "/libraries":
+			_ = enc.Encode(map[string]any{"libraries": []host.Library{{ID: 1, Name: "Games", Kind: "games", Console: "auto"}, {ID: 2, Name: "More games", Kind: "games", Console: "auto"}, {ID: 3, Name: "SNES", Kind: "games", Console: "snes"}}})
+		case "/items/counts":
+			counts := map[string]map[string]int{
+				"1": {"nes": 3, "gb": 1},
+				"2": {"genesis": 4, "gb": 1, "snes": 9},
+				"3": {"snes": 1},
+			}[r.URL.Query().Get("library")]
+			if r.URL.Query().Get("library") == "" {
+				counts = map[string]int{"nes": 3, "genesis": 4, "gb": 2, "snes": 10}
+			}
+			_ = enc.Encode(map[string]any{"counts": counts})
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	_, h := testApp(t, host.NewAt(srv.URL, "t", nil))
+	var list []ConsoleView
+	w := asWho(t, h, "GET", "/games/consoles", otherID, nil)
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &list) != nil {
+		t.Fatalf("%d %s", w.Code, w.Body)
+	}
+	want := map[string]int64{"nes": 1, "genesis": 2, "gb": 1, "snes": 3}
+	for _, c := range list {
+		if w, ok := want[c.ID]; ok && c.Library != w {
+			t.Errorf("%s opens library %d, want %d", c.ID, c.Library, w)
+		}
+		if c.ID == "genesis" && c.TotalGames != 4 {
+			t.Errorf("genesis: %d games", c.TotalGames)
+		}
+	}
+}
