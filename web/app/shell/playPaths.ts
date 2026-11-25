@@ -139,9 +139,13 @@ export function moveTab(order: string[], id: string, dir: -1 | 1): string[] {
 // Consoles and All games are WittyPlay's own pages; the rest are the home page's tabs.
 export const tabRoute = (id: string) => (id === 'consoles' ? PLAY_CONSOLES : id === 'all' ? PLAY_LIBRARY : PLAY_HOME + '?tab=' + id)
 
-// The games library a console's games are browsed in: the one kept for that console, else the first games library (it holds many).
-export function libraryFor<L extends { id: number; type: string; console?: string }>(libs: L[], consoleId: string): L | undefined {
+// The games library a console opens: the one the server says holds its games (home: /games/consoles' "library", the one
+// kept for that console, else the one with the most of its games), else the one kept for it, else one for every console.
+// With two games libraries the first one used to win, and a console whose games were all in the second opened an empty one.
+export function libraryFor<L extends { id: number; type: string; console?: string }>(libs: L[], consoleId: string, home?: number): L | undefined {
   const games = libs.filter((l) => l.type === 'games')
+  const held = home ? games.find((l) => l.id === home) : undefined
+  if (held) return held
   return games.find((l) => l.console === consoleId) || games.find((l) => !l.console || l.console === 'auto') || games[0]
 }
 // A console's years as people say them: 1990 to 1997, or since 2017.

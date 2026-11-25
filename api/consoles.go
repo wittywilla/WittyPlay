@@ -106,6 +106,9 @@ type ConsoleView struct {
 	BiosFiles  []biosFileView `json:"biosFiles,omitempty"` // in the system folder, and where each came from
 	Blocked    string         `json:"blocked,omitempty"`
 	TotalGames int            `json:"totalGames,omitempty"`
+	// Library is the games library its games open in: the one kept for it, else the one with the most of its games
+	// (consoleHomes). Without ?library only.
+	Library int64 `json:"library,omitempty"`
 	// LogoName is the name to ask the logo service for, kind "console".
 	LogoName string `json:"logoName,omitempty"`
 	// Emulators are the standalone emulators set up to play it here, and Standalone the one Play
@@ -291,9 +294,17 @@ func handleGameConsoles(a *App, w http.ResponseWriter, r *http.Request) {
 		for i := range views {
 			views[i].Count = counts[views[i].ID]
 		}
-	} else if counts, err := a.Host.Counts(ctx, host.For(r), "games", "console"); err == nil {
-		for i := range views {
-			views[i].TotalGames = counts[views[i].ID]
+	} else {
+		if counts, err := a.Host.Counts(ctx, host.For(r), "games", "console"); err == nil {
+			for i := range views {
+				views[i].TotalGames = counts[views[i].ID]
+			}
+		}
+		// Which library each console opens (consoleHomes): a console whose games are all in a second games library opens that one.
+		if _, homes, err := a.consoleHomes(ctx, host.For(r), 0); err == nil && len(homes) > 0 {
+			for i := range views {
+				views[i].Library = homes[views[i].ID]
+			}
 		}
 	}
 	writeJSON(w, 200, views)

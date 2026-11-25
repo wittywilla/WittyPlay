@@ -1,6 +1,6 @@
 {
   "name": "@wittywilla/wittyplay",
-  "version": "0.7.23",
+  "version": "0.7.24",
   "description": "The browser half of WittyPlay: a game player for streamed libretro games, with gamepad, keyboard and touch controls, a remap screen and a touch layout editor.",
   "license": "AGPL-3.0-or-later",
   "author": "WittyWilla (https://github.com/wittywilla)",
@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build:bundle": "node ${WITTYMODULE:-../WittyModule}/kit/web/build-bundle.mjs .",
-    "test": "node --experimental-strip-types --test web/logic.test.mjs web/watchdog.test.mjs web/hostcss.test.mjs web/pointerChoose.test.mjs && node scripts/test-web.mjs"
+    "test": "node --experimental-strip-types --test web/logic.test.mjs web/watchdog.test.mjs web/hostcss.test.mjs web/pointerChoose.test.mjs web/libraryFor.test.mjs && node scripts/test-web.mjs"
   },
   "files": [
     "web",

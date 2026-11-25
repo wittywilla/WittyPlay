@@ -190,33 +190,9 @@ func filteredQuery(library int64, filter map[string]string) host.Query {
 // the order of the console list, each with how many and opening the library that holds them: the
 // one kept for that console, else the one with the most of its games.
 func (a *App) libraryConsoles(ctx context.Context, on host.On, library int64) ([]sdui.Item, error) {
-	libs, err := a.Host.Libraries(ctx)
+	total, home, err := a.consoleHomes(ctx, on, library)
 	if err != nil {
 		return nil, err
-	}
-	total := map[string]int{}
-	home := map[string]int64{} // console → the library its tile opens
-	best := map[string]int{}   // how many of its games that library has; -1: it's kept for the console
-	for _, l := range libs {
-		if l.Kind != "games" || (library > 0 && l.ID != library) {
-			continue
-		}
-		counts, err := a.Host.CountsIn(ctx, on, l.ID, "console")
-		if err != nil {
-			continue // a library this person can't open
-		}
-		for c, n := range counts {
-			if n <= 0 {
-				continue
-			}
-			total[c] += n
-			switch {
-			case l.Console == c:
-				home[c], best[c] = l.ID, -1
-			case best[c] >= 0 && n > best[c]:
-				home[c], best[c] = l.ID, n
-			}
-		}
 	}
 	// A scan going on: each console it has sorted games into shows now, with how many so far,
 	// rather than only once the scan ends.
@@ -664,4 +640,40 @@ func thousands(n int) string {
 		s = s[:i] + "," + s[i:]
 	}
 	return s
+}
+
+// consoleHomes counts each console's games across the games libraries this person can open (library > 0: that one alone),
+// and picks the library a console opens: the one kept for that console, else the one with the most of its games. With two
+// games libraries and none kept for a console, "the first one" opened the wrong library for a console whose games are all
+// in the second; every place that opens a console's games goes by this (the Consoles row here, and the Consoles page
+// through /games/consoles' "library").
+func (a *App) consoleHomes(ctx context.Context, on host.On, library int64) (total map[string]int, home map[string]int64, err error) {
+	libs, err := a.Host.Libraries(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	total, home = map[string]int{}, map[string]int64{}
+	best := map[string]int{} // how many of its games that library has; -1: it's kept for the console
+	for _, l := range libs {
+		if l.Kind != "games" || (library > 0 && l.ID != library) {
+			continue
+		}
+		counts, err := a.Host.CountsIn(ctx, on, l.ID, "console")
+		if err != nil {
+			continue // a library this person can't open
+		}
+		for c, n := range counts {
+			if n <= 0 {
+				continue
+			}
+			total[c] += n
+			switch {
+			case l.Console == c:
+				home[c], best[c] = l.ID, -1
+			case best[c] >= 0 && n > best[c]:
+				home[c], best[c] = l.ID, n
+			}
+		}
+	}
+	return total, home, nil
 }
