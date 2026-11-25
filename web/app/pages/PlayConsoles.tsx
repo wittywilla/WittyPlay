@@ -146,7 +146,7 @@ function coreLine(c: GameConsole): { core: string; state: 'ready' | 'setup' | 'n
 function ConsolePanel({ c, sheet, onClose }: { c: ShownConsole; sheet: boolean; onClose: () => void }) {
   const { libraries } = useApp()
   const head = useId()
-  const lib = libraryFor(libraries, c.id)
+  const lib = libraryFor(libraries, c.id, c.library)
   const how = coreLine(c)
   const n = gamesOf(c)
   const facts = [c.era ? ERA_NAMES[c.era] : '', yearsWords(c.launched, c.ended), c.media === 'disc' ? 'Discs' : c.media === 'cart' ? 'Cartridges' : c.media === 'pocket' ? 'Handheld' : '',
@@ -203,7 +203,7 @@ export default function PlayConsoles() {
   const nav = useNavigate()
   const press = useChooseThenOpen()
   const browse = (c: ShownConsole) => {
-    const lib = libraryFor(libraries, c.id)
+    const lib = libraryFor(libraries, c.id, c.library)
     if (lib && gamesOf(c) > 0 && !c.sorting) nav(`${PLAY_LIBRARY}/${lib.id}?console=${encodeURIComponent(c.id)}`)
   }
   return (

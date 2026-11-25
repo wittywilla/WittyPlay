@@ -3,6 +3,17 @@
 What changed in WittyPlay, newest first. What changed before it had a repository of its own is in the
 [WittyMediaServer changelog](https://github.com/wittywilla/WittyMediaServer/blob/master/CHANGELOG.md).
 
+## 0.7.24
+
+### What's fixed
+
+- **A console opens the library its games are in.** With two games libraries, the Consoles page's Browse games (and a second click or Enter on a console) opened the first games library for every console, so a console whose games were all in the second opened one with none of them. It now opens the library kept for that console, else the one holding the most of its games, as the Consoles row on WittyPlay's home already did.
+
+### Developer notes
+
+- `GET /games/consoles` (without `?library`) gives each console a `library`: the games library its games open in (`consoleHomes`, which the Consoles row's `libraryConsoles` now shares). `libraryFor(libs, console, home)` in web/app/shell/playPaths.ts takes it first, and falls back as before for an older module answer or a library the person can't see.
+- Tests: `TestConsoleOpensTheLibraryWithItsGames` (two libraries for every console, one kept for a console, ties), and web/libraryFor.test.mjs.
+
 ## 0.7.23
 
 ### What's fixed
